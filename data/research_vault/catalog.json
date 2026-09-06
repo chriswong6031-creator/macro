@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-09-06T18:43:20.571062+00:00",
-  "count": 1874,
+  "generated_at": "2026-09-06T20:55:49.871811+00:00",
+  "count": 1880,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -25,6 +25,7 @@
     "Citadel",
     "Citi",
     "CommBank",
+    "Commbank",
     "Curvature",
     "Danske",
     "Deutsche Bank",
@@ -128,6 +129,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-le2zh0bg2z6-afa158",
+      "title": "Article equitymarketcommentaryaug2026 ltr",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-06T01:44:13Z",
+      "summary_points": [
+        "**S&P 500 Earnings Revaluation**: Projected 2027 S&P 500 earnings of ~$415 support index reaching >8,000 by 2026, with robust company guidance suggesting $415 may be undervalued for 2023.",
+        "**AI Scarcity Thesis**: Persistent supply-demand mismatches in semiconductors, AI chips, memory, and compute power justify \"investing in scarcity,\" despite Nvidia/Google exceeding fundamentals while prices underperformed.",
+        "**July Market Risks & Diversification**: Hedge fund meltdown revealed correlated AI/tech strategies' fragility; non-correlated stocks offset AI/tech losses, underscoring diversification as critical risk control.",
+        "**Fed Rate Hike Impact**: Persistent inflation may force Fed rate hikes, limiting S&P 500 growth to earnings (no P/E expansion), hurting speculative stocks, and favoring cash-rich mega-cap tech.",
+        "**Valuation vs Bubble Thesis**: S&P 500’s lower forward P/E vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -236,6 +258,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-sogbrmleysu-8eab97",
+      "title": "GS TWIG Notes Special ‘Back to School’ TW(S)IG This Summer in Global Research September 4, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T03:10:04Z",
+      "summary_points": [
+        "**Fed Policy Outlook**: Fed on hold in September with core CPI/PCE ~0.2% in August; US consumer spending forecast 1-1.5% growth in 2026.",
+        "**China Semiconductor Capex**: $82bn investment by 2030E for domestic plants, critical for tech sector exposure and geopolitical risk assessment.",
+        "**AI Debt Financing**: Hyperscalers to finance 33% of 2026 capex with debt ($250bn new credit), driving AI adoption to 22.4% by August 2026.",
+        "**Humanoid Robotics Market**: 6.5mn units by 2035 ($138bn market), driven by warehouse automation, car production, and China’s AI-enabled industrial phase."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nplanbrs3lh-00989e",
       "title": "End of Week Market Intelligence laborious",
       "institution": "Goldman Sachs",
@@ -318,6 +360,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-guvxtztf70p-b2e6b1",
+      "title": "Mark dowding gas discomfort",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-09-05T01:13:38Z",
+      "summary_points": [
+        "**European energy crisis escalation**: TTF gas futures surge 140% above pre-war levels, driving inflation and creating ECB rate path uncertainty amid Middle East tensions and LNG shipping disruptions.",
+        "**U.S.",
+        "Rate Outlook & Geopolitical Risks**: Hawkish Fed speech (Warsh) and Middle East tensions heighten September FOMC rate hike expectations, with Treasury yields rising on oil-driven inflation and yield curve flattening.",
+        "**Japan's Policy & JGB Flows**: Ueda's hawkish stance confirms 25bps BoJ hike, driving JGB rally (Y155 vs USD), though skepticism persists on yen strength due to domestic bond weakness.",
+        "**UK Fiscal Crisis & Pound Risk**: OBR strained by inflation/borrowing costs, CPI likely hitting 5% in Q1, social welfare spending threats, and pound under pressure from fiscal instability."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-rffxmbchjzy-7152da",
       "title": "weekly headings",
       "institution": "Raymond James",
@@ -379,6 +442,24 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-buwzoefz6qb-ad3629",
+      "title": "Economics Perspective 04 09 2026",
+      "institution": "Commbank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T01:02:42Z",
+      "summary_points": [
+        "**Housing Market Deterioration**: 9% peak-to-trough national price decline (10% in 5-cap cities), driven by weaker momentum, higher rates; approvals down 3.6% (July private sector weakness) - **Current Account Deficit**: Widened to $27.2bn (Q2 2026), signaling severe trade imbalance; terms of trade down 1.6%/qtr from Middle East conflict - **RBA Policy Divergence**: Market pricing below RBA forecast (rates peak 4.60% Dec-26), creating AUD/USD flow risks and yield curve tensions vs.",
+        "US (rates rising to 4.50% Mar-27) - **Middle East Conflict**: Drives oil volatility, offsets travel demand, fuels Eurozone inflation (3.3%); US-Iran Strait of Hormuz strikes escalate tensions - **US Labor Market Data**: Critical for Fed policy; Unemployment Rate (Aug), Nonfarm Payrolls (Aug) signal slowdown/resilience amid JOLTS/ADP underperformance - **ECB Rate Hike**: Expected +25bps as Eurozone inflation exceeds targets (3.3%); aligns with China’s PPI (+3.8% YoY) and US CPI headline rise - **Global Policy Divergence**: US (rising rates), RBA (peaking then falling), Euro Area (low) creates currency valuation risks and capital flow shifts"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ofdgxn8actc-3aa4c8",
       "title": "Asia FX Weekly Focus on China data and US CPI",
       "institution": "MUFG",
@@ -417,6 +498,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 149,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1brcf5e62ye-949568",
+      "title": "16641 UK EU Beyond Treasuries Munis Final",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-09-05T00:57:56Z",
+      "summary_points": [
+        "**Treasury Credit Downgrade**: AAA to AA+ downgrade by all three major agencies signals fiscal concerns, altering credit quality fundamentals and shifting relative value dynamics.",
+        "**State Fiscal Cushion**: State reserves at median 21% of expenditure (2026 projection, vs 14% pre-pandemic) and $296bn cushion provide resilience against federal debt risks ($39.98T, 124% debt-to-GDP).",
+        "**Spread Dynamics**: Taxable munis maintain wider spreads over Treasuries than similarly rated corporates despite equivalent credit ratings, driven by fiscal trajectory and yield movements.",
+        "**Yield Superiority**: AA Rev taxable muni revenue bonds yield 5.97% for 30-year maturities, exceeding US Treasury yields (4.95%) and other sovereigns, offering superior income."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -542,6 +643,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dwh7dprvecu-cc29ae",
+      "title": "EM Weekly Fund Flows Monitor North Asia saw US$5bn foreign selling, while Brazil saw moderate inflows w w",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-04T21:31:44Z",
+      "summary_points": [
+        "**FTSE reclassification impact**: Greece/Taiwan reclassified as Developed Markets (Sept 18), triggering $5.5bn+ gross flows and $1.5bn/$1.2bn net inflows in China/HK/Taiwan via FTSE GEIS rebalancing.",
+        "**HF de-grossing Asia**: Hedge funds reversed risk-on positioning (2nd consecutive month), de-grossing Asia with net allocation to China at 73rd %ile, signaling shift to risk-off despite prior sentiment.",
+        "**Country-specific de-grossing**: China (7.4% net allocation, 16th %ile), Korea (3.0%, 70th %ile), and Taiwan (4.2%, 74th %ile) saw large August de-grossing flows, highlighting divergent regional positioning.",
+        "**Regional flow divergence**: Japan (+$56bn) and Southbound (+$49bn) led buying vs.",
+        "Korea (-$111bn) and Taiwan (-$24bn), with Brazil dominating non-Asia EM inflows (+$3.4bn)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 21,
       "language": "en",
       "needs_metadata": false
     },
