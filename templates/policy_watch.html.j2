@@ -29,6 +29,18 @@
     'risk_zh':'衰退担忧和信用利差扩大可能盖过这些利好。'
   }
 } %}
+{% set UK_STANCE = {
+  'supportive':['Reads as supportive','读作偏支持','green'],
+  'restrictive':['Reads as restrictive','读作偏收紧','amber'],
+  'mixed':['Reads as mixed','读作方向不一','blue'],
+  'routine':['Routine business','例行事务','neutral']
+} %}
+{% set UK_STATE = {
+  'gate_off':['This desk is off right now.','此栏目目前未开启。','It turns on with the UK policy desk. Nothing is missing from the rest of the page.','开启英国政策台后即可显示，本页其余内容不受影响。'],
+  'no_new':['No new UK announcement today.','今天没有新的英国公告。','The most recent one we have is below.','以下是我们已有的最近一条。'],
+  'source_outage':['GOV.UK did not answer this time.','本次未能连接 GOV.UK。','Showing the most recent announcement we already have.','以下显示我们已有的最近一条公告。'],
+  'stale':['This desk has not refreshed recently.','此栏目最近未更新。','Check GOV.UK for anything newer before acting.','采取行动前，请先到 GOV.UK 查看是否有更新。']
+} %}
 {% set TF_COPY = {
   'tf_comms': {
     'en':'Possible changes to forecasts, press conferences and meeting transcripts.',
@@ -254,11 +266,13 @@
     --pw-ink-2:color-mix(in srgb,var(--text) 68%,transparent);
     --pw-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 8%,transparent),0 1px 1px rgba(0,0,0,.24),0 14px 30px -18px rgba(0,0,0,.52);
     --pw-purple:#a879e8;--pw-blue:#5b8def;--pw-teal:#3fb6c0;--pw-green:var(--up);--pw-amber:var(--warn);--pw-red:var(--down);
+    --uk-accent:var(--pw-teal);--uk-accent-w:3px;--uk-tint:10%;--uk-edge:42%;
+    --uk-rail:color-mix(in srgb,var(--line) 58%,transparent);
     background:#0a0c11;color:var(--text);font-family:var(--font-ui);font-size:14px;line-height:1.55;font-weight:500;
     padding:18px 18px 60px;font-synthesis:none;text-rendering:optimizeLegibility;
   }
   @media(min-width:1100px){body{padding:26px max(40px,calc((100vw - 1500px)/2)) 72px}}
-  html[data-theme="light"] body{--pw-tile:#eef1f6;--pw-ink-2:color-mix(in srgb,var(--text) 72%,transparent);--pw-shadow:0 1px 2px rgba(23,32,55,.05),0 8px 24px -12px rgba(23,32,55,.12);background:#e8ebf1}
+  html[data-theme="light"] body{--pw-tile:#eef1f6;--pw-ink-2:color-mix(in srgb,var(--text) 72%,transparent);--pw-shadow:0 1px 2px rgba(23,32,55,.05),0 8px 24px -12px rgba(23,32,55,.12);background:#e8ebf1;--uk-accent-w:2px;--uk-tint:7%;--uk-edge:54%;--uk-rail:var(--line)}
   html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif;letter-spacing:normal}
   .pw-shell{width:100%;max-width:1500px;margin:18px auto 0;min-width:0}
   .pw-shell *{min-width:0}
@@ -303,6 +317,34 @@
   .pw-card{position:relative;padding:17px 18px;overflow:hidden;overflow-wrap:anywhere}.pw-card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--card-accent,var(--pw-purple))}.pw-card.green{--card-accent:var(--pw-green)}.pw-card.blue{--card-accent:var(--pw-blue)}.pw-card.amber{--card-accent:var(--pw-amber)}.pw-card.teal{--card-accent:var(--pw-teal)}
   .pw-card-title{margin:0;font-size:15px;font-weight:600;line-height:1.35;letter-spacing:-.01em}.pw-card p{margin:8px 0 0;color:var(--pw-ink-2);font-size:13px;line-height:1.5}.pw-card p.pw-primary{color:var(--text);font-size:13.5px}.pw-card .pw-meta-row{margin-top:10px}.pw-card-label{display:block;margin-bottom:3px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
   .pw-stance{display:inline-flex;margin-top:12px;padding:5px 10px;border-radius:8px;color:var(--pw-amber);border:1px solid color-mix(in srgb,var(--pw-amber) 38%,var(--line));background:color-mix(in srgb,var(--pw-amber) 9%,var(--panel));font-size:11.5px;font-weight:700}
+  .uk-desk{position:relative;padding:20px 22px;overflow:hidden}
+  .uk-desk::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--uk-accent-w);background:var(--uk-accent)}
+  .uk-desk.uk-supportive{--uk-accent:var(--pw-green)}
+  .uk-desk.uk-restrictive{--uk-accent:var(--pw-amber)}
+  .uk-desk.uk-mixed{--uk-accent:var(--pw-blue)}
+  .uk-desk.uk-routine{--uk-accent:var(--pw-teal)}
+  .uk-masthead{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 11px}
+  .uk-body-name{color:var(--pw-ink-2);font-size:11.5px;font-weight:600}
+  .uk-src{margin-left:auto;color:var(--muted);font-family:var(--font-data);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  html[data-lang="zh"] .uk-src{letter-spacing:0}
+  .uk-null{margin:0 0 12px;padding:9px 12px;border:1px solid var(--pw-hair);border-radius:10px;background:var(--pw-tile);color:var(--pw-ink-2);font-size:12.5px;line-height:1.45}
+  .uk-null strong{color:var(--text)}
+  .uk-desk[data-uk-state="source_outage"] .uk-null,
+  .uk-desk[data-uk-state="stale"] .uk-null{color:var(--pw-amber);border-color:color-mix(in srgb,var(--pw-amber) var(--uk-edge),var(--line));background:color-mix(in srgb,var(--pw-amber) var(--uk-tint),var(--panel))}
+  .uk-headline{margin:0;color:var(--text);font-family:var(--font-display);font-size:20px;font-weight:700;line-height:1.25;letter-spacing:-.015em;overflow-wrap:anywhere}
+  html[data-lang="zh"] .uk-headline{letter-spacing:0}
+  .uk-rail{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin:11px 0 0;padding:8px 0 0;border-top:1px solid var(--uk-rail)}
+  .uk-when{color:var(--pw-ink-2);font-family:var(--font-data);font-size:11.5px;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .uk-stance{margin-left:auto;padding:3px 9px;border-radius:999px;border:1px solid var(--pw-hair);font-size:11px;font-weight:700;line-height:1.25;white-space:nowrap}
+  .uk-stance-green{color:var(--pw-green);border-color:color-mix(in srgb,var(--pw-green) var(--uk-edge),var(--line));background:color-mix(in srgb,var(--pw-green) var(--uk-tint),var(--panel))}
+  .uk-stance-amber{color:var(--pw-amber);border-color:color-mix(in srgb,var(--pw-amber) var(--uk-edge),var(--line));background:color-mix(in srgb,var(--pw-amber) var(--uk-tint),var(--panel))}
+  .uk-stance-blue{color:var(--pw-blue);border-color:color-mix(in srgb,var(--pw-blue) var(--uk-edge),var(--line));background:color-mix(in srgb,var(--pw-blue) var(--uk-tint),var(--panel))}
+  .uk-stance-neutral{color:var(--pw-ink-2);background:var(--pw-tile)}
+  .uk-summary{margin:12px 0 0;color:var(--text);font-size:13.5px;line-height:1.5}
+  .uk-watch{margin:12px 0 0;color:var(--pw-ink-2);font-size:12.5px;line-height:1.5}
+  .uk-watch .pw-card-label{margin-bottom:2px}
+  .uk-desk .pw-build-note{margin-top:14px}
+  @media(max-width:680px){.uk-desk{padding:17px 16px}.uk-headline{font-size:17px}.uk-rail{gap:4px 12px}.uk-stance{margin-left:0}.uk-src{margin-left:0;flex-basis:100%}}
   details.pw-details{margin-top:12px}.pw-details>summary{list-style:none}.pw-details>summary::-webkit-details-marker{display:none}.pw-details[open]>summary{margin-bottom:9px}.pw-detail-body{padding:11px 13px;border:1px solid var(--pw-hair);border-radius:10px;background:var(--pw-tile);color:var(--pw-ink-2);font-size:12px;line-height:1.55;overflow-wrap:anywhere}.pw-detail-body p{margin:0 0 8px;font-size:12px}.pw-detail-body p:last-child{margin-bottom:0}
   .pw-statbar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}.pw-stat{padding:7px 10px;border:1px solid var(--pw-hair);border-radius:9px;background:var(--pw-tile);color:var(--pw-ink-2);font-size:11.5px}.pw-stat strong{color:var(--text);font-size:13px}
   .pw-market-card .pw-examples{color:var(--text);font-family:var(--font-data);font-size:11.5px;font-weight:600;letter-spacing:.01em}.pw-performance{font-size:11.5px}
@@ -381,6 +423,7 @@
 
   <nav class="pw-toc" aria-label="Jump to section">
     <a class="gbtn gbtn-sm gbtn-pill" href="#overview">{{ t('Quick take','快速了解') }}</a>
+    <a class="gbtn gbtn-sm gbtn-pill" href="#uk">{{ t('UK desk','英国政策台') }}</a>
     {% if desk %}<a class="gbtn gbtn-sm gbtn-pill" href="#views">{{ t('Market views','市场观点') }}</a>{% endif %}
     <a class="gbtn gbtn-sm gbtn-pill" href="#fed">{{ t('The Fed','美联储') }}</a>
     <a class="gbtn gbtn-sm gbtn-pill" href="#policy">{{ t('Policy moves','政策行动') }}</a>
@@ -402,6 +445,43 @@
       </article>
     </div>
     <p class="pw-build-note">{{ t('The Fed and Treasury appear aligned on lower borrowing costs, but there is no proof of a coordinated plan.','美联储与财政部似乎都希望降低融资成本，但没有证据表明双方存在协同计划。') }}</p>
+  </section>
+
+  <section class="pw-section" id="uk">
+    {{ section_head('UK policy desk','英国政策台',
+                    'United Kingdom · HM Treasury','英国 · 英国财政部',
+                    'The latest UK government announcement, in plain words.','最新的英国政府公告，用平实语言说明。') }}
+    <article class="uk-desk pw-surface uk-{{ uk_desk.stance }}" data-uk-state="{{ uk_desk.state }}" data-jurisdiction="GB">
+      <div class="uk-masthead">
+        <span class="pw-badge neutral">{{ bl(uk_desk.jurisdiction_en, uk_desk.jurisdiction_zh) }}</span>
+        <span class="uk-body-name">{{ bl(uk_desk.body_en, uk_desk.body_zh) }}</span>
+        <span class="uk-src">{{ uk_desk.source_label }}</span>
+      </div>
+      {% set st = UK_STATE.get(uk_desk.state) %}
+      {% if st %}<p class="uk-null" role="status"><strong>{{ t(st[0], st[1]) }}</strong> {{ t(st[2], st[3]) }}</p>{% endif %}
+      {% if uk_desk.headline %}
+      <h3 class="uk-headline">{{ uk_desk.headline }}</h3>
+      {% set sc = UK_STANCE.get(uk_desk.stance, UK_STANCE['routine']) %}
+      <div class="uk-rail">
+        {% if uk_desk.published_label_en %}<span class="uk-when">{{ t('Published','发布') }} <span class="l-en">{{ uk_desk.published_label_en }}</span><span class="l-zh">{{ uk_desk.published_label_zh }}</span></span>{% endif %}
+        {% if uk_desk.known_at_label_en %}<span class="uk-when">{{ t('Known here','我们获知') }} <span class="l-en">{{ uk_desk.known_at_label_en }}</span><span class="l-zh">{{ uk_desk.known_at_label_zh }}</span></span>{% endif %}
+        <span class="uk-stance uk-stance-{{ sc[2] }}">{{ bl(sc[0], sc[1]) }}</span>
+      </div>
+      {% if uk_desk.summary_en %}<p class="uk-summary">{{ bl(uk_desk.summary_en, uk_desk.summary_zh) }}</p>{% endif %}
+      <p class="uk-watch"><span class="pw-card-label">{{ t('What to do','该怎么做') }}</span>{% if uk_desk.watch_en %}{{ bl(uk_desk.watch_en, uk_desk.watch_zh) }}{% else %}{{ t("Watch \u2014 don't chase. This is context, not a trade.",'观察，不追涨。这是背景信息，不是交易建议。') }}{% endif %}</p>
+      <details class="pw-details">
+        <summary class="gbtn gbtn-sm gbtn-quiet">{{ t('Source and wording','来源与原文') }}</summary>
+        <div class="pw-detail-body">
+          {% if uk_desk.doc_type_en %}<p><strong>{{ t('Type','类型') }}:</strong> {{ bl(uk_desk.doc_type_en, uk_desk.doc_type_zh) }}</p>{% endif %}
+          {% if uk_desk.excerpt %}<p>{{ uk_desk.excerpt }}</p>{% endif %}
+          <p><a href="{{ uk_desk.source_url }}" rel="nofollow noopener" target="_blank">{{ uk_desk.source_url }}</a></p>
+          {% if uk_desk.provider_label %}<p><strong>{{ t('Read by','解读来源') }}:</strong> {{ uk_desk.provider_label }}</p>{% endif %}
+          <p>{{ t('Crown copyright, reused under the Open Government Licence v3.0.','英国王室版权，依据开放政府许可 v3.0 使用。') }}</p>
+        </div>
+      </details>
+      {% endif %}
+      <p class="pw-build-note">{{ t('Context only\u2014not investment advice.','仅供参考，不构成投资建议。') }}</p>
+    </article>
   </section>
 
   {% if desk %}
