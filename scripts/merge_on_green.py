@@ -455,6 +455,17 @@ COMMIT_FILES_TRUNCATED_AT = 300
 # `/pulls/{n}/files` pages, 100 each. A pull request bigger than this has a footprint
 # we cannot fully see, and an UNDER-read footprint under-detects, so it is re-proven.
 PR_FILE_PAGE_CAP = 3
+# How a pull request's changed-file inventory was OBSERVED. `pull_files` answers
+# `None` for several unrelated reasons, and they do not deserve the same verdict:
+# a truncated/broad footprint and a complete inventory matching no gate are
+# ANSWERS the sweep may act on conservatively, while a failed transport is
+# SILENCE. Collapsing silence into affirmative staleness made a failed read
+# author an update-branch write (#6855/#6854) — a non-GET effect caused purely by
+# not being able to look. These are per-sweep only; nothing is cached across
+# sweeps, so the next ordinary sweep simply re-observes.
+PR_FILES_COMPLETE = "complete"
+PR_FILES_UNAVAILABLE = "proof_surface_unavailable"
+PR_FILES_TRUNCATED_BROAD = "truncated_broad"
 OPEN_PULL_PAGE_CAP = 10
 # `/issues/{n}/comments` pages, 100 each, for the recorded-hold guard below. A pull
 # request carrying more than this many comments is not fully readable, and an
@@ -1843,6 +1854,12 @@ class ProofFreshness:
         self._recursive_trees: dict[str, dict[str, tuple[str, str, str]]] = {}
         self._blobs: dict[str, bytes] = {}
         self._pr_files: dict[Any, list[str] | None] = {}
+        # Observation class + sanitized diagnostic for each inventory read above.
+        # Absent means "not read through `pull_files` in this sweep" (a directly
+        # seeded inventory, for instance), which stays on the pre-existing
+        # conservative path rather than inheriting the new deferral.
+        self._pr_files_class: dict[Any, str] = {}
+        self._pr_files_detail: dict[Any, str] = {}
         # Exact checked head -> newest main commit already contained by that head.
         # This is a compatibility fallback for older/external check records that do
         # not expose the exact pull_request base SHA used by the primary path below.
@@ -1925,13 +1942,32 @@ class ProofFreshness:
         return bound
 
     def note_merged_commit(
-        self, sha: str, files: list[str] | None, message: str = ""
+        self,
+        sha: str,
+        files: list[str] | None,
+        message: str = "",
+        *,
+        inventory_complete: bool = True,
     ) -> None:
-        """Record a squash this sweep just landed so the next PR classifies it."""
+        """Record a squash this sweep just landed so the next PR classifies it.
+
+        This commit is inserted at the FRONT of the main timeline, so it enters the
+        staleness window of every pull request evaluated later in the same sweep.
+        That makes the ``files`` argument safety-critical rather than bookkeeping:
+        recording an unseen footprint as an EMPTY, non-truncated list tells every
+        later candidate that this commit changed NOTHING, and a sibling whose tested
+        surface really does overlap it would then merge with no re-proof.
+
+        ``inventory_complete=False`` means the sweep could not fully see what the
+        merged commit touched. Record it as TRUNCATED, which the existing window
+        loop already reads as "cannot be shown to be outside the surface" and routes
+        to conservative re-proof. Not knowing must never present as "touched
+        nothing".
+        """
         if not sha:
             return
         self.commits.insert(0, {"sha": sha, "message": message})
-        self._commit_files[sha] = (list(files or []), False)
+        self._commit_files[sha] = (list(files or []), not inventory_complete)
         self._proof_bound_sha = None
 
     def sha_is_skip_ci_tick(self, sha: str) -> bool:
@@ -2277,26 +2313,65 @@ class ProofFreshness:
         return answer
 
     def pull_files(self, number: Any) -> list[str] | None:
-        """The pull request's own changed files, or None when they cannot be seen."""
+        """The pull request's own changed files, or None when they cannot be seen.
+
+        The ``None`` contract is unchanged, and every existing caller keeps its
+        fail-closed reading of it. What is new is that this method also RECORDS
+        why it answered ``None``, because the reasons are not equivalent: a
+        transport failure is silence, while a truncated footprint is an answer.
+        ``surface_class`` exposes that distinction to the freshness decision.
+        """
         if number in self._pr_files:
             return self._pr_files[number]
         names: list[str] = []
         seen: set[str] = set()
         answer: list[str] | None = names
+        outcome = PR_FILES_COMPLETE
+        detail = ""
         for page in range(1, PR_FILE_PAGE_CAP + 1):
             query = urllib.parse.urlencode({"per_page": "100", "page": str(page)})
-            status, payload = _request(
-                "GET",
-                f"{GITHUB_API}/repos/{self.repo}/pulls/{number}/files?{query}",
-                self.token,
-            )
-            if status >= 400 or not isinstance(payload, list):
-                answer = None
+            try:
+                status, payload = _request(
+                    "GET",
+                    f"{GITHUB_API}/repos/{self.repo}/pulls/{number}/files?{query}",
+                    self.token,
+                )
+            except RateLimited:
+                # Rate-limit refusal keeps its own established propagation law.
+                raise
+            except Exception as exc:
+                # Socket/DNS/TLS failure. Previously this escaped as an exception
+                # from a read; it is the same not-knowing as an HTTP 5xx. Only the
+                # exception TYPE is recorded — the message can carry a URL, a
+                # header echo or a token fragment.
+                answer, outcome = None, PR_FILES_UNAVAILABLE
+                detail = (
+                    f"PR #{number}: transport error reading changed files "
+                    f"(page {page}, {type(exc).__name__})"
+                )
+                break
+            if status >= 400:
+                answer, outcome = None, PR_FILES_UNAVAILABLE
+                detail = (
+                    f"PR #{number}: HTTP {int(status)} reading changed files "
+                    f"(page {page})"
+                )
+                break
+            if not isinstance(payload, list):
+                answer, outcome = None, PR_FILES_UNAVAILABLE
+                detail = (
+                    f"PR #{number}: non-list response reading changed files "
+                    f"(page {page}, HTTP {int(status)})"
+                )
                 break
             try:
                 page_paths = _changed_file_paths(payload)
             except RuntimeError:
-                answer = None
+                answer, outcome = None, PR_FILES_UNAVAILABLE
+                detail = (
+                    f"PR #{number}: malformed row reading changed files "
+                    f"(page {page}, HTTP {int(status)})"
+                )
                 break
             for path in page_paths:
                 if path not in seen:
@@ -2306,10 +2381,32 @@ class ProofFreshness:
                 break
         else:
             # Every page was full: the footprint is truncated, and an UNDER-read
-            # footprint under-detects. Not knowing is re-prove, never merge.
-            answer = None
+            # footprint under-detects. Not knowing is re-prove, never merge. This
+            # is an OBSERVED answer, so it keeps the conservative reproof.
+            answer, outcome = None, PR_FILES_TRUNCATED_BROAD
+            detail = (
+                f"PR #{number}: changed-file inventory exceeds "
+                f"{PR_FILE_PAGE_CAP} full pages"
+            )
         self._pr_files[number] = answer
+        self._pr_files_class[number] = outcome
+        self._pr_files_detail[number] = detail
         return answer
+
+    def surface_class(self, number: Any) -> str:
+        """How this sweep OBSERVED the pull request's changed-file inventory.
+
+        Defaults to ``PR_FILES_COMPLETE`` when the inventory did not come from
+        ``pull_files`` in this sweep, so an unclassified answer keeps the
+        pre-existing conservative disposition instead of silently acquiring the
+        new deferral. Only a read this sweep actually attempted and lost can
+        report ``PR_FILES_UNAVAILABLE``.
+        """
+        return self._pr_files_class.get(number, PR_FILES_COMPLETE)
+
+    def surface_unavailable_detail(self, number: Any) -> str:
+        """Sanitized diagnostic: PR number, failure class, page, numeric status."""
+        return self._pr_files_detail.get(number, "")
 
     def included_main_base(self, pull: dict[str, Any]) -> str | None:
         """Newest snapshot-main commit already contained by the exact checked head.
@@ -2572,6 +2669,33 @@ class ProofFreshness:
 
         surface = self.surface_of(number)
         if surface is None:
+            inventory = self.surface_class(number)
+            if inventory == PR_FILES_UNAVAILABLE:
+                # SILENCE, not evidence. The sweep could not look at the footprint,
+                # which says nothing about whether main's movement is inside it. An
+                # update-branch cannot repair a transport failure, so returning
+                # ``True`` here would let a failed READ author a non-GET WRITE
+                # against a pull request (#6855/#6854). Defer with zero effect; the
+                # next ordinary sweep re-observes. Nothing is cached across sweeps
+                # and no retry is scheduled.
+                return None, (
+                    (
+                        self.surface_unavailable_detail(number)
+                        or f"PR #{number}: changed-file inventory unavailable"
+                    )
+                    + " — proof surface unavailable, deferring without update-branch"
+                )
+            if inventory == PR_FILES_TRUNCATED_BROAD:
+                # An OBSERVED answer: the footprint is genuinely too broad to bound.
+                # Conservative reproof is preserved exactly as before.
+                return True, (
+                    "the pull request's own changed files could not be established "
+                    "because its footprint exceeds the readable page cap, so its "
+                    "tested surface is unknown"
+                )
+            # A COMPLETE inventory that satisfies no gate entry resolves to the
+            # empty surface. That is knowledge, and merging on it would be the
+            # no-op this gate exists to prevent — conservative reproof preserved.
             return True, (
                 "the pull request's own changed files could not be established, so "
                 "its tested surface is unknown"
@@ -6228,18 +6352,18 @@ def reprove(
     merge_token: str,
     budget: "SweepBudget | None" = None,
 ) -> str:
-    """Refuse to merge a clean-but-stale proof; hand the head back to CI.
+    """Refuse to merge on a stale proof; hand the head back to CI.
 
     `update-branch` is the sanctioned path and already exists: it merges main into
     the head, which makes the head UNPROVEN until its fresh checks conclude, and a
     later sweep judges it on those. Nothing about the merge gate is weakened here —
-    this only stops a green from outliving the base it was computed against.
+    this only stops a receipt from outliving the base it was computed against.
 
     When GitHub declines the update the head genuinely conflicts with main, which no
     number of sweeps will fix, so it is labeled and explained exactly once.
 
     …UNLESS another sweep merged it a second ago. Pre-deploy or out-of-band sweeps
-    can both judge this pull request clean and stale; the loser's
+    can both judge this pull request's proof stale; the loser's
     update-branch answers 422 because the pull request is MERGED, and labelling that
     `merge-blocked` with a one-shot "not merging" comment is #4647's hazard arriving
     through a new door. `already_settled` is asked before any accusation here for
@@ -6249,7 +6373,7 @@ def reprove(
     _annotate(
         "notice",
         "merge-on-green",
-        f"PR #{number}: checks are clean but the proof is stale — {reason}. Merging "
+        f"PR #{number}: the advertised proof is stale — {reason}. Merging "
         "main into the head; its fresh checks decide on a later sweep.",
     )
     update_result = attempt_update_branch(
@@ -6292,8 +6416,8 @@ def reprove(
         repo,
         pull,
         (
-            "`merge-on-green` sweeper: **not merging.** Every check concluded clean, "
-            f"but the proof is no longer trustworthy: {reason}.\n\n"
+            "`merge-on-green` sweeper: **not merging.** The advertised proof is no "
+            f"longer trustworthy because it is no longer current: {reason}.\n\n"
             "A check proves the head against the base it was handed, not against the "
             "base that exists at merge time — that is how PR #4583's honest 15-hour-old "
             "green turned main red. The sweeper tried to merge `main` into this branch "
@@ -6465,17 +6589,70 @@ def sweep_pull(
         if anchor_verdict != "clean":
             verdict, names = anchor_verdict, anchor_names
 
+    # A physical proof generation that has not concluded has no semantic
+    # disposition yet. In particular, a historical artifact preloaded for the
+    # main-red overlap check must not override an active anchor, write a refusal,
+    # or request a second proof generation.
+    if verdict == "pending":
+        print(
+            f"PR #{number}: {len(names)} check(s) still running "
+            f"({', '.join(names[:6])}) — waiting for the next sweep.",
+            flush=True,
+        )
+        return verdict
+
+    if verdict in {"unproven", "incomplete"}:
+        _annotate(
+            "notice",
+            "merge-on-green",
+            f"PR #{number}: head {head_sha[:12]} has no complete affirmative ci/fences "
+            f"proof ({', '.join(names[:6]) or 'no check runs'}). Nothing is merged or "
+            "accused; a fresh proof event or branch update can supply the missing anchors. "
+            "If this head intentionally has no CI, dispose of it manually.",
+        )
+        return verdict
+
+    def proof_freshness_disposition() -> str | None:
+        """Return a terminal freshness action, or None when proof is current."""
+        try:
+            stale, reason = freshness.stale_for(pull, runs)
+        except Exception as exc:  # a broken read must never become permission to merge
+            stale, reason = None, f"the tested-surface check itself failed ({exc})"
+        if stale is None:
+            _annotate(
+                "warning",
+                "merge-on-green",
+                f"PR #{number}: exact proof freshness is indeterminate ({reason}). "
+                "Left armed without update-branch; the next sweep re-reads the evidence.",
+            )
+            return "freshness-deferred"
+        if stale:
+            if settled_owner_generation:
+                _annotate(
+                    "notice",
+                    "merge-on-green refresh lease",
+                    f"PR #{number}: its leased proof generation settled but main moved "
+                    "again. Rotating the high-load lane before this pull request may "
+                    "request another generation.",
+                )
+                return "lease-rotation-deferred"
+            return reprove(repo, pull, reason, read_token, merge_token, budget)
+        print(f"PR #{number}: proof still current — {reason}.", flush=True)
+        return None
+
     semantic_mode = False
     semantic_gate = None
     semantic_refusal = ""
+    semantic_freshness_checked = False
     # Green heads retain the zero-artifact-call fast path. A red/ambiguous head,
     # or a candidate already loaded for the semantic main-red overlap decision,
     # must use v1 when present. Claimed malformed v1 is a hard refusal and cannot
     # fall back to pack-name causality.
-    if semantic_evidence is not None or (
+    semantic_candidate = semantic_evidence is not None or (
         verdict in {"blocked", "incomplete"}
         and _head_can_advertise_semantic_evidence(runs)
-    ):
+    )
+    if semantic_candidate:
         try:
             loaded = semantic_evidence or semantic_evidence_for_head(
                 repo,
@@ -6484,6 +6661,17 @@ def sweep_pull(
                 check_runs=runs,
                 expected_base_sha=_semantic_pr_base_sha(runs, head_sha, number),
             )
+            # Merely advertising a ci-gate run does not prove this is a
+            # semantic-v1 head: pre-epoch runs load as legacy_absent and retain
+            # their exact legacy disposition. For an actual, already-bound v1
+            # receipt, freshness must precede semantic classification in both
+            # directions — stale success and stale failure have equal zero
+            # authority over the current candidate.
+            if getattr(loaded, "mode", "") == "semantic":
+                freshness_action = proof_freshness_disposition()
+                if freshness_action is not None:
+                    return freshness_action
+                semantic_freshness_checked = True
             semantic_gate = _semantic_gate(loaded)
             if semantic_gate is not None:
                 semantic_mode = True
@@ -6512,25 +6700,6 @@ def sweep_pull(
                 f"legacy reasoning: {str(exc)[:400]}"
             )
             verdict, names = "blocked", [semantic_refusal]
-
-    if verdict == "pending":
-        print(
-            f"PR #{number}: {len(names)} check(s) still running "
-            f"({', '.join(names[:6])}) — waiting for the next sweep.",
-            flush=True,
-        )
-        return verdict
-
-    if verdict in {"unproven", "incomplete"}:
-        _annotate(
-            "notice",
-            "merge-on-green",
-            f"PR #{number}: head {head_sha[:12]} has no complete affirmative ci/fences "
-            f"proof ({', '.join(names[:6]) or 'no check runs'}). Nothing is merged or "
-            "accused; a fresh proof event or branch update can supply the missing anchors. "
-            "If this head intentionally has no CI, dispose of it manually.",
-        )
-        return verdict
 
     if verdict == "blocked":
         if semantic_mode:
@@ -6685,35 +6854,14 @@ def sweep_pull(
             flush=True,
         )
 
-    # Every check concluded clean, or the reds are main's current weather.
-    # proven but WHICH exact main SHA its pull_request event tested. GitHub records
-    # that SHA on the check run itself; timestamps are not proof identity. An
-    # unavailable identity defers without mutation because update-branch cannot
-    # repair a control-plane read failure.
-    try:
-        stale, reason = freshness.stale_for(pull, runs)
-    except Exception as exc:  # a broken read must never become permission to merge
-        stale, reason = None, f"the tested-surface check itself failed ({exc})"
-    if stale is None:
-        _annotate(
-            "warning",
-            "merge-on-green",
-            f"PR #{number}: exact proof freshness is indeterminate ({reason}). "
-            "Left armed without update-branch; the next sweep re-reads the evidence.",
-        )
-        return "freshness-deferred"
-    if stale:
-        if settled_owner_generation:
-            _annotate(
-                "notice",
-                "merge-on-green refresh lease",
-                f"PR #{number}: its leased proof generation settled but main moved "
-                "again. Rotating the high-load lane before this pull request may "
-                "request another generation.",
-            )
-            return "lease-rotation-deferred"
-        return reprove(repo, pull, reason, read_token, merge_token, budget)
-    print(f"PR #{number}: proof still current — {reason}.", flush=True)
+    # Every check concluded clean, or the reds are main's current weather. A
+    # semantic-era candidate was already freshness-bound before its semantic
+    # disposition could gain merge or blocking authority. Legacy and green
+    # zero-artifact heads retain the same late freshness path as before.
+    if not semantic_freshness_checked:
+        freshness_action = proof_freshness_disposition()
+        if freshness_action is not None:
+            return freshness_action
     # NOTE (item N5, round-3 adjudication, 2026-08-21): a stale-`merge-blocked`
     # cleanup used to run HERE, unconditionally. Round-2 (item m3) narrowed it
     # to skip when a cheap, network-free BODY-only pre-check thought the pull
@@ -7063,10 +7211,14 @@ def sweep_pull(
             f"PR #{number}: every check concluded clean — squash-merged "
             f"({merged_sha[:12]}).",
         )
+        merged_files = freshness.pull_files(number)
         freshness.note_merged_commit(
             merged_sha or f"merged-{number}",
-            freshness.pull_files(number),
+            merged_files,
             message=f"squash merge of #{number}",
+            inventory_complete=(
+                freshness.surface_class(number) == PR_FILES_COMPLETE
+            ),
         )
         # Cleanup is genuinely best-effort. A label/ref read can fail after GitHub
         # has accepted the merge; that must never hide the `merged` verdict and let

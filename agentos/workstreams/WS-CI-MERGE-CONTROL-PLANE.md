@@ -22,6 +22,7 @@ discoveries:
   - "DSC:CI-SELF-MOD-FENCE-ARGV-BYPASSES-BOUNDED-TRANSPORT"
   - "DSC:REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES"
   - "DSC:SEALED-PC-CI-REPLAY-AND-PORTABILITY-NEED-EXPLICIT-RUNTIME-BINDINGS"
+  - "DSC:SEMANTIC-REFUSAL-BYPASSED-PROOFFRESHNESS"
 waves:
   - id: W-TRANSPORT
     title: Bounded changed-files transport across CI and self-mod fences
@@ -70,6 +71,28 @@ waves:
       ProofFreshness remain the governing contract. PR 5591 remains historical
       W-REWRITE archaeology only; completing this wave does not commission or
       complete W-REWRITE or any CI-speed/scoping wave.
+  - id: W-PROOFFRESHNESS-ORDER
+    title: ProofFreshness precedes semantic disposition
+    status: awaiting_ci
+    note: >
+      Sol commissioned one bounded merge-controller repair after PR #6391
+      exposed stale unknown/inherited evidence blocking before the canonical
+      reproof path. The candidate preserves semantic classification and exact
+      tested-tree/base law while ordering bound semantic-v1 freshness before
+      either success or refusal. Fresh unknown/regression evidence still blocks;
+      stale green and stale red both reprove; pending/incomplete anchors wait;
+      malformed and legacy-absent evidence preserve existing fail-closed law;
+      the existing refresh lease remains the sole duplicate-dispatch guard.
+      Evidence: DEC:STALE-SEMANTIC-PROOF-HAS-NO-CURRENT-VERDICT-AUTHORITY and
+      DSC:SEMANTIC-REFUSAL-BYPASSED-PROOFFRESHNESS. 2026-09-05 same-carrier
+      recovery reconciled the candidate onto current main by merge (both
+      histories preserved, sole conflict a union of discovery keys) and added
+      one bounded repair exposed by #6855/#6854: an unreadable changed-file
+      inventory is PROOF_SURFACE_UNAVAILABLE and defers with zero non-GET
+      effects instead of re-proving, while truncated/broad and
+      complete-unclassified inventories keep their conservative reproof. The
+      wave remains awaiting_ci and HOLD-FOR-SOL; it does not modify or operate
+      PR #6391.
   - id: W-PR-EVENT-CAUSALITY
     title: Candidate authority and lifecycle-event causality closure
     status: done

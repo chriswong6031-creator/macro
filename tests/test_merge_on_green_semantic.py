@@ -292,6 +292,88 @@ def test_main_infrastructure_ambiguity_retains_global_breaker(monkeypatch):
     assert "infrastructure" in why
 
 
+def test_red_main_nonoverlap_routes_stale_candidate_to_reproof_never_merge(
+    monkeypatch, capsys
+):
+    """The existing main-red exception cannot launder a stale PR receipt."""
+    pull = _pull()
+    runs = [
+        _check("ci-pack-4", "failure"),
+        _check("ci-gate", "failure", details=True),
+        _check("fence-pack", "success"),
+    ]
+    freshness = _Fresh(stale=(True, "candidate proof predates current main"))
+    freshness.commit_file_reads = 0
+    lease = SimpleNamespace(
+        readable=True,
+        owner_number=None,
+        claim_attempted=False,
+        owns=lambda _pull: False,
+    )
+    reproofs = []
+
+    monkeypatch.setenv("GH_REPO", "acme/widgets")
+    monkeypatch.setenv("READ_TOKEN", "read")
+    monkeypatch.setenv("MERGE_TOKEN", "write")
+    monkeypatch.delenv("TRIGGER_HEAD_SHA", raising=False)
+    monkeypatch.delenv("TRIGGER_CONCLUSION", raising=False)
+    monkeypatch.delenv("CURRENT_RUN_ID", raising=False)
+    monkeypatch.setattr(MOG, "core_rate_limit", lambda _token: (1000, 1000))
+    monkeypatch.setattr(MOG, "labeled_pulls", lambda *_a: [pull])
+    monkeypatch.setattr(MOG, "prepare_refresh_lease", lambda *_a: (lease, [pull]))
+    monkeypatch.setattr(MOG, "serialized_refresh_authority", lambda *_a: True)
+    monkeypatch.setattr(MOG, "in_flight_pr_proofs", lambda *_a: 0)
+    monkeypatch.setattr(MOG, "refresh_lease_reservation_count", lambda *_a: 0)
+    monkeypatch.setattr(
+        MOG, "integration_baseline_state", lambda *_a: ("red", "inherited main red")
+    )
+    monkeypatch.setattr(MOG, "newest_main_semantic_evidence", lambda *_a: _loaded("main"))
+    monkeypatch.setattr(
+        MOG.semantic_proof,
+        "red_semantic_units",
+        lambda _evidence: frozenset({("main-job", "main-proof")}),
+    )
+    monkeypatch.setattr(MOG, "ensure_semantic_main_evidence", lambda *_a, **_k: "current")
+    monkeypatch.setattr(MOG, "ensure_integration_baseline", lambda *_a: "already red")
+    monkeypatch.setattr(
+        MOG.ProofFreshness,
+        "build",
+        classmethod(lambda _cls, *_a, **_k: freshness),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "main_proof",
+        lambda *_a: MOG.MainProof(frozenset(), None, "", "no clean main proof"),
+    )
+    monkeypatch.setattr(MOG, "head_check_runs", lambda *_a: runs)
+    monkeypatch.setattr(
+        MOG, "semantic_evidence_for_head", lambda *_a, **_k: _loaded("candidate")
+    )
+    monkeypatch.setattr(
+        MOG,
+        "semantic_main_circuit_decision",
+        lambda *_a, **_k: (True, frozenset(), "no semantic overlap"),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "_semantic_gate",
+        lambda *_a, **_k: pytest.fail("stale candidate receipt gained authority"),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "reprove",
+        lambda _repo, _pull, reason, _read, _write, _budget: (
+            reproofs.append(reason) or "re-proving"
+        ),
+    )
+    monkeypatch.setattr(MOG, "ensure_main_baseline", lambda *_a: "not requested")
+
+    assert MOG.main() == 0
+    assert reproofs == ["candidate proof predates current main"]
+    assert freshness.stale_calls == 1
+    assert "1 re-proving" in capsys.readouterr().out
+
+
 def test_job_infrastructure_is_a_nonunit_blocker() -> None:
     loaded = SimpleNamespace(
         mode="semantic",
@@ -372,7 +454,11 @@ def test_semantic_clear_still_runs_proof_freshness_and_reproves(monkeypatch):
     ]
     fresh = _Fresh(stale=(True, "newer main changed the tested surface"))
     monkeypatch.setattr(MOG, "head_check_runs", lambda *_a: runs)
-    monkeypatch.setattr(MOG, "_semantic_gate", lambda _loaded: _gate(clear=True))
+    monkeypatch.setattr(
+        MOG,
+        "_semantic_gate",
+        lambda _loaded: pytest.fail("stale semantic success gained merge authority"),
+    )
     monkeypatch.setattr(
         MOG.semantic_proof,
         "format_semantic_unit",
@@ -395,6 +481,249 @@ def test_semantic_clear_still_runs_proof_freshness_and_reproves(monkeypatch):
     assert verdict == "rebased"
     assert fresh.stale_calls == 1
     assert calls == ["newer main changed the tested surface"]
+
+
+def test_stale_6391_semantic_receipt_reproves_before_unknown_can_block(monkeypatch):
+    """A stale receipt cannot classify the current candidate before reproof.
+
+    This catches the production ordering defect exposed by PR #6391: moving
+    semantic disposition back ahead of ProofFreshness would consult the old
+    ``unknown / not_run_prior_failure`` unit and write ``merge-blocked`` instead
+    of creating the one canonical proof-producing generation.
+    """
+    subject_head = "0f929e4e66ea9d6a9e27110f0f3f0102158c9ab7"
+    historical_base = "f2de463c4feb3eea6e6b20ae3b31ff823035e415"
+    pull = _pull()
+    pull["head"]["sha"] = subject_head
+    pull["base"]["sha"] = historical_base
+
+    runs = [
+        _check("ci-pack-4", "failure"),
+        _check("ci-gate", "failure", details=True),
+        _check("fence-pack", "success"),
+    ]
+    for run in runs:
+        run["pull_requests"] = [
+            {
+                "number": 9,
+                "head": {"sha": subject_head},
+                "base": {"sha": historical_base},
+            }
+        ]
+
+    inherited = _unit("inherited_base")
+    unknown = _unit("unknown")
+    unknown.outcome = "not_run_prior_failure"
+    historical_gate = SimpleNamespace(
+        clear=False,
+        blocking=(unknown,),
+        inherited=(inherited,),
+        passed=(),
+        infrastructure_blocking=False,
+    )
+    freshness = _Fresh(
+        stale=(True, "current main no longer matches the historical tested base"),
+        paths=[
+            "engine/fundamental_forensics/broad_sec_store.py",
+            "tests/test_fundamental_forensics_broad_sec.py",
+        ],
+    )
+    events = []
+
+    def semantic_gate(_loaded):
+        events.append("semantic-verdict")
+        return historical_gate
+
+    monkeypatch.setattr(MOG, "_semantic_gate", semantic_gate)
+    monkeypatch.setattr(MOG, "live_authorized_pull", lambda *_a, **_k: (pull, "ok"))
+    monkeypatch.setattr(
+        MOG,
+        "reprove",
+        lambda _repo, _pull, reason, _read, _write, _budget: (
+            events.append(("reprove", reason)) or "re-proving"
+        ),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "mark_blocked",
+        lambda *_a, **_k: pytest.fail("stale semantic receipt gained blocking authority"),
+    )
+
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        pull,
+        "read",
+        "write",
+        freshness,
+        semantic_evidence=_loaded("historical-6391"),
+        check_runs=runs,
+    )
+
+    assert verdict == "re-proving"
+    assert freshness.stale_calls == 1
+    assert events == [
+        (
+            "reprove",
+            "current main no longer matches the historical tested base",
+        )
+    ]
+
+
+def test_reproof_notice_does_not_call_a_stale_red_receipt_clean(monkeypatch, capsys):
+    """The shared reproof path must describe both stale green and stale red honestly."""
+    monkeypatch.setattr(MOG, "attempt_update_branch", lambda *_a, **_k: "updated")
+    monkeypatch.setattr(MOG, "clear_blocked", lambda *_a, **_k: None)
+
+    assert MOG.reprove(
+        "acme/widgets",
+        _pull(),
+        "semantic proof base is superseded",
+        "read",
+        "write",
+    ) == "re-proving"
+
+    out = capsys.readouterr().out
+    assert "advertised proof is stale" in out
+    assert "checks are clean" not in out
+
+
+def test_pending_semantic_candidate_waits_without_freshness_or_marker(monkeypatch):
+    """A historical artifact cannot override an active proof generation."""
+    runs = [
+        _check("ci-pack-4", "failure"),
+        _check("ci-gate", "failure", details=True),
+        {
+            **_check("fence-pack", "success"),
+            "status": "in_progress",
+            "conclusion": None,
+        },
+    ]
+    freshness = _Fresh(stale=(True, "historical base is stale"))
+
+    monkeypatch.setattr(
+        MOG,
+        "_semantic_gate",
+        lambda *_a, **_k: pytest.fail("pending proof consumed historical semantics"),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "reprove",
+        lambda *_a, **_k: pytest.fail("pending proof dispatched a duplicate refresh"),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "mark_blocked",
+        lambda *_a, **_k: pytest.fail("pending proof wrote a semantic refusal"),
+    )
+
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        freshness,
+        semantic_evidence=_loaded("historical-preloaded-proof"),
+        check_runs=runs,
+    )
+
+    assert verdict == "pending"
+    assert freshness.stale_calls == 0
+
+
+def test_stale_pre_epoch_legacy_red_keeps_exact_legacy_block(monkeypatch):
+    """Advertising ci-gate is not proof that semantic-v1 exists."""
+    runs = [
+        _check("ci-pack-4", "failure"),
+        _check("ci-gate", "failure", details=True),
+        _check("fence-pack", "success"),
+    ]
+    freshness = _Fresh(stale=(True, "main changed after the legacy proof"))
+    comments = []
+
+    monkeypatch.setattr(MOG, "live_authorized_pull", lambda *_a, **_k: (_pull(), "ok"))
+    monkeypatch.setattr(
+        MOG,
+        "reprove",
+        lambda *_a, **_k: pytest.fail("legacy-absent behavior was widened to reproof"),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "mark_blocked",
+        lambda _repo, _pull, message, _token: comments.append(message) or True,
+    )
+
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        freshness,
+        semantic_evidence=SimpleNamespace(mode="legacy_absent", evidence={}),
+        check_runs=runs,
+    )
+
+    assert verdict == "blocked"
+    assert freshness.stale_calls == 0
+    assert len(comments) == 1
+    assert "ci-pack-4" in comments[0]
+
+
+@pytest.mark.parametrize(
+    ("classification", "outcome"),
+    [
+        ("unknown", "not_run_prior_failure"),
+        ("pr_regression", "failed"),
+    ],
+)
+def test_fresh_semantic_failure_blocks_without_reproof_loop(
+    monkeypatch, classification, outcome
+):
+    """Fresh proof keeps its exact semantic authority, including failures."""
+    runs = [
+        _check("ci-pack-4", "failure"),
+        _check("ci-gate", "failure", details=True),
+        _check("fence-pack", "success"),
+    ]
+    unit = _unit(classification)
+    unit.outcome = outcome
+    gate = SimpleNamespace(
+        clear=False,
+        blocking=(unit,),
+        inherited=(),
+        passed=(),
+        infrastructure_blocking=False,
+    )
+    freshness = _Fresh(stale=(False, "exact proof base is current"))
+    comments = []
+
+    monkeypatch.setattr(MOG, "_semantic_gate", lambda _loaded: gate)
+    monkeypatch.setattr(MOG, "live_authorized_pull", lambda *_a, **_k: (_pull(), "ok"))
+    monkeypatch.setattr(
+        MOG,
+        "reprove",
+        lambda *_a, **_k: pytest.fail("fresh semantic failure was reproof-looped"),
+    )
+    monkeypatch.setattr(
+        MOG,
+        "mark_blocked",
+        lambda _repo, _pull, message, _token: comments.append(message) or True,
+    )
+
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        freshness,
+        semantic_evidence=_loaded("fresh-current-proof"),
+        check_runs=runs,
+    )
+
+    assert verdict == "blocked"
+    assert freshness.stale_calls == 1
+    assert len(comments) == 1
+    assert classification in comments[0]
+    assert outcome in comments[0]
 
 
 def test_advertised_malformed_v1_fails_closed_instead_of_legacy(monkeypatch):
