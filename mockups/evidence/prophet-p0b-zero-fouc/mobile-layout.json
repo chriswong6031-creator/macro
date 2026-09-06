@@ -9,7 +9,7 @@
   },
   "verifier": {
     "path": "scripts/verify_stock_dashboard_mobile_layout.cjs",
-    "sha256": "4e1bf9ea22e1f44fe581bf6ddb34c44bb8ce76699f15e5c7a951af8a110f2f6b"
+    "sha256": "776d3c1c0606a8978b74a7c49196b50220b5dc14e97e5d1de9c090e5d3101501"
   },
   "browser": {
     "engine": "chromium",
@@ -17,14 +17,14 @@
   },
   "fixture_receipt": {
     "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-    "sha256": "66f8f21fe8a7e5968f6d1c08a858b835d983c68e4f02a6c0f0ce12d804864089"
+    "sha256": "126279b36bcfb4e147715a2743033991e274f866efba788997c409127593c027"
   },
   "fixture_assets_root": "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data",
   "fixture_market": "hk",
   "input_html": {
     "path": "hk_stocks.html",
     "route": "/hk_stocks.html",
-    "sha256": "94b5e06171e7fe988e11a9064853ce50f88e3fb6d9314fbf607ae08aaf6688ea"
+    "sha256": "90ec3ccb12d6265716e904909a483876c8649aa9c95b62ac6ad5d7836ccbf79f"
   },
   "construction_inputs": {
     "engine/i18n.py": "486116b2c2640bf164724a03d9a8871efef7977fb3b5bd7e8d5956e8d3675b44",
@@ -46,7 +46,7 @@
     "templates/_risk_radar_dlg.html.j2": "a2ead084ec5feb4259c36423717a8a9b4273348c928e4b7b020b8c322e9cea43",
     "templates/_seo_head.html.j2": "eda59eeb5f7cf0fb83a1a6430ff523939ee43cd214fe2b4aebba7ca4561bbbee",
     "templates/_site_nav.html.j2": "164f3119fd04b8886d2d29703dc9c017e13bceeae1ecc49a36f9842353d9e482",
-    "templates/hk.html.j2": "861ac90aa06968a5ae43dcc3101919b8826a68fb142dc39b71dbb4dc0b1086f8"
+    "templates/hk.html.j2": "56246b8b9854e9393af61e955e3ab2f28c1f241ed31ccb1a466dc1be54c87f46"
   },
   "loaded_assets": {
     "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/overlay.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
@@ -56,12 +56,13 @@
     "site/charts.js": "5372d2a229f4d2b16319a2d02c9fb2bfba19ad65c680d415796b12103aeff6ff",
     "site/dashboard-icons.css": "be32e541eabb7deeb4a6c88ff20bd1a0a53a96c873fb3773ed01da470682b0e9",
     "site/dashboard-icons.js": "6d98e4cbf040ad07d257bb38398c2dadec42f80f0653dc1b2307cc124a06d86f",
+    "site/favicon.svg": "a717b918f423c0c3f7c4988cfbf70d4b3c21fc03614800bfb423762cc0fb9aa9",
     "site/fonts/Inter-400.woff2": "8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc",
     "site/fonts/Inter-500.woff2": "f3779f1efccc4bdcdf9c0a02ab95bf6bd092ed09c48c08cedc725889edd1d19f",
     "site/fonts/Inter-600.woff2": "f9a06e79cd3a2a20951c0f0e28f66dd0e6d3fda73911d640a2125c8fcb78f21a",
     "site/fonts/Inter-700.woff2": "6f56409fd3d64bb85f7d070bce20749db2d66b6d63cec586cc22d1c761be2491",
     "site/fonts/Inter-800.woff2": "a7d0a50f15d389cad679238466bdb5fc9787aa0715719064ce25abaff042820d",
-    "site/hk-stock-v36.js": "d14f4d0669db702bd71f74b6ba36211e7cd5f391ca52fc1245f26b878c64cde3",
+    "site/hk-stock-v36.js": "cc501fd94610badbc613f1a3daf195892b2b865a424fcd8c38710192ac365d76",
     "site/illus.css": "cbe6a0b4f83095ed300ee49a5d9f4d03e88005170a4792a7a9f41805a67e5f07",
     "site/illus.js": "8e0a3779784525f15bb4a1b20e50f39ef4d0ddf243827f5ab609cfb08a69c620",
     "site/live.js": "f7bdf7cce1606c07d806408b7feb8b134c99e838acc3ee887bf5e1a15a9f4478",
@@ -71,7 +72,7 @@
     "site/nav_market.js": "24985e3240b509bfa197a5203b7bd28bb039b82b77a624481393203c74463497",
     "site/navigation-refresh.css": "c299c32498d25c412608eca40e53686b891076dd11a0c452b7dfe048c3d25584",
     "site/product-nav-icons.css": "093ad1ea5ed74b16894c3939d971db3e957aba3476a7bf8aab2ccd7b3d044d93",
-    "site/stock-dashboard.css": "15542c18a9a13e06a0c4b1fa73ae8c2e19ff170857b31887f75fcda03c95ad93",
+    "site/stock-dashboard.css": "4f189774d614fb54d001e853227fa463e146121a6fe46d23fed6afc5dbaf413e",
     "site/stock-logos.js": "cc29be531bc08e655464b6c0d384e1a46041aeb31caf7d982e926681fda7cb49",
     "site/stocktable.js": "56f6f93366f2e21024b4cd5c971766a7c9506aea49c21b37b428674b8f086819",
     "site/tablesort.js": "484d93337c0288b95b920d82d893600c97d7e4313c715d6bd9263222c9e4cc78",
@@ -88,15 +89,169 @@
     "height": 900,
     "device_scale_factor": 1
   },
-  "acceptance": "390px layout; one mobile action lane; typed action membership; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; no generic showmore owner; typed Canada quote states",
+  "acceptance": "390px layout; server-owned four-anchor degraded fallback without false tab semantics; composer upgrades the same nodes in place; one mobile action lane in loaded/disabled/failed/pending states; deterministic owner counts and controls; valid/invalid/direct/back/forward fragment reconciliation; in-place click/keyboard lane switching; node-identity-stable lane-local expansion outside the global list overlay; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; typed Canada quote states; zero duplicate ids and console exceptions",
+  "fragment_navigation": {
+    "cases": [
+      {
+        "label": "direct-valid",
+        "url_fragment": "#anv2-pull",
+        "internal_active_key": "near",
+        "selected_keys": [
+          "near"
+        ],
+        "current_keys": [
+          "near"
+        ],
+        "visible_keys": [
+          "near"
+        ],
+        "focused_key": null,
+        "selector_roles": 1,
+        "tab_roles": 4,
+        "controls_valid": true,
+        "focus_required": false,
+        "pass": true
+      },
+      {
+        "label": "click-with-fragment",
+        "url_fragment": "#anv2-bot",
+        "internal_active_key": "wait",
+        "selected_keys": [
+          "wait"
+        ],
+        "current_keys": [
+          "wait"
+        ],
+        "visible_keys": [
+          "wait"
+        ],
+        "focused_key": "wait",
+        "selector_roles": 1,
+        "tab_roles": 4,
+        "controls_valid": true,
+        "focus_required": true,
+        "pass": true
+      },
+      {
+        "label": "second-click",
+        "url_fragment": "#anv2-red",
+        "internal_active_key": "avoid",
+        "selected_keys": [
+          "avoid"
+        ],
+        "current_keys": [
+          "avoid"
+        ],
+        "visible_keys": [
+          "avoid"
+        ],
+        "focused_key": "avoid",
+        "selector_roles": 1,
+        "tab_roles": 4,
+        "controls_valid": true,
+        "focus_required": true,
+        "pass": true
+      },
+      {
+        "label": "back",
+        "url_fragment": "#anv2-bot",
+        "internal_active_key": "wait",
+        "selected_keys": [
+          "wait"
+        ],
+        "current_keys": [
+          "wait"
+        ],
+        "visible_keys": [
+          "wait"
+        ],
+        "focused_key": "wait",
+        "selector_roles": 1,
+        "tab_roles": 4,
+        "controls_valid": true,
+        "focus_required": true,
+        "pass": true
+      },
+      {
+        "label": "forward",
+        "url_fragment": "#anv2-red",
+        "internal_active_key": "avoid",
+        "selected_keys": [
+          "avoid"
+        ],
+        "current_keys": [
+          "avoid"
+        ],
+        "visible_keys": [
+          "avoid"
+        ],
+        "focused_key": "avoid",
+        "selector_roles": 1,
+        "tab_roles": 4,
+        "controls_valid": true,
+        "focus_required": true,
+        "pass": true
+      },
+      {
+        "label": "direct-invalid",
+        "url_fragment": "#anv2-buy",
+        "internal_active_key": "buy",
+        "selected_keys": [
+          "buy"
+        ],
+        "current_keys": [
+          "buy"
+        ],
+        "visible_keys": [
+          "buy"
+        ],
+        "focused_key": null,
+        "selector_roles": 1,
+        "tab_roles": 4,
+        "controls_valid": true,
+        "focus_required": false,
+        "pass": true
+      }
+    ],
+    "node_identity": {
+      "valid_page": {
+        "captured": true,
+        "captured_before_composer": true,
+        "same_host": true,
+        "same_controls": true,
+        "same_lanes": true,
+        "same_lists": true,
+        "same_rows": true,
+        "child_list_mutations": 0,
+        "payload_hash_before": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+        "payload_hash_after": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+        "pass": true
+      },
+      "invalid_page": {
+        "captured": true,
+        "captured_before_composer": true,
+        "same_host": true,
+        "same_controls": true,
+        "same_lanes": true,
+        "same_lists": true,
+        "same_rows": true,
+        "child_list_mutations": 0,
+        "payload_hash_before": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+        "payload_hash_after": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+        "pass": true
+      }
+    },
+    "console_exceptions": [],
+    "pass": true
+  },
   "desktop": {
     "viewport": {
       "width": 1440,
       "height": 900
     },
     "initial": {
-      "action_panel_height": 239.45,
-      "prophet_top": 625.55,
+      "action_panel_height": 238.45,
+      "prophet_top": 624.55,
       "lane_rows": {
         "buy": 3,
         "near": 2,
@@ -475,7 +630,7 @@
         ],
         "active_row_count": 3,
         "known_membership_hook": true,
-        "known_copy": "Fixture sectorFixture sector2 · Prophet候选↗",
+        "known_copy": "Sector pulse · FIXTURE-SECTOR板块脉搏 · FIXTURE-SECTOR Fixture sectorFixture sector FIXTURE ENTRYFIXTURE ENTRY Current setup当前形态Entry open today今日入场窗口开启Signal ~2d信号约 2 天 → What matters要点 A clean entry is open today.今日入场窗口干净。 Click row for the full sector view点击查看完整板块详情FIXTURE-SECTOR ↗ Fixture sectorFixture sector2 · Prophet候选 ↗ ENTRY NOW现在入场 FIXTURE ENTRYFIXTURE ENTRY · ~2d天 · FIXTURE-SECTOR",
         "unknown_membership_hook": false,
         "unknown_route": true,
         "generic_showmore_attribute": false,
@@ -516,11 +671,116 @@
           "stocktable_ready": true,
           "pass": true
         },
+        "wtaon": {
+          "enhanced": true,
+          "selected_lane_key": "buy",
+          "selector_count": 1,
+          "button_count": 4,
+          "visible_lane_body_count": 1,
+          "per_lane_owner_count": {
+            "buy": 4,
+            "near": 2,
+            "wait": 1,
+            "avoid": 2
+          },
+          "rendered_visible_row_count": 4,
+          "expanded": true,
+          "focus_keyboard": {
+            "exercised": true,
+            "sequence": [
+              "near",
+              "avoid",
+              "buy",
+              "avoid",
+              "wait"
+            ],
+            "focus_visible": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "enter": true,
+            "space": true,
+            "pass": true
+          },
+          "aria_controls": {
+            "unique": 4,
+            "valid": true
+          },
+          "static_semantics": {
+            "container_role": "tablist",
+            "tab_roles": [
+              "tab",
+              "tab",
+              "tab",
+              "tab"
+            ],
+            "aria_selected": [
+              "true",
+              "false",
+              "false",
+              "false"
+            ],
+            "aria_current": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_controls": [
+              "anv2-buy",
+              "anv2-pull",
+              "anv2-bot",
+              "anv2-red"
+            ]
+          },
+          "pass": true,
+          "identity_hashes": {
+            "before": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500",
+            "after": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500"
+          },
+          "node_identity": {
+            "captured": true,
+            "captured_before_composer": true,
+            "same_host": true,
+            "same_controls": true,
+            "same_lanes": true,
+            "same_lists": true,
+            "same_rows": true,
+            "child_list_mutations": 0,
+            "payload_hash_before": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "payload_hash_after": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "pass": true
+          }
+        },
         "pass": true,
         "view_all": {
           "before": 3,
           "after": 4,
+          "per_lane_before": {
+            "buy": 3,
+            "near": 0,
+            "wait": 0,
+            "avoid": 0
+          },
+          "per_lane_after": {
+            "buy": 4,
+            "near": 0,
+            "wait": 0,
+            "avoid": 0
+          },
           "active_only": true,
+          "lane_local_after_switch": true,
+          "ownership": {
+            "same_button": true,
+            "same_list": true,
+            "same_parent": true,
+            "focus_retained": true,
+            "list_stayed_in_lane": true,
+            "global_overlay_count": 0
+          },
           "pass": true
         },
         "view_transition": {
@@ -582,6 +842,8 @@
       "horizontal_overflow": false,
       "elements_wider_than_viewport": 0,
       "offenders": [],
+      "duplicate_ids": [],
+      "console_exceptions": [],
       "screenshot_width": 390,
       "pass": true
     },
@@ -627,7 +889,7 @@
         ],
         "active_row_count": 3,
         "known_membership_hook": true,
-        "known_copy": "Fixture sectorFixture sector2 · Prophet候选↗",
+        "known_copy": "Sector pulse · FIXTURE-SECTOR板块脉搏 · FIXTURE-SECTOR Fixture sectorFixture sector FIXTURE ENTRYFIXTURE ENTRY Current setup当前形态Entry open today今日入场窗口开启Signal ~2d信号约 2 天 → What matters要点 A clean entry is open today.今日入场窗口干净。 Click row for the full sector view点击查看完整板块详情FIXTURE-SECTOR ↗ Fixture sectorFixture sector2 · Prophet候选 ↗ ENTRY NOW现在入场 FIXTURE ENTRYFIXTURE ENTRY · ~2d天 · FIXTURE-SECTOR",
         "unknown_membership_hook": false,
         "unknown_route": true,
         "generic_showmore_attribute": false,
@@ -668,11 +930,116 @@
           "stocktable_ready": true,
           "pass": true
         },
+        "wtaon": {
+          "enhanced": true,
+          "selected_lane_key": "buy",
+          "selector_count": 1,
+          "button_count": 4,
+          "visible_lane_body_count": 1,
+          "per_lane_owner_count": {
+            "buy": 4,
+            "near": 2,
+            "wait": 1,
+            "avoid": 2
+          },
+          "rendered_visible_row_count": 4,
+          "expanded": true,
+          "focus_keyboard": {
+            "exercised": true,
+            "sequence": [
+              "near",
+              "avoid",
+              "buy",
+              "avoid",
+              "wait"
+            ],
+            "focus_visible": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "enter": true,
+            "space": true,
+            "pass": true
+          },
+          "aria_controls": {
+            "unique": 4,
+            "valid": true
+          },
+          "static_semantics": {
+            "container_role": "tablist",
+            "tab_roles": [
+              "tab",
+              "tab",
+              "tab",
+              "tab"
+            ],
+            "aria_selected": [
+              "true",
+              "false",
+              "false",
+              "false"
+            ],
+            "aria_current": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_controls": [
+              "anv2-buy",
+              "anv2-pull",
+              "anv2-bot",
+              "anv2-red"
+            ]
+          },
+          "pass": true,
+          "identity_hashes": {
+            "before": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500",
+            "after": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500"
+          },
+          "node_identity": {
+            "captured": true,
+            "captured_before_composer": true,
+            "same_host": true,
+            "same_controls": true,
+            "same_lanes": true,
+            "same_lists": true,
+            "same_rows": true,
+            "child_list_mutations": 0,
+            "payload_hash_before": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "payload_hash_after": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "pass": true
+          }
+        },
         "pass": true,
         "view_all": {
           "before": 3,
           "after": 4,
+          "per_lane_before": {
+            "buy": 3,
+            "near": 0,
+            "wait": 0,
+            "avoid": 0
+          },
+          "per_lane_after": {
+            "buy": 4,
+            "near": 0,
+            "wait": 0,
+            "avoid": 0
+          },
           "active_only": true,
+          "lane_local_after_switch": true,
+          "ownership": {
+            "same_button": true,
+            "same_list": true,
+            "same_parent": true,
+            "focus_retained": true,
+            "list_stayed_in_lane": true,
+            "global_overlay_count": 0
+          },
           "pass": true
         },
         "view_transition": {
@@ -734,6 +1101,8 @@
       "horizontal_overflow": false,
       "elements_wider_than_viewport": 0,
       "offenders": [],
+      "duplicate_ids": [],
+      "console_exceptions": [],
       "screenshot_width": 390,
       "pass": true
     },
@@ -779,7 +1148,7 @@
         ],
         "active_row_count": 3,
         "known_membership_hook": true,
-        "known_copy": "Fixture sectorFixture sector2 · Prophet候选↗",
+        "known_copy": "Sector pulse · FIXTURE-SECTOR板块脉搏 · FIXTURE-SECTOR Fixture sectorFixture sector FIXTURE ENTRYFIXTURE ENTRY Current setup当前形态Entry open today今日入场窗口开启Signal ~2d信号约 2 天 → What matters要点 A clean entry is open today.今日入场窗口干净。 Click row for the full sector view点击查看完整板块详情FIXTURE-SECTOR ↗ Fixture sectorFixture sector2 · Prophet候选 ↗ ENTRY NOW现在入场 FIXTURE ENTRYFIXTURE ENTRY · ~2d天 · FIXTURE-SECTOR",
         "unknown_membership_hook": false,
         "unknown_route": true,
         "generic_showmore_attribute": false,
@@ -820,11 +1189,116 @@
           "stocktable_ready": true,
           "pass": true
         },
+        "wtaon": {
+          "enhanced": true,
+          "selected_lane_key": "buy",
+          "selector_count": 1,
+          "button_count": 4,
+          "visible_lane_body_count": 1,
+          "per_lane_owner_count": {
+            "buy": 4,
+            "near": 2,
+            "wait": 1,
+            "avoid": 2
+          },
+          "rendered_visible_row_count": 4,
+          "expanded": true,
+          "focus_keyboard": {
+            "exercised": true,
+            "sequence": [
+              "near",
+              "avoid",
+              "buy",
+              "avoid",
+              "wait"
+            ],
+            "focus_visible": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "enter": true,
+            "space": true,
+            "pass": true
+          },
+          "aria_controls": {
+            "unique": 4,
+            "valid": true
+          },
+          "static_semantics": {
+            "container_role": "tablist",
+            "tab_roles": [
+              "tab",
+              "tab",
+              "tab",
+              "tab"
+            ],
+            "aria_selected": [
+              "true",
+              "false",
+              "false",
+              "false"
+            ],
+            "aria_current": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_controls": [
+              "anv2-buy",
+              "anv2-pull",
+              "anv2-bot",
+              "anv2-red"
+            ]
+          },
+          "pass": true,
+          "identity_hashes": {
+            "before": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500",
+            "after": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500"
+          },
+          "node_identity": {
+            "captured": true,
+            "captured_before_composer": true,
+            "same_host": true,
+            "same_controls": true,
+            "same_lanes": true,
+            "same_lists": true,
+            "same_rows": true,
+            "child_list_mutations": 0,
+            "payload_hash_before": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "payload_hash_after": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "pass": true
+          }
+        },
         "pass": true,
         "view_all": {
           "before": 3,
           "after": 4,
+          "per_lane_before": {
+            "buy": 3,
+            "near": 0,
+            "wait": 0,
+            "avoid": 0
+          },
+          "per_lane_after": {
+            "buy": 4,
+            "near": 0,
+            "wait": 0,
+            "avoid": 0
+          },
           "active_only": true,
+          "lane_local_after_switch": true,
+          "ownership": {
+            "same_button": true,
+            "same_list": true,
+            "same_parent": true,
+            "focus_retained": true,
+            "list_stayed_in_lane": true,
+            "global_overlay_count": 0
+          },
           "pass": true
         },
         "view_transition": {
@@ -886,6 +1360,8 @@
       "horizontal_overflow": false,
       "elements_wider_than_viewport": 0,
       "offenders": [],
+      "duplicate_ids": [],
+      "console_exceptions": [],
       "screenshot_width": 390,
       "pass": true
     },
@@ -931,7 +1407,7 @@
         ],
         "active_row_count": 3,
         "known_membership_hook": true,
-        "known_copy": "Fixture sectorFixture sector2 · Prophet候选↗",
+        "known_copy": "Sector pulse · FIXTURE-SECTOR板块脉搏 · FIXTURE-SECTOR Fixture sectorFixture sector FIXTURE ENTRYFIXTURE ENTRY Current setup当前形态Entry open today今日入场窗口开启Signal ~2d信号约 2 天 → What matters要点 A clean entry is open today.今日入场窗口干净。 Click row for the full sector view点击查看完整板块详情FIXTURE-SECTOR ↗ Fixture sectorFixture sector2 · Prophet候选 ↗ ENTRY NOW现在入场 FIXTURE ENTRYFIXTURE ENTRY · ~2d天 · FIXTURE-SECTOR",
         "unknown_membership_hook": false,
         "unknown_route": true,
         "generic_showmore_attribute": false,
@@ -972,11 +1448,116 @@
           "stocktable_ready": true,
           "pass": true
         },
+        "wtaon": {
+          "enhanced": true,
+          "selected_lane_key": "buy",
+          "selector_count": 1,
+          "button_count": 4,
+          "visible_lane_body_count": 1,
+          "per_lane_owner_count": {
+            "buy": 4,
+            "near": 2,
+            "wait": 1,
+            "avoid": 2
+          },
+          "rendered_visible_row_count": 4,
+          "expanded": true,
+          "focus_keyboard": {
+            "exercised": true,
+            "sequence": [
+              "near",
+              "avoid",
+              "buy",
+              "avoid",
+              "wait"
+            ],
+            "focus_visible": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "enter": true,
+            "space": true,
+            "pass": true
+          },
+          "aria_controls": {
+            "unique": 4,
+            "valid": true
+          },
+          "static_semantics": {
+            "container_role": "tablist",
+            "tab_roles": [
+              "tab",
+              "tab",
+              "tab",
+              "tab"
+            ],
+            "aria_selected": [
+              "true",
+              "false",
+              "false",
+              "false"
+            ],
+            "aria_current": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_controls": [
+              "anv2-buy",
+              "anv2-pull",
+              "anv2-bot",
+              "anv2-red"
+            ]
+          },
+          "pass": true,
+          "identity_hashes": {
+            "before": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500",
+            "after": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500"
+          },
+          "node_identity": {
+            "captured": true,
+            "captured_before_composer": true,
+            "same_host": true,
+            "same_controls": true,
+            "same_lanes": true,
+            "same_lists": true,
+            "same_rows": true,
+            "child_list_mutations": 0,
+            "payload_hash_before": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "payload_hash_after": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "pass": true
+          }
+        },
         "pass": true,
         "view_all": {
           "before": 3,
           "after": 4,
+          "per_lane_before": {
+            "buy": 3,
+            "near": 0,
+            "wait": 0,
+            "avoid": 0
+          },
+          "per_lane_after": {
+            "buy": 4,
+            "near": 0,
+            "wait": 0,
+            "avoid": 0
+          },
           "active_only": true,
+          "lane_local_after_switch": true,
+          "ownership": {
+            "same_button": true,
+            "same_list": true,
+            "same_parent": true,
+            "focus_retained": true,
+            "list_stayed_in_lane": true,
+            "global_overlay_count": 0
+          },
           "pass": true
         },
         "view_transition": {
@@ -1038,6 +1619,8 @@
       "horizontal_overflow": false,
       "elements_wider_than_viewport": 0,
       "offenders": [],
+      "duplicate_ids": [],
+      "console_exceptions": [],
       "screenshot_width": 390,
       "pass": true
     },
@@ -1049,7 +1632,7 @@
       "composer": "loaded",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-js-disabled-dark-390.png",
-        "sha256": "0bca40ddf56d66be0ef57261c2ffd8c70e8da5e6e1405f0a9f57d428d45eee26"
+        "sha256": "3359fe1b1506ce4a1dc2a11eeeb97b50b317084900487653292538b7c4511ee2"
       },
       "behavior": {
         "tabs": [
@@ -1057,7 +1640,7 @@
             "lane": "buy",
             "title": "Buy Now立即买入",
             "count": "4",
-            "selected": true,
+            "selected": false,
             "title_fully_visible": true
           },
           {
@@ -1128,10 +1711,229 @@
           "stocktable_ready": false,
           "pass": true
         },
+        "wtaon": {
+          "enhanced": false,
+          "selected_lane_key": "buy",
+          "selector_count": 0,
+          "button_count": 4,
+          "visible_lane_body_count": 1,
+          "per_lane_owner_count": {
+            "buy": 4,
+            "near": 2,
+            "wait": 1,
+            "avoid": 2
+          },
+          "rendered_visible_row_count": 3,
+          "expanded": false,
+          "focus_keyboard": {
+            "exercised": false,
+            "sequence": [],
+            "focus_visible": [],
+            "enter": false,
+            "space": false,
+            "pass": true
+          },
+          "aria_controls": {
+            "unique": 0,
+            "valid": false
+          },
+          "static_semantics": {
+            "container_role": null,
+            "tab_roles": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_selected": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_current": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_controls": [
+              null,
+              null,
+              null,
+              null
+            ]
+          },
+          "pass": true,
+          "identity_hashes": {
+            "before": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500",
+            "after": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500"
+          },
+          "node_identity": {
+            "captured": false,
+            "reason": "javascript_disabled",
+            "pass": true
+          }
+        },
         "pass": true,
         "static_anchor_fallback": {
-          "visible_lanes": [
-            "near"
+          "cases": [
+            {
+              "lane": "buy",
+              "visible_lane_keys": [
+                "buy"
+              ],
+              "highlighted_control": "buy",
+              "url_fragment": "#anv2-buy",
+              "owner_count": 4,
+              "owner_row_count": 4,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "near",
+              "visible_lane_keys": [
+                "near"
+              ],
+              "highlighted_control": "near",
+              "url_fragment": "#anv2-pull",
+              "owner_count": 2,
+              "owner_row_count": 2,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "wait",
+              "visible_lane_keys": [
+                "wait"
+              ],
+              "highlighted_control": "wait",
+              "url_fragment": "#anv2-bot",
+              "owner_count": 1,
+              "owner_row_count": 1,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "avoid",
+              "visible_lane_keys": [
+                "avoid"
+              ],
+              "highlighted_control": "avoid",
+              "url_fragment": "#anv2-red",
+              "owner_count": 2,
+              "owner_row_count": 2,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            }
           ],
           "pass": true
         },
@@ -1142,6 +1944,8 @@
       "horizontal_overflow": false,
       "elements_wider_than_viewport": 0,
       "offenders": [],
+      "duplicate_ids": [],
+      "console_exceptions": [],
       "screenshot_width": 390,
       "pass": true
     },
@@ -1153,7 +1957,7 @@
       "composer": "failed",
       "screenshot": {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-composer-failed-light-390.png",
-        "sha256": "236c1e7ed949d4c996ea534a383b74d5a99c2f05545b6bc4d5980d70f5589560"
+        "sha256": "5a11dfa9914c9b66062ebdc41128b3929e84c75737896d777cd773af14f5c7cf"
       },
       "behavior": {
         "tabs": [
@@ -1161,7 +1965,7 @@
             "lane": "buy",
             "title": "Buy Now立即买入",
             "count": "4",
-            "selected": true,
+            "selected": false,
             "title_fully_visible": true
           },
           {
@@ -1232,10 +2036,237 @@
           "stocktable_ready": true,
           "pass": true
         },
+        "wtaon": {
+          "enhanced": false,
+          "selected_lane_key": "buy",
+          "selector_count": 0,
+          "button_count": 4,
+          "visible_lane_body_count": 1,
+          "per_lane_owner_count": {
+            "buy": 4,
+            "near": 2,
+            "wait": 1,
+            "avoid": 2
+          },
+          "rendered_visible_row_count": 3,
+          "expanded": false,
+          "focus_keyboard": {
+            "exercised": false,
+            "sequence": [],
+            "focus_visible": [],
+            "enter": false,
+            "space": false,
+            "pass": true
+          },
+          "aria_controls": {
+            "unique": 0,
+            "valid": false
+          },
+          "static_semantics": {
+            "container_role": null,
+            "tab_roles": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_selected": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_current": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_controls": [
+              null,
+              null,
+              null,
+              null
+            ]
+          },
+          "pass": true,
+          "identity_hashes": {
+            "before": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500",
+            "after": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500"
+          },
+          "node_identity": {
+            "captured": true,
+            "captured_before_composer": true,
+            "same_host": true,
+            "same_controls": true,
+            "same_lanes": true,
+            "same_lists": true,
+            "same_rows": true,
+            "child_list_mutations": 0,
+            "payload_hash_before": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "payload_hash_after": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "pass": true
+          }
+        },
         "pass": true,
         "static_anchor_fallback": {
-          "visible_lanes": [
-            "near"
+          "cases": [
+            {
+              "lane": "buy",
+              "visible_lane_keys": [
+                "buy"
+              ],
+              "highlighted_control": "buy",
+              "url_fragment": "#anv2-buy",
+              "owner_count": 4,
+              "owner_row_count": 4,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "near",
+              "visible_lane_keys": [
+                "near"
+              ],
+              "highlighted_control": "near",
+              "url_fragment": "#anv2-pull",
+              "owner_count": 2,
+              "owner_row_count": 2,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "wait",
+              "visible_lane_keys": [
+                "wait"
+              ],
+              "highlighted_control": "wait",
+              "url_fragment": "#anv2-bot",
+              "owner_count": 1,
+              "owner_row_count": 1,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "avoid",
+              "visible_lane_keys": [
+                "avoid"
+              ],
+              "highlighted_control": "avoid",
+              "url_fragment": "#anv2-red",
+              "owner_count": 2,
+              "owner_row_count": 2,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            }
           ],
           "pass": true
         },
@@ -1265,6 +2296,8 @@
       "horizontal_overflow": false,
       "elements_wider_than_viewport": 0,
       "offenders": [],
+      "duplicate_ids": [],
+      "console_exceptions": [],
       "screenshot_width": 390,
       "pass": true
     },
@@ -1280,7 +2313,7 @@
             "lane": "buy",
             "title": "Buy Now立即买入",
             "count": "4",
-            "selected": true,
+            "selected": false,
             "title_fully_visible": true
           },
           {
@@ -1351,7 +2384,240 @@
           "stocktable_ready": true,
           "pass": true
         },
+        "wtaon": {
+          "enhanced": false,
+          "selected_lane_key": "buy",
+          "selector_count": 0,
+          "button_count": 4,
+          "visible_lane_body_count": 1,
+          "per_lane_owner_count": {
+            "buy": 4,
+            "near": 2,
+            "wait": 1,
+            "avoid": 2
+          },
+          "rendered_visible_row_count": 3,
+          "expanded": false,
+          "focus_keyboard": {
+            "exercised": false,
+            "sequence": [],
+            "focus_visible": [],
+            "enter": false,
+            "space": false,
+            "pass": true
+          },
+          "aria_controls": {
+            "unique": 0,
+            "valid": false
+          },
+          "static_semantics": {
+            "container_role": null,
+            "tab_roles": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_selected": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_current": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "aria_controls": [
+              null,
+              null,
+              null,
+              null
+            ]
+          },
+          "pass": true,
+          "identity_hashes": {
+            "before": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500",
+            "after": "72af608931bd6d502762f08553c54a48fda0bcba07b30af59ff54619db79c500"
+          },
+          "node_identity": {
+            "captured": true,
+            "captured_before_composer": true,
+            "same_host": true,
+            "same_controls": true,
+            "same_lanes": true,
+            "same_lists": true,
+            "same_rows": true,
+            "child_list_mutations": 0,
+            "payload_hash_before": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "payload_hash_after": "3c95778d7d9002b308fcc32c84ca71eff3723c9673b810c05c956bb5f0aff4f9",
+            "pass": true
+          }
+        },
         "pass": true,
+        "static_anchor_fallback": {
+          "cases": [
+            {
+              "lane": "buy",
+              "visible_lane_keys": [
+                "buy"
+              ],
+              "highlighted_control": "buy",
+              "url_fragment": "#anv2-buy",
+              "owner_count": 4,
+              "owner_row_count": 4,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "near",
+              "visible_lane_keys": [
+                "near"
+              ],
+              "highlighted_control": "near",
+              "url_fragment": "#anv2-pull",
+              "owner_count": 2,
+              "owner_row_count": 2,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "wait",
+              "visible_lane_keys": [
+                "wait"
+              ],
+              "highlighted_control": "wait",
+              "url_fragment": "#anv2-bot",
+              "owner_count": 1,
+              "owner_row_count": 1,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            },
+            {
+              "lane": "avoid",
+              "visible_lane_keys": [
+                "avoid"
+              ],
+              "highlighted_control": "avoid",
+              "url_fragment": "#anv2-red",
+              "owner_count": 2,
+              "owner_row_count": 2,
+              "enhanced": false,
+              "semantics": {
+                "container_role": null,
+                "tab_roles": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_selected": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_current": [
+                  null,
+                  null,
+                  null,
+                  null
+                ],
+                "aria_controls": [
+                  null,
+                  null,
+                  null,
+                  null
+                ]
+              },
+              "pass": true
+            }
+          ],
+          "pass": true
+        },
         "exercised_lanes": []
       },
       "client_width": 390,
@@ -1359,6 +2625,8 @@
       "horizontal_overflow": false,
       "elements_wider_than_viewport": 0,
       "offenders": [],
+      "duplicate_ids": [],
+      "console_exceptions": [],
       "screenshot_width": 390,
       "pass": true
     }

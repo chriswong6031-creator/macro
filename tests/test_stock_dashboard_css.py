@@ -223,8 +223,9 @@ def test_mobile_segment_grammar_one_lane_at_a_time():
         r"\.ca-v36-an-seg\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:",
         r"\.ca-v36-an-lanes\s*\{[^}]*grid-template-columns:\s*1fr",
         r"\.ca-v36-an-lane\s*\{[^}]*display:\s*none",
-        r"\.ca-v36-an-lane\.is-current\s*\{[^}]*display:\s*block",
-        r"\.ca-v36-an-lane:target\s*\{[^}]*display:\s*block",
+        r"\.ca-v36-an-body\.is-enhanced\s+\.ca-v36-an-lane\.is-current,",
+        r"\.ca-v36-an-body:not\(\.is-enhanced\):not\(:has\(\.ca-v36-an-lane:target\)\)\s+\.ca-v36-an-lane\.is-current,",
+        r"\.ca-v36-an-body:not\(\.is-enhanced\)\s+\.ca-v36-an-lane:target\s*\{[^}]*display:\s*block",
     ]:
         assert re.search(pattern, block), (
             f"680px media query lost {pattern!r} — the mobile one-lane "

@@ -31,7 +31,8 @@
        source/filter. hasThemeRank gates all theme-rank language (missing
        owner -> no number, no basis chip). Membership knowledge is PER
        GROUP (each item's members is a Set or null), never a global flag. */
-    anLane: null, anOpen: {}, hasThemeRank: false };
+    anLane: null, anDefault: null, anOpen: {}, anMedia: null,
+    anHistoryBound: false, hasThemeRank: false };
   var rowsByTicker = Object.create(null);
   var tableObserver = null;
   var quoteObserver = null;
@@ -256,61 +257,121 @@
     host.hidden = !fresh;
   }
 
-  /* What to Act On Now (V3.8 §5) — at-rest action map above Prophet, same
-     grammar as the HK composer. Rows carry the same data-ca-lead-kind/-id
-     the leadership rows use (one activation path; population never touched)
-     plus the owner's group-research route. Lane order is the ACTION owner's
-     own DOM order via laneIdx — the theme/leadership axis never orders or
-     gates the action surface. */
-  var AN_AT_REST = 3;
-  function anLaneItems(tone) {
-    return state.sectors.filter(function (x) { return x.tone === tone; })
-      .sort(function (a, b) { return (a.laneIdx || 0) - (b.laneIdx || 0); });
+  /* What to Act On Now is server-owned. The enhancer may change only the
+     selector state, lane visibility, focus, and the active lane's in-place
+     expansion. It never creates, moves, clones, filters, or reorders rows. */
+  function actionHost() { return qs("#ca-v36-an-body"); }
+  function actionTabs() {
+    var host = actionHost();
+    return host ? qsa("[data-ca-an-lane]", host) : [];
   }
-  function anRowHtml(x) {
-    var countHtml = x.count != null ? '<span class="ca-v36-an-n">' + x.count + ' · ' + bi("Prophet", "候选") + '</span>' : '';
-    var go = x.href ? '<a class="ca-v36-an-go" href="' + esc(x.href) + '" aria-label="' + esc(x.name.en) + ' sector research">↗</a>' : '';
-    /* Filter affordance ONLY under canonical membership (§10: membership
-       missing → omit count/filter, keep the group-detail route) — an
-       unknown-membership row is a research destination, not a filter that
-       would no-op and paint the whole board as matching. */
-    var act = x.members != null ? ' data-ca-lead-kind="sector" data-ca-lead-id="' + esc(x.id) + '"' : ' disabled';
-    return '<div class="ca-v36-an-row-w" data-action-id="' + esc(x.id) + '"><button class="ca-v36-an-row" type="button"' + act + '><span class="ca-v36-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
+  function actionLanes() {
+    var host = actionHost();
+    return host ? qsa("[data-ca-an-lane-body]", host) : [];
   }
-  function anLaneHtml(lane) {
-    var items = anLaneItems(lane.tone), open = !!state.anOpen[lane.tone];
-    var shown = open ? items : items.slice(0, AN_AT_REST);
-    var body = shown.length ? shown.map(anRowHtml).join("") : '<div class="ca-v36-an-empty">—</div>';
-    var more = items.length > AN_AT_REST
-      ? '<button class="ca-v36-an-more" type="button" data-ca-an-view="' + esc(lane.tone) + '" aria-expanded="' + open + '">' +
-        (open ? bi("Show fewer", "收起") : bi("View all " + items.length, "查看全部 " + items.length)) + '</button>'
-      : '';
-    var current = state.anLane === lane.tone ? " is-current" : "";
-    return '<div class="ca-v36-an-lane' + current + '" id="' + esc(lane.sel.slice(1)) + '" data-action-lane-body="' + esc(lane.tone) + '" data-ca-an-lane-body="' + esc(lane.tone) + '"><div class="ca-v36-an-hd ' + lane.tone + '"><span>' + bi(lane.en, lane.zh) + '</span><b>' + items.length + '</b></div>' + body + more + '</div>';
+  function toneFromActionHash() {
+    var id = location.hash ? location.hash.slice(1) : "";
+    var lane = actionLanes().find(function (node) { return node.id === id; });
+    return lane ? lane.getAttribute("data-ca-an-lane-body") : null;
   }
-  function renderActNow() {
-    var host = qs("#ca-v36-an-body"); if (!host) return;
-    if (state.anLane == null) {
-      /* Elected ONLY while no lane has been chosen — a user who taps an
-         empty lane keeps it and sees its truthful "—" body (HK adversarial
-         review 2026-08-27, finding 1, baked in here from the start). */
-      for (var i = 0; i < LANE_DEFS.length; i++) {
-        if (anLaneItems(LANE_DEFS[i].tone).length) { state.anLane = LANE_DEFS[i].tone; break; }
-      }
-      if (state.anLane == null) state.anLane = LANE_DEFS[0].tone;
+  function laneIdForTone(tone) {
+    var tab = actionTabs().find(function (node) { return node.getAttribute("data-ca-an-lane") === tone; });
+    var href = tab && tab.getAttribute("href");
+    return href && /^#[A-Za-z][A-Za-z0-9_.:-]*$/.test(href) ? href.slice(1) : null;
+  }
+  function writeActionHash(tone, mode) {
+    var laneId = laneIdForTone(tone), next = laneId ? "#" + laneId : "";
+    if (!next || location.hash === next) return;
+    if (mode === "replace") history.replaceState(null, "", next);
+    else history.pushState(null, "", next);
+  }
+  function syncActNow(focusTone) {
+    var host = actionHost(); if (!host) return;
+    var mobile = window.matchMedia("(max-width: 680px)").matches;
+    host.setAttribute("data-active-lane", state.anLane || "");
+    var seg = qs(".ca-v36-an-seg", host);
+    if (seg) {
+      if (mobile) { seg.setAttribute("role", "tablist"); seg.setAttribute("aria-label", "What to Act On Now lanes"); }
+      else { seg.removeAttribute("role"); seg.removeAttribute("aria-label"); }
     }
-    var seg = '<div class="ca-v36-an-seg" role="tablist">' + LANE_DEFS.map(function (lane) {
-      return '<button type="button" role="tab" data-ca-an-lane="' + esc(lane.tone) + '" aria-selected="' + (state.anLane === lane.tone) + '"><span class="ca-v36-an-seg-t">' + bi(lane.en, lane.zh) + '</span><b>' + anLaneItems(lane.tone).length + '</b></button>';
-    }).join("") + '</div>';
-    host.innerHTML = seg + '<div class="ca-v36-an-lanes">' + LANE_DEFS.map(anLaneHtml).join("") + '</div>';
-    markLeadership();
+    actionTabs().forEach(function (tab) {
+      var tone = tab.getAttribute("data-ca-an-lane"), active = tone === state.anLane;
+      var laneId = laneIdForTone(tone);
+      if (mobile) {
+        tab.id = "ca-v36-an-tab-" + tone;
+        tab.setAttribute("role", "tab");
+        tab.setAttribute("aria-controls", laneId);
+        tab.setAttribute("aria-selected", active ? "true" : "false");
+        tab.setAttribute("tabindex", active ? "0" : "-1");
+      } else {
+        tab.removeAttribute("id");
+        tab.removeAttribute("role");
+        tab.removeAttribute("aria-controls");
+        tab.removeAttribute("aria-selected");
+        tab.removeAttribute("tabindex");
+      }
+      if (active && focusTone === tone) tab.focus();
+    });
+    actionLanes().forEach(function (lane) {
+      var tone = lane.getAttribute("data-ca-an-lane-body"), active = tone === state.anLane;
+      lane.classList.toggle("is-current", active);
+      if (mobile) {
+        lane.setAttribute("role", "tabpanel");
+        lane.setAttribute("aria-labelledby", "ca-v36-an-tab-" + tone);
+        lane.hidden = !active;
+      } else {
+        lane.removeAttribute("role");
+        lane.removeAttribute("aria-labelledby");
+        lane.hidden = false;
+      }
+    });
   }
-  function setAnLane(tone) {
+  function adoptActNow() {
+    var host = actionHost(), tabs = actionTabs();
+    var selected = tabs.find(function (tab) { return tab.getAttribute("data-ca-an-default") === "true"; });
+    if (!host || !tabs.length) return;
+    state.anDefault = selected ? selected.getAttribute("data-ca-an-lane") : tabs[0].getAttribute("data-ca-an-lane");
+    state.anLane = toneFromActionHash() || state.anDefault;
+    host.classList.add("is-enhanced");
+    if (/^#anv2-/.test(location.hash) && !toneFromActionHash()) writeActionHash(state.anDefault, "replace");
+    if (!state.anMedia) {
+      state.anMedia = window.matchMedia("(max-width: 680px)");
+      var resizeActionMode = function () { syncActNow(); };
+      if (state.anMedia.addEventListener) state.anMedia.addEventListener("change", resizeActionMode);
+      else if (state.anMedia.addListener) state.anMedia.addListener(resizeActionMode);
+    }
+    if (!state.anHistoryBound) {
+      window.addEventListener("hashchange", reconcileActionLocation);
+      window.addEventListener("popstate", reconcileActionLocation);
+      state.anHistoryBound = true;
+    }
+    syncActNow();
+  }
+  function reconcileActionLocation() {
+    var tone = toneFromActionHash() || state.anDefault;
+    if (!tone) return;
+    if (/^#anv2-/.test(location.hash) && !toneFromActionHash()) writeActionHash(tone, "replace");
+    state.anLane = tone;
+    var focused = document.activeElement && document.activeElement.closest &&
+      document.activeElement.closest("[data-ca-an-lane]");
+    syncActNow(focused || /^#anv2-/.test(location.hash) ? tone : null);
+  }
+  function setAnLane(tone, focus, historyMode) {
     /* Presentation-only: never mutates the Prophet selection/filter. */
-    state.anLane = tone; renderActNow();
+    if (!actionTabs().some(function (tab) { return tab.getAttribute("data-ca-an-lane") === tone; })) return;
+    state.anLane = tone;
+    syncActNow(focus ? tone : null);
+    if (historyMode !== false) writeActionHash(tone, historyMode === "replace" ? "replace" : "push");
   }
   function toggleAnLane(tone) {
-    state.anOpen[tone] = !state.anOpen[tone]; renderActNow();
+    var lane = actionLanes().find(function (node) { return node.getAttribute("data-ca-an-lane-body") === tone; });
+    if (!lane) return;
+    var list = qs(".ca-v36-an-list", lane), button = qs("[data-ca-an-view]", lane);
+    if (!list || !button) return;
+    var open = list.classList.contains("is-collapsed");
+    list.classList.toggle("is-collapsed", !open);
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+    state.anOpen[tone] = open;
   }
 
   function itemForFilter() {
@@ -493,11 +554,23 @@
       /* Act-Now presentation controls: distinct targets, never carry the
          lead-kind/-id pair, never touch source/filter. */
       b = e.target.closest("[data-ca-an-lane]"); if (b) { e.preventDefault(); return setAnLane(b.getAttribute("data-ca-an-lane")); }
-      b = e.target.closest("[data-ca-an-view]"); if (b) return toggleAnLane(b.getAttribute("data-ca-an-view"));
+      b = e.target.closest("[data-ca-an-view]"); if (b) { e.preventDefault(); setAnLane(b.getAttribute("data-ca-an-view")); return toggleAnLane(b.getAttribute("data-ca-an-view")); }
       b = e.target.closest("[data-ca-lead-kind][data-ca-lead-id]"); if (b) return activate(b.getAttribute("data-ca-lead-kind"), b.getAttribute("data-ca-lead-id"));
       if (e.target.closest("#ca-v36-filter")) { state.filter = null; return applyFilter(); }
       if (e.target.closest("#ca-v36-expand")) return openModal();
       if (e.target.closest(".ca-v36-empty-switch")) return setSource("all");
+    });
+    root.addEventListener("keydown", function (e) {
+      var tab = e.target.closest("[data-ca-an-lane]");
+      if (!tab) return;
+      var tabs = actionTabs(), index = tabs.indexOf(tab), next = index;
+      if (e.key === "ArrowRight") next = (index + 1) % tabs.length;
+      else if (e.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = tabs.length - 1;
+      else if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      setAnLane(tabs[next].getAttribute("data-ca-an-lane"), true);
     });
   }
 
@@ -513,7 +586,7 @@
       }
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
     }
-    renderActNow(); renderLeadership(); renderFresh(); applyFilter(); observeQuoteStatus();
+    adoptActNow(); renderLeadership(); renderFresh(); applyFilter(); observeQuoteStatus();
     var selectedView = qs("[data-ca-view][aria-selected='true']", main);
     adoptView(selectedView && selectedView.getAttribute("data-ca-view"));
     observeTable(); return true;

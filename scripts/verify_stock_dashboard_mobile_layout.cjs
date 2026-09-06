@@ -230,6 +230,117 @@ const LAYOUT_SCRIPT = `() => {
   };
 }`;
 
+async function installPageInit(context, market, locale, theme) {
+  const prefix = market === "hk" ? "hk" : "ca";
+  const version = market === "hk" ? "hk-v37" : "ca-v36";
+  await context.addInitScript(({prefix, version, locale, theme}) => {
+    localStorage.setItem("lang", locale);
+    localStorage.setItem("theme", theme);
+
+    /* Capture the parser-owned action graph after parsing, but before the
+       delayed entitled composer executes. Object references and a child-list
+       observer make node preservation a real identity proof: equal markup or
+       equal hashes cannot disguise replacement. */
+    function immutablePayload(host, controls, lanes, lists, rows) {
+      return {
+        host_id: host.id,
+        controls: controls.map((control) => ({
+          lane: control.getAttribute(`data-${prefix}-an-lane`),
+          href: control.getAttribute("href"),
+          owner_default: control.getAttribute(`data-${prefix}-an-default`),
+          title: (control.querySelector(`.${version}-an-seg-t`) || control).textContent.trim(),
+          count: (control.querySelector("b") || {}).textContent || "",
+        })),
+        lanes: lanes.map((lane, index) => ({
+          id: lane.id,
+          key: lane.getAttribute(`data-${prefix}-an-lane-body`),
+          list_classes: Array.from(lists[index].classList).filter((name) => name !== "is-collapsed").sort(),
+          rows: rows[index].map((row) => ({
+            action_id: row.getAttribute("data-action-id"),
+            has_rpop: row.hasAttribute("data-rpop"),
+            decision_payload: !!row.querySelector(".rp-src"),
+            route: (row.querySelector(`.${version}-an-go`) || {}).getAttribute?.("href") || null,
+            membership_kind: (row.querySelector(`[data-${prefix}-lead-kind]`) || {}).getAttribute?.(`data-${prefix}-lead-kind`) || null,
+            membership_id: (row.querySelector(`[data-${prefix}-lead-id]`) || {}).getAttribute?.(`data-${prefix}-lead-id`) || null,
+            html: row.innerHTML,
+          })),
+        })),
+      };
+    }
+
+    function captureStaticGraph() {
+      const host = document.querySelector(`#${version}-an-body`);
+      if (!host || host.classList.contains("is-enhanced")) return false;
+      const controls = Array.from(host.querySelectorAll(`[data-${prefix}-an-lane]`));
+      const lanes = Array.from(host.querySelectorAll(`[data-${prefix}-an-lane-body]`));
+      const lists = lanes.map((lane) => lane.querySelector(`.${version}-an-list`));
+      if (controls.length !== 4 || lanes.length !== 4 || lists.some((list) => !list)) return false;
+      const rows = lanes.map((lane) => Array.from(lane.querySelectorAll(`.${version}-an-row-w`)));
+      const probe = {
+        captured: true,
+        captured_before_composer: !host.classList.contains("is-enhanced") &&
+          !host.querySelector('[role="tablist"], [role="tab"]'),
+        host,
+        controls,
+        lanes,
+        lists,
+        rows,
+        childListMutations: 0,
+      };
+      probe.snapshot = () => immutablePayload(host, controls, lanes, lists, rows);
+      probe.payloadBefore = probe.snapshot();
+      probe.observer = new MutationObserver((records) => {
+        probe.childListMutations += records.filter((record) => record.type === "childList").length;
+      });
+      probe.observer.observe(host, {childList: true, subtree: true});
+      window.__wtaonStaticProbe = probe;
+      return true;
+    }
+
+    window.__wtaonStaticProbe = {captured: false, childListMutations: null};
+    document.addEventListener("DOMContentLoaded", captureStaticGraph, {once: true});
+  }, {prefix, version, locale, theme});
+}
+
+async function nodeIdentityProof(page, market) {
+  const prefix = market === "hk" ? "hk" : "ca";
+  const version = market === "hk" ? "hk-v37" : "ca-v36";
+  const proof = await page.evaluate(({prefix, version}) => {
+    const probe = window.__wtaonStaticProbe;
+    if (!probe || !probe.captured) return {captured: false, pass: false};
+    const host = document.querySelector(`#${version}-an-body`);
+    const controls = Array.from(host.querySelectorAll(`[data-${prefix}-an-lane]`));
+    const lanes = Array.from(host.querySelectorAll(`[data-${prefix}-an-lane-body]`));
+    const lists = lanes.map((lane) => lane.querySelector(`.${version}-an-list`));
+    const rows = lanes.map((lane) => Array.from(lane.querySelectorAll(`.${version}-an-row-w`)));
+    const sameArray = (before, after) => before.length === after.length &&
+      before.every((node, index) => node === after[index]);
+    const sameRows = probe.rows.length === rows.length &&
+      probe.rows.every((laneRows, index) => sameArray(laneRows, rows[index]));
+    return {
+      captured: true,
+      captured_before_composer: probe.captured_before_composer,
+      same_host: probe.host === host,
+      same_controls: sameArray(probe.controls, controls),
+      same_lanes: sameArray(probe.lanes, lanes),
+      same_lists: sameArray(probe.lists, lists),
+      same_rows: sameRows,
+      child_list_mutations: probe.childListMutations,
+      payload_before: probe.payloadBefore,
+      payload_after: probe.snapshot(),
+    };
+  }, {prefix, version});
+  if (!proof.captured) return proof;
+  proof.payload_hash_before = sha256Bytes(Buffer.from(JSON.stringify(proof.payload_before)));
+  proof.payload_hash_after = sha256Bytes(Buffer.from(JSON.stringify(proof.payload_after)));
+  delete proof.payload_before;
+  delete proof.payload_after;
+  proof.pass = proof.captured_before_composer && proof.same_host && proof.same_controls &&
+    proof.same_lanes && proof.same_lists && proof.same_rows && proof.child_list_mutations === 0 &&
+    proof.payload_hash_before === proof.payload_hash_after;
+  return proof;
+}
+
 async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
   const prefix = market === "hk" ? "hk" : "ca";
   const version = market === "hk" ? "hk-v37" : "ca-v36";
@@ -238,7 +349,8 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
       const style = getComputedStyle(el);
       return style.display !== "none" && style.visibility !== "hidden" && el.getClientRects().length > 0;
     };
-    const tabs = Array.from(document.querySelectorAll(`[data-${prefix}-an-lane]`)).map((tab) => {
+    const tabNodes = Array.from(document.querySelectorAll(`[data-${prefix}-an-lane]`));
+    const tabs = tabNodes.map((tab) => {
       const title = tab.querySelector(`.${version}-an-seg-t`) || tab;
       return {
         lane: tab.getAttribute(`data-${prefix}-an-lane`),
@@ -277,6 +389,33 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
     const tableButton = viewButtons.find((button) => button.getAttribute(`data-${prefix}-view`) === "table");
     const stockTableReady = !!(window.StockTable && typeof window.StockTable._setView === "function");
     const identity = (items) => items.map(cardId);
+    const laneKey = (lane) => lane.getAttribute(`data-${prefix}-an-lane-body`);
+    const ownerIdentities = Object.fromEntries(lanes.map((lane) => [
+      laneKey(lane),
+      Array.from(lane.querySelectorAll(`.${version}-an-row-w`)).map((row) => row.getAttribute("data-action-id")),
+    ]));
+    const ownerCounts = Object.fromEntries(Object.entries(ownerIdentities).map(([lane, ids]) => [lane, ids.length]));
+    const actionHost = document.querySelector(`#${version}-an-body`);
+    const enhanced = !!(actionHost && actionHost.classList.contains("is-enhanced"));
+    const selectedTabs = tabNodes.filter((tab) => tab.getAttribute("aria-selected") === "true");
+    const targetLane = lanes.find((lane) => `#${lane.id}` === location.hash);
+    const defaultTab = tabNodes.find((tab) => tab.getAttribute(`data-${prefix}-an-default`) === "true");
+    const effectiveLane = enhanced
+      ? (selectedTabs[0] && selectedTabs[0].getAttribute(`data-${prefix}-an-lane`))
+      : (targetLane && targetLane.getAttribute(`data-${prefix}-an-lane-body`)) ||
+        (defaultTab && defaultTab.getAttribute(`data-${prefix}-an-lane`));
+    const controls = tabNodes.map((tab) => tab.getAttribute("aria-controls"));
+    const controlsValid = tabNodes.every((tab) => {
+      const target = document.getElementById(tab.getAttribute("aria-controls") || "");
+      return !!target && target.getAttribute(`data-${prefix}-an-lane-body`) === tab.getAttribute(`data-${prefix}-an-lane`);
+    });
+    const staticSemantics = {
+      container_role: actionHost && actionHost.querySelector(`.${version}-an-seg`)?.getAttribute("role"),
+      tab_roles: tabNodes.map((tab) => tab.getAttribute("role")),
+      aria_selected: tabNodes.map((tab) => tab.getAttribute("aria-selected")),
+      aria_current: tabNodes.map((tab) => tab.getAttribute("aria-current")),
+      aria_controls: controls,
+    };
     const result = {
       tabs,
       visible_lanes: visibleLanes,
@@ -312,6 +451,23 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
         table_disabled: !!(tableButton && tableButton.disabled),
         stocktable_ready: stockTableReady,
       },
+      wtaon: {
+        enhanced,
+        selected_lane_key: effectiveLane || null,
+        selector_count: actionHost ? actionHost.querySelectorAll(`.${version}-an-seg[role="tablist"]`).length : 0,
+        button_count: tabNodes.length,
+        visible_lane_body_count: visibleLanes.length,
+        per_lane_owner_count: ownerCounts,
+        rendered_visible_row_count: activeRows.length,
+        expanded: !!lanes.find((lane) => {
+          const button = lane.querySelector(`[data-${prefix}-an-view]`);
+          return button && button.getAttribute("aria-expanded") === "true";
+        }),
+        focus_keyboard: {exercised: false, sequence: [], focus_visible: [], enter: false, space: false, pass: true},
+        aria_controls: {unique: new Set(controls.filter(Boolean)).size, valid: controlsValid},
+        static_semantics: staticSemantics,
+        owner_identity_order: ownerIdentities,
+      },
     };
     result.source_contract.pass = selectedSources.length === 1 && source === initialSource && activeSource === source &&
       JSON.stringify(result.source_contract.expected_grid) === JSON.stringify(result.source_contract.visible_grid) &&
@@ -321,15 +477,33 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
       result.prophet_chrome.help_count === 1 && result.prophet_chrome.legacy_view_count === 0;
     result.view_owner.pass = result.view_owner.control_count === 1 && result.view_owner.button_count === 2 &&
       result.view_owner.selected === "grid" && result.view_owner.table_disabled === !stockTableReady;
+    const staticSemanticsHonest = !staticSemantics.container_role &&
+      staticSemantics.tab_roles.every((value) => value === null) &&
+      staticSemantics.aria_selected.every((value) => value === null) &&
+      staticSemantics.aria_current.every((value) => value === null) &&
+      staticSemantics.aria_controls.every((value) => value === null);
+    result.wtaon.pass = result.wtaon.selected_lane_key === "buy" &&
+      result.wtaon.button_count === 4 && result.wtaon.visible_lane_body_count === 1 &&
+      (enhanced
+        ? result.wtaon.selector_count === 1 && selectedTabs.length === 1 &&
+          result.wtaon.aria_controls.unique === 4 && result.wtaon.aria_controls.valid
+        : result.wtaon.selector_count === 0 && staticSemanticsHonest);
     result.pass = tabs.length === 4 && tabs.every((tab) => tab.title && /^\d+$/.test(tab.count.trim()) && tab.title_fully_visible) &&
       visibleLanes.length === 1 && visibleLanes[0] === "buy" && activeRows.length <= 3 &&
       result.known_membership_hook && /2\s*·\s*Prophet/.test(result.known_copy) &&
       !result.unknown_membership_hook && result.unknown_route &&
       !result.generic_showmore_attribute && result.generic_showmore_bar_count === 0 &&
       (market !== "ca" || (result.quote_state === "unavailable" && /Quotes unavailable/.test(result.quote_copy))) &&
-      result.source_contract.pass && result.prophet_chrome.pass && result.view_owner.pass;
+      result.source_contract.pass && result.prophet_chrome.pass && result.view_owner.pass && result.wtaon.pass;
     return result;
   }, {prefix, version, market});
+
+  const beforeIdentity = basic.wtaon.owner_identity_order;
+  basic.wtaon.identity_hashes = {
+    before: sha256Bytes(Buffer.from(JSON.stringify(beforeIdentity))),
+    after: null,
+  };
+  delete basic.wtaon.owner_identity_order;
 
   const exercised = [];
   if (javascriptEnabled && composerMode === "loaded") {
@@ -350,28 +524,176 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
       state.pass = state.visible_lanes.length === 1 && state.visible_lanes[0] === lane && state.source_unchanged;
       exercised.push(state);
     }
-    const more = page.locator(`[data-${prefix}-an-lane-body="buy"] .${version}-an-more`);
-    const before = await page.locator(`[data-${prefix}-an-lane-body="buy"] .${version}-an-row-w`).count();
-    if (await more.count()) await more.click();
-    const after = await page.locator(`[data-${prefix}-an-lane-body="buy"] .${version}-an-row-w`).count();
-    const visibleAfter = await page.evaluate(({prefix}) => Array.from(document.querySelectorAll(`[data-${prefix}-an-lane-body]`))
-      .filter((el) => getComputedStyle(el).display !== "none" && el.getClientRects().length > 0)
-      .map((el) => el.getAttribute(`data-${prefix}-an-lane-body`)), {prefix});
-    basic.view_all = {
-      before,
-      after,
-      active_only: visibleAfter.length === 1 && visibleAfter[0] === "buy",
-      pass: before === 3 && after === 4 && visibleAfter.length === 1 && visibleAfter[0] === "buy",
+
+    const keyboardSequence = [];
+    const focusVisibility = [];
+    const buyTab = page.locator(`[data-${prefix}-an-lane="buy"]`);
+    await buyTab.focus();
+    for (const key of ["ArrowRight", "End", "Home", "ArrowLeft", "ArrowLeft"]) {
+      await page.keyboard.press(key);
+      const keyState = await page.evaluate(({prefix}) => {
+        const selected = document.querySelector(`[data-${prefix}-an-lane][aria-selected="true"]`);
+        const focused = document.activeElement && document.activeElement.closest(`[data-${prefix}-an-lane]`);
+        const selectedLane = selected && selected.getAttribute(`data-${prefix}-an-lane`);
+        const focusedLane = focused && focused.getAttribute(`data-${prefix}-an-lane`);
+        const focusStyle = focused ? getComputedStyle(focused) : null;
+        return {
+          lane: selectedLane === focusedLane ? selectedLane : null,
+          visible: !!focusStyle && focusStyle.outlineStyle !== "none" && parseFloat(focusStyle.outlineWidth) > 0,
+        };
+      }, {prefix});
+      keyboardSequence.push(keyState.lane);
+      focusVisibility.push(keyState.visible);
+    }
+    await page.keyboard.press("Enter");
+    const enterWorked = await page.evaluate(({prefix}) => {
+      const selected = document.querySelector(`[data-${prefix}-an-lane][aria-selected="true"]`);
+      return !!selected && selected.getAttribute(`data-${prefix}-an-lane`) === "wait";
+    }, {prefix});
+    await page.keyboard.press("Space");
+    const spaceWorked = await page.evaluate(({prefix}) => {
+      const selected = document.querySelector(`[data-${prefix}-an-lane][aria-selected="true"]`);
+      return !!selected && selected.getAttribute(`data-${prefix}-an-lane`) === "wait";
+    }, {prefix});
+    basic.wtaon.focus_keyboard = {
+      exercised: true,
+      sequence: keyboardSequence,
+      focus_visible: focusVisibility,
+      enter: enterWorked,
+      space: spaceWorked,
+      pass: JSON.stringify(keyboardSequence) === JSON.stringify(["near", "avoid", "buy", "avoid", "wait"]) &&
+        focusVisibility.length === keyboardSequence.length && focusVisibility.every(Boolean) && enterWorked && spaceWorked,
     };
-  } else if (composerMode !== "pending") {
+    await buyTab.click();
+
+    const more = page.locator(`[data-${prefix}-an-lane-body="buy"] .${version}-an-more`);
+    const visibleRowCounts = () => page.evaluate(({prefix, version}) => Object.fromEntries(
+      Array.from(document.querySelectorAll(`[data-${prefix}-an-lane-body]`)).map((lane) => [
+        lane.getAttribute(`data-${prefix}-an-lane-body`),
+        Array.from(lane.querySelectorAll(`.${version}-an-row-w`)).filter((row) =>
+          getComputedStyle(row).display !== "none" && row.getClientRects().length > 0
+        ).length,
+      ])
+    ), {prefix, version});
+    const beforeCounts = await visibleRowCounts();
+    if (await more.count()) {
+      await more.focus();
+      await page.evaluate(({prefix, version}) => {
+        const button = document.querySelector(`[data-${prefix}-an-lane-body="buy"] .${version}-an-more`);
+        const list = document.querySelector(`[data-${prefix}-an-lane-body="buy"] .${version}-an-list`);
+        window.__wtaonViewAllProbe = {button, list, parent: list && list.parentNode};
+      }, {prefix, version});
+      await more.click();
+    }
+    const afterCounts = await visibleRowCounts();
+    const viewAllOwnership = await page.evaluate(({prefix, version}) => {
+      const probe = window.__wtaonViewAllProbe || {};
+      const lane = document.querySelector(`[data-${prefix}-an-lane-body="buy"]`);
+      const button = lane && lane.querySelector(`.${version}-an-more`);
+      const list = lane && lane.querySelector(`.${version}-an-list`);
+      return {
+        same_button: probe.button === button,
+        same_list: probe.list === list,
+        same_parent: probe.parent === (list && list.parentNode),
+        focus_retained: document.activeElement === button,
+        list_stayed_in_lane: !!(lane && list && lane.contains(list)),
+        global_overlay_count: document.querySelectorAll(".lst-ovl.is-open, .lst-ovl-body > .hk-v37-an-list, .lst-ovl-body > .ca-v36-an-list").length,
+      };
+    }, {prefix, version});
     await page.locator(`[data-${prefix}-an-lane="near"]`).click();
-    await page.waitForTimeout(50);
-    const fallback = await page.evaluate(({prefix}) => Array.from(document.querySelectorAll(`[data-${prefix}-an-lane-body]`))
-      .filter((el) => getComputedStyle(el).display !== "none" && el.getClientRects().length > 0)
-      .map((el) => el.getAttribute(`data-${prefix}-an-lane-body`)), {prefix});
+    const awayExpansion = await page.evaluate(({prefix}) => {
+      const selected = document.querySelector(`[data-${prefix}-an-lane][aria-selected="true"]`);
+      const expanded = Array.from(document.querySelectorAll(`[data-${prefix}-an-lane-body]`))
+        .filter((lane) => lane.querySelector(`[data-${prefix}-an-view][aria-expanded="true"]`))
+        .map((lane) => lane.getAttribute(`data-${prefix}-an-lane-body`));
+      return {
+        selected: selected && selected.getAttribute(`data-${prefix}-an-lane`),
+        expanded_lanes: expanded,
+      };
+    }, {prefix});
+    await buyTab.click();
+    const expansion = await page.evaluate(({prefix}) => {
+      const lanes = Array.from(document.querySelectorAll(`[data-${prefix}-an-lane-body]`));
+      const visible = (el) => getComputedStyle(el).display !== "none" && el.getClientRects().length > 0;
+      return {
+        visible_lanes: lanes.filter(visible).map((el) => el.getAttribute(`data-${prefix}-an-lane-body`)),
+        expanded_lanes: lanes.filter((lane) => lane.querySelector(`[data-${prefix}-an-view][aria-expanded="true"]`))
+          .map((lane) => lane.getAttribute(`data-${prefix}-an-lane-body`)),
+      };
+    }, {prefix});
+    basic.view_all = {
+      before: beforeCounts.buy,
+      after: afterCounts.buy,
+      per_lane_before: beforeCounts,
+      per_lane_after: afterCounts,
+      active_only: expansion.visible_lanes.length === 1 && expansion.visible_lanes[0] === "buy" &&
+        JSON.stringify(expansion.expanded_lanes) === JSON.stringify(["buy"]),
+      lane_local_after_switch: awayExpansion.selected === "near" &&
+        JSON.stringify(awayExpansion.expanded_lanes) === JSON.stringify(["buy"]),
+      ownership: viewAllOwnership,
+      pass: beforeCounts.buy === 3 && afterCounts.buy === 4 &&
+        Object.entries(afterCounts).every(([lane, count]) => lane === "buy" || count === beforeCounts[lane]) &&
+        expansion.visible_lanes.length === 1 && expansion.visible_lanes[0] === "buy" &&
+        JSON.stringify(expansion.expanded_lanes) === JSON.stringify(["buy"]) &&
+        awayExpansion.selected === "near" &&
+        JSON.stringify(awayExpansion.expanded_lanes) === JSON.stringify(["buy"]) &&
+        viewAllOwnership.same_button && viewAllOwnership.same_list && viewAllOwnership.same_parent &&
+        viewAllOwnership.focus_retained && viewAllOwnership.list_stayed_in_lane &&
+        viewAllOwnership.global_overlay_count === 0,
+    };
+    basic.wtaon.expanded = expansion.expanded_lanes.length === 1 && expansion.expanded_lanes[0] === "buy";
+    basic.wtaon.rendered_visible_row_count = afterCounts.buy;
+  } else {
+    const fallbackCases = [];
+    for (const lane of ["buy", "near", "wait", "avoid"]) {
+      await page.locator(`[data-${prefix}-an-lane="${lane}"]`).click();
+      await page.waitForTimeout(30);
+      const fallback = await page.evaluate(({prefix, version, lane}) => {
+        const visible = (el) => getComputedStyle(el).display !== "none" && el.getClientRects().length > 0;
+        const controls = Array.from(document.querySelectorAll(`[data-${prefix}-an-lane]`));
+        const lanes = Array.from(document.querySelectorAll(`[data-${prefix}-an-lane-body]`));
+        const target = controls.find((control) => control.getAttribute(`data-${prefix}-an-lane`) === lane);
+        const signature = (control) => {
+          const style = getComputedStyle(control);
+          return [style.backgroundColor, style.color, style.borderTopColor, style.boxShadow].join("|");
+        };
+        const targetSignature = target ? signature(target) : null;
+        const highlighted = controls.filter((control) => signature(control) === targetSignature);
+        const body = document.querySelector(`#${version}-an-body`);
+        const laneBody = lanes.find((node) => node.getAttribute(`data-${prefix}-an-lane-body`) === lane);
+        const count = Number((target && target.querySelector("b") || {}).textContent || NaN);
+        const rowCount = laneBody ? laneBody.querySelectorAll(`.${version}-an-row-w`).length : -1;
+        return {
+          lane,
+          visible_lane_keys: lanes.filter(visible).map((node) => node.getAttribute(`data-${prefix}-an-lane-body`)),
+          highlighted_control: highlighted.length === 1 ? highlighted[0].getAttribute(`data-${prefix}-an-lane`) : null,
+          url_fragment: location.hash,
+          owner_count: count,
+          owner_row_count: rowCount,
+          enhanced: !!(body && body.classList.contains("is-enhanced")),
+          semantics: {
+            container_role: body && body.querySelector(`.${version}-an-seg`)?.getAttribute("role"),
+            tab_roles: controls.map((control) => control.getAttribute("role")),
+            aria_selected: controls.map((control) => control.getAttribute("aria-selected")),
+            aria_current: controls.map((control) => control.getAttribute("aria-current")),
+            aria_controls: controls.map((control) => control.getAttribute("aria-controls")),
+          },
+        };
+      }, {prefix, version, lane});
+      const semantics = fallback.semantics;
+      fallback.pass = fallback.visible_lane_keys.length === 1 && fallback.visible_lane_keys[0] === lane &&
+        fallback.highlighted_control === lane && fallback.url_fragment ===
+          `#${lane === "near" ? "anv2-pull" : lane === "wait" ? "anv2-bot" : lane === "avoid" ? "anv2-red" : "anv2-buy"}` &&
+        fallback.owner_count === fallback.owner_row_count && !fallback.enhanced && !semantics.container_role &&
+        semantics.tab_roles.every((value) => value === null) &&
+        semantics.aria_selected.every((value) => value === null) &&
+        semantics.aria_current.every((value) => value === null) &&
+        semantics.aria_controls.every((value) => value === null);
+      fallbackCases.push(fallback);
+    }
     basic.static_anchor_fallback = {
-      visible_lanes: fallback,
-      pass: fallback.length === 1 && fallback[0] === "near",
+      cases: fallbackCases,
+      pass: fallbackCases.length === 4 && fallbackCases.every((row) => row.pass),
     };
   }
   if (javascriptEnabled && composerMode !== "pending") {
@@ -419,12 +741,120 @@ async function mobileBehavior(page, market, composerMode, javascriptEnabled) {
       basic.view_transition = {...tableState, grid_restored: gridRestored, pass: tableState.pass && gridRestored};
     }
   }
+  const afterIdentity = await page.evaluate(({prefix, version}) => Object.fromEntries(
+    Array.from(document.querySelectorAll(`[data-${prefix}-an-lane-body]`)).map((lane) => [
+      lane.getAttribute(`data-${prefix}-an-lane-body`),
+      Array.from(lane.querySelectorAll(`.${version}-an-row-w`)).map((row) => row.getAttribute("data-action-id")),
+    ])
+  ), {prefix, version});
+  basic.wtaon.identity_hashes.after = sha256Bytes(Buffer.from(JSON.stringify(afterIdentity)));
+  basic.wtaon.node_identity = javascriptEnabled
+    ? await nodeIdentityProof(page, market)
+    : {captured: false, reason: "javascript_disabled", pass: true};
+  basic.wtaon.pass = basic.wtaon.pass && basic.wtaon.focus_keyboard.pass &&
+    basic.wtaon.identity_hashes.before === basic.wtaon.identity_hashes.after &&
+    basic.wtaon.node_identity.pass;
   basic.exercised_lanes = exercised;
   basic.pass = basic.pass && exercised.every((row) => row.pass) &&
     (!basic.view_all || basic.view_all.pass) &&
     (!basic.static_anchor_fallback || basic.static_anchor_fallback.pass) &&
-    (!basic.view_transition || basic.view_transition.pass);
+    (!basic.view_transition || basic.view_transition.pass) && basic.wtaon.pass;
   return basic;
+}
+
+async function fragmentNavigationProof(browser, market, route, installRoutes) {
+  const prefix = market === "hk" ? "hk" : "ca";
+  const version = market === "hk" ? "hk-v37" : "ca-v36";
+  const context = await browser.newContext({viewport: {width: 390, height: 844}, deviceScaleFactor: 1});
+  await installPageInit(context, market, "en", "dark");
+  await installRoutes(context, "loaded");
+
+  async function waitForComposer(page) {
+    await page.waitForFunction(({version}) => {
+      const host = document.querySelector(`#${version}-an-body`);
+      return !!(host && host.classList.contains("is-enhanced"));
+    }, {version}, {timeout: 5000});
+    await page.waitForTimeout(50);
+  }
+
+  async function inspect(page, label, expectedLane, expectedHash, focusRequired) {
+    const state = await page.evaluate(({prefix, version, label}) => {
+      const visible = (node) => getComputedStyle(node).display !== "none" && node.getClientRects().length > 0;
+      const host = document.querySelector(`#${version}-an-body`);
+      const controls = Array.from(host.querySelectorAll(`[data-${prefix}-an-lane]`));
+      const lanes = Array.from(host.querySelectorAll(`[data-${prefix}-an-lane-body]`));
+      const selected = controls.filter((control) => control.getAttribute("aria-selected") === "true");
+      const current = lanes.filter((lane) => lane.classList.contains("is-current"));
+      const shown = lanes.filter(visible);
+      const focused = document.activeElement && document.activeElement.closest &&
+        document.activeElement.closest(`[data-${prefix}-an-lane]`);
+      return {
+        label,
+        url_fragment: location.hash,
+        internal_active_key: host.getAttribute("data-active-lane"),
+        selected_keys: selected.map((node) => node.getAttribute(`data-${prefix}-an-lane`)),
+        current_keys: current.map((node) => node.getAttribute(`data-${prefix}-an-lane-body`)),
+        visible_keys: shown.map((node) => node.getAttribute(`data-${prefix}-an-lane-body`)),
+        focused_key: focused ? focused.getAttribute(`data-${prefix}-an-lane`) : null,
+        selector_roles: host.querySelectorAll(`.${version}-an-seg[role="tablist"]`).length,
+        tab_roles: controls.filter((node) => node.getAttribute("role") === "tab").length,
+        controls_valid: controls.every((control) => {
+          const lane = document.getElementById(control.getAttribute("aria-controls") || "");
+          return !!lane && lane.getAttribute(`data-${prefix}-an-lane-body`) ===
+            control.getAttribute(`data-${prefix}-an-lane`);
+        }),
+      };
+    }, {prefix, version, label});
+    state.focus_required = focusRequired;
+    state.pass = state.url_fragment === expectedHash && state.internal_active_key === expectedLane &&
+      JSON.stringify(state.selected_keys) === JSON.stringify([expectedLane]) &&
+      JSON.stringify(state.current_keys) === JSON.stringify([expectedLane]) &&
+      JSON.stringify(state.visible_keys) === JSON.stringify([expectedLane]) &&
+      (!focusRequired || state.focused_key === expectedLane) && state.selector_roles === 1 &&
+      state.tab_roles === 4 && state.controls_valid;
+    return state;
+  }
+
+  const errors = [];
+  try {
+    const validPage = await context.newPage();
+    validPage.on("pageerror", (error) => errors.push(String(error && (error.stack || error.message) || error)));
+    const validUrl = new URL(route, "http://stock-dashboard.invalid");
+    validUrl.hash = "anv2-pull";
+    await validPage.goto(validUrl.href, {waitUntil: "load", timeout: 30000});
+    await waitForComposer(validPage);
+    const cases = [await inspect(validPage, "direct-valid", "near", "#anv2-pull", false)];
+
+    await validPage.locator(`[data-${prefix}-an-lane="wait"]`).click();
+    cases.push(await inspect(validPage, "click-with-fragment", "wait", "#anv2-bot", true));
+    await validPage.locator(`[data-${prefix}-an-lane="avoid"]`).click();
+    cases.push(await inspect(validPage, "second-click", "avoid", "#anv2-red", true));
+    await validPage.goBack();
+    await validPage.waitForTimeout(50);
+    cases.push(await inspect(validPage, "back", "wait", "#anv2-bot", true));
+    await validPage.goForward();
+    await validPage.waitForTimeout(50);
+    cases.push(await inspect(validPage, "forward", "avoid", "#anv2-red", true));
+    const validIdentity = await nodeIdentityProof(validPage, market);
+
+    const invalidPage = await context.newPage();
+    invalidPage.on("pageerror", (error) => errors.push(String(error && (error.stack || error.message) || error)));
+    const invalidUrl = new URL(route, "http://stock-dashboard.invalid");
+    invalidUrl.hash = "anv2-unknown";
+    await invalidPage.goto(invalidUrl.href, {waitUntil: "load", timeout: 30000});
+    await waitForComposer(invalidPage);
+    const invalid = await inspect(invalidPage, "direct-invalid", "buy", "#anv2-buy", false);
+    const invalidIdentity = await nodeIdentityProof(invalidPage, market);
+    return {
+      cases: cases.concat([invalid]),
+      node_identity: {valid_page: validIdentity, invalid_page: invalidIdentity},
+      console_exceptions: errors,
+      pass: cases.concat([invalid]).every((row) => row.pass) &&
+        validIdentity.pass && invalidIdentity.pass && errors.length === 0,
+    };
+  } finally {
+    await context.close();
+  }
 }
 
 async function desktopBehavior(page, market) {
@@ -690,7 +1120,9 @@ async function main() {
         return;
       }
       if (path.basename(url.pathname) === composer && composerMode === "pending") {
-        await new Promise((resolve) => setTimeout(resolve, 2500));
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+      } else if (path.basename(url.pathname) === composer && composerMode === "loaded") {
+        await new Promise((resolve) => setTimeout(resolve, 150));
       }
       const relative = url.pathname.replace(/^\/+/, "");
       const fixtureCandidate = path.resolve(fixtureAssetsDir, relative);
@@ -727,14 +1159,13 @@ async function main() {
         javaScriptEnabled: state.javascriptEnabled !== false,
       });
       if (state.javascriptEnabled !== false) {
-        await context.addInitScript(({locale, theme}) => {
-          localStorage.setItem("lang", locale);
-          localStorage.setItem("theme", theme);
-        }, {locale: state.locale, theme: state.theme});
+        await installPageInit(context, fixtureBinding.market, state.locale, state.theme);
       }
       await installRoutes(context, state.composerMode || "loaded");
 
       const page = await context.newPage();
+      const consoleExceptions = [];
+      page.on("pageerror", (error) => consoleExceptions.push(String(error && (error.stack || error.message) || error)));
       const waitUntil = state.composerMode === "pending" ? "commit" : "load";
       const pageUrl = new URL(fixtureBinding.route, "http://stock-dashboard.invalid");
       await page.goto(pageUrl.href, {waitUntil, timeout: 30000});
@@ -751,6 +1182,12 @@ async function main() {
         await page.waitForTimeout(1400);
       }
       const layout = await page.evaluate(`(${LAYOUT_SCRIPT})()`);
+      layout.duplicate_ids = await page.evaluate(() => {
+        const counts = new Map();
+        document.querySelectorAll("[id]").forEach((node) => counts.set(node.id, (counts.get(node.id) || 0) + 1));
+        return Array.from(counts.entries()).filter(([, count]) => count > 1).map(([id, count]) => ({id, count}));
+      });
+      layout.console_exceptions = consoleExceptions;
       const screenshot = await page.screenshot({fullPage: true});
       let screenshotBinding = null;
       if (screenshotDir && ["js-disabled", "composer-failed"].includes(state.name)) {
@@ -767,7 +1204,8 @@ async function main() {
       }
       layout.screenshot_width = pngWidth(screenshot);
       layout.pass = !layout.horizontal_overflow &&
-        layout.elements_wider_than_viewport === 0 && layout.screenshot_width === 390;
+        layout.elements_wider_than_viewport === 0 && layout.screenshot_width === 390 &&
+        layout.duplicate_ids.length === 0 && layout.console_exceptions.length === 0;
       const behavior = await mobileBehavior(
         page,
         fixtureBinding.market,
@@ -788,14 +1226,18 @@ async function main() {
       await context.close();
     }
 
+    var fragmentNavigation = await fragmentNavigationProof(
+      browser,
+      fixtureBinding.market,
+      fixtureBinding.route,
+      installRoutes
+    );
+
     const desktopContext = await browser.newContext({
       viewport: {width: 1440, height: 900},
       deviceScaleFactor: 1,
     });
-    await desktopContext.addInitScript(() => {
-      localStorage.setItem("lang", "en");
-      localStorage.setItem("theme", "dark");
-    });
+    await installPageInit(desktopContext, fixtureBinding.market, "en", "dark");
     await installRoutes(desktopContext, "loaded");
     const desktopPage = await desktopContext.newPage();
     await desktopPage.goto(new URL(fixtureBinding.route, "http://stock-dashboard.invalid").href, {waitUntil: "load", timeout: 30000});
@@ -835,9 +1277,10 @@ async function main() {
     loaded_assets: Object.fromEntries(Array.from(loadedAssets.entries()).sort()),
     viewport: {width: 390, height: 844, device_scale_factor: 1},
     desktop_viewport: {width: 1440, height: 900, device_scale_factor: 1},
-    acceptance: "390px layout; one mobile action lane; typed action membership; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; no generic showmore owner; typed Canada quote states",
+    acceptance: "390px layout; server-owned four-anchor degraded fallback without false tab semantics; composer upgrades the same nodes in place; one mobile action lane in loaded/disabled/failed/pending states; deterministic owner counts and controls; valid/invalid/direct/back/forward fragment reconciliation; in-place click/keyboard lane switching; node-identity-stable lane-local expansion outside the global list overlay; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; typed Canada quote states; zero duplicate ids and console exceptions",
+    fragment_navigation: fragmentNavigation,
     desktop,
-    pass: rows.every((row) => row.pass) && desktop.pass,
+    pass: rows.every((row) => row.pass) && fragmentNavigation.pass && desktop.pass,
     states: rows,
   };
   const encoded = JSON.stringify(payload, null, 2) + "\n";

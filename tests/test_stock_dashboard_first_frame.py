@@ -202,6 +202,13 @@ def test_composer_only_enhances_existing_dom_in_place(market: str) -> None:
     assert f'qs("#{spec["main"]}")' in build.group(0), (
         f"{market}: buildShell() must bind the server-owned #{spec['main']}"
     )
+    assert "renderActNow" not in text, (
+        f"{market}: the composer must adopt the server-owned action DOM, not render it"
+    )
+    for generator in ("anRowHtml", "anLaneHtml", "anLaneItems"):
+        assert f"function {generator}" not in text, (
+            f"{market}: action rows and lanes must have exactly one server owner"
+        )
 
 
 def test_canada_optional_fetches_cannot_admit_or_delay_the_shell() -> None:
@@ -728,6 +735,92 @@ def test_explicit_empty_action_owner_is_the_only_healthy_empty_state(
     copy = panel.get_text(" ", strip=True)
     assert "No sector actions are open" in copy
     assert "Action owner unavailable" not in copy
+    tabs = panel.select(f"[data-{market}-an-lane]")
+    lanes = panel.select("[data-action-lane-body]")
+    assert len(tabs) == 4
+    assert len(lanes) == 4
+    assert [tab.get("data-hk-an-lane") or tab.get("data-ca-an-lane") for tab in tabs] == [
+        "buy",
+        "near",
+        "wait",
+        "avoid",
+    ]
+    assert [tab.select_one(".l-en").get_text(strip=True) for tab in tabs] == [
+        "Buy Now",
+        "In Favour",
+        "Bottoming Watch",
+        "Reduce / Avoid",
+    ]
+    assert [tab.select_one("b").get_text(strip=True) for tab in tabs] == ["0"] * 4
+    assert not panel.select("[role='tablist'], [role='tab']")
+    assert all(not tab.has_attr("aria-selected") for tab in tabs)
+    assert all(not tab.has_attr("aria-controls") for tab in tabs)
+    assert [tab.has_attr(f"data-{market}-an-default") for tab in tabs] == [True, False, False, False]
+    assert [lane.get("data-action-lane-body") for lane in lanes] == [
+        "buy",
+        "near",
+        "wait",
+        "avoid",
+    ]
+    assert [lane.get("data-action-lane-body") for lane in lanes if "is-current" in lane.get("class", [])] == ["buy"]
+
+
+@pytest.mark.parametrize("market", MARKETS)
+@pytest.mark.parametrize(
+    ("actions", "selected", "counts", "identities"),
+    (
+        (_actions(buy_now=[_action_row("buy-a")]), "buy", [1, 0, 0, 0], [["BUY-A"], [], [], []]),
+        (_actions(on_the_run=[_action_row("near-a")]), "near", [0, 1, 0, 0], [[], ["NEAR-A"], [], []]),
+        (_actions(buy_soon=[_action_row("wait-a")]), "wait", [0, 0, 1, 0], [[], [], ["WAIT-A"], []]),
+        (_actions(avoid=[_action_row("avoid-a")]), "avoid", [0, 0, 0, 1], [[], [], [], ["AVOID-A"]]),
+        (
+            _actions(
+                hold=[_action_row("near-a"), _action_row("near-b")],
+                buy_soon=[_action_row("wait-a")],
+                take_profits=[_action_row("avoid-a")],
+            ),
+            "near",
+            [0, 2, 1, 1],
+            [[], ["NEAR-A", "NEAR-B"], ["WAIT-A"], ["AVOID-A"]],
+        ),
+        (_actions(), "buy", [0, 0, 0, 0], [[], [], [], []]),
+    ),
+)
+def test_server_elects_and_wires_the_complete_action_selector(
+    market: str,
+    actions: dict[str, object],
+    selected: str,
+    counts: list[int],
+    identities: list[list[str]],
+) -> None:
+    """The first frame owns lane order, counts, identity, and deterministic election."""
+    soup = _render_action_fixture(market, actions)
+    panel = soup.find(id="act-now")
+    assert panel is not None
+    tabs = panel.select(f"[data-{market}-an-lane]")
+    lanes = panel.select("[data-action-lane-body]")
+    assert len(tabs) == len(lanes) == 4
+    assert [int(tab.select_one("b").get_text(strip=True)) for tab in tabs] == counts
+    assert [tab.get("href") for tab in tabs] == [f"#{lane.get('id')}" for lane in lanes]
+    assert len({tab.get("href") for tab in tabs}) == 4
+    assert not panel.select("[role='tablist'], [role='tab']")
+    assert all(not tab.has_attr("aria-selected") for tab in tabs)
+    assert all(not tab.has_attr("aria-controls") for tab in tabs)
+    assert all(not tab.has_attr("aria-current") for tab in tabs)
+    assert [
+        tab.get(f"data-{market}-an-default") == "true" for tab in tabs
+    ].count(True) == 1
+    assert next(
+        tab.get(f"data-{market}-an-lane")
+        for tab in tabs
+        if tab.get(f"data-{market}-an-default") == "true"
+    ) == selected
+    assert [lane.get("data-action-lane-body") for lane in lanes if "is-current" in lane.get("class", [])] == [selected]
+    assert [
+        [row.get("data-action-id") for row in lane.select("[data-action-id]")]
+        for lane in lanes
+    ] == identities
+    assert not panel.select(".lst-wrap, .lst-collapse, .lst-more")
 
 
 @pytest.mark.parametrize(
@@ -751,7 +844,7 @@ def test_static_action_rows_bind_only_identity_proven_membership(
     body = soup.find(id=body_id)
     assert panel is not None and body is not None
     assert panel.get("data-action-owner-state") == "available"
-    assert len(body.select("[role='tab']")) == 4
+    assert len(body.select(f"[data-{market}-an-lane]")) == 4
     assert len(body.select("[data-action-lane-body]")) == 4
 
     known = body.select_one(f".{row_class}-w[data-action-id='FIXTURE-SECTOR']")
@@ -1173,6 +1266,94 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
         assert view_owner["button_count"] == 2
         assert view_owner["selected"] == "grid"
         assert view_owner["pass"] is True
+
+        wtaon = behavior["wtaon"]
+        assert wtaon["selected_lane_key"] == "buy"
+        assert wtaon["button_count"] == 4
+        assert wtaon["visible_lane_body_count"] == 1
+        assert set(wtaon["per_lane_owner_count"]) == {"buy", "near", "wait", "avoid"}
+        assert wtaon["rendered_visible_row_count"] >= 0
+        assert isinstance(wtaon["expanded"], bool)
+        loaded = row["composer"] == "loaded" and row["javascript_enabled"] is True
+        assert wtaon["enhanced"] is loaded
+        assert wtaon["selector_count"] == (1 if loaded else 0)
+        assert wtaon["aria_controls"] == (
+            {"unique": 4, "valid": True}
+            if loaded
+            else {"unique": 0, "valid": False}
+        )
+        hashes = wtaon["identity_hashes"]
+        assert re.fullmatch(r"[0-9a-f]{64}", hashes["before"])
+        assert hashes["after"] == hashes["before"]
+        identity = wtaon["node_identity"]
+        assert identity["pass"] is True
+        if row["javascript_enabled"]:
+            assert identity["captured"] is True
+            assert identity["captured_before_composer"] is True
+            assert identity["same_host"] is True
+            assert identity["same_controls"] is True
+            assert identity["same_lanes"] is True
+            assert identity["same_lists"] is True
+            assert identity["same_rows"] is True
+            assert identity["child_list_mutations"] == 0
+            assert identity["payload_hash_after"] == identity["payload_hash_before"]
+        else:
+            assert identity == {
+                "captured": False,
+                "reason": "javascript_disabled",
+                "pass": True,
+            }
+        assert wtaon["pass"] is True
+
+    for name in ("en-dark", "en-light", "zh-dark", "zh-light"):
+        keyboard = states[name]["behavior"]["wtaon"]["focus_keyboard"]
+        assert keyboard["exercised"] is True
+        assert keyboard["pass"] is True
+        assert keyboard["sequence"] == ["near", "avoid", "buy", "avoid", "wait"]
+        assert keyboard["focus_visible"] == [True, True, True, True, True]
+
+    for name in ("js-disabled", "composer-failed", "composer-pending"):
+        behavior = states[name]["behavior"]
+        wtaon = behavior["wtaon"]
+        assert wtaon["focus_keyboard"]["exercised"] is False
+        assert wtaon["focus_keyboard"]["focus_visible"] == []
+        assert wtaon["expanded"] is False
+        fallback = behavior["static_anchor_fallback"]
+        assert fallback["pass"] is True
+        assert [case["lane"] for case in fallback["cases"]] == [
+            "buy", "near", "wait", "avoid"
+        ]
+        assert all(case["pass"] for case in fallback["cases"])
+        assert all(case["enhanced"] is False for case in fallback["cases"])
+        assert all(case["highlighted_control"] == case["lane"] for case in fallback["cases"])
+        assert all(case["owner_count"] == case["owner_row_count"] for case in fallback["cases"])
+        assert all(case["semantics"]["container_role"] is None for case in fallback["cases"])
+        assert all(
+            all(value is None for value in case["semantics"][field])
+            for case in fallback["cases"]
+            for field in ("tab_roles", "aria_selected", "aria_current", "aria_controls")
+        )
+
+    fragment = browser["fragment_navigation"]
+    assert fragment["pass"] is True
+    assert [case["label"] for case in fragment["cases"]] == [
+        "direct-valid", "click-with-fragment", "second-click", "back", "forward", "direct-invalid"
+    ]
+    assert all(case["pass"] for case in fragment["cases"])
+    assert fragment["console_exceptions"] == []
+    assert fragment["node_identity"]["valid_page"]["pass"] is True
+    assert fragment["node_identity"]["invalid_page"]["pass"] is True
+
+    for name in ("en-dark", "en-light", "zh-dark", "zh-light"):
+        ownership = states[name]["behavior"]["view_all"]["ownership"]
+        assert ownership == {
+            "same_button": True,
+            "same_list": True,
+            "same_parent": True,
+            "focus_retained": True,
+            "list_stayed_in_lane": True,
+            "global_overlay_count": 0,
+        }
 
     disabled_view = states["js-disabled"]["behavior"]["view_owner"]
     assert disabled_view["stocktable_ready"] is False

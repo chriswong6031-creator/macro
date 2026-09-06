@@ -237,14 +237,12 @@ def test_act_now_panel_renders_at_rest_above_prophet_never_modal_only():
         "the V3.7 modal group-action band is back — the at-rest panel is "
         "the one home for group action"
     )
-    m2 = re.search(r"function anRowHtml\b.*?(?=\n  function )", composer, re.S)
-    assert m2, "could not locate anRowHtml() function body via regex"
-    an_body = m2.group(0)
-    assert 'data-ca-lead-kind="sector" data-ca-lead-id="\' + esc(x.id)' in an_body, (
+    assert 'data-ca-lead-kind="sector" data-ca-lead-id="{{ it.ticker|trim|upper }}"' in owner, (
         "at-rest action rows no longer carry the data-ca-lead-kind/-id pair "
         "— they must reuse the one existing activation path (activate() via "
         "bind()'s delegation), never a parallel click mechanism"
     )
+    assert "renderActNow" not in composer
 
 
 def test_sector_rank_is_never_lane_traversal_and_theme_rank_is_owner_only():
@@ -319,9 +317,8 @@ def test_theme_rank_language_gated_on_owner_and_prophet_count_label():
     assert 'bi("Board", "榜单")' not in text, (
         "the ambiguous Board/榜单 count label is back somewhere in the file"
     )
-    man = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
-    assert man, "could not locate anRowHtml() function body via regex"
-    assert 'bi("Prophet", "候选")' in man.group(0), (
+    template = _template_text()
+    assert "{{ _ca_members.count }} · {{ t('Prophet', '候选') }}" in template, (
         "the at-rest count chip is no longer labelled Prophet/候选"
     )
     mo = re.search(r"function modalPane\b.*?(?=\n  function )", text, re.S)
@@ -359,7 +356,6 @@ def test_theme_rank_language_gated_on_owner_and_prophet_count_label():
     for fn, snippet in [
         ("leadRow", 'x.count != null ? x.count : "—"'),
         ("modalRows", 'x.count != null ? x.count : "—"'),
-        ("anRowHtml", "var countHtml = x.count != null ? '"),
     ]:
         mf = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
         assert mf, f"could not locate {fn}() function body via regex"
@@ -367,6 +363,7 @@ def test_theme_rank_language_gated_on_owner_and_prophet_count_label():
             f"{fn}() no longer branches on count != null — unknown "
             "membership would render as zero, and missing ≠ zero"
         )
+    assert "{% if _ca_members.known %}<span class=\"ca-v36-an-n\">" in template
 
 
 def test_leadership_surface_is_themes_only_no_covert_sector_ordering():
@@ -413,8 +410,8 @@ def test_activation_affordance_requires_canonical_membership():
     unknown-membership row keeps the group-research route as its
     affordance."""
     text = _composer_text()
+    template = _template_text()
     for fn, gate in [
-        ("anRowHtml", "var act = x.members != null ? ' data-ca-lead-kind=\"sector\" data-ca-lead-id=\"' + esc(x.id) + '\"' : ' disabled';"),
         ("leadRow", "var act = x.members != null ? ' data-ca-lead-kind=\"' + x.kind + '\" data-ca-lead-id=\"' + esc(x.id) + '\"' : ' disabled';"),
         ("modalRows", "var act = x.members != null ? ' tabindex=\"0\" data-ca-modal-kind=\"' + x.kind + '\" data-ca-modal-id=\"' + esc(x.id) + '\"' : '';"),
     ]:
@@ -425,33 +422,29 @@ def test_activation_affordance_requires_canonical_membership():
             "x.members != null — an unknown-membership group would offer a "
             "filter that no-ops and claims the full board matches"
         )
+    assert "{% if _ca_members.known %} data-ca-lead-kind=\"sector\"" in template
+    assert "{% else %} disabled{% endif %}" in template
 
 
 def test_at_rest_lane_rows_capped_at_three_with_view_all():
     """V3.8 §5.2 density law: ≤3 group rows per lane at rest; more only via
     the explicit View-all expansion."""
-    text = _composer_text()
-    assert re.search(r"var AN_AT_REST = 3;", text), (
-        "AN_AT_REST is no longer exactly 3 — the at-rest density pin is broken"
-    )
-    m = re.search(r"function anLaneHtml\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate anLaneHtml() function body via regex"
-    body = m.group(0)
-    assert "items.slice(0, AN_AT_REST)" in body, (
-        "anLaneHtml() no longer caps the collapsed lane at AN_AT_REST rows"
-    )
-    assert "items.length > AN_AT_REST" in body and "data-ca-an-view" in body, (
-        "anLaneHtml() lost the View-all control or its threshold"
+    template = _template_text()
+    css = (ROOT / "templates" / "stock-dashboard.css").read_text(encoding="utf-8")
+    assert 'class="anv2-lst ca-v36-an-list is-collapsed"' in template
+    assert "{% if items|length > 3 %}" in template and "data-ca-an-view" in template
+    assert re.search(
+        r"\.ca-v36-an-list\.is-collapsed\s*>\s*:nth-child\(n\+4\)\s*\{\s*display:\s*none",
+        css,
     )
 
 
 def test_act_now_presentation_controls_never_touch_population_or_filter():
     """V3.8 §5.5: switching the visible mobile lane / expanding View all is
     presentation-only. setAnLane()/toggleAnLane() must not call setSource/
-    activate/applyFilter or assign state.source/state.filter, and the
-    default-lane election runs ONLY while no lane is chosen (an OR on the
-    chosen lane's emptiness would hijack a user's empty-lane tap — HK
-    adversarial-review finding 1)."""
+    activate/applyFilter or assign state.source/state.filter. The enhancer
+    adopts the server's deterministic election and never renders a second
+    action surface from client data."""
     text = _composer_text()
     for fn in ("setAnLane", "toggleAnLane"):
         m = re.search(r"function " + fn + r"\b.*?\n  \}", text, re.S)
@@ -463,16 +456,37 @@ def test_act_now_presentation_controls_never_touch_population_or_filter():
                 f"{fn}() references {forbidden!r} — Act-Now presentation "
                 "controls must never mutate the Prophet population or filter"
             )
-    m2 = re.search(r"function renderActNow\b.*?(?=\n  function )", text, re.S)
-    assert m2, "could not locate renderActNow() function body via regex"
-    body2 = m2.group(0)
-    assert "if (state.anLane == null) {" in body2, (
-        "renderActNow() lost the null-only default-lane election guard"
-    )
-    assert not re.search(r"state\.anLane == null\s*\|\|", body2), (
-        "the default-lane election guard is an OR — a chosen-but-empty lane "
-        "would be silently overridden on every render"
-    )
+    assert "renderActNow" not in text
+    adopt = re.search(r"function adoptActNow\b.*?(?=\n  function )", text, re.S)
+    assert adopt and 'getAttribute("data-ca-an-default") === "true"' in adopt.group(0)
+    assert 'host.classList.add("is-enhanced")' in adopt.group(0)
+    template = _template_text()
+    assert "('avoid' if _ca_red else 'buy')" in template
+
+
+def test_act_now_enhancement_reconciles_fragments_without_replacing_owner_nodes():
+    """The static owner remains an honest anchor fallback; the composer
+    upgrades those exact controls in place and owns action-local history."""
+    text = _composer_text()
+    template = _template_text()
+    assert '<div class="ca-v36-an-seg">' in template
+    assert '<a href="#anv2-buy" data-ca-an-lane="buy"' in template
+    segment = template[
+        template.index('<div class="ca-v36-an-seg">'):
+        template.index('<div class="anv2-grid ca-v36-an-lanes">')
+    ]
+    assert 'role="tablist"' not in segment
+    assert 'role="tab"' not in segment
+    assert "function toneFromActionHash" in text
+    assert 'seg.setAttribute("role", "tablist")' in text
+    assert 'tab.setAttribute("role", "tab")' in text
+    assert 'tab.setAttribute("aria-controls", laneId)' in text
+    assert 'window.addEventListener("hashchange", reconcileActionLocation)' in text
+    assert 'window.addEventListener("popstate", reconcileActionLocation)' in text
+    assert "history.pushState" in text
+    assert "cloneNode(" not in re.search(
+        r"function adoptActNow\b.*?(?=\n  function )", text, re.S
+    ).group(0)
 
 
 def test_known_zero_group_keeps_research_route_and_lane_order_is_owner_order():
@@ -482,10 +496,8 @@ def test_known_zero_group_keeps_research_route_and_lane_order_is_owner_order():
     lane order is the ACTION owner's own DOM order (laneIdx), never the
     theme/leadership axis."""
     text = _composer_text()
-    m = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
-    assert "x.href" in m.group(0) and "ca-v36-an-go" in m.group(0), (
-        "anRowHtml() no longer renders the owner group-research route"
-    )
+    template = _template_text()
+    assert 'class="anv2-name-link ca-v36-an-go" href="sectors/{{ it.ticker }}.html"' in template
     m2 = re.search(r"function emptyStateHtml\b.*?(?=\n  function )", text, re.S)
     assert m2, "could not locate emptyStateHtml() function body via regex"
     e_body = m2.group(0)
@@ -502,11 +514,8 @@ def test_known_zero_group_keeps_research_route_and_lane_order_is_owner_order():
     assert "laneIdx: out.length" in text, (
         "collectSectors() no longer stamps the action owner's row order"
     )
-    m3 = re.search(r"function anLaneItems\b.*?(?=\n  function )", text, re.S)
-    assert re.search(r"a\.laneIdx \|\| 0\) - \(b\.laneIdx \|\| 0", m3.group(0)), (
-        "anLaneItems() no longer sorts by laneIdx — the leadership axis "
-        "would order/gate the action surface"
-    )
+    assert "renderActNow" not in text
+    assert "{% for it in items %}{{ _ca_anrow(it, lane) }}{% endfor %}" in template
 
 
 def test_fresh_cue_lives_in_prophet_header_and_is_absent_when_zero():

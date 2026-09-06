@@ -27,7 +27,8 @@
        visible on the mobile segmented selector; anOpen = per-lane View-all
        expansion. Neither ever touches source/filter — a lane change must not
        mutate the Prophet selection until a group is actually chosen. */
-    anLane: null, anOpen: {}, membershipKnown: false };
+    anLane: null, anDefault: null, anOpen: {}, anMedia: null,
+    anHistoryBound: false, membershipKnown: false };
   var rowsByTicker = Object.create(null);
   var tableObserver = null;
 
@@ -259,73 +260,122 @@
     host.hidden = !sb;
   }
 
-  /* What to Act On Now (V3.8 §5) — the restored high-frequency customer job,
-     AT REST above Prophet. Sectors partition by lane 1:1 via `tone`, minted
-     straight from LANE_DEFS in collectSectors() — never a second lane
-     vocabulary. Row rows carry the same data-hk-lead-id the leadership rows
-     use, so activation runs through the one existing delegation path
-     (activate(): filter only — the Top Picks | All Candidates population is
-     never touched). At rest each lane shows at most AN_AT_REST rows; the
-     remainder is behind a per-lane View all toggle. A lane's Prophet count
-     chip renders only when canonical membership is known — unknown
-     membership must never render as 0. */
-  var AN_AT_REST = 3;
-  function anLaneItems(tone) {
-    /* Sorted by the action owner's own lane order (laneIdx), NOT by the
-       rotation-rank order state.sectors carries for the Leadership surface. */
-    return state.sectors.filter(function (x) { return x.tone === tone; })
-      .sort(function (a, b) { return (a.laneIdx || 0) - (b.laneIdx || 0); });
+  /* What to Act On Now is server-owned. The enhancer may change only the
+     selector state, lane visibility, focus, and the active lane's in-place
+     expansion. It never creates, moves, clones, filters, or reorders rows. */
+  function actionHost() { return qs("#hk-v37-an-body"); }
+  function actionTabs() {
+    var host = actionHost();
+    return host ? qsa("[data-hk-an-lane]", host) : [];
   }
-  /* Each row = filter button + the owner's own group-research route (the
-     harvested sectors/<id>.html href). The route is what keeps a known-zero
-     group useful as a research destination (§5.4/§10) instead of a dead end. */
-  function anRowHtml(x) {
-    var countHtml = x.count != null ? '<span class="hk-v37-an-n">' + x.count + ' · ' + bi("Prophet", "候选") + '</span>' : '';
-    var go = x.href ? '<a class="hk-v37-an-go" href="' + esc(x.href) + '" aria-label="' + esc(x.name.en) + ' sector research">↗</a>' : '';
-    var act = x.members != null ? ' data-hk-lead-id="' + esc(x.id) + '"' : ' disabled';
-    return '<div class="hk-v37-an-row-w" data-action-id="' + esc(x.id) + '"><button class="hk-v37-an-row" type="button"' + act + '><span class="hk-v37-an-name">' + bi(x.name.en, x.name.zh) + '</span>' + countHtml + '</button>' + go + '</div>';
+  function actionLanes() {
+    var host = actionHost();
+    return host ? qsa("[data-hk-an-lane-body]", host) : [];
   }
-  function anLaneHtml(lane) {
-    var items = anLaneItems(lane.tone), open = !!state.anOpen[lane.tone];
-    var shown = open ? items : firstN(items, AN_AT_REST);
-    var body = shown.length ? shown.map(anRowHtml).join("") : '<div class="hk-v37-an-empty">—</div>';
-    var more = items.length > AN_AT_REST
-      ? '<button class="hk-v37-an-more" type="button" data-hk-an-view="' + esc(lane.tone) + '" aria-expanded="' + open + '">' +
-        (open ? bi("Show fewer", "收起") : bi("View all " + items.length, "查看全部 " + items.length)) + '</button>'
-      : '';
-    var current = state.anLane === lane.tone ? " is-current" : "";
-    return '<div class="hk-v37-an-lane' + current + '" id="' + esc(lane.sel.slice(1)) + '" data-action-lane-body="' + esc(lane.tone) + '" data-hk-an-lane-body="' + esc(lane.tone) + '"><div class="hk-v37-an-hd ' + lane.tone + '"><span>' + bi(lane.en, lane.zh) + '</span><b>' + items.length + '</b></div>' + body + more + '</div>';
+  function toneFromActionHash() {
+    var id = location.hash ? location.hash.slice(1) : "";
+    var lane = actionLanes().find(function (node) { return node.id === id; });
+    return lane ? lane.getAttribute("data-hk-an-lane-body") : null;
   }
-  function renderActNow() {
-    var host = qs("#hk-v37-an-body"); if (!host) return;
-    if (state.anLane == null) {
-      /* Mobile default lane: Buy Now when non-empty, else the next non-empty
-         lane in the owner's own urgency order (§5.5). Elected ONLY while no
-         lane has been chosen yet — a user who taps an empty lane keeps it
-         and sees its truthful "—" body; re-electing on every render would
-         silently snap the selector back to Buy Now (adversarial review
-         2026-08-27, finding 1). */
-      for (var i = 0; i < LANE_DEFS.length; i++) {
-        if (anLaneItems(LANE_DEFS[i].tone).length) { state.anLane = LANE_DEFS[i].tone; break; }
-      }
-      if (state.anLane == null) state.anLane = LANE_DEFS[0].tone;
+  function laneIdForTone(tone) {
+    var tab = actionTabs().find(function (node) { return node.getAttribute("data-hk-an-lane") === tone; });
+    var href = tab && tab.getAttribute("href");
+    return href && /^#[A-Za-z][A-Za-z0-9_.:-]*$/.test(href) ? href.slice(1) : null;
+  }
+  function writeActionHash(tone, mode) {
+    var laneId = laneIdForTone(tone), next = laneId ? "#" + laneId : "";
+    if (!next || location.hash === next) return;
+    if (mode === "replace") history.replaceState(null, "", next);
+    else history.pushState(null, "", next);
+  }
+  function syncActNow(focusTone) {
+    var host = actionHost(); if (!host) return;
+    var mobile = window.matchMedia("(max-width: 680px)").matches;
+    host.setAttribute("data-active-lane", state.anLane || "");
+    var seg = qs(".hk-v37-an-seg", host);
+    if (seg) {
+      if (mobile) { seg.setAttribute("role", "tablist"); seg.setAttribute("aria-label", "What to Act On Now lanes"); }
+      else { seg.removeAttribute("role"); seg.removeAttribute("aria-label"); }
     }
-    /* The count rides as a separate fixed badge so a narrow segment button
-       ellipsizes the title only — §5.5 requires every lane title AND count
-       accessible from the selector. */
-    var seg = '<div class="hk-v37-an-seg" role="tablist">' + LANE_DEFS.map(function (lane) {
-      return '<button type="button" role="tab" data-hk-an-lane="' + esc(lane.tone) + '" aria-selected="' + (state.anLane === lane.tone) + '"><span class="hk-v37-an-seg-t">' + bi(lane.en, lane.zh) + '</span><b>' + anLaneItems(lane.tone).length + '</b></button>';
-    }).join("") + '</div>';
-    host.innerHTML = seg + '<div class="hk-v37-an-lanes">' + LANE_DEFS.map(anLaneHtml).join("") + '</div>';
-    markLeadership();
+    actionTabs().forEach(function (tab) {
+      var tone = tab.getAttribute("data-hk-an-lane"), active = tone === state.anLane;
+      var laneId = laneIdForTone(tone);
+      if (mobile) {
+        tab.id = "hk-v37-an-tab-" + tone;
+        tab.setAttribute("role", "tab");
+        tab.setAttribute("aria-controls", laneId);
+        tab.setAttribute("aria-selected", active ? "true" : "false");
+        tab.setAttribute("tabindex", active ? "0" : "-1");
+      } else {
+        tab.removeAttribute("id");
+        tab.removeAttribute("role");
+        tab.removeAttribute("aria-controls");
+        tab.removeAttribute("aria-selected");
+        tab.removeAttribute("tabindex");
+      }
+      if (active && focusTone === tone) tab.focus();
+    });
+    actionLanes().forEach(function (lane) {
+      var tone = lane.getAttribute("data-hk-an-lane-body"), active = tone === state.anLane;
+      lane.classList.toggle("is-current", active);
+      if (mobile) {
+        lane.setAttribute("role", "tabpanel");
+        lane.setAttribute("aria-labelledby", "hk-v37-an-tab-" + tone);
+        lane.hidden = !active;
+      } else {
+        lane.removeAttribute("role");
+        lane.removeAttribute("aria-labelledby");
+        lane.hidden = false;
+      }
+    });
   }
-  function setAnLane(tone) {
+  function adoptActNow() {
+    var host = actionHost(), tabs = actionTabs();
+    var selected = tabs.find(function (tab) { return tab.getAttribute("data-hk-an-default") === "true"; });
+    if (!host || !tabs.length) return;
+    state.anDefault = selected ? selected.getAttribute("data-hk-an-lane") : tabs[0].getAttribute("data-hk-an-lane");
+    state.anLane = toneFromActionHash() || state.anDefault;
+    host.classList.add("is-enhanced");
+    if (/^#anv2-/.test(location.hash) && !toneFromActionHash()) writeActionHash(state.anDefault, "replace");
+    if (!state.anMedia) {
+      state.anMedia = window.matchMedia("(max-width: 680px)");
+      var resizeActionMode = function () { syncActNow(); };
+      if (state.anMedia.addEventListener) state.anMedia.addEventListener("change", resizeActionMode);
+      else if (state.anMedia.addListener) state.anMedia.addListener(resizeActionMode);
+    }
+    if (!state.anHistoryBound) {
+      window.addEventListener("hashchange", reconcileActionLocation);
+      window.addEventListener("popstate", reconcileActionLocation);
+      state.anHistoryBound = true;
+    }
+    syncActNow();
+  }
+  function reconcileActionLocation() {
+    var tone = toneFromActionHash() || state.anDefault;
+    if (!tone) return;
+    if (/^#anv2-/.test(location.hash) && !toneFromActionHash()) writeActionHash(tone, "replace");
+    state.anLane = tone;
+    var focused = document.activeElement && document.activeElement.closest &&
+      document.activeElement.closest("[data-hk-an-lane]");
+    syncActNow(focused || /^#anv2-/.test(location.hash) ? tone : null);
+  }
+  function setAnLane(tone, focus, historyMode) {
     /* Presentation-only: switching the visible mobile lane must not mutate
-       the Prophet selection/filter until a group row is actually chosen. */
-    state.anLane = tone; renderActNow();
+       the Prophet selection/filter until a group is actually chosen. */
+    if (!actionTabs().some(function (tab) { return tab.getAttribute("data-hk-an-lane") === tone; })) return;
+    state.anLane = tone;
+    syncActNow(focus ? tone : null);
+    if (historyMode !== false) writeActionHash(tone, historyMode === "replace" ? "replace" : "push");
   }
   function toggleAnLane(tone) {
-    state.anOpen[tone] = !state.anOpen[tone]; renderActNow();
+    var lane = actionLanes().find(function (node) { return node.getAttribute("data-hk-an-lane-body") === tone; });
+    if (!lane) return;
+    var list = qs(".hk-v37-an-list", lane), button = qs("[data-hk-an-view]", lane);
+    if (!list || !button) return;
+    var open = list.classList.contains("is-collapsed");
+    list.classList.toggle("is-collapsed", !open);
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+    state.anOpen[tone] = open;
   }
 
   function itemForFilter() {
@@ -536,11 +586,23 @@
          segment/View-all buttons never carry data-hk-lead-id, and neither
          handler touches source/filter. */
       b = e.target.closest("[data-hk-an-lane]"); if (b) { e.preventDefault(); return setAnLane(b.getAttribute("data-hk-an-lane")); }
-      b = e.target.closest("[data-hk-an-view]"); if (b) { e.preventDefault(); return toggleAnLane(b.getAttribute("data-hk-an-view")); }
+      b = e.target.closest("[data-hk-an-view]"); if (b) { e.preventDefault(); setAnLane(b.getAttribute("data-hk-an-view")); return toggleAnLane(b.getAttribute("data-hk-an-view")); }
       b = e.target.closest("[data-hk-lead-id]"); if (b) return activate(b.getAttribute("data-hk-lead-id"));
       if (e.target.closest("#hk-v37-filter")) { state.filter = null; return applyFilter(); }
       if (e.target.closest("#hk-v37-expand")) return openModal();
       if (e.target.closest(".hk-v37-empty-switch")) return setSource("all");
+    });
+    root.addEventListener("keydown", function (e) {
+      var tab = e.target.closest("[data-hk-an-lane]");
+      if (!tab) return;
+      var tabs = actionTabs(), index = tabs.indexOf(tab), next = index;
+      if (e.key === "ArrowRight") next = (index + 1) % tabs.length;
+      else if (e.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = tabs.length - 1;
+      else if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      setAnLane(tabs[next].getAttribute("data-hk-an-lane"), true);
     });
   }
 
@@ -556,7 +618,7 @@
       }
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
     }
-    renderActNow(); renderLeadership(); renderFlowCue();
+    adoptActNow(); renderLeadership(); renderFlowCue();
     setSource(state.source);
     var selectedView = qs("[data-hk-view][aria-selected='true']", main);
     adoptView(selectedView && selectedView.getAttribute("data-hk-view"));

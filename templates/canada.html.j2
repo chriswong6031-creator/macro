@@ -864,8 +864,8 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 {% set _ca_bot = _ca_actions.get('buy_soon', []) if _ca_action_owner_valid else [] %}
 {% set _ca_red = (_ca_actions.get('take_profits', []) + _ca_actions.get('avoid', [])) if _ca_action_owner_valid else [] %}
 {% set _ca_action_has_rows = _ca_action_owner_valid and (_ca_buy or _ca_pull or _ca_bot or _ca_red) %}
-{% set _ca_action_default = 'buy' if _ca_buy else ('near' if _ca_pull else ('wait' if _ca_bot else 'avoid')) %}
-{% if mode == 'stocks' and _ca_action_has_rows %}
+{% set _ca_action_default = 'buy' if _ca_buy else ('near' if _ca_pull else ('wait' if _ca_bot else ('avoid' if _ca_red else 'buy'))) %}
+{% if mode == 'stocks' and _ca_action_owner_valid %}
 <!-- ===== Act-Now v2 — four-lane board, matching china_stocks.html ===== -->
 <style>
 .anv2-board .anv2-name-link{color:inherit;text-decoration:none}
@@ -886,7 +886,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 .row-pop-mark .ic-svg{width:17px;height:17px;display:block}
 </style>
 {{ lens.lens_css() }}
-<div class="panel anv2-board" id="act-now" data-action-owner-state="available">
+<div class="panel anv2-board" id="act-now" data-action-owner-state="{{ 'available' if _ca_action_has_rows else 'empty' }}">
     {{ dc.dc_css() }}
   <div class="anv2-hd">
     <h2>{{ t('What to Act On Now', '现在行动') }}
@@ -908,12 +908,13 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       <span class="muted" style="font-size:11px">{{ t('sectors as of', '板块截至') }} {{ latest.date }}</span>
     </div>
   </div>
+  {% if not _ca_action_has_rows %}<p class="anv2-empty ca-v36-an-all-empty">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</p>{% endif %}
   <div class="ca-v36-an-body" id="ca-v36-an-body">
-  <div class="ca-v36-an-seg" role="tablist">
-    <a role="tab" href="#anv2-buy" data-ca-an-lane="buy" aria-selected="{{ 'true' if _ca_action_default == 'buy' else 'false' }}"><span class="ca-v36-an-seg-t">{{ t('Buy Now', '立即买入') }}</span><b>{{ _ca_buy|length }}</b></a>
-    <a role="tab" href="#anv2-pull" data-ca-an-lane="near" aria-selected="{{ 'true' if _ca_action_default == 'near' else 'false' }}"><span class="ca-v36-an-seg-t">{{ t('In Favour', '看好') }}</span><b>{{ _ca_pull|length }}</b></a>
-    <a role="tab" href="#anv2-bot" data-ca-an-lane="wait" aria-selected="{{ 'true' if _ca_action_default == 'wait' else 'false' }}"><span class="ca-v36-an-seg-t">{{ t('Bottoming Watch', '洗盘观察') }}</span><b>{{ _ca_bot|length }}</b></a>
-    <a role="tab" href="#anv2-red" data-ca-an-lane="avoid" aria-selected="{{ 'true' if _ca_action_default == 'avoid' else 'false' }}"><span class="ca-v36-an-seg-t">{{ t('Reduce / Avoid', '减仓 / 回避') }}</span><b>{{ _ca_red|length }}</b></a>
+  <div class="ca-v36-an-seg">
+    <a href="#anv2-buy" data-ca-an-lane="buy"{% if _ca_action_default == 'buy' %} data-ca-an-default="true"{% endif %}><span class="ca-v36-an-seg-t">{{ t('Buy Now', '立即买入') }}</span><b>{{ _ca_buy|length }}</b></a>
+    <a href="#anv2-pull" data-ca-an-lane="near"{% if _ca_action_default == 'near' %} data-ca-an-default="true"{% endif %}><span class="ca-v36-an-seg-t">{{ t('In Favour', '看好') }}</span><b>{{ _ca_pull|length }}</b></a>
+    <a href="#anv2-bot" data-ca-an-lane="wait"{% if _ca_action_default == 'wait' %} data-ca-an-default="true"{% endif %}><span class="ca-v36-an-seg-t">{{ t('Bottoming Watch', '洗盘观察') }}</span><b>{{ _ca_bot|length }}</b></a>
+    <a href="#anv2-red" data-ca-an-lane="avoid"{% if _ca_action_default == 'avoid' %} data-ca-an-default="true"{% endif %}><span class="ca-v36-an-seg-t">{{ t('Reduce / Avoid', '减仓 / 回避') }}</span><b>{{ _ca_red|length }}</b></a>
   </div>
   <div class="anv2-grid ca-v36-an-lanes">
     {%- macro _ca_anrow(it, lane) -%}
@@ -1013,12 +1014,12 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       <div class="anv2-lane-hd ca-v36-an-hd {{ _ca_tone }}">
         <span><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span></span><b>{{ items|length }}</b>
       </div>
-      <div class="anv2-lane-body lst-wrap">
-        <div class="anv2-lst lst-collapse lst-cap3 is-collapsed">
+      <div class="anv2-lane-body ca-v36-an-lane-body">
+        <div class="anv2-lst ca-v36-an-list is-collapsed">
           {% for it in items %}{{ _ca_anrow(it, lane) }}{% endfor %}
           {% if not items %}<div class="anv2-empty">{{ t('No sectors in this lane today.', '今天此栏暂无板块。') }}</div>{% endif %}
         </div>
-        {% if items|length > 3 %}<button class="lst-more ca-v36-an-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('View all', '查看全部') }} {{ items|length }}</span><span class="lm-hide">{{ t('Show fewer', '收起') }}</span></button>{% endif %}
+        {% if items|length > 3 %}<button class="ca-v36-an-more" type="button" data-ca-an-view="{{ _ca_tone }}" aria-expanded="false"><span class="lm-show">{{ t('View all', '查看全部') }} {{ items|length }}</span><span class="lm-hide">{{ t('Show fewer', '收起') }}</span></button>{% endif %}
       </div>
     </div>
     {%- endmacro -%}
@@ -1032,9 +1033,7 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
 {% endif %}
 
 {% if mode == 'stocks' %}
-{% if _ca_action_owner_valid and not _ca_action_has_rows %}
-<div class="panel anv2-board ca-v36-empty ca-v36-static-state" id="act-now" data-action-owner-state="empty">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</div>
-{% elif not _ca_action_owner_valid %}
+{% if not _ca_action_owner_valid %}
 <div class="panel anv2-board ca-v36-empty ca-v36-static-state" id="act-now" data-action-owner-state="unavailable">{{ t('Action owner unavailable.', '行动数据暂不可用。') }}</div>
 {% endif %}
 </section>

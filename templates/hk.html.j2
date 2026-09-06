@@ -3215,8 +3215,8 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   {% set _hk_bot = _hk_actions.get('buy_soon', []) if _hk_action_owner_valid else [] %}
   {% set _hk_red = (_hk_actions.get('take_profits', []) + _hk_actions.get('avoid', [])) if _hk_action_owner_valid else [] %}
   {% set _hk_action_has_rows = _hk_action_owner_valid and (_hk_buy or _hk_pull or _hk_bot or _hk_red) %}
-  {% set _hk_action_default = 'buy' if _hk_buy else ('near' if _hk_pull else ('wait' if _hk_bot else 'avoid')) %}
-  {% if _hk_action_has_rows %}
+  {% set _hk_action_default = 'buy' if _hk_buy else ('near' if _hk_pull else ('wait' if _hk_bot else ('avoid' if _hk_red else 'buy'))) %}
+  {% if _hk_action_owner_valid %}
   <style>
   /* ---- HKRV-W3: leadership banner + turn chip ---- */
   .hkrv-banner { margin: 0 0 10px; padding: 13px 16px; border-radius: 10px;
@@ -3276,7 +3276,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   .row-pop-mark .ic-svg { width: 17px; height: 17px; display: block; }
   </style>
 {{ lens.lens_css() }}
-  <div class="panel span12 anv2-board" id="act-now" data-action-owner-state="available">
+  <div class="panel span12 anv2-board" id="act-now" data-action-owner-state="{{ 'available' if _hk_action_has_rows else 'empty' }}">
     {{ dc.dc_css() }}
     <div class="anv2-hd">
       <h2>{{ t('What to Act On Now', '现在行动') }}
@@ -3390,12 +3390,13 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
     </div>
     {%- endif -%}
     {# ===== END HKRV-W3 banner ===== #}
+    {% if not _hk_action_has_rows %}<p class="anv2-empty hk-v37-an-all-empty">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</p>{% endif %}
     <div class="hk-v37-an-body" id="hk-v37-an-body">
-    <div class="hk-v37-an-seg" role="tablist">
-      <a role="tab" href="#anv2-buy" data-hk-an-lane="buy" aria-selected="{{ 'true' if _hk_action_default == 'buy' else 'false' }}"><span class="hk-v37-an-seg-t">{{ t('Buy Now', '立即买入') }}</span><b>{{ _hk_buy|length }}</b></a>
-      <a role="tab" href="#anv2-pull" data-hk-an-lane="near" aria-selected="{{ 'true' if _hk_action_default == 'near' else 'false' }}"><span class="hk-v37-an-seg-t">{{ t('In Favour', '看好') }}</span><b>{{ _hk_pull|length }}</b></a>
-      <a role="tab" href="#anv2-bot" data-hk-an-lane="wait" aria-selected="{{ 'true' if _hk_action_default == 'wait' else 'false' }}"><span class="hk-v37-an-seg-t">{{ t('Bottoming Watch', '洗盘观察') }}</span><b>{{ _hk_bot|length }}</b></a>
-      <a role="tab" href="#anv2-red" data-hk-an-lane="avoid" aria-selected="{{ 'true' if _hk_action_default == 'avoid' else 'false' }}"><span class="hk-v37-an-seg-t">{{ t('Reduce / Avoid', '减仓 / 回避') }}</span><b>{{ _hk_red|length }}</b></a>
+    <div class="hk-v37-an-seg">
+      <a href="#anv2-buy" data-hk-an-lane="buy"{% if _hk_action_default == 'buy' %} data-hk-an-default="true"{% endif %}><span class="hk-v37-an-seg-t">{{ t('Buy Now', '立即买入') }}</span><b>{{ _hk_buy|length }}</b></a>
+      <a href="#anv2-pull" data-hk-an-lane="near"{% if _hk_action_default == 'near' %} data-hk-an-default="true"{% endif %}><span class="hk-v37-an-seg-t">{{ t('In Favour', '看好') }}</span><b>{{ _hk_pull|length }}</b></a>
+      <a href="#anv2-bot" data-hk-an-lane="wait"{% if _hk_action_default == 'wait' %} data-hk-an-default="true"{% endif %}><span class="hk-v37-an-seg-t">{{ t('Bottoming Watch', '洗盘观察') }}</span><b>{{ _hk_bot|length }}</b></a>
+      <a href="#anv2-red" data-hk-an-lane="avoid"{% if _hk_action_default == 'avoid' %} data-hk-an-default="true"{% endif %}><span class="hk-v37-an-seg-t">{{ t('Reduce / Avoid', '减仓 / 回避') }}</span><b>{{ _hk_red|length }}</b></a>
     </div>
     <div class="anv2-grid hk-v37-an-lanes">
       {%- macro _hk_anrow(it, lane) -%}
@@ -3496,12 +3497,12 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
         <div class="anv2-lane-hd hk-v37-an-hd {{ _hk_tone }}">
           <span><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span></span><b>{{ items|length }}</b>
         </div>
-        <div class="anv2-lane-body lst-wrap">
-          <div class="anv2-lst lst-collapse lst-cap3 is-collapsed">
+        <div class="anv2-lane-body hk-v37-an-lane-body">
+          <div class="anv2-lst hk-v37-an-list is-collapsed">
             {% for it in items %}{{ _hk_anrow(it, lane) }}{% endfor %}
             {% if not items %}<div class="anv2-empty">{{ t('No sectors in this lane today.', '今天此栏暂无板块。') }}</div>{% endif %}
           </div>
-          {% if items|length > 3 %}<button class="lst-more hk-v37-an-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('View all', '查看全部') }} {{ items|length }}</span><span class="lm-hide">{{ t('Show fewer', '收起') }}</span></button>{% endif %}
+          {% if items|length > 3 %}<button class="hk-v37-an-more" type="button" data-hk-an-view="{{ _hk_tone }}" aria-expanded="false"><span class="lm-show">{{ t('View all', '查看全部') }} {{ items|length }}</span><span class="lm-hide">{{ t('Show fewer', '收起') }}</span></button>{% endif %}
         </div>
       </div>
       {%- endmacro -%}
@@ -3513,11 +3514,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
     </div>
   </div>
   {% else %}
-  {% if _hk_action_owner_valid %}
-  <div class="panel span12 anv2-board hk-v37-empty hk-v37-static-state" id="act-now" data-action-owner-state="empty">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</div>
-  {% else %}
   <div class="panel span12 anv2-board hk-v37-empty hk-v37-static-state" id="act-now" data-action-owner-state="unavailable">{{ t('Action owner unavailable.', '行动数据暂不可用。') }}</div>
-  {% endif %}
   {% endif %}
   </section>
   {% endif %}

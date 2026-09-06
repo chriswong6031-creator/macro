@@ -180,13 +180,22 @@
 }
 .mx-stockdash--ca .ca-v36-an-seg-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-stockdash--ca .ca-v36-an-seg b { flex: none; font-variant-numeric: tabular-nums; font-weight: 700; }
-.mx-stockdash--ca .ca-v36-an-seg :is(button, a)[aria-selected=true] {
+.mx-stockdash--ca .ca-v36-an-body.is-enhanced .ca-v36-an-seg :is(button, a)[aria-selected=true],
+.mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):not(:has(.ca-v36-an-lane:target)) .ca-v36-an-seg [data-ca-an-default=true],
+.mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):has(#anv2-buy:target) .ca-v36-an-seg [href="#anv2-buy"],
+.mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):has(#anv2-pull:target) .ca-v36-an-seg [href="#anv2-pull"],
+.mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):has(#anv2-bot:target) .ca-v36-an-seg [href="#anv2-bot"],
+.mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):has(#anv2-red:target) .ca-v36-an-seg [href="#anv2-red"] {
   color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); background: var(--panel);
+}
+.mx-stockdash--ca .ca-v36-an-seg :is(button, a):focus-visible {
+  outline: 2px solid var(--ink-link, var(--link)); outline-offset: 2px;
 }
 
 .mx-stockdash--ca .ca-v36-an-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .mx-stockdash--ca .ca-v36-an-lane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--panel2); overflow: hidden; }
 .mx-stockdash--ca .ca-v36-an-body .anv2-lane-body { padding: 0; }
+.mx-stockdash--ca .ca-v36-an-list.is-collapsed > :nth-child(n+4) { display: none; }
 .mx-stockdash--ca .ca-v36-an-body .anv2-lst .anv2-row {
   min-width: 0; padding: 0; overflow: visible; border-bottom: 0;
 }
@@ -240,6 +249,9 @@
   background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; cursor: pointer;
 }
 .mx-stockdash--ca .ca-v36-an-more:hover { color: var(--text); }
+.mx-stockdash--ca .ca-v36-an-more .lm-hide { display: none; }
+.mx-stockdash--ca .ca-v36-an-more[aria-expanded="true"] .lm-show { display: none; }
+.mx-stockdash--ca .ca-v36-an-more[aria-expanded="true"] .lm-hide { display: inline; }
 
 .mx-stockdash--ca .ca-v36-empty-go {
   display: inline-block; margin-top: 10px; color: var(--ink-link, var(--link));
@@ -628,7 +640,12 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg :is(button, a) {
   background: color-mix(in srgb, var(--text) 6%, var(--panel2));
 }
 html[data-theme=light] .mx-stockdash--ca .ca-v36-seg button[aria-selected=true],
-html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg :is(button, a)[aria-selected=true] {
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-body.is-enhanced .ca-v36-an-seg :is(button, a)[aria-selected=true],
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):not(:has(.ca-v36-an-lane:target)) .ca-v36-an-seg [data-ca-an-default=true],
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):has(#anv2-buy:target) .ca-v36-an-seg [href="#anv2-buy"],
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):has(#anv2-pull:target) .ca-v36-an-seg [href="#anv2-pull"],
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):has(#anv2-bot:target) .ca-v36-an-seg [href="#anv2-bot"],
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):has(#anv2-red:target) .ca-v36-an-seg [href="#anv2-red"] {
   background: var(--panel);
   border-color: var(--line);
   color: var(--text);
@@ -728,9 +745,9 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
   }
   .mx-stockdash--ca .ca-v36-an-lanes { grid-template-columns: 1fr; }
   .mx-stockdash--ca .ca-v36-an-lane { display: none; }
-  .mx-stockdash--ca .ca-v36-an-lane.is-current { display: block; }
-  .mx-stockdash--ca .ca-v36-an-lanes:has(.ca-v36-an-lane:target) .ca-v36-an-lane.is-current { display: none; }
-  .mx-stockdash--ca .ca-v36-an-lane:target { display: block; }
+  .mx-stockdash--ca .ca-v36-an-body.is-enhanced .ca-v36-an-lane.is-current,
+  .mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced):not(:has(.ca-v36-an-lane:target)) .ca-v36-an-lane.is-current,
+  .mx-stockdash--ca .ca-v36-an-body:not(.is-enhanced) .ca-v36-an-lane:target { display: block; }
   /* One lane at a time: a column/row divider would be a rule against nothing.
      A plain `.ca-v36-an-lane` reset is specificity-dead here — the desktop
      divider rules it needs to beat (`+ .ca-v36-an-lane` above, `:nth-child`
@@ -850,8 +867,8 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
 }
 .mx-stockdash--hk #stocktable-wrap tr.hk-v37-hidden { display: none !important; }
 
-/* What to Act On Now: the owner-rendered rows are the first frame; the
-   composer may replace only this body with equivalent compact controls. */
+/* What to Act On Now: the server owns every selector, lane, and row. The
+   composer only enhances state/focus and expands one lane in place. */
 .mx-stockdash--hk .hk-v37-an-body { padding: 4px 12px 5px; }
 .mx-stockdash--hk .hk-v37-an-seg { display: none; gap: 6px; margin-bottom: 10px; }
 .mx-stockdash--hk .hk-v37-an-seg :is(button, a) {
@@ -862,14 +879,23 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
 }
 .mx-stockdash--hk .hk-v37-an-seg-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-stockdash--hk .hk-v37-an-seg b { flex: none; font-variant-numeric: tabular-nums; font-weight: 700; }
-.mx-stockdash--hk .hk-v37-an-seg :is(button, a)[aria-selected=true] {
+.mx-stockdash--hk .hk-v37-an-body.is-enhanced .hk-v37-an-seg :is(button, a)[aria-selected=true],
+.mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):not(:has(.hk-v37-an-lane:target)) .hk-v37-an-seg [data-hk-an-default=true],
+.mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):has(#anv2-buy:target) .hk-v37-an-seg [href="#anv2-buy"],
+.mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):has(#anv2-pull:target) .hk-v37-an-seg [href="#anv2-pull"],
+.mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):has(#anv2-bot:target) .hk-v37-an-seg [href="#anv2-bot"],
+.mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):has(#anv2-red:target) .hk-v37-an-seg [href="#anv2-red"] {
   color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); background: var(--panel);
+}
+.mx-stockdash--hk .hk-v37-an-seg :is(button, a):focus-visible {
+  outline: 2px solid var(--ink-link, var(--link)); outline-offset: 2px;
 }
 .mx-stockdash--hk .hk-v37-an-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .mx-stockdash--hk .hk-v37-an-lane {
   min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--panel2);
 }
 .mx-stockdash--hk .hk-v37-an-body .anv2-lane-body { padding: 0; }
+.mx-stockdash--hk .hk-v37-an-list.is-collapsed > :nth-child(n+4) { display: none; }
 .mx-stockdash--hk .hk-v37-an-body .anv2-lst .anv2-row {
   min-width: 0; padding: 0; overflow: visible; border-bottom: 0;
 }
@@ -918,6 +944,9 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal .ca-v36-modal-x:hover {
   background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; cursor: pointer;
 }
 .mx-stockdash--hk .hk-v37-an-more:hover { color: var(--text); }
+.mx-stockdash--hk .hk-v37-an-more .lm-hide { display: none; }
+.mx-stockdash--hk .hk-v37-an-more[aria-expanded="true"] .lm-show { display: none; }
+.mx-stockdash--hk .hk-v37-an-more[aria-expanded="true"] .lm-hide { display: inline; }
 
 .mx-stockdash--hk .hk-v37-lead-list { padding: 2px 0; }
 .mx-stockdash--hk .hk-v37-lead-list-h {
@@ -1036,7 +1065,12 @@ html[data-theme=light] .mx-stockdash--hk .hk-v37-an-go { border-left-style: soli
 html[data-theme=light] .mx-stockdash--hk .hk-v37-an-more { border-top-style: solid; border-top-color: color-mix(in srgb, var(--line) 70%, transparent); }
 html[data-theme=light] .mx-stockdash--hk .hk-v37-an-more:hover { color: var(--ink-link, var(--link)); }
 html[data-theme=light] .mx-stockdash--hk .hk-v37-an-seg :is(button, a) { background: color-mix(in srgb, var(--text) 6%, var(--panel2)); }
-html[data-theme=light] .mx-stockdash--hk .hk-v37-an-seg :is(button, a)[aria-selected=true] {
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-body.is-enhanced .hk-v37-an-seg :is(button, a)[aria-selected=true],
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):not(:has(.hk-v37-an-lane:target)) .hk-v37-an-seg [data-hk-an-default=true],
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):has(#anv2-buy:target) .hk-v37-an-seg [href="#anv2-buy"],
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):has(#anv2-pull:target) .hk-v37-an-seg [href="#anv2-pull"],
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):has(#anv2-bot:target) .hk-v37-an-seg [href="#anv2-bot"],
+html[data-theme=light] .mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):has(#anv2-red:target) .hk-v37-an-seg [href="#anv2-red"] {
   background: var(--panel); border-color: var(--line); color: var(--text); box-shadow: var(--card-shadow);
 }
 html[data-theme=light] .mx-stockdash--hk .hk-v37-card-grid { background: var(--bg); }
@@ -1111,9 +1145,9 @@ html[data-theme=light] .mx-stockdash--hk .hk-v37-modal-sb { background: var(--pa
   }
   .mx-stockdash--hk .hk-v37-an-lanes { grid-template-columns: 1fr; }
   .mx-stockdash--hk .hk-v37-an-lane { display: none; }
-  .mx-stockdash--hk .hk-v37-an-lane.is-current { display: block; }
-  .mx-stockdash--hk .hk-v37-an-lanes:has(.hk-v37-an-lane:target) .hk-v37-an-lane.is-current { display: none; }
-  .mx-stockdash--hk .hk-v37-an-lane:target { display: block; }
+  .mx-stockdash--hk .hk-v37-an-body.is-enhanced .hk-v37-an-lane.is-current,
+  .mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced):not(:has(.hk-v37-an-lane:target)) .hk-v37-an-lane.is-current,
+  .mx-stockdash--hk .hk-v37-an-body:not(.is-enhanced) .hk-v37-an-lane:target { display: block; }
   html[data-theme=light] .mx-stockdash--hk .hk-v37-an-lane + .hk-v37-an-lane { border-left: 0; }
   .mx-stockdash--hk .hk-v37-card-grid { padding: 10px; }
   .mx-stockdash--hk .hk-v37-lead-row { grid-template-columns: 48px minmax(0, 1fr) auto; }

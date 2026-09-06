@@ -1,6 +1,6 @@
 {
   "disclaimer": "Heuristics identify review targets; they do not determine that a page is bad.",
-  "generated_at": "2026-09-06T08:16:07Z",
+  "generated_at": "2026-09-06T10:50:42Z",
   "metric_notes": {
     "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
@@ -19,18 +19,18 @@
         "asof_present": true,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 3979,
+            "document_height_px": 3978,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 6072,
+            "document_height_px": 6071,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
-        "document_height_px": 3979,
+        "document_height_px": 3978,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
@@ -50,12 +50,12 @@
           "viewport": "desktop"
         },
         "panel_count": 9,
-        "payload_bytes_total": 146582,
+        "payload_bytes_total": 445425,
         "raw_slug_hit_count": 1,
         "raw_slug_hits": [
           "hk_prophet_v2"
         ],
-        "request_count": 29,
+        "request_count": 28,
         "screenshot_completion": 1.0,
         "section_count": 1,
         "source_present": false,
@@ -71,18 +71,18 @@
         "asof_present": true,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 3148,
+            "document_height_px": 3357,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 4108,
+            "document_height_px": 4317,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
-        "document_height_px": 3148,
+        "document_height_px": 3357,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
@@ -102,7 +102,7 @@
           "viewport": "desktop"
         },
         "panel_count": 9,
-        "payload_bytes_total": 674266,
+        "payload_bytes_total": 591432,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 30,
@@ -111,7 +111,7 @@
         "source_present": false,
         "todo_placeholder_hit_count": 0,
         "todo_placeholder_hits": [],
-        "visible_word_count": 472
+        "visible_word_count": 533
       },
       "page_id": "macro:canada_stocks",
       "route": "/canada_stocks.html"
@@ -123,7 +123,7 @@
     "canonical_build_proof": "unavailable",
     "fixture_receipt": {
       "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-      "sha256": "66f8f21fe8a7e5968f6d1c08a858b835d983c68e4f02a6c0f0ce12d804864089"
+      "sha256": "126279b36bcfb4e147715a2743033991e274f866efba788997c409127593c027"
     },
     "kind": "rendered_fixture",
     "production_proof": "none",
@@ -131,11 +131,11 @@
     "rendered_pages": {
       "/canada_stocks.html": {
         "output": "canada_stocks.html",
-        "sha256": "bf0ebdd3973393425247157be2781f7ea615b4135de61ced87855cef971f4798"
+        "sha256": "f9418b2d1145233d20e4c6bd253e651a7199a1a79474eea35569e2f4e4777b50"
       },
       "/hk_stocks.html": {
         "output": "hk_stocks.html",
-        "sha256": "94b5e06171e7fe988e11a9064853ce50f88e3fb6d9314fbf607ae08aaf6688ea"
+        "sha256": "90ec3ccb12d6265716e904909a483876c8649aa9c95b62ac6ad5d7836ccbf79f"
       }
     },
     "resolved_gitdir_or_none": null,

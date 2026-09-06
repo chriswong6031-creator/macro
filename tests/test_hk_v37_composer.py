@@ -516,22 +516,18 @@ def _build_shell_markup(_text: str = "") -> str:
 def test_act_now_renders_at_rest_above_prophet_never_modal_only():
     """V3.8 §13.1: without opening any modal, the user sees the owner-native
     action lanes — group action must not be recoverable only through Expand
-    Leadership. Pins (a) the #hk-v37-actnow section markup sits INSIDE
-    buildShell()'s at-rest page composition, BEFORE the #hk-v37-prophet
-    section (page grammar §4: Action above Prophet); (b) renderActNow() is
-    actually called from the mount path; (c) the V3.7 modal group-action
-    band (hk-v37-modal-lanes) is gone — the at-rest panel is the one home,
-    so the forbidden mutation 'move the lanes back inside openModal()' has
-    no surviving carrier to hide in."""
+    Leadership. Pins the server-owned #hk-v37-actnow markup before Prophet,
+    forbids client reconstruction/movement, and keeps the old modal action
+    band absent so there is exactly one action-surface owner."""
     text = _composer_text()
     shell = _build_shell_markup(text)
     actnow_idx = shell.find('id="hk-v37-actnow"')
     prophet_idx = shell.find('id="hk-v37-prophet"')
     assert actnow_idx != -1, (
-        "buildShell() no longer composes the #hk-v37-actnow section at rest "
+        "the template no longer renders the #hk-v37-actnow section at rest "
         "— the What to Act On Now job is buried again"
     )
-    assert prophet_idx != -1, "buildShell() lost the #hk-v37-prophet section"
+    assert prophet_idx != -1, "the template lost the #hk-v37-prophet section"
     assert actnow_idx < prophet_idx, (
         "the What to Act On Now section must render ABOVE Prophet (§4 page "
         "grammar), not below it"
@@ -555,29 +551,17 @@ def test_act_now_renders_at_rest_above_prophet_never_modal_only():
 
 def test_at_rest_lane_rows_capped_at_three_with_view_all():
     """V3.8 §5.2 density law: no more than 3 group rows per lane at rest;
-    additional content only through the explicit View all expansion. Pins
-    the AN_AT_REST constant at exactly 3, the firstN(items, AN_AT_REST)
-    call inside anLaneHtml()'s collapsed branch, and the View-all control
-    keyed on items.length > AN_AT_REST — raising the constant, bypassing
-    firstN, or unconditionally rendering every row all turn this red."""
-    text = _composer_text()
-    assert re.search(r"var AN_AT_REST = 3;", text), (
-        "AN_AT_REST is no longer exactly 3 — the at-rest density pin "
-        "(≤3 rows per lane before View all) is broken"
-    )
-    m = re.search(r"function anLaneHtml\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate anLaneHtml() function body via regex"
-    body = m.group(0)
-    assert "firstN(items, AN_AT_REST)" in body, (
-        "anLaneHtml() no longer caps the collapsed lane at "
-        "firstN(items, AN_AT_REST) — every row would render at rest"
-    )
-    assert "items.length > AN_AT_REST" in body, (
-        "anLaneHtml() lost the items.length > AN_AT_REST condition for the "
-        "View-all control — either it never appears or it always appears"
-    )
-    assert "data-hk-an-view" in body, (
-        "anLaneHtml() lost the data-hk-an-view View-all control"
+    additional content only through the explicit View all expansion. The
+    server renders every owner row once, while the shared stylesheet caps a
+    collapsed lane at three and the template emits View all only above that
+    threshold."""
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    css = STOCK_CSS.read_text(encoding="utf-8")
+    assert 'class="anv2-lst hk-v37-an-list is-collapsed"' in template
+    assert "{% if items|length > 3 %}" in template and "data-hk-an-view" in template
+    assert re.search(
+        r"\.hk-v37-an-list\.is-collapsed\s*>\s*:nth-child\(n\+4\)\s*\{\s*display:\s*none",
+        css,
     )
 
 
@@ -707,10 +691,6 @@ def test_count_is_labelled_prophet_and_unknown_membership_never_renders_zero():
     for fn, snippet in [
         ("leadRow", 'x.count != null ? x.count : "—"'),
         ("modalRows", 'x.count != null ? x.count : "—"'),
-        # Exact ternary-head pin: a mutation like `(x.count != null || true)`
-        # keeps the bare substring but breaks this shape (adversarial review
-        # 2026-08-27, finding 8).
-        ("anRowHtml", "var countHtml = x.count != null ? '"),
     ]:
         m3 = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
         assert m3, f"could not locate {fn}() function body via regex"
@@ -718,6 +698,8 @@ def test_count_is_labelled_prophet_and_unknown_membership_never_renders_zero():
             f"{fn}() no longer branches on count != null — an unknown "
             "membership would render as zero, and missing ≠ zero"
         )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert "{% if _hk_members.known %}<span class=\"hk-v37-an-n\">" in template
 
 
 # ---------------------------------------------------------------------------
@@ -736,50 +718,59 @@ def test_static_owner_action_board_has_mobile_single_column_grammar():
         stock_css,
         re.S,
     )
-    assert re.search(r"\.hk-v37-an-lane:target\s*\{[^}]*display:\s*block", stock_css)
+    assert re.search(
+        r"\.hk-v37-an-body:not\(\.is-enhanced\).*?\.hk-v37-an-lane:target\s*\{[^}]*display:\s*block",
+        stock_css,
+        re.S,
+    )
+    assert ".hk-v37-an-body.is-enhanced .hk-v37-an-lane.is-current" in stock_css
     assert 'id="act-now"' in template
 
 
 def test_mobile_lane_election_only_when_no_lane_chosen():
     """Adversarial review 2026-08-27, finding 1 (MAJOR): the default-lane
-    election must run ONLY while no lane has been chosen (state.anLane ==
-    null). Guarding it on the chosen lane's emptiness re-elects Buy Now on
-    every render, silently overriding a user who tapped an empty lane and
-    making the empty-lane "—" body unreachable on mobile (§5.5/§13.6 give
-    every lane title an accessible body, empty or not)."""
+    election belongs to the static owner and must be adopted once. The
+    enhancer must not re-elect from client data after a user chooses an empty
+    lane; all-empty deterministically falls back to Buy."""
     text = _composer_text()
-    m = re.search(r"function renderActNow\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate renderActNow() function body via regex"
-    body = m.group(0)
-    assert "if (state.anLane == null) {" in body, (
-        "renderActNow() lost the null-only default-lane election guard"
-    )
-    assert not re.search(r"state\.anLane == null\s*\|\|", body), (
-        "the default-lane election guard is an OR again — a chosen-but-empty "
-        "lane would be overridden back to the first non-empty lane on every "
-        "render, hijacking the user's segment choice"
-    )
-    assert "!anLaneItems(state.anLane).length" not in body, (
-        "renderActNow() re-elects when the chosen lane is empty — the "
-        "election must fire only when NO lane has been chosen yet"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert "renderActNow" not in text
+    adopt = re.search(r"function adoptActNow\b.*?(?=\n  function )", text, re.S)
+    assert adopt and 'getAttribute("data-hk-an-default") === "true"' in adopt.group(0)
+    assert 'host.classList.add("is-enhanced")' in adopt.group(0)
+    assert "('avoid' if _hk_red else 'buy')" in template
+
+
+def test_act_now_enhancement_reconciles_fragments_without_replacing_owner_nodes():
+    """The static owner is an anchor fallback; only the loaded composer may
+    upgrade those same nodes to tabs and bind action-local history."""
+    text = _composer_text()
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert '<div class="hk-v37-an-seg">' in template
+    assert '<a href="#anv2-buy" data-hk-an-lane="buy"' in template
+    assert 'role="tablist"' not in template[template.index('<div class="hk-v37-an-seg">'):template.index('<div class="anv2-grid hk-v37-an-lanes">')]
+    assert "function toneFromActionHash" in text
+    assert 'seg.setAttribute("role", "tablist")' in text
+    assert 'tab.setAttribute("role", "tab")' in text
+    assert 'tab.setAttribute("aria-controls", laneId)' in text
+    assert 'window.addEventListener("hashchange", reconcileActionLocation)' in text
+    assert 'window.addEventListener("popstate", reconcileActionLocation)' in text
+    assert "history.pushState" in text
+    assert "cloneNode(" not in re.search(
+        r"function adoptActNow\b.*?(?=\n  function )", text, re.S
+    ).group(0)
 
 
 def test_act_now_rows_carry_group_research_route_and_known_zero_state():
     """Adversarial review 2026-08-27, finding 2 (MAJOR): §5.4/§10 — a
     known-zero group must stay useful as a group-research destination.
-    Pins (a) anRowHtml() renders the harvested owner href as a live
+    Pins (a) the server row renders the harvested owner href as a live
     .hk-v37-an-go route link; (b) emptyStateHtml() has a distinct known-zero
     branch (members known, size 0) with quiet §10 copy — never the
     filter-miss language — that keeps the research route usable."""
     text = _composer_text()
-    m = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate anRowHtml() function body via regex"
-    body = m.group(0)
-    assert "x.href" in body and "hk-v37-an-go" in body, (
-        "anRowHtml() no longer renders the harvested sector href as an "
-        ".hk-v37-an-go route — known-zero groups become dead ends again"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert 'class="anv2-name-link hk-v37-an-go" href="sectors/{{ it.ticker }}.html"' in template
     m2 = re.search(r"function emptyStateHtml\b.*?(?=\n  function )", text, re.S)
     assert m2, "could not locate emptyStateHtml() function body via regex"
     empty_body = m2.group(0)
@@ -840,44 +831,32 @@ def test_at_rest_action_rows_carry_no_metric_towers():
     """§5.2/§13.5: at-rest action rows carry only the group name, optional
     type cue, optional Prophet count, and a route/filter affordance — never
     performance stacks, score towers, percentile or diagnostic fields. Pins
-    the anRowHtml() surface to exactly the name span + optional count span
-    + optional route link, and bans the §5.2 forbidden-field vocabulary."""
+    the server row summary and the scoped CSS that keeps supplemental card
+    chips and stats out of the at-rest lane."""
     text = _composer_text()
-    m = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate anRowHtml() function body via regex"
-    body = m.group(0)
-    for banned in ("20d", "60d", "5d", "pctile", "percentile", "score",
-                   "priority", "mom", "sparkline"):
-        assert banned not in body, (
-            f"anRowHtml() carries {banned!r} — at-rest action rows must not "
-            "grow performance/score/percentile towers (§5.2)"
-        )
-    spans = re.findall(r'<span class="([^"]+)"', body)
-    assert set(spans) <= {"hk-v37-an-name", "hk-v37-an-n"}, (
-        f"anRowHtml() renders unexpected span classes {spans!r} — the "
-        "at-rest row surface is name + optional count only"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert "renderActNow" not in text
+    assert '<div class="anv2-row-top">' in template
+    assert '<button class="anv2-name hk-v37-an-row"' in template
+    css = STOCK_CSS.read_text(encoding="utf-8")
+    assert ".hk-v37-an-body :is(.anv2-chips, .anv2-stat) { display: none; }" in css
 
 
 def test_act_now_lane_order_is_the_action_owners_order():
     """DEC:V38-ACTION-IS-NOT-LEADERSHIP: the rank axis must not order (or
     via the 3-row cap, gate the at-rest visibility of) the action surface.
-    collectLaneSectors() stamps the owner's own lane row order as laneIdx
-    and anLaneItems() sorts by it, undoing the rotation-rank sort that
-    state.sectors carries for the Leadership surface."""
+    collectLaneSectors() records the owner's lane order for Leadership, while
+    the static action surface preserves the owner's template iteration order
+    independently of that client-side presentation model."""
     text = _composer_text()
     m = re.search(r"function collectLaneSectors\b.*?(?=\n  /\*|\n  function )", text, re.S)
     assert m, "could not locate collectLaneSectors() function body via regex"
     assert "laneIdx: out.length" in m.group(0), (
         "collectLaneSectors() no longer stamps the action owner's row order"
     )
-    m2 = re.search(r"function anLaneItems\b.*?(?=\n  /\*|\n  function )", text, re.S)
-    assert m2, "could not locate anLaneItems() function body via regex"
-    assert re.search(r"a\.laneIdx \|\| 0\) - \(b\.laneIdx \|\| 0", m2.group(0)), (
-        "anLaneItems() no longer sorts by laneIdx — the at-rest action rows "
-        "would surface in rotation-rank order, letting the leadership axis "
-        "decide which action rows are visible under the 3-row cap"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert "{% for it in items %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert "renderActNow" not in text
 
 
 def test_act_now_presentation_controls_never_touch_population_or_filter():
