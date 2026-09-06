@@ -6,13 +6,17 @@ calibrated fields absent. Event identity stays spine.py's own (no second
 event database); event-time vs known-at are both printed (known_at only
 when the source data genuinely supports a distinct clock -- otherwise a
 typed null reason, never fabricated); direct vs second-order materiality is
-labelled; causal labels never exceed uncalibrated association.
+labelled; causal labels never exceed uncalibrated association; weak
+second-order (corpus-dominant themes / ambiguous caps) fails closed rather
+than ranking; no nightly git-tracked impact.jsonl dump.
 
 Events are built via schema.new_event (the real assembly path every adapter
 uses) rather than hand-rolled dicts, so a spine field rename here fails these
-tests instead of leaving them silently green (Major 8).
+tests instead of leaving them silently green.
 """
 from __future__ import annotations
+
+import time
 
 from engine.chronicle import impact, schema
 
@@ -39,14 +43,11 @@ def _ev(source_ref, date, ts=None, source="research_vault", kind="report",
 def test_event_identity_is_spine_own_no_second_database():
     ev = _ev("abc123", "2026-09-01", tickers=["NVDA"])
     proj = impact.project_event_impact(ev)
-    # The projection carries the SAME id spine minted -- it never mints or
-    # derives a new identity of its own.
     assert proj["event_id"] == ev["id"]
 
 
-def test_known_at_printed_when_source_gives_a_genuine_distinct_clock():
-    # research_vault's real adapter path: ts carries the actual published_at
-    # publication time, genuinely distinct from the calendar date.
+def test_event_time_vs_known_at_are_distinct_and_printed():
+    # Alias of the genuine-distinct-clock case — PR acceptance evidence name.
     ev = _ev("x-1", date="2026-08-30", ts="2026-08-30T14:22:00Z", tickers=["AAPL"])
     proj = impact.project_event_impact(ev)
     assert proj["event_time"] == "2026-08-30"
@@ -55,11 +56,15 @@ def test_known_at_printed_when_source_gives_a_genuine_distinct_clock():
     assert proj["event_time"] != proj["known_at"]
 
 
+def test_known_at_printed_when_source_gives_a_genuine_distinct_clock():
+    ev = _ev("x-1b", date="2026-08-30", ts="2026-08-30T14:22:00Z", tickers=["AAPL"])
+    proj = impact.project_event_impact(ev)
+    assert proj["event_time"] == "2026-08-30"
+    assert proj["known_at"] == "2026-08-30T14:22:00Z"
+    assert proj["known_at_reason"] is None
+
+
 def test_known_at_is_null_with_typed_reason_when_ts_is_synthetic_midnight():
-    # Every non-timestamped adapter (adapters.py, earnings_calls.py,
-    # state_log.py) sets ts=f"{date}T00:00:00Z" -- the SAME instant as
-    # event_time, never a real ingestion clock. Printing it as known_at would
-    # fabricate a bitemporal claim the ledger explicitly disclaims (Blocker 1).
     ev = _ev("x-2", date="2026-09-01", ts="2026-09-01T00:00:00Z", tickers=["MSFT"])
     proj = impact.project_event_impact(ev)
     assert proj["event_time"] == "2026-09-01"
@@ -68,8 +73,6 @@ def test_known_at_is_null_with_typed_reason_when_ts_is_synthetic_midnight():
 
 
 def test_clockless_event_projects_null_time_fields_with_typed_reason_not_none_silently():
-    # Blocker 3: a record with no date and no ts must fail closed with a
-    # typed reason, never a bare None with no explanation.
     ev = {"id": "cev-x-clockless", "ts": None, "date": None, "source": "earnings",
           "source_ref": "r", "kind": "earnings", "title": "t", "facts": [],
           "tickers": ["TSLA"], "themes": [], "horizon_hint": "short",
@@ -80,25 +83,36 @@ def test_clockless_event_projects_null_time_fields_with_typed_reason_not_none_si
     assert proj["known_at_reason"] == impact.NO_SOURCE_CLOCK
 
 
+def test_ts_without_date_recovers_event_time_not_known_at_alone():
+    # MINOR: date absent + ts present must not print known_at beside a null
+    # event_time — recover the calendar date from the timestamp.
+    ev = {"id": "cev-x-ts-only", "ts": "2026-09-01T14:00:00Z", "date": None,
+          "source": "research_vault", "source_ref": "r", "kind": "report",
+          "title": "t", "facts": [], "tickers": ["AAPL"], "themes": [],
+          "horizon_hint": "medium", "weight_hint": 1,
+          "links": {"site": None, "source": None, "receipt": None}}
+    proj = impact.project_event_impact(ev)
+    assert proj["event_time"] == "2026-09-01"
+    assert proj["known_at"] == "2026-09-01T14:00:00Z"
+    assert proj["known_at_reason"] is None
+
+
 def test_direct_materiality_for_named_ticker():
     ev = _ev("x-3", "2026-09-01", tickers=["MSFT"])
     proj = impact.project_event_impact(ev)
     assert {"ticker": "MSFT", "materiality": "direct"} in proj["exposures"]
 
 
-def test_second_order_requires_minimum_support_and_carries_k1_evidence():
-    # NVDA is directly named on TWO prior earnings-family events sharing the
-    # ai_capex theme -- meets SECOND_ORDER_MIN_SUPPORT, so a later report
-    # sharing that theme (but naming no ticker) gets NVDA as second_order,
-    # never silently upgraded to direct, with the originating event ids
-    # attached as evidence (Major 5 / K1).
+def test_second_order_materiality_via_co_theme_never_promoted_to_direct():
+    # Narrow theme + MIN_SUPPORT met: second_order labelled, never upgraded.
     earn1 = _ev("e1", "2026-08-30", source="earnings", kind="earnings",
                 tickers=["NVDA"], themes=["ai_capex"])
     earn2 = _ev("e2", "2026-08-31", source="earnings", kind="earnings",
                 tickers=["NVDA"], themes=["ai_capex"])
     report = _ev("r1", "2026-09-02", source="research_vault", tickers=[],
                   themes=["ai_capex"])
-    projections = {p["event_id"]: p for p in impact.project_events_impact([earn1, earn2, report])}
+    projections = {p["event_id"]: p for p in impact.project_events_impact(
+        [earn1, earn2, report])}
     report_proj = projections[report["id"]]
     nvda_exp = next(e for e in report_proj["exposures"] if e["ticker"] == "NVDA")
     assert nvda_exp["materiality"] == "second_order"
@@ -107,57 +121,98 @@ def test_second_order_requires_minimum_support_and_carries_k1_evidence():
                    for e in report_proj["exposures"])
 
 
+def test_second_order_requires_minimum_support_and_carries_k1_evidence():
+    earn1 = _ev("e1b", "2026-08-30", source="earnings", kind="earnings",
+                tickers=["NVDA"], themes=["ai_capex"])
+    earn2 = _ev("e2b", "2026-08-31", source="earnings", kind="earnings",
+                tickers=["NVDA"], themes=["ai_capex"])
+    report = _ev("r1b", "2026-09-02", source="research_vault", tickers=[],
+                  themes=["ai_capex"])
+    projections = {p["event_id"]: p for p in impact.project_events_impact(
+        [earn1, earn2, report])}
+    report_proj = projections[report["id"]]
+    nvda_exp = next(e for e in report_proj["exposures"] if e["ticker"] == "NVDA")
+    assert nvda_exp["materiality"] == "second_order"
+    assert sorted(nvda_exp["source_event_ids"]) == sorted([earn1["id"], earn2["id"]])
+
+
 def test_second_order_needs_minimum_support_single_co_theme_event_is_dropped():
-    # Major 4: a SINGLE co-theme event naming a ticker is not enough support
-    # to propagate it -- prevents one stray event fanning a ticker onto every
-    # sibling under a broad theme.
-    earn = _ev("e1", "2026-08-30", source="earnings", tickers=["NVDA"], themes=["ai_capex"])
-    report = _ev("r1", "2026-09-01", source="research_vault", tickers=[], themes=["ai_capex"])
+    earn = _ev("e1c", "2026-08-30", source="earnings", tickers=["NVDA"], themes=["ai_capex"])
+    report = _ev("r1c", "2026-09-01", source="research_vault", tickers=[], themes=["ai_capex"])
     projections = {p["event_id"]: p for p in impact.project_events_impact([earn, report])}
     assert projections[report["id"]]["exposures"] == []
 
 
-def test_second_order_is_capped_per_event_and_marks_truncation():
-    # Major 4: fan-out is capped, not unbounded (probe D scenario: many
-    # tickers sharing one theme must not all land on a ticker-less event).
+def test_broad_theme_second_order_fails_closed_not_ranked():
+    # BLOCKER 1: corpus-dominant theme ("earnings") must not propagate
+    # second-order exposures via co-mention count / alphabetical top-N.
     supporters = []
-    for i in range(SUPPORTERS := 12):
-        for _dup in range(2):  # 2x so each ticker clears MIN_SUPPORT
-            supporters.append(_ev(f"s{i}-{_dup}", "2026-08-01",
+    # 40 events under "earnings" + 1 under a narrow theme so earnings share
+    # is well above SECOND_ORDER_THEME_MAX_SHARE (5%).
+    for i in range(40):
+        supporters.append(_ev(f"earn-{i}", "2026-08-01", source="earnings",
+                              tickers=[f"T{i % 5}"], themes=["earnings"]))
+    report = _ev("rv-broad", "2026-09-01", source="research_vault", tickers=[],
+                  themes=["earnings"])
+    projections = {p["event_id"]: p for p in impact.project_events_impact(
+        supporters + [report])}
+    proj = projections[report["id"]]
+    assert proj["exposures"] == []
+    assert "earnings" in proj["second_order_theme_refused"]
+    assert proj["second_order_theme_refused_reason"] == (
+        impact.SECOND_ORDER_THEME_TOO_BROAD_REASON)
+
+
+def test_second_order_ambiguous_cap_refuses_all_and_prints_dropped_count():
+    # MAJOR 7 + no opaque ranker: when > MAX candidates remain on a narrow
+    # theme, refuse ALL second-order and print candidate/dropped counts.
+    supporters = []
+    for i in range(12):
+        for dup in range(2):
+            supporters.append(_ev(f"s{i}-{dup}", "2026-08-01",
                                     source="earnings", tickers=[f"T{i}"],
-                                    themes=["broad"]))
-    ticker_less = _ev("tl-1", "2026-09-01", source="research_vault", tickers=[], themes=["broad"])
-    projections = {p["event_id"]: p for p in impact.project_events_impact(supporters + [ticker_less])}
+                                    themes=["narrow_supply"]))
+    ticker_less = _ev("tl-1", "2026-09-01", source="research_vault", tickers=[],
+                       themes=["narrow_supply"])
+    projections = {p["event_id"]: p for p in impact.project_events_impact(
+        supporters + [ticker_less])}
     proj = projections[ticker_less["id"]]
-    assert len(proj["exposures"]) == impact.SECOND_ORDER_MAX_PER_EVENT
+    assert proj["exposures"] == []
     assert proj["second_order_truncated"] is True
-    assert proj["second_order_truncated_reason"] == impact.SECOND_ORDER_CAPPED_REASON
+    assert proj["second_order_truncated_reason"] == impact.SECOND_ORDER_AMBIGUOUS_REASON
+    assert proj["second_order_candidate_count"] == 12
+    assert proj["second_order_dropped_count"] == 12
 
 
 def test_direct_wins_when_ticker_is_both_direct_and_second_order():
+    # Exercise project_event_impact's dedup branch directly (not only the
+    # project_events_impact path that drops own tickers before the call).
     ev = _ev("x-4", "2026-09-01", tickers=["NVDA"], themes=["ai_capex"])
-    other1 = _ev("x-5", "2026-08-30", tickers=["NVDA"], themes=["ai_capex"])
-    other2 = _ev("x-6", "2026-08-31", tickers=["NVDA"], themes=["ai_capex"])
-    projections = impact.project_events_impact([ev, other1, other2])
-    ev_proj = next(p for p in projections if p["event_id"] == ev["id"])
-    nvda = [e for e in ev_proj["exposures"] if e["ticker"] == "NVDA"]
+    proj = impact.project_event_impact(
+        ev,
+        second_order_tickers=["NVDA", "AMD"],
+        second_order_sources={"NVDA": ["cev-other"], "AMD": ["cev-other2"]},
+    )
+    nvda = [e for e in proj["exposures"] if e["ticker"] == "NVDA"]
     assert nvda == [{"ticker": "NVDA", "materiality": "direct"}]
+    assert {"ticker": "AMD", "materiality": "second_order",
+            "source_event_ids": ["cev-other2"]} in proj["exposures"]
 
 
 def test_second_order_never_leaks_from_a_future_event_point_in_time():
-    # Major 6: an event dated 2026-12-31 must never hand its ticker backward
-    # onto an earlier event sharing the theme (point-in-time correctness).
     future = _ev("fut", "2026-12-31", source="earnings", tickers=["NVDA"], themes=["ai_capex"])
-    earlier1 = _ev("e1", "2026-08-30", source="earnings", tickers=["AMD"], themes=["ai_capex"])
-    earlier2 = _ev("e2", "2026-08-31", source="research_vault", tickers=[], themes=["ai_capex"])
-    projections = {p["event_id"]: p for p in impact.project_events_impact([future, earlier1, earlier2])}
+    earlier1 = _ev("e1d", "2026-08-30", source="earnings", tickers=["AMD"], themes=["ai_capex"])
+    earlier2 = _ev("e2d", "2026-08-31", source="research_vault", tickers=[], themes=["ai_capex"])
+    # Need a second prior AMD naming so MIN_SUPPORT is the only reason NVDA
+    # stays out -- future must not contribute.
+    earlier3 = _ev("e3d", "2026-08-29", source="earnings", tickers=["AMD"], themes=["ai_capex"])
+    projections = {p["event_id"]: p for p in impact.project_events_impact(
+        [future, earlier1, earlier2, earlier3])}
     earlier_proj = projections[earlier2["id"]]
     assert not any(e["ticker"] == "NVDA" for e in earlier_proj["exposures"])
 
 
 def test_evidence_fields_are_carried_not_dropped():
-    # Major 5 (K1): source_ref/links/facts/title must survive the projection
-    # so an exposure is never emitted with no way to trace it back.
     ev = _ev("x-7", "2026-09-01", tickers=["AAPL"])
     proj = impact.project_event_impact(ev)
     assert proj["source_ref"] == ev["source_ref"]
@@ -167,8 +222,6 @@ def test_evidence_fields_are_carried_not_dropped():
 
 
 def test_retracted_event_reports_typed_state_and_empties_exposures():
-    # Major 7: a caller marking an event retracted must never see a live
-    # exposure survive the projection -- state is explicit, not inferred.
     ev = _ev("x-8", "2026-09-01", tickers=["AAPL"])
     proj = impact.project_event_impact(ev, retracted=True, retraction_reason="quarantined")
     assert proj["state"] == "retracted"
@@ -222,13 +275,43 @@ def test_empty_event_list_yields_no_projections_no_crash():
     assert impact.project_family_impact([]) == {}
 
 
-def test_write_family_impact_persists_real_consumer_artifact(tmp_path):
-    # Blocker 2: impact.py has a real reader/writer path, not just tests --
-    # governor.build_and_write calls this exact function.
+def test_glance_consequence_surface_explicitly_does_not_serve_market_feed():
+    # BLOCKER 3 / MO-DELTA-001: real consumer surface + explicit non-Market-Feed.
     ev = _ev("a-1", "2026-09-01", source="earnings", tickers=["A"])
-    families = impact.project_family_impact([ev])
-    path = impact.write_family_impact(tmp_path, families)
-    assert path.exists()
-    import json
-    lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-    assert lines[0]["family"] == "earnings"
+    surface = impact.glance_consequence_surface([ev])
+    assert surface["served_as_market_feed"] is False
+    assert surface["market_feed_disposition"] == "explicitly_does_not_serve_market_feed"
+    assert surface["event_count"] == 1
+    assert surface["rows"][0]["direct_tickers"] == ["A"]
+    assert surface["rows"][0]["calibrated_impact"] is None
+
+
+def test_glance_consequence_surface_null_on_empty():
+    surface = impact.glance_consequence_surface([])
+    assert surface["rows"] == []
+    assert surface["stance_en"] == "Not available yet"
+    assert surface["served_as_market_feed"] is False
+
+
+def test_no_write_family_impact_helper_on_module():
+    # BLOCKER 2: nightly writer removed — projection is read-time only.
+    assert not hasattr(impact, "write_family_impact")
+
+
+def test_project_events_impact_scale_stays_subsecond_on_2k_events():
+    # MAJOR 5: bounded cost on a 2k-event fixture (dominant broad theme
+    # refused; narrow theme stays small).
+    events = []
+    for i in range(1900):
+        events.append(_ev(f"broad-{i}", f"2026-01-{(i % 28) + 1:02d}",
+                          source="earnings", tickers=[f"B{i % 10}"],
+                          themes=["earnings"]))
+    for i in range(100):
+        events.append(_ev(f"narrow-{i}", f"2026-02-{(i % 28) + 1:02d}",
+                          source="research_vault", tickers=[f"N{i % 3}"],
+                          themes=["narrow_supply"]))
+    t0 = time.perf_counter()
+    out = impact.project_events_impact(events)
+    elapsed = time.perf_counter() - t0
+    assert len(out) == 2000
+    assert elapsed < 2.0, f"projection took {elapsed:.3f}s on 2k events"

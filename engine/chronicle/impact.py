@@ -21,11 +21,15 @@ on K5 (Evaluation OS / registered model law) and always reports as
 Materiality law: "direct" means the ticker appears in the event's own
 ``tickers`` field (the adapter that produced the event already asserted that
 linkage from source data). "second_order" means a ticker is NOT on the event
-but shares a theme with the event and IS directly implicated by some OTHER
-event carrying that theme, dated on-or-before this event (point-in-time --
-no future-event leakage) -- a strictly weaker, labelled-as-such claim, never
-silently promoted to direct, capped in count, and carried with the
-originating event ids as its evidence (K1).
+but shares a *narrow* theme with the event and IS directly implicated by some
+OTHER event carrying that theme, dated on-or-before this event (point-in-time
+-- no future-event leakage) -- a strictly weaker, labelled-as-such claim,
+never silently promoted to direct. Broad co-mention themes (e.g. corpus-wide
+"earnings") fail closed rather than fabricating materiality. When more than
+``SECOND_ORDER_MAX_PER_EVENT`` candidates remain after the specificity +
+support filters, the projection refuses ALL second-order exposures for that
+event (fail closed on ambiguity) and prints the candidate/dropped counts --
+it never ranks by co-mention count or alphabetical tiebreak to pick winners.
 
 Causal label law: every projection carries ``causal_label`` fixed to
 ``"uncalibrated_association"``. This module has no identification strategy and
@@ -51,6 +55,10 @@ sees them). A caller that still holds a retracted or superseded event object
 (e.g. re-projecting a stale snapshot) can mark it explicitly via
 ``retracted=True`` / ``retraction_reason`` on :func:`project_event_impact`;
 this module never infers retraction on its own -- that stays spine's call.
+
+Nightly write law: this module never writes a git-tracked data/ artifact.
+Consumers call :func:`project_events_impact` / :func:`glance_consequence_surface`
+at render or inspect time over a bounded event window.
 """
 from __future__ import annotations
 
@@ -76,15 +84,28 @@ NO_SOURCE_CLOCK = "no_source_clock"
 # it as a separate "known_at" would fabricate a bitemporal claim.
 NO_DISTINCT_SOURCE_CLOCK = "no_distinct_source_clock"
 
-# K3/K5 dependency-cap law (ledger authority_ceiling: "context_only; K3/K5
-# dependency caps causal/second-order claims"): second-order propagation is
-# capped in count per event, and only carries a ticker forward when at least
-# this many OTHER prior events under the shared theme directly name it --
-# a single stray co-theme event can never fan one ticker out across the
-# entire event set.
+# Second-order eligibility (fail closed on weak materiality / ambiguity).
+# MIN_SUPPORT is an eligibility floor, not a ranker. MAX_PER_EVENT is a
+# refuse-all ceiling when ambiguity remains after the theme-specificity gate
+# -- never a top-N selector. THEME_MAX_SHARE refuses corpus-dominant themes
+# (measured: "earnings" alone is ~82% of events.jsonl) where co-theme carries
+# no information.
 SECOND_ORDER_MIN_SUPPORT = 2
 SECOND_ORDER_MAX_PER_EVENT = 5
-SECOND_ORDER_CAPPED_REASON = "second_order_capped_k3_k5_dependency_ceiling"
+SECOND_ORDER_THEME_MAX_SHARE = 0.05
+# Share gate only applies once a theme's absolute count clears this floor —
+# otherwise a 3-event fixture would refuse every theme (3/3 = 100% share)
+# while the real corpus still needs the share gate for "earnings" (~82%).
+SECOND_ORDER_THEME_BROAD_MIN_COUNT = 40
+SECOND_ORDER_AMBIGUOUS_REASON = "second_order_refused_ambiguous_cap"
+SECOND_ORDER_THEME_TOO_BROAD_REASON = "second_order_refused_theme_too_broad"
+# Kept as an alias so older call-sites/tests that still reference the prior
+# truncation reason string keep resolving; new emits use AMBIGUOUS_REASON.
+SECOND_ORDER_CAPPED_REASON = SECOND_ORDER_AMBIGUOUS_REASON
+
+# Glance-tier surface bound (News Feed consequence panel). Bounded so render
+# never runs the full-corpus projection.
+GLANCE_EVENT_LIMIT = 24
 
 
 def _midnight_of(date: str | None) -> str | None:
@@ -96,6 +117,9 @@ def _time_fields(event: dict) -> tuple[str | None, str | None, str | None]:
 
     Never fabricates a known_at that the source data does not actually
     support -- see the bitemporal-honesty note in the module docstring.
+    event_time and known_at stay the same granularity family: event_time is
+    always a calendar date (YYYY-MM-DD) when knowable; known_at is an ISO
+    instant only when genuinely distinct from midnight-of-that-date.
     """
     date = event.get("date") or None
     ts = event.get("ts") or None
@@ -103,13 +127,14 @@ def _time_fields(event: dict) -> tuple[str | None, str | None, str | None]:
     if not date and not ts:
         return None, None, NO_SOURCE_CLOCK
 
+    # When date is absent but ts is present, recover the calendar date from
+    # the timestamp so we never print known_at beside a null event_time.
+    if not date and isinstance(ts, str) and len(ts) >= 10 and ts[4] == "-" and ts[7] == "-":
+        date = ts[:10]
+
     event_time = date
     if ts and ts != _midnight_of(date):
-        # A genuinely distinct clock (e.g. research_vault's published_at) --
-        # this IS real bitemporal information, print it.
         return event_time, ts, None
-    # ts is absent, or identical to the synthetic midnight-of-date stamp --
-    # no separate ingestion/discovery clock exists yet.
     return event_time, None, NO_DISTINCT_SOURCE_CLOCK
 
 
@@ -186,12 +211,12 @@ def project_event_impact(
     }
 
 
-def _co_theme_index(events: list[dict]) -> dict[str, list[tuple[str, str]]]:
-    """theme -> [(ticker, date), ...] for every (ticker, event) directly
-    naming that ticker under that theme -- one entry per (event, ticker)
-    pair so callers can apply an as-of cutoff and a support-count test.
+def _co_theme_index(events: list[dict]) -> dict[str, list[tuple[str, list[str], str | None]]]:
+    """theme -> [(date, tickers, event_id), ...] for every event that
+    directly names tickers under that theme -- one entry per event so
+    callers can apply an as-of cutoff and a support-count eligibility test.
     """
-    out: dict[str, list[tuple[str, str]]] = {}
+    out: dict[str, list[tuple[str, list[str], str | None]]] = {}
     for ev in events:
         tickers = [t for t in (ev.get("tickers") or []) if t]
         date = ev.get("date") or ""
@@ -202,35 +227,73 @@ def _co_theme_index(events: list[dict]) -> dict[str, list[tuple[str, str]]]:
     return out
 
 
+def _eligible_themes(events: list[dict]) -> set[str]:
+    """Themes narrow enough that co-theme overlap can carry materiality.
+
+    A theme is refused only when it is both numerous in absolute terms
+    (``SECOND_ORDER_THEME_BROAD_MIN_COUNT``) AND appears on more than
+    ``SECOND_ORDER_THEME_MAX_SHARE`` of the event set. Corpus-dominant themes
+    like "earnings" (~82% of events.jsonl) fail closed; small fixtures and
+    genuinely narrow themes stay eligible.
+    """
+    if not events:
+        return set()
+    counts: dict[str, int] = {}
+    for ev in events:
+        for theme in set(ev.get("themes") or []):
+            counts[theme] = counts.get(theme, 0) + 1
+    n = len(events)
+    eligible: set[str] = set()
+    for theme, count in counts.items():
+        if count >= SECOND_ORDER_THEME_BROAD_MIN_COUNT and (count / n) > SECOND_ORDER_THEME_MAX_SHARE:
+            continue
+        eligible.add(theme)
+    return eligible
+
+
 def project_events_impact(events: list[dict]) -> list[dict]:
     """Project a full event list, resolving second-order (co-theme) exposures.
 
-    Point-in-time (Major 6): a ticker only propagates to an event via themes
-    from OTHER events dated on-or-before that event's own date -- a later
-    event can never leak its ticker backward onto an earlier one.
+    Point-in-time: a ticker only propagates to an event via themes from OTHER
+    events dated on-or-before that event's own date -- a later event can never
+    leak its ticker backward onto an earlier one.
 
-    Dependency-capped (Major 4): a ticker must be directly named by at least
-    ``SECOND_ORDER_MIN_SUPPORT`` prior co-theme events before it propagates at
-    all, and each event carries at most ``SECOND_ORDER_MAX_PER_EVENT``
-    second-order tickers (ties broken by support count then ticker name,
-    deterministic).
+    Fail-closed specificity: only themes at-or-below
+    ``SECOND_ORDER_THEME_MAX_SHARE`` of the corpus participate. Broad themes
+    are refused with a typed reason, not ranked through.
+
+    Fail-closed ambiguity: a ticker must be directly named by at least
+    ``SECOND_ORDER_MIN_SUPPORT`` prior co-theme events; if more than
+    ``SECOND_ORDER_MAX_PER_EVENT`` candidates remain, ALL second-order
+    exposures for that event are refused and the candidate/dropped counts are
+    printed. There is no support-count or alphabetical top-N selector -- that
+    would be an opaque catalyst ranker (do_not_redo).
 
     Deterministic and order-preserving: iterating the same event list twice
     yields byte-identical output, matching spine.py's byte-stable regeneration
     contract. No field outside the event's own schema-allowed data is
     consulted -- no external ranking, no LLM call.
     """
-    by_theme = _co_theme_index(events)
+    eligible = _eligible_themes(events)
+    by_theme = {
+        theme: rows for theme, rows in _co_theme_index(events).items()
+        if theme in eligible
+    }
     projections = []
     for ev in events:
         own = set(ev.get("tickers") or [])
         own_date = ev.get("date") or ""
+        own_themes = list(ev.get("themes") or [])
+        refused_themes = sorted({t for t in own_themes if t not in eligible})
+
         # ticker -> set of supporting (prior, on-or-before-date) event ids
         support: dict[str, set[str]] = {}
-        for theme in (ev.get("themes") or []):
+        for theme in own_themes:
+            if theme not in eligible:
+                continue
             for date, tickers, src_id in by_theme.get(theme, ()):
                 if date > own_date:
-                    continue  # Major 6: no future-event leakage
+                    continue
                 if src_id == ev.get("id"):
                     continue
                 for t in tickers:
@@ -242,22 +305,39 @@ def project_events_impact(events: list[dict]) -> list[dict]:
             (t, sorted(ids)) for t, ids in support.items()
             if len(ids) >= SECOND_ORDER_MIN_SUPPORT
         ]
-        candidates.sort(key=lambda pair: (-len(pair[1]), pair[0]))
-        capped = candidates[:SECOND_ORDER_MAX_PER_EVENT]
+        # Deterministic order by ticker name only -- NEVER by support count.
+        # Sorting here is for stable output, not selection: when over the
+        # ceiling we refuse the whole set rather than taking a prefix.
+        candidates.sort(key=lambda pair: pair[0])
+        candidate_count = len(candidates)
 
-        second_order = [t for t, _ in capped]
-        second_order_sources = {t: ids for t, ids in capped}
+        if candidate_count > SECOND_ORDER_MAX_PER_EVENT:
+            second_order: list[str] = []
+            second_order_sources: dict[str, list[str]] = {}
+            truncated = True
+            truncated_reason = SECOND_ORDER_AMBIGUOUS_REASON
+            dropped_count = candidate_count
+        else:
+            second_order = [t for t, _ in candidates]
+            second_order_sources = {t: ids for t, ids in candidates}
+            truncated = False
+            truncated_reason = None
+            dropped_count = 0
 
         proj = project_event_impact(
             ev, second_order_tickers=second_order,
             second_order_sources=second_order_sources,
         )
-        if len(candidates) > len(capped):
-            proj["second_order_truncated"] = True
-            proj["second_order_truncated_reason"] = SECOND_ORDER_CAPPED_REASON
+        proj["second_order_truncated"] = truncated
+        proj["second_order_truncated_reason"] = truncated_reason
+        proj["second_order_candidate_count"] = candidate_count
+        proj["second_order_dropped_count"] = dropped_count
+        if refused_themes:
+            proj["second_order_theme_refused"] = refused_themes
+            proj["second_order_theme_refused_reason"] = SECOND_ORDER_THEME_TOO_BROAD_REASON
         else:
-            proj["second_order_truncated"] = False
-            proj["second_order_truncated_reason"] = None
+            proj["second_order_theme_refused"] = []
+            proj["second_order_theme_refused_reason"] = None
         projections.append(proj)
     return projections
 
@@ -274,30 +354,75 @@ def project_family_impact(events: list[dict]) -> dict[str, list[dict]]:
     return families
 
 
-def write_family_impact(repo, families: dict[str, list[dict]]):
-    """Persist the per-family consequence surface to
-    data/chronicle/impact.jsonl -- the real consumer/entry point for this
-    projection inside the owned engine/chronicle/ package (see
-    governor.build_and_write). One JSON line per family, deterministic order.
-    """
-    import json
-    import os
-    import tempfile
-    from pathlib import Path
+def glance_consequence_surface(
+    events: list[dict],
+    *,
+    limit: int = GLANCE_EVENT_LIMIT,
+) -> dict:
+    """Bounded, plain-word consequence surface for the News Feed panel.
 
-    path = Path(repo) / "data" / "chronicle" / "impact.jsonl"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), prefix=".impact-", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            for family in sorted(families):
-                fh.write(json.dumps({"family": family, "events": families[family]},
-                                     sort_keys=True) + "\n")
-        os.replace(tmp_path, path)
-    except Exception:  # noqa: BLE001
-        try:
-            os.unlink(tmp_path)
-        except Exception:  # noqa: BLE001
-            pass
-        raise
-    return path
+    Reads spine events (most-recent first), projects impact over that window
+    only, and returns glance rows plus an explicit Market-Feed disposition:
+    this surface is served on the existing News Feed page and is NOT a
+    Market-Feed-branded product surface (MO-DELTA-001).
+
+    Calibrated impact stays null + reason. Empty / missing input prints an
+    honest null state rather than fabricating rows.
+    """
+    if not events:
+        return {
+            "served_as_market_feed": False,
+            "market_feed_disposition": "explicitly_does_not_serve_market_feed",
+            "stance_en": "Not available yet",
+            "stance_zh": "暂不可用",
+            "reason_en": "No chronicle events in this window yet.",
+            "reason_zh": "此窗口尚无大事记事件。",
+            "families": {},
+            "rows": [],
+            "event_count": 0,
+        }
+
+    # Most-recent window, then restore chronological order for projection
+    # (point-in-time second-order needs on-or-before semantics inside the window).
+    newest = sorted(
+        events,
+        key=lambda e: (e.get("date") or "", e.get("id") or ""),
+        reverse=True,
+    )[: max(1, int(limit))]
+    window = sorted(
+        newest,
+        key=lambda e: (e.get("date") or "", e.get("id") or ""),
+    )
+    families = project_family_impact(window)
+    rows = []
+    for proj in project_events_impact(window):
+        direct = [e["ticker"] for e in proj["exposures"] if e.get("materiality") == MATERIALITY_DIRECT]
+        second = [e["ticker"] for e in proj["exposures"] if e.get("materiality") == MATERIALITY_SECOND_ORDER]
+        rows.append({
+            "event_id": proj["event_id"],
+            "event_time": proj["event_time"],
+            "known_at": proj["known_at"],
+            "family": proj["source"] or "unknown",
+            "title": proj.get("title") or "",
+            "direct_tickers": direct,
+            "second_order_tickers": second,
+            "second_order_truncated": bool(proj.get("second_order_truncated")),
+            "second_order_candidate_count": proj.get("second_order_candidate_count", 0),
+            "second_order_dropped_count": proj.get("second_order_dropped_count", 0),
+            "calibrated_impact": None,
+            "calibrated_impact_reason": CALIBRATED_IMPACT_GATE_REASON,
+            "causal_label": CAUSAL_LABEL,
+        })
+    # Glance order: newest first.
+    rows.sort(key=lambda r: (r.get("event_time") or "", r.get("event_id") or ""), reverse=True)
+    return {
+        "served_as_market_feed": False,
+        "market_feed_disposition": "explicitly_does_not_serve_market_feed",
+        "stance_en": "Named tickers on recent chronicle events",
+        "stance_zh": "近期大事记事件中点名的标的",
+        "reason_en": None,
+        "reason_zh": None,
+        "families": {k: len(v) for k, v in families.items()},
+        "rows": rows,
+        "event_count": len(window),
+    }

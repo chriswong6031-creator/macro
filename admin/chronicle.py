@@ -30,6 +30,7 @@ _ACCRUING_NOTE = (
 
 _N_RECENT_EVENTS = 20
 _N_STATE_LOG_TAIL = 5
+_N_IMPACT_WINDOW = 24
 
 
 def _default_root() -> Path:
@@ -103,6 +104,30 @@ def overview(root=None) -> dict:
             state_log_rows, key=lambda r: str(r.get("date") or ""),
         )[-_N_STATE_LOG_TAIL:]
 
+        # F05/MO-PAID-017: real reader of the consequence projection over a
+        # bounded recent window (never a full-corpus nightly dump).
+        impact_surface = None
+        try:
+            from engine.chronicle import impact as impact_mod  # noqa: PLC0415
+            impact_surface = impact_mod.glance_consequence_surface(
+                events,
+                limit=_N_IMPACT_WINDOW,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("chronicle.overview impact surface failed: %s", exc)
+            impact_surface = {
+                "served_as_market_feed": False,
+                "market_feed_disposition": "explicitly_does_not_serve_market_feed",
+                "stance_en": "Not available yet",
+                "stance_zh": "暂不可用",
+                "reason_en": "Consequence projection failed to load.",
+                "reason_zh": "后果投影未能加载。",
+                "families": {},
+                "rows": [],
+                "event_count": 0,
+                "error": str(exc),
+            }
+
         if manifest is None:
             return {
                 "ok": True,
@@ -116,6 +141,7 @@ def overview(root=None) -> dict:
                 "total_events": len(events),
                 "recent_events": recent_events,
                 "state_log_tail": state_log_tail,
+                "impact_surface": impact_surface,
             }
 
         return {
@@ -134,6 +160,7 @@ def overview(root=None) -> dict:
             "total_events": len(events),
             "recent_events": recent_events,
             "state_log_tail": state_log_tail,
+            "impact_surface": impact_surface,
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("chronicle.overview failed: %s", exc)
