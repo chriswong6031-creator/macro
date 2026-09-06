@@ -69,8 +69,11 @@ verified_by: >
   after clean current-base integration and Agent OS validation. Its material
   finding consumed authority root C0BSBM78V1N/1788638548.778139 and result
   1788694977.934769, which classified the current authority evidence as
-  AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS with effect NONE. These are source, review
-  and authority receipts, not a fresh host census or production proof.
+  AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS with effect NONE. The Personal-Pro read
+  census separately returned R2/OWNER-NATIVE-MAPPING-UNKNOWN at
+  C0BSBM78V1N/1788605608.765019/1788688097.577459 and was terminally accepted at
+  1788692645.271809. These are source, review and evidence receipts, not a fresh
+  privileged host classification or production proof.
 scope:
   - executive-os
   - personal-pro
@@ -208,16 +211,21 @@ from this record.
 
 ## Current ownership and continuation
 
-The product prerequisite is the already-existing census:
-`personal-pro-executive-read-census-20260905-sol-001` on
-`C0BSBM78V1N/1788605608.765019`. Sol's attended-Secretary continuation is
-`1788694368.242469` on the existing W3C carrier, while the census result remains
-the accepted R2/owner-native-mapping-unknown evidence. The existing Secretary and
-native services own activation and attention through verified current bindings;
-the actual reader owns its ACK, START and evidence. Sent messages do not prove any
-of those occurred. The W3C/Integration host owners remain responsible for native
-permissions and accepted installed-state evidence. No competing installer/admin
-flow is created.
+The native Personal-Pro read census is complete on
+`C0BSBM78V1N/1788605608.765019`: result `1788688097.577459`, accepted STOP
+`1788692645.271809`, classification `R2 / OWNER-NATIVE MAPPING UNKNOWN`. It proved
+that observed Personal/Business tunnel servers were fixture-backed and that the
+privileged selected control/runtime mapping remained unreadable; it did not
+select a repair or prove production data.
+
+The existing owner-native follow-up remains the W3C host carrier
+`C0BSBM78V1N/1788521402.466429`, exact incumbent native task
+`01a06c33-e5f2-73c0-aa66-44ad9ca36ec1`, Sol read-only host-evidence instruction
+`1788694368.242469` and activation request `1788695120.900129`. That follow-up
+must either return sanitized installed-root R0/R1/R2/R3 evidence or the one exact
+human-only command required by a visible Chairman-controlled TTY boundary. A
+sent activation request is not native pickup or host evidence. No replacement
+worker, helper, installer, tunnel or lifecycle reader is authorized.
 
 Sol owns this records correction and architecture adjudication. The retained
 independent reviewer remains on `C0BSBM78V1N/1788633533.339369`; exact-head
