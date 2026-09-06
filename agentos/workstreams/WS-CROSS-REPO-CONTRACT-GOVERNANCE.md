@@ -18,18 +18,19 @@ ambiguity: scoped
 waves:
   - id: R0
     title: Durable home and architecture freeze
-    status: awaiting_ci
+    status: done
     pr: 6596
     next_action: >
-      Sol reviews exact PR #6596 head after required hosted validation; only accepted
-      merge may make R0 durable on main. R0 creates no Executive Job and proves no
-      Fable execution.
+      R0 is terminal and durable on Macro main via accepted squash merge
+      2a45075ddb1139d3bcab6c6402f483040e0f6378. It created the Agent OS home,
+      architecture/decision/census and principal handoff only; it repaired zero
+      production seams and created no Executive Job or Fable execution claim.
   - id: R1
     title: P0 authority and imported-state identity
     status: todo
     depends_on: [R0]
     next_action: >
-      After R0 is durable and an actual Fable principal carrier is claimed, execute
+      After an actual Fable principal carrier is claimed, execute
       CRG-NW-AUTHORITY-V1 then CRG-MACRO-IMPORT-IDENTITY-V1 under fresh collision checks.
   - id: R2
     title: High-value real-consumer contracts
@@ -129,11 +130,13 @@ artifacts:
   - research/CROSS_REPO_CONTRACT_GOVERNANCE_R0_CARRIER_RECEIPT_2026-08-28.md
   - agentos/decisions/DEC-CROSS-REPO-CONTRACT-GOVERNANCE-FEDERATED-NO-RUNTIME.md
   - agentos/handoffs/CROSS-REPO-CONTRACT-GOVERNANCE-2026-08-28-fable-principal.md
+  - agentos/handoffs/CROSS-REPO-CONTRACT-GOVERNANCE-2026-08-29-r0-closeout.md
 next_action: >
-  Complete exact-head validation and Sol review of PR #6596. After R0 merges, reconcile
-  current runtime/transport state and establish one actual claimed Fable principal carrier
-  for operation `crg-fable-principal-20260828-sol-001`; only then commission
-  CRG-NW-AUTHORITY-V1 on a fresh stable child operation key.
+  Reconcile live provider/session placement and establish one actual claimed Fable
+  principal carrier for operation `crg-fable-principal-20260828-sol-001`. Until a lawful
+  receiver ACK/readback or canonical Executive Job/Worker claim exists, keep it UNCLAIMED /
+  WAITING_CAPACITY rather than calling it queued or executing. Only after claim may Sol
+  commission CRG-NW-AUTHORITY-V1 on a fresh stable child operation key.
 ---
 
 ## Context
@@ -144,9 +147,11 @@ important cross-repo risks; by 2026-08-28 some findings had been repaired and ot
 so the Chairman assigned Sol end-to-end ownership and explicitly approved the recovered
 architecture.
 
-R0 creates the missing organizational home without creating a second runtime. The current-state
-census is `research/CROSS_REPO_CONTRACT_GOVERNANCE_CURRENT_STATE_2026-08-28.md`; the binding
-architecture is `docs/superpowers/specs/2026-08-28-cross-repo-contract-governance-design.md`.
+R0 is durable on Macro `main` at `2a45075ddb1139d3bcab6c6402f483040e0f6378`. It created the
+missing organizational home without creating a second runtime. The current-state census is
+`research/CROSS_REPO_CONTRACT_GOVERNANCE_CURRENT_STATE_2026-08-28.md`; the binding architecture is
+`docs/superpowers/specs/2026-08-28-cross-repo-contract-governance-design.md`. R0 itself remains a
+records/research architecture wave and repaired zero production seams.
 
 ## Current capability frontier
 
@@ -174,4 +179,4 @@ vertical per PR where possible. No child inherits authority merely because this 
 
 The durable principal organizational operation key is
 `crg-fable-principal-20260828-sol-001`. Until approved runtime/session evidence shows an actual
-claim, it must be described as **UNCLAIMED**, not queued/executing/working.
+claim, it must be described as **UNCLAIMED / WAITING_CAPACITY**, not queued/executing/working.
