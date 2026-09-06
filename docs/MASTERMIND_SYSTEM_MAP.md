@@ -1594,7 +1594,7 @@ Govern options flow, structure, exposure, dislocation, Prophet overlays, and iss
 - `feeds_context_to` → `terminal-signal-layer` (`conceptual`; authority transfer: none)
 - `renders_through` → `terminal-charting` (`conceptual`; authority transfer: none)
 
-**Canonical docs:** `macro:research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md`, `terminal:docs/OPTIONS_SUPERINTELLIGENCE_MASTERPLAN_2026-07-31.md`
+**Canonical docs:** `macro:research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md`, `terminal:docs/OPTIONS_SUPERINTELLIGENCE_MASTERPLAN_2026-07-31.md`, `macro:research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md`
 
 **Implementation anchors:** `macro:engine/options_hub.py`, `macro:engine/options_dislocation.py`, `macro:contracts/options`, `terminal:terminal/app/(shell)/options`, `terminal:terminal/app/api/flow`
 
@@ -3760,7 +3760,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | Source | SHA-256 |
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
-| `config/mastermind_programs.yml` | `4f398dd5f6ef0b42a66786c4b4eef06178f3ceaa7bc56375ca241032825316d9` |
-| `config/synapse.yml` | `82022e1c804177208e908429ff69301c80fa3120e003d4057f2a2344d90c73b8` |
+| `config/mastermind_programs.yml` | `268971b99700c149ef0500b8b73545863fbf0a9cda66671c8ed85d9fcba93fcc` |
+| `config/synapse.yml` | `733e95496c8ef8278ed1aec94bbf365b3e09745c85c74fd35848c7a40ade6cf9` |
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.
