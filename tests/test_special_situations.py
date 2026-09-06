@@ -1384,9 +1384,17 @@ def test_the_real_build_path_calls_the_producer_and_no_refresh_stays_source_iner
     assert "enrich_deal_terms" in refresh_block, "producer must run only under refresh"
     # it must run BEFORE the desk is compiled, or the first build reads an empty ledger
     assert refresh_block.index("enrich_deal_terms") < refresh_block.index("desk_payload")
-    # and it must be allowed to REACQUIRE, or every pre-existing cached filing stays ineligible
-    assert "fetch_missing=True" in refresh_block, \
-        "the refresh producer cannot reacquire a legacy cache, so coverage stays structurally 0"
+    # it may be allowed to REACQUIRE a legacy cache, but never unconditionally on the render
+    # path (macro#6793 review): a live SEC full-submission GET + unbounded, unpruned disk
+    # retention belongs behind a config gate that defaults OFF, not a hardcoded fetch_missing=True.
+    assert "fetch_missing=True" not in refresh_block, \
+        "reacquire-on-every-render-build must not be hardcoded True — gate it via config"
+    assert "deal_terms_fetch_missing" in refresh_block, \
+        "the reacquire path must be config-gated so it can stay off until #6783 lands"
+    from lib import config as _config
+    default_ss = _config.load().get("special_situations", {}) or {}
+    assert not default_ss.get("deal_terms_fetch_missing", False), \
+        "deal_terms_fetch_missing must default to False in the shipped config"
 
 
 # ===========================================================================

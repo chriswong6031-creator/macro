@@ -376,10 +376,13 @@ def build(refresh: bool = True) -> str:
             # F09-1: deterministic, evidence-bound deal terms BEFORE the desk is compiled.
             # Without this call the observation ledger stays empty on a natural run and every
             # cash deal reports SOURCE_UNAVAILABLE — the capability would be inert in production
-            # while every unit test passed. Reads only already-retained source objects.
+            # while every unit test passed. Reads only already-retained source objects: the
+            # render path never reacquires (a live SEC full-submission GET + unbounded,
+            # unpruned disk retention belongs behind #6783, not inside the nightly render
+            # budget). Reviewer finding (macro#6793): a hardcoded reacquire flag here falsified
+            # PR's own "reads only bytes the existing source owner already cached" claim.
             col.enrich_deal_terms(limit=int(ss.get("deal_terms_per_build", 200)),
-                                  fetch_missing=True)   # reacquire a legacy cache that has no
-            #                                             verified complete-source receipt
+                                  fetch_missing=bool(ss.get("deal_terms_fetch_missing", False)))
             from collectors import special_prices as colpx
             colpx.fetch_arb_prices()                             # P1.2 price ADR/OTC deal targets (best-effort)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage

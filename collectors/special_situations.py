@@ -928,7 +928,7 @@ def _cached_body(accession: str) -> tuple[str | None, Path | None]:
         return None, None
 
 
-def verified_projection(accession: str) -> tuple[str, dict] | None:
+def verified_projection(accession: str, *, _cache: dict | None = None) -> tuple[str, dict] | None:
     """The normalized projection re-derived from the VERIFIED retained object, or None.
 
     The extractor used to read `doc_cache/<accession>.txt` while the observation cited the
@@ -936,8 +936,18 @@ def verified_projection(accession: str) -> tuple[str, dict] | None:
     object is re-opened, its digest and byte length are recomputed against the receipt, and the
     projection is derived from that verified readback and checked against the receipt too. Only
     bytes that survive all three may be extracted from.
+
+    `_cache`, when passed, is an ordinary caller-owned dict (never module-global state, so it can
+    never leak between unrelated callers or tests) keyed by accession -> (projection, receipt);
+    a hit is trusted only while `raw_sha256` still matches the caller's own receipt lookup, which
+    is naturally true within one call because the caller supplies the same cache across repeated
+    reads of the SAME on-disk ledger (reviewer finding, macro#6793: read_ledger_strict() used to
+    re-gunzip + re-derive every row's projection on every call, and enrich_deal_terms() calls it
+    twice per build).
     """
     from engine import special_arb as arb
+    if _cache is not None and accession in _cache:
+        return _cache[accession]
     receipt = _source_receipt(accession)
     if not receipt or not receipt.get("readback_verified"):
         return None
@@ -956,7 +966,10 @@ def verified_projection(accession: str) -> tuple[str, dict] | None:
         log.warning("special_situations: normalized projection disagrees with its receipt (%s)",
                     accession)
         return None
-    return projection, receipt
+    result = (projection, receipt)
+    if _cache is not None:
+        _cache[accession] = result
+    return result
 
 
 def canonical_event_authority() -> dict[str, dict]:
@@ -987,7 +1000,7 @@ def canonical_event_authority() -> dict[str, dict]:
     return out
 
 
-def read_ledger_strict() -> tuple[list[dict], dict]:
+def read_ledger_strict(*, _proj_cache: dict | None = None) -> tuple[list[dict], dict]:
     """The whole observation ledger, validated row by row. Returns (rows, census).
 
     FAIL CLOSED, and fail closed BEFORE writing. The producer used to scan the ledger with a
@@ -1017,7 +1030,7 @@ def read_ledger_strict() -> tuple[list[dict], dict]:
             census["invalid"] += 1
             continue
         accession = str((o.get("source") or {}).get("accession") or "")
-        verified = verified_projection(accession) if accession else None
+        verified = verified_projection(accession, _cache=_proj_cache) if accession else None
         if verified is None:
             census["unbound"] += 1
             continue
@@ -1068,7 +1081,10 @@ def enrich_deal_terms(limit: int | None = None, *, fetch_missing: bool = False) 
         eligible = eligible.head(int(limit))
 
     path = _observations_path()
-    existing, census = read_ledger_strict()
+    # One cache for this call only (never module state — see verified_projection docstring):
+    # the ledger is read twice (before and after the append) and the same accessions recur.
+    _proj_cache: dict = {}
+    existing, census = read_ledger_strict(_proj_cache=_proj_cache)
     if not census["ok"]:
         # never extend a ledger that does not fully validate — appending to a corrupt ledger is
         # how a crash-truncated tail becomes a permanent, growing integrity failure
@@ -1089,12 +1105,12 @@ def enrich_deal_terms(limit: int | None = None, *, fetch_missing: bool = False) 
         cik = str(r.get("cik") or "")
         if not accession or not cik:
             continue
-        verified = verified_projection(accession)
+        verified = verified_projection(accession, _cache=_proj_cache)
         if verified is None and fetch_missing:
             # a legacy candidate cache with no verified receipt is REACQUIRED through the
             # existing fetch owner; `--no-refresh` never reaches this branch and stays inert
             _fetch_filing_text(cik, accession, reacquire=True)
-            verified = verified_projection(accession)
+            verified = verified_projection(accession, _cache=_proj_cache)
         if verified is None:
             skipped_no_receipt += 1
             continue
@@ -1132,7 +1148,7 @@ def enrich_deal_terms(limit: int | None = None, *, fetch_missing: bool = False) 
     payload = "".join(json.dumps(o, ensure_ascii=False, sort_keys=True) + "\n"
                       for o in existing + fresh)
     _atomic_write(path, payload.encode("utf-8"))
-    _, after = read_ledger_strict()
+    _, after = read_ledger_strict(_proj_cache=_proj_cache)
     if not after["ok"] or after["kept"] != len(existing) + len(fresh):
         print("::warning title=special-situations deal-term ledger readback::published ledger "
               f"failed its own validator: {after}", flush=True)

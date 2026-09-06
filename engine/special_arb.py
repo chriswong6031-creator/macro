@@ -1639,8 +1639,10 @@ def select_ordered_context(rows: list[dict] | None, *, block: str = "arb",
         counts["considered"] += 1
         state = econ["quality_state"]
         counts["by_state"][state] = counts["by_state"].get(state, 0) + 1
-        if state == QUALITY_VERIFIED:
-            counts["verified"] += 1
+        if state != QUALITY_VERIFIED:
+            counts["excluded"] += 1
+            continue
+        counts["verified"] += 1
         if econ.get("orderable") and econ.get("annualized_pct") is not None:
             ordered.append(r)
         else:
