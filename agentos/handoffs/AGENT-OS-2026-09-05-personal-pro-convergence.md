@@ -28,6 +28,12 @@ changed:
       operation, existing Secretary activation responsibility and exact native
       product dependency. Preserve historical failures and unresolved effects
       without calling a sent message working ownership or a source merge live.
+  - path: agentos/discoveries/DSC-PERSONAL-PRO-MCP-READ-ROOT-AND-HOT-STATE-GAP.md
+    what: >
+      Preserve the September 6 S0/B2 authority adjudication exactly: the current
+      evidence is AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS, neither override state is
+      selected, S0-R1 remains NOT_PROVEN, and B2 stays independently held pending
+      one explicit current Chairman ruling plus the other existing release gates.
 verified:
   - claim: Current protected procedure was requalified without mixing revisions.
     command: >
@@ -117,6 +123,23 @@ verified:
       and config set: exit0,1066 records,0 errors,642 warnings with disclosed
       extraction/cross-repository limits. These are prior-head reviewer receipts,
       not a new full local-validator run by this author or current-head proof.
+  - claim: The current S0/B2 authority evidence was adjudicated without selecting a state.
+    command: >
+      Slack.slack_read_thread channel_id=C0BSBM78V1N
+      message_ts=1788638548.778139;
+      Slack.slack_read_thread channel_id=C0BSBM78V1N
+      message_ts=1788633533.339369;
+      GitHub.fetch
+      https://api.github.com/repos/mastermindx-market-intelligence/macro/pulls/6877/reviews/5125220529.
+    result: >
+      Sol returned AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS/effect=NONE at
+      1788694977.934769. Current protected and Linear records still encode the
+      old S0-R1 to B2 dependency, while the exact originating Chairman carrier
+      for the advisory nonblocking override and expected issue markers could not
+      be recovered; no later supersession was found. The retained reviewer then
+      submitted exact-head REQUEST_CHANGES review5125220529 on Macro92d968d6,
+      requiring the records to select neither state, preserve B2's independent
+      hold and name one explicit current Chairman ruling as the next edge.
 unverified:
   - claim: The corrected records pass current-head checks and independent review.
     what_would_verify: >
@@ -145,13 +168,13 @@ unverified:
       separate owner-native canonical data comparison, generation and freshness.
       State/inbox require no invented IDs; absent legitimate Job/intent IDs produce
       NOT_EXERCISED. No new Runtime, copied database or fixture substitution.
-  - claim: Original C1 effects and S0-related authority are reconciled.
+  - claim: Original C1 effects and final S0/B2 authority are resolved.
     what_would_verify: >
       Original-RuntimeBinding evidence on C0BSBM78V1N/1787889177.672699 for C1;
-      canonical current-source/Chairman evidence on existing S0 authority root
-      1788638548.778139. No effect replay, substitute receiver or silent override
-      revocation. Any applicable fixture-grant/verifier/final proof stays with its
-      existing owner. No B2/C2 release follows from this records update.
+      one explicit current Chairman ruling that either reaffirms or supersedes the
+      historical S0-R1 nonblocking/membership ruling, followed by repair on the
+      existing protected and projection carriers. No effect replay, substitute
+      receiver or silent authority selection. No B2/C2 release follows automatically.
   - claim: Personal/Business parity and production latency are measured.
     what_would_verify: >
       Paired actual-account 20-row evidence and attributable timings through
@@ -170,13 +193,13 @@ unresolved:
   - Whether any correction is needed instead of reuse of an accepted owner.
   - Actual Personal account, information clearance, tunnel and client behavior.
   - C1 Step-D effect on its original RuntimeBinding.
-  - Current S0-R1 override/dependency reconciliation and separately owed proof.
+  - Explicit current Chairman ruling on whether the historical S0-R1 nonblocking and membership ruling remains in force; records select neither state until then.
   - Real admission and return/continue/stop capability under current B2/C2 gates.
 next_actions:
   - >
     Verify the resulting #489/#6877 heads and bind them on the existing review
-    root1788633533.339369 under continuation1788684974.668929. Reuse the retained
-    reviewer; do not reopen withdrawn roots or add an unassigned reviewer.
+    root1788633533.339369. Reuse the retained reviewer; do not reopen withdrawn
+    roots or add an unassigned reviewer.
   - >
     Existing Secretary consumes census intake1788685004.157919 on original
     root1788605608.765019, verifies native service/task identity and obtains actual
@@ -191,9 +214,10 @@ next_actions:
     reads. Neither records review nor missing privileged production evidence should
     suppress an already-authorized nonprivileged census or qualified inert client test.
   - >
-    Preserve original C1 reconciliation, current S0 authority and independent
-    write-path gates. Accept product only after real canonical read/admission/
-    return evidence, not after source review or merge.
+    Preserve original C1 reconciliation and all independent write-path gates. Obtain
+    one explicit current Chairman S0/B2 authority ruling, then reconcile existing
+    protected and projection records. Accept product only after real canonical read,
+    admission and return evidence, not after source review or merge.
 do_not_redo:
   - Do not create another backend, semantic API, copied Runtime or authenticated policy copy.
   - Do not select a dedicated read port from source-template topology alone.
@@ -207,6 +231,7 @@ do_not_redo:
   - Do not restore MAS-48 to Done from a records merge or green CI.
   - Do not merge bases solely to reduce behind_by or inherit old-head proof.
   - Do not use the author account for independent approval.
+  - Do not select OVERRIDE_CURRENT or OVERRIDE_SUPERSEDED from advisory memory or stale projection text.
 danger_areas:
   - Source-contract split roots are not an installed R1 verdict.
   - The prior amendment/discovery prematurely selected a service port; that decision is withdrawn.
@@ -218,24 +243,30 @@ danger_areas:
   - Previous Grok-addressed delivery did not prove current attended Secretary intake.
   - Reviewer validation scope and warnings must not be inflated into a full production proof.
   - Native privileged input and original unresolved effects retain their existing owners.
+  - Current source and advisory Chairman memory conflict; one explicit current Chairman ruling is required before selecting the S0/B2 authority state.
 ---
 
 # Personal-Pro Executive convergence — review correction and working ownership
 
 ## Capability delta
 
-The retained reviewer actually completed the prior review and produced two
-commit-anchored CHANGES_REQUESTED results. Sol has accepted the one material
-finding and is correcting the existing records instead of assigning another
-unbound source worker. Product remains PARTIAL. No production read, account
-canary, service installation or Executive mutation has been performed here.
+The retained reviewer completed the prior review and produced two commit-anchored
+CHANGES_REQUESTED results. Sol accepted the read-root finding and corrected the
+existing records instead of assigning another unbound source worker. Mastermind
+#489 then received exact-head approval, while Macro #6877 remained held until its
+required checks concluded. After current-base validation, the retained reviewer
+submitted exact-head Macro REQUEST_CHANGES review `5125220529` because the records
+did not yet preserve the September 6 authority adjudication. This update is that
+smallest records-only correction. Product remains PARTIAL. No production read,
+account canary, service installation or Executive mutation has been performed.
 
 Mastermind amendment commit `7e9066417525a3fd5f4f801185bd47ae0104fcb6` preserves
 the root-coupling evidence while making the port, diagram and DAG conditional.
 Macro discovery correction `d837fed0346ca0edd6eca150e169213bbf55ff0d` applies the
-same ruling to durable claim, falsifier and next action. This handoff replaces
-stale pre-review pointers; its resulting GitHub commit is the exact candidate
-for current-head verification. No final approval is claimed before that review.
+same ruling to durable claim, falsifier and next action. The current Macro
+correction additionally records `AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS` without
+selecting either S0/B2 authority state. No final approval is claimed before the
+new exact head receives current-base validation and independent review.
 
 ## Outcome-first dependency
 
@@ -269,11 +300,11 @@ one concrete refusal. It is not another mission or permission to create a new
 control plane. An already-started/effect-unknown task cannot be replaced.
 
 The retained reviewer `01a046f7-a959-7440-821e-a8080ad8a47d` remains independent
-on `C0BSBM78V1N/1788633533.339369`. Sol continuation `1788684974.668929` permits
-one additional exact-head review per repaired PR when Sol binds the final heads.
-Use its existing continuation/native callback; do not create a per-child polling
-daemon, claim this web chat is running in the background or call a sent message
-an activated task. Actual future pickup/continuation must be evidenced.
+on `C0BSBM78V1N/1788633533.339369`. Its latest exact-head Macro review is
+`5125220529`, REQUEST_CHANGES. Reuse its existing continuation/native callback;
+do not create a per-child polling daemon, claim this web chat is running in the
+background or call a sent message an activated task. Actual future pickup and
+continuation must be evidenced.
 
 ## Preserved chronology and exclusions
 
@@ -308,15 +339,41 @@ The prior unprivileged codesign diagnostic remains a privilege-context
 hypothesis, not proof of current root-context corruption.
 
 C1 remains on `1787889177.672699` and its original RuntimeBinding. Missing
-SOL_STATE is not zero effect. S0's existing authority-reconciliation root
-`1788638548.778139` is separate; this correction neither revokes nor proves the
-Chairman override, and it releases no B2/C2 action.
+SOL_STATE is not zero effect. It remains separate from the S0/B2 authority issue.
+
+## Authority adjudication
+
+The finite authority reconciliation on
+`C0BSBM78V1N/1788638548.778139` returned at `1788694977.934769` with
+`AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS / effect=NONE`.
+
+Current protected and Linear records still encode the old S0-R1 to B2 dependency.
+Advisory Chairman context says S0-R1 should not block B2 and additional
+Chairman-owned members should not count as rights drift, but the exact originating
+Chairman carrier and expected issue markers were not recovered. No later
+supersession was found. The records therefore select neither `OVERRIDE_CURRENT`
+nor `OVERRIDE_SUPERSEDED`.
+
+S0-R1 remains `NOT_PROVEN`; this adjudication does not decide whether it is a
+current blocking gate. B2 remains independently unreleased because C1 effect
+reconciliation, current-source release, write-route/security/admission/conflict
+proof and explicit Sol release are unsatisfied. Do not attribute the B2 hold
+solely to MAS-112. Extra Chairman-owned membership is neither a blocker nor
+permission to mutate membership under this evidence.
+
+The smallest next authority edge is one explicit current Chairman ruling that
+either reaffirms the historical nonblocking/membership ruling or supersedes it.
+After that receipt, repair protected research and Agent OS/Linear projections on
+their existing carriers. Do not create another authority child, silently choose
+a state, run S0, or release B2/C2 from these records.
 
 ## Exact continuation
 
-Read actual current heads/checks and the two original carriers. Finish the
-bounded correction review without another program-wide audit. Obtain the
+Read the actual new #6877 head, checks and original carrier. Finish only the
+bounded records re-review; do not repeat program-wide archaeology. Obtain the
 census's native result or concrete activation boundary, classify installed
 R0/R1/R2/R3, and decide reuse versus one demonstrated necessary correction.
-Only real canonical account/backend and eventual admission/return proof can
-close the product; documentation acceptance cannot.
+Recover C1 effect truth on its original RuntimeBinding and obtain the one current
+Chairman authority ruling described above. Only real canonical account/backend
+and eventual admission/return proof can close the product; documentation
+acceptance cannot.
