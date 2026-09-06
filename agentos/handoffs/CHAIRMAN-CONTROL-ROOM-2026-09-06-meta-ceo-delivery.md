@@ -133,7 +133,7 @@ one bounded delivery envelope. Routine successful subtasks need no new Meta-CEO
 reasoning turn; genuine scope, security, ownership and uncertain effects still return
 to their owner. Duration is not a proxy for completed capability.
 
-[Task1 acceptance and evidence](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5562149841)
+[Task1 identity and next-wave mapping](https://github.com/mastermindx-market-intelligence/Mastermind/pull/489#issuecomment-5562149841)
 remain source-scoped. The completed 11 SDK/auth, 7 response and 10 input fixture
 checks are [supporting evidence](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5561958922),
 not real Executive reads or extra release gates. Do not repeat generic protocol probes.
