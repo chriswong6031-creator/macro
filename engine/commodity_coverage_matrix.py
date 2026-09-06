@@ -33,7 +33,15 @@ FAMILIES: tuple[dict, ...] = (
         "family_zh": "能源——原油与成品油",
         "price": {
             "producer": "engine/commodity_inputs.py",
-            "artifacts": ("data/yahoo/CL_F.parquet",),
+            # One artifact per commodity the cell copy names below (oil / gas /
+            # fuels) — MO-DELTA-029 review MAJOR-5: the claim must not exceed
+            # what is actually checked.
+            "artifacts": (
+                "data/yahoo/CL_F.parquet",   # oil (WTI crude)
+                "data/yahoo/NG_F.parquet",   # gas (Henry Hub natural gas)
+                "data/yahoo/HO_F.parquet",   # fuels (heating oil)
+                "data/yahoo/RB_F.parquet",   # fuels (RBOB gasoline)
+            ),
             "source_en": "Daily price history (Yahoo)",
             "source_zh": "每日价格历史（Yahoo）",
             "cell_en": "Daily prices for oil, gas and fuels",
@@ -58,7 +66,13 @@ FAMILIES: tuple[dict, ...] = (
         "family_zh": "贵金属",
         "price": {
             "producer": "engine/commodity_inputs.py",
-            "artifacts": ("data/yahoo/GC_F.parquet",),
+            # One artifact per metal the cell copy names (MAJOR-5 above).
+            "artifacts": (
+                "data/yahoo/GC_F.parquet",   # gold
+                "data/yahoo/SI_F.parquet",   # silver
+                "data/yahoo/PL_F.parquet",   # platinum
+                "data/yahoo/PA_F.parquet",   # palladium
+            ),
             "source_en": "Daily price history (Yahoo)",
             "source_zh": "每日价格历史（Yahoo）",
             "cell_en": "Daily prices for gold, silver, platinum and palladium",
@@ -86,7 +100,17 @@ FAMILIES: tuple[dict, ...] = (
         "family_zh": "谷物与软商品",
         "price": {
             "producer": "engine/commodity_inputs.py",
-            "artifacts": ("data/yahoo/ZC_F.parquet",),
+            # One artifact per commodity the cell copy names (MAJOR-5 above).
+            "artifacts": (
+                "data/yahoo/ZC_F.parquet",   # corn
+                "data/yahoo/ZW_F.parquet",   # wheat
+                "data/yahoo/ZS_F.parquet",   # soybeans
+                "data/yahoo/LE_F.parquet",   # cattle (live cattle)
+                "data/yahoo/KC_F.parquet",   # coffee
+                "data/yahoo/SB_F.parquet",   # sugar
+                "data/yahoo/CC_F.parquet",   # cocoa
+                "data/yahoo/CT_F.parquet",   # cotton
+            ),
             "source_en": "Daily price history (Yahoo)",
             "source_zh": "每日价格历史（Yahoo）",
             "cell_en": "Daily prices for corn, wheat, soybeans, cattle, coffee, sugar, cocoa and cotton",

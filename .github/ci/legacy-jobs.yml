@@ -2273,6 +2273,7 @@ jobs:
           tests/test_commodity_index.py
           tests/test_commodity_confluence.py
           tests/test_commodity_cycle_state.py
+          tests/test_commodity_coverage_matrix.py
           tests/test_fear_euphoria.py tests/test_froth_fragility.py
           tests/test_vol_velocity.py tests/test_fear_greed_honesty.py
           tests/test_archive_context_snapshots.py
@@ -2895,6 +2896,7 @@ jobs:
           tests/test_capital_structure_projection.py
           tests/test_build_capital_structure_projection.py
           tests/test_capital_structure_page.py
+          tests/test_capital_structure_policy_projection.py
           tests/test_capital_structure_api.py
           tests/test_capital_structure_source_identity.py
           tests/test_capital_structure_source_manifest.py

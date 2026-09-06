@@ -131,3 +131,19 @@ def test_8_render_diff_contained_between_markers():
     block = src[start:end]
     # sanity: nothing outside {coverage} usage leaks past the markers
     assert "cov-panel" in block
+
+
+def test_9_multi_commodity_claims_are_backed_by_one_artifact_per_named_commodity():
+    """B3 review MAJOR-5: a family whose cell copy names N commodities must
+    check N filesystem artifacts — one ticker standing proxy for every named
+    commodity is exactly the overclaim the review measured (e.g. "precious"
+    printed gold/silver/platinum/palladium on GC_F.parquet alone)."""
+    by_id = {f["id"]: f for f in FAMILIES}
+    assert len(by_id["energy"]["price"]["artifacts"]) >= 3    # oil, gas, fuels
+    assert len(by_id["precious"]["price"]["artifacts"]) == 4  # gold/silver/platinum/palladium
+    assert len(by_id["agri"]["price"]["artifacts"]) == 8      # corn..cotton
+    for fam_id in ("energy", "precious", "agri"):
+        artifacts = by_id[fam_id]["price"]["artifacts"]
+        assert len(set(artifacts)) == len(artifacts), "no duplicate tickers"
+        for artifact in artifacts:
+            assert artifact.startswith("data/yahoo/") and artifact.endswith(".parquet")

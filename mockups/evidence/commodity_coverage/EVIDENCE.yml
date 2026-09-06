@@ -1,0 +1,4 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/capital_structure.css
+manifest: mockups/evidence/commodity_coverage/manifest.json

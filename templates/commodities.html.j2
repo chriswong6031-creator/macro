@@ -137,21 +137,21 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 .cov-row { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px 22px; align-items: start;
   padding: 14px 18px 13px 16px; border-top: 1px solid var(--line); border-left: 2px solid var(--line2); }
 .cov-row:first-child { border-top: 0; }
-.cov-covered { border-left-color: var(--blue); background: rgba(93,139,255,.07); }
+.cov-covered { border-left-color: var(--blue); background: color-mix(in srgb, var(--blue) 7%, transparent); }
 .cov-partial { border-left-style: dashed; }
 .cov-none    { border-left-style: dotted; }
 .cov-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
 .cov-fam { font-weight: 600; font-size: 14px; color: var(--tx); }
-.cov-state { font-size: 11.5px; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px;
+.cov-state { font-size: 11.5px; letter-spacing: .04em; padding: 2px 8px; border-radius: var(--r-pill,999px);
   border: 1px solid var(--line2); color: var(--mut); white-space: nowrap; }
-.cov-covered .cov-state { border-color: rgba(93,139,255,.45); color: var(--tx); }
+.cov-covered .cov-state { border-color: color-mix(in srgb, var(--blue) 45%, transparent); color: var(--tx); }
 .cov-reads { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
 .cov-k { display: block; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); }
 .cov-v { display: block; font-size: 13px; color: var(--tx); }
 .cov-none .cov-v { color: var(--mut); }
 .cov-detail { grid-column: 1 / -1; margin-top: 6px; font-size: 12px; color: var(--mut); }
 .cov-detail summary { cursor: pointer; }
-.cov-detail summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+.cov-detail summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: var(--r-ctl,4px); }
 .cov-detail ul { margin: 6px 0 0; padding-left: 16px; }
 .cov-detail code { font-size: 11.5px; color: var(--faint); }
 .cov-foot { margin: 0; padding: 12px 18px 14px; color: var(--faint); font-size: 12px; border-top: 1px solid var(--line); }
@@ -163,7 +163,7 @@ body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, 
 [data-theme='light'] .cov-covered { background: transparent; border-left-width: 3px; }
 [data-theme='light'] .cov-covered .cov-fam { font-weight: 650; }
 [data-theme='light'] .cov-state { background: var(--panel2); }
-[data-theme='light'] .cov-covered .cov-state { background: rgba(28,79,224,.07); border-color: rgba(28,79,224,.28); }
+[data-theme='light'] .cov-covered .cov-state { background: color-mix(in srgb, var(--blue) 7%, transparent); border-color: color-mix(in srgb, var(--blue) 28%, transparent); }
 .panel2 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; }
 .grid { display: grid; gap: 14px; }
 .g2 { grid-template-columns: 1.35fr 1fr; }
@@ -1207,7 +1207,7 @@ html[data-theme="light"] :is(
     {% endfor %}
   </div>
   {% else %}<div class="faint" style="font-size:13px">{{ t('No events scheduled in the next 14 days.', '未来14天内无预定市场事件。') }}</div>{% endif %}
-  <div class="disclaimer">{{ news_disclaimer }} <a href="#coverage">{{ t('See what we cover', '查看覆盖范围') }}</a></div>
+  <div class="disclaimer">{{ news_disclaimer }}</div>
 </div>
 
 <!-- ========================= ALERT TIMELINE ========================= -->

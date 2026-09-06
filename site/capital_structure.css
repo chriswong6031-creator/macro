@@ -118,6 +118,7 @@ body.cs-page.cs-modal-open { overflow: hidden; }
 
 .cs-status,
 .cs-unavailable,
+.cs-policy-active,
 .cs-rail,
 .cs-dossier,
 .cs-evidence-drawer {
@@ -171,6 +172,28 @@ body.cs-page.cs-modal-open { overflow: hidden; }
 .cs-unavailable-mark { color: var(--cs-gold); font-size: 17px; font-weight: 800; line-height: 1.2; }
 .cs-unavailable strong { display: block; margin-bottom: 1px; color: var(--cs-ink); font-size: 11px; }
 .cs-unavailable span { font-size: 11px; }
+
+/* Policy watch, `present` state (B-F09-6, MO-PAID-067): a dated public-record
+   step is normal desk activity, not degraded coverage — so it gets its own
+   calm/informational treatment (cyan) instead of borrowing `.cs-unavailable`'s
+   gold outage look. Same layout mechanics, distinct semantic color; dark/light
+   both resolve automatically because --cs-cyan/--cs-surface/--cs-line already
+   repaint per theme above. */
+.cs-policy-active {
+  display: flex;
+  align-items: flex-start;
+  margin: 12px 0 16px;
+  padding: 11px 14px;
+  border-color: color-mix(in srgb, var(--cs-cyan) 24%, var(--cs-line));
+  border-radius: 13px;
+  color: var(--cs-muted);
+  background: color-mix(in srgb, var(--cs-cyan) 5%, var(--cs-surface));
+  box-shadow: none;
+  gap: 10px;
+}
+.cs-policy-mark { color: var(--cs-cyan); font-size: 17px; font-weight: 800; line-height: 1.2; }
+.cs-policy-active strong { display: block; margin-bottom: 1px; color: var(--cs-ink); font-size: 11px; }
+.cs-policy-active span { font-size: 11px; }
 
 .cs-workspace { display: grid; min-width: 0; grid-template-columns: minmax(272px, 320px) minmax(0, 1fr); align-items: start; gap: 16px; }
 .cs-rail { position: sticky; top: 16px; min-width: 0; overflow: hidden; border-radius: var(--cs-radius); }
