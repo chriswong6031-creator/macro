@@ -300,6 +300,223 @@ ALERT_KIND: dict[str, dict[str, str]] = {
     "contradiction_change": _pair("Contradiction appears or resolves", "矛盾出现或消解"),
 }
 
+# --- F01 Macro Command P2: The Read + the state strip -----------------------
+# Design pin `macro_command_P2_design_pin.md` §1/§6. `headline.state_id` is a
+# QUADRANT LETTER (A-D, `lib.macro_suite_view._QUADRANT_GRID`) whose meaning is
+# entirely local to its own workspace — `B` is "Accelerating momentum, broad
+# strength" for `growth_real_economy` and "Tight conditions / Tightening
+# impulse" for `financial_conditions`. STATE_WORD / PREDICATE_FORM / STATE_TONE
+# are therefore keyed `workspace_id -> state_id -> value` (pin D-1), never on
+# a flat state_id and never on freshness. The three tables carry an IDENTICAL
+# `(workspace_id, state_id)` key set — a mismatch is a build defect
+# (tests/test_macro_command_read_strip.py).
+#
+# `monetary_policy` and `rates_curves` publish no axes and so never produce a
+# `state_id` (§1) — they carry no rows here by design, not by omission; their
+# chips render null via the CHIP_NULL_NOTE cause table below.
+
+CHIP_LABEL: dict[str, dict[str, str]] = {
+    # F-8: the chip label IS the Read topic word, for all seven market chips —
+    # one reviewed pair used in both registers. `coverage` has no Read
+    # counterpart and keeps its own label.
+    "money": _pair("Money", "资金"),
+    # D-3: "Policy rates", not "Central banks" — the source workspace is
+    # `monetary_policy`, mapped to the `policy` section; "central banks" names
+    # `liquidity_central_banks`, which lives under `money`.
+    "policy": _pair("Policy rates", "政策利率"),
+    "rates": _pair("Rates", "利率"),
+    "inflation": _pair("Inflation", "通胀"),
+    "growth": _pair("Growth", "增长"),
+    "jobs": _pair("Jobs", "就业"),
+    # D-10: "Borrowing", not "Borrowing costs" — measured truncation at 1008px
+    # content width; the section itself keeps the longer name.
+    "credit": _pair("Borrowing", "融资"),
+    "coverage": _pair("Data coverage", "数据覆盖"),
+}
+
+STATE_WORD: dict[str, dict[str, dict[str, str]]] = {
+    "liquidity_regime": {
+        "A": _pair("Ample", "充裕"),
+        "B": _pair("Tight but backed", "偏紧但有支撑"),
+        "C": _pair("Easy but thin", "宽松但偏薄"),
+        "D": _pair("Tight and thin", "偏紧且偏薄"),
+    },
+    "inflation_system": {
+        "A": _pair("Cooling, still sticky", "降温但仍顽固"),
+        "B": _pair("Rising and broad", "上升且广泛"),
+        "C": _pair("Cooling", "全面降温"),
+        "D": _pair("Rising, but narrow", "上升但面窄"),
+    },
+    "growth_real_economy": {
+        "A": _pair("Strong but slowing", "强劲但放缓"),
+        "B": _pair("Picking up", "正在加快"),
+        "C": _pair("Weak and slowing", "疲弱且放缓"),
+        "D": _pair("Weak but improving", "疲弱但改善"),
+    },
+    "labor_markets": {
+        "A": _pair("Tight but cooling", "偏紧但降温"),
+        "B": _pair("Hiring, still tight", "招聘强仍偏紧"),
+        "C": _pair("Cooling and loose", "降温且宽松"),
+        "D": _pair("Hiring into slack", "宽松中招聘"),
+    },
+    "financial_conditions": {
+        "A": _pair("Easy but tightening", "宽松但转紧"),
+        "B": _pair("Tight and tightening", "偏紧且续紧"),
+        "C": _pair("Easy and easing", "宽松且续松"),
+        "D": _pair("Tight but easing", "偏紧但转松"),
+    },
+}
+
+PREDICATE_FORM: dict[str, dict[str, dict[str, str]]] = {
+    "liquidity_regime": {
+        "A": _pair("is ample and well supported", "既充裕又有支撑"),
+        "B": _pair("is tight but still backed", "偏紧，但仍有支撑"),
+        "C": _pair("is easy to get but thinly supported", "容易取得，但支撑偏薄"),
+        "D": _pair("is tight and poorly supported", "既偏紧，支撑也不足"),
+    },
+    "inflation_system": {
+        "A": _pair("is cooling but still sticky underneath", "正在降温，但底层仍顽固"),
+        "B": _pair("is rising and broadening", "正在上升，并向各处扩散"),
+        "C": _pair("is cooling across the board", "已全面降温"),
+        "D": _pair("is picking up in a few places only", "有所回升，但只集中在少数项目"),
+    },
+    "growth_real_economy": {
+        "A": _pair("is strong but slowing", "依然强劲，但正在放缓"),
+        "B": _pair("is picking up across the board", "正在加快，面也广"),
+        "C": _pair("is weak and still slowing", "疲弱，且仍在放缓"),
+        "D": _pair("is weak but improving", "仍然疲弱，但正在改善"),
+    },
+    "labor_markets": {
+        "A": _pair("are still tight but cooling", "仍然偏紧，但正在降温"),
+        "B": _pair("are still hard to fill", "仍然一岗难求"),
+        "C": _pair("are cooling and easier to fill", "正在降温，招人变得更容易"),
+        "D": _pair("are picking up with room to grow", "招聘在回升，且仍有余量"),
+    },
+    "financial_conditions": {
+        "A": _pair("is still cheap but getting less so", "仍然便宜，但正在变贵"),
+        "B": _pair("is expensive and getting harder", "成本偏高，而且越来越难"),
+        "C": _pair("is cheap and getting cheaper", "便宜，而且还在变便宜"),
+        "D": _pair("is expensive but easing", "成本仍高，但正在放松"),
+    },
+}
+
+# Tone judged INSIDE the chip's own subject only (pin §6.4) — a tight labour
+# market is `ok` because hiring is strong FOR JOBS; whether that is
+# inflationary is a different workspace's question. Null chip -> `neutral`,
+# always (D1 / §3.4): freshness never contributes a tone anywhere.
+STATE_TONE: dict[str, dict[str, str]] = {
+    "liquidity_regime": {"A": "ok", "B": "warn", "C": "warn", "D": "bad"},
+    "inflation_system": {"A": "warn", "B": "bad", "C": "ok", "D": "warn"},
+    "growth_real_economy": {"A": "warn", "B": "ok", "C": "bad", "D": "warn"},
+    "labor_markets": {"A": "warn", "B": "ok", "C": "bad", "D": "ok"},
+    "financial_conditions": {"A": "warn", "B": "bad", "C": "ok", "D": "warn"},
+}
+
+# Plain-word siblings of FRESHNESS (`.mc-chip-fresh`, pin §6.6). FRESHNESS's
+# own strings are producer-shaped internal names ("Stale source", "Source
+# failed") banned from the glance tier by doctrine Law 2 / charter §7.x. This
+# table sets no tone, ever — freshness never contributes a tone (D1). CURRENT
+# has no row: the caller omits `.mc-chip-fresh` entirely when freshness is
+# CURRENT.
+FRESHNESS_NOTE: dict[str, dict[str, str]] = {
+    "LATE_WITHIN_TOLERANCE": _pair("arriving late", "延迟送达"),
+    "STALE_SOURCE": _pair("not updated today", "今日未更新"),
+    "NOT_YET_RELEASED": _pair("not published yet", "尚未发布"),
+    "SOURCE_FAILED": _pair("didn't arrive today", "今日未送达"),
+    "RIGHTS_BLOCKED": _pair("not licensed here", "此处无授权"),
+    "NOT_COVERED": _pair("not covered", "未覆盖"),
+    "HISTORICAL_AS_KNOWN": _pair("as known at the time", "按当时已知"),
+    "SIMULATED": _pair("simulated", "模拟数据"),
+}
+
+# The always-rendered chip note (`role="note"` + `aria-describedby`, pin §6.7).
+# Budget: <= 24 EN words / <= 42 ZH characters.
+CHIP_MEANING: dict[str, dict[str, str]] = {
+    "money": _pair(
+        "How easily money is moving through the system, and whether central-bank support is behind it.",
+        "资金在体系中流动的难易程度，以及背后是否有央行支持。"),
+    "policy": _pair(
+        "Where official interest rates sit, and where the market expects them to go next.",
+        "官方利率目前的水平，以及市场预期其下一步走向。"),
+    "rates": _pair(
+        "What it costs to borrow for a few months, against what it costs for a few years.",
+        "借款数月与借款数年之间的成本差异。"),
+    "inflation": _pair(
+        "How fast prices are rising, and whether the rise is broad or confined to a few things.",
+        "物价上涨的速度，以及涨势是广泛的还是仅限于少数项目。"),
+    "growth": _pair(
+        "Whether the economy is speeding up or slowing down, and how widely.",
+        "经济是在加速还是放缓，以及影响面有多广。"),
+    "jobs": _pair(
+        "How hard it is for companies to hire, and how easily people find work.",
+        "企业招人的难度，以及求职者找工作的难易程度。"),
+    "credit": _pair(
+        "How expensive, and how hard, it is for companies to borrow right now.",
+        "企业当下借钱的成本高低与难易程度。"),
+    "coverage": _pair(
+        "How many sections have a reading dated today. This one is about our data, not the market.",
+        "有多少板块已具备今日读数。此项说明的是我们的数据，而非市场。"),
+}
+
+# Null-chip notes, replacing CHIP_MEANING when the chip is null (pin §6.8).
+# Selection order lives in `lib.macro_suite_view._chip_null_cause` — the
+# first matching cause wins.
+CHIP_NULL_NOTE: dict[str, dict[str, str]] = {
+    "no_state": _pair(
+        "This section publishes its own numbers rather than a one-word read. Open it to see them.",
+        "本板块发布的是具体数据，而非一句话读数。点击查看。"),
+    "late": _pair(
+        "Today's reading hasn't arrived. We show nothing rather than yesterday's number dressed as today's.",
+        "今日读数尚未送达。我们宁可不显示，也不会把昨天的数字当作今天的。"),
+    "not_released": _pair(
+        "The source hasn't published yet. It appears here the first time it does.",
+        "数据源尚未发布。首次发布后即会出现在此处。"),
+    "no_snapshot": _pair(
+        "We show this once this section publishes a dated reading. It refreshes with the nightly update.",
+        "该板块首次发布带日期的读数后即会显示，随每晚更新刷新。"),
+    "rights": _pair(
+        "We're not licensed to show this reading here.",
+        "我们在此处没有显示该读数的授权。"),
+    "plan": _pair(
+        "This section is part of a higher plan.",
+        "本板块属于更高级别方案。"),
+}
+
+# Chip 8 (`coverage`) value word (pin §6.5) — digit-free, per §3.0 bullet 1.
+COVERAGE_WORD: dict[str, dict[str, str]] = {
+    "complete": _pair("All sections current", "各板块均最新"),
+    "partial": _pair("Some sections behind", "部分板块滞后"),
+}
+
+# The Read's inter-clause punctuation, assigned by POSITION, never stored in
+# copy (pin §4.3): index < n-2 -> "mid", index == n-2 -> "penultimate", last
+# -> "last". ZH never carries a coordinating word (native-shaped, not
+# calqued) — every ZH value is "；" or "。".
+READ_PUNCT: dict[str, dict[str, str]] = {
+    "mid": _pair(", ", "；"),
+    "penultimate": _pair(", and ", "；"),
+    "last": _pair(".", "。"),
+}
+
+
+def date_display_pair(iso_date: str) -> dict[str, str] | None:
+    """Bilingual display for an ISO ``YYYY-MM-DD`` (or longer timestamp,
+    truncated to its date) — ``"4 Sep 2026"`` / ``"2026年9月4日"``. Never a
+    raw ISO string in visible text (G2b); returns ``None`` for anything that
+    does not parse rather than fabricating a date."""
+    if not isinstance(iso_date, str) or len(iso_date) < 10:
+        return None
+    from datetime import date as _date  # noqa: PLC0415 — stdlib, avoids a
+    # module-level import purely for one formatter used by one packet.
+    try:
+        d = _date.fromisoformat(iso_date[:10])
+    except ValueError:
+        return None
+    month_en = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")[d.month - 1]
+    return _pair(f"{d.day} {month_en} {d.year}", f"{d.year}年{d.month}月{d.day}日")
+
+
 _VOCABULARIES: dict[str, dict[str, dict[str, str]]] = {
     "freshness": FRESHNESS,
     "null_reason": NULL_REASON,
@@ -372,6 +589,15 @@ def unknown_tokens() -> tuple[str, ...]:
 
 def reset_unknown_tokens() -> None:
     _UNKNOWN.clear()
+
+
+def record_unknown(token: str) -> None:
+    """Register a token this process had no reviewed label for, outside the
+    ``label()`` lookup path — used by a caller (Macro Command's chip/Read
+    builder) that resolves its own workspace-scoped tables rather than a flat
+    :data:`_VOCABULARIES` entry, but still owes the same
+    :func:`unknown_tokens` accounting (frozen spec §3.3 step 3)."""
+    _UNKNOWN.add(token)
 
 
 def known(vocabulary: str) -> tuple[str, ...]:

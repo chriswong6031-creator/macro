@@ -19,3 +19,85 @@
 {% macro nulled(en, zh) -%}
 <span class="mq-dash" aria-hidden="true">—</span><span class="mq-sr">{{ t(en, zh) }}</span>
 {%- endmacro %}
+
+{%- macro bl(node) -%}
+{%- if node %}{{ t(node.en, node.zh) }}{% endif -%}
+{%- endmacro %}
+
+{#
+  THE READ (F01 Macro Command P2, frozen spec §2.1/§3.3).
+
+  One sentence. Every clause is a verbatim pass-through of ONE workspace's own
+  reviewed state, joined by fixed connectives (G3). `clause.punct` is a
+  BILINGUAL pair: EN joins with ", " / ", and " / "."; ZH joins with "；" and
+  ends "。" and never carries a coordinating word (a calqued "，和" is not
+  Chinese). Fewer than three clauses suppresses the sentence entirely.
+
+  NO whitespace is emitted inside <p class="mc-read"> — not between the anchor
+  and its predicate, not between clauses. EN's word space is a CSS margin on
+  `.mc-read-topic` and ZH's near-zero gap is the same token; inter-clause
+  separation is `punct` alone. Template whitespace here renders as a Latin word
+  space in Chinese and as a leading indent before the first word (F-10).
+#}
+{% macro read_block(read) -%}
+{%- if read.clauses|length >= 3 %}
+<p class="mc-read" data-mc-read>
+{%- for clause in read.clauses -%}
+<span class="mc-read-clause"><a class="mc-read-topic mq-tone-{{ clause.tone }}" href="#{{ clause.section }}" data-mc-topic="{{ clause.id }}">{{ bl(clause.topic) }}</a><span class="mc-read-state">{{ bl(clause.predicate) }}</span>{{ bl(clause.punct) }}</span>
+{%- endfor -%}
+</p>
+{%- if read.omitted %}
+<p class="mc-read-omitted">{{ t('Some readings are not available today — see the states below.',
+                                '部分读数今日不可用，具体见下方状态条。') }}</p>
+{%- endif %}
+{%- else %}
+<p class="mc-read-fallback">{{ t("Today's reading is incomplete. Here is what we do have.",
+                                 '今日读数不完整。以下是我们已有的部分。') }}</p>
+{%- endif %}
+{%- endmacro %}
+
+{#
+  THE STATE STRIP (frozen spec §3). Eight cells, fixed order, one workspace each.
+  Two lines: [topic ......... Data to <date>] over [state word]. A third line
+  appears only when a freshness note or a coverage count exists.
+
+  `chip.meaning` renders in every state, null included, and is bound to the link
+  with aria-describedby so it is ANNOUNCED, never merely hoverable (D13). It is
+  never a `title=` attribute (no CJK in title=, G6).
+#}
+{% macro state_strip(strip) -%}
+<h2 class="mq-sr" id="mc-strip-h">{{ t("Today's state, one line per section",
+                                       '今日状态，每个板块一行') }}</h2>
+<ul class="mc-strip" data-mc-strip aria-labelledby="mc-strip-h">
+  {%- for chip in strip %}
+  <li class="mc-chip{{ ' is-null' if chip.null else '' }}" data-mc-topic="{{ chip.id }}">
+    <a class="mc-chip-link" href="#{{ chip.section }}" aria-describedby="{{ chip.id }}-help">
+      <span class="mc-chip-top">
+        <span class="mc-chip-label">{{ bl(chip.label) }}</span>
+        {#- F-12: a fully null chip renders NO as-of. Its value line already
+            says "Not available yet" and its note gives the reason, so
+            `nulled()`'s dash would be an orphan glyph — worst at 390, where
+            the head stacks. `nulled()` still fires for the case §3.4 aims
+            at: a chip that HAS a value but no date. -#}
+        {%- if chip.as_of %}
+        <span class="mc-chip-asof">
+          <span class="mc-asof-word">{{ t('Data to', '数据截至') }}</span>
+          <time datetime="{{ chip.as_of }}">{{ bl(chip.as_of_display) }}</time>
+        </span>
+        {%- elif not chip.null %}
+        <span class="mc-chip-asof">{{ nulled('no dated reading for this topic', '该主题没有带日期的读数') }}</span>
+        {%- endif %}
+      </span>
+      <strong class="mc-chip-value mq-tone-{{ chip.tone }}">
+        {%- if chip.null %}{{ t('Not available yet', '暂不可用') }}
+        {%- else %}{{ bl(chip.value) }}{% endif -%}
+      </strong>
+      {%- if chip.note %}
+      <span class="mc-chip-fresh">{{ bl(chip.note) }}</span>
+      {%- endif %}
+    </a>
+    <span class="mc-chip-help" id="{{ chip.id }}-help" role="note">{{ bl(chip.meaning) }}</span>
+  </li>
+  {%- endfor %}
+</ul>
+{%- endmacro %}

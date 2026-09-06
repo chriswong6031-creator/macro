@@ -1254,3 +1254,235 @@ def build_hub_view(entries: Sequence[Mapping[str, Any]], *,
         },
         "unavailable": unavailable,
     }
+
+
+# ==========================================================================
+# F01 Macro Command P2 — The Read + the state strip
+# ==========================================================================
+#
+# Named `build_command_header` rather than extending `build_hub_view` above:
+# that function is the PRE-Macro-Command hub view (kicker/workspaces/changes/
+# attention), already unused by the production `build_hub()` path (P1
+# superseded it with `_macro_command_sections`) and still exercised, in its
+# OLD contract, by `tests/test_macro_monetary_hub.py` — a file already red on
+# this branch against the CURRENT P1 template (5 failed / 16 errored,
+# confirmed 2026-09-06, before this packet touched anything) and owned by a
+# separate worker per this packet's own commission. Reusing the name or
+# reshaping its return contract would entangle this packet with that pending
+# rewrite for no benefit; a new name keeps the two changes independent.
+#
+# This function reads only the seven named chip workspaces plus the coverage
+# tally's representative workspaces. It never scores, ranks or fuses them
+# (G3, DNR:KILL-FUSED-COMPOSITE) — every clause and every chip is a verbatim
+# pass-through of exactly one workspace's own reviewed state.
+
+#: (chip_id, workspace_id, section_id) — the seven market chips / Read
+#: clauses, frozen spec §1.1 x design pin §6.1. `workspace_id` is the
+#: PRIMARY workspace for a subtabbed section (money/growth/credit), the same
+#: convention `scripts/build_macro_suite_pages.py`'s `SECTIONS` constant uses
+#: for a subtab's first-listed entry.
+_CHIP_WORKSPACES: tuple[tuple[str, str, str], ...] = (
+    ("money", "liquidity_regime", "money"),
+    ("policy", "monetary_policy", "policy"),
+    ("rates", "rates_curves", "rates"),
+    ("inflation", "inflation_system", "inflation"),
+    ("growth", "growth_real_economy", "growth"),
+    ("jobs", "labor_markets", "jobs"),
+    ("credit", "financial_conditions", "credit"),
+)
+
+#: Chip 8 (`coverage`, design pin §6.5): one representative workspace per
+#: SIDEBAR SECTION (frozen spec §1.1's `SECTIONS`, the PRIMARY workspace for
+#: a subtabbed section), plus the hub page itself (`overview`, always
+#: counted current — it is built fresh at `page_built_at`). 11 + 1 = 12,
+#: matching the frozen spec's own "N of 12 sections" phrasing. Kept as its
+#: own constant rather than imported from `scripts/build_macro_suite_pages.py`
+#: to avoid a lib -> script import; `tests/test_macro_command_read_strip.py`
+#: pins this list against that module's `SECTIONS`.
+_COVERAGE_WORKSPACES: tuple[str, ...] = (
+    "liquidity_regime", "monetary_policy", "rates_curves", "inflation_system",
+    "growth_real_economy", "labor_markets", "housing_real_estate",
+    "consumer_payments", "financial_conditions", "national_debt_liabilities",
+    "trade_flows",
+)
+
+
+def _freshness_state(snapshot: Mapping[str, Any] | None) -> str | None:
+    if not snapshot:
+        return None
+    return (snapshot.get("availability") or {}).get("state")
+
+
+def _chip_null_cause(entry: Mapping[str, Any] | None, null_reason: Any) -> str:
+    """The one typed cause a null chip's note is selected from (design pin
+    §6.8). Checked in this order: a workspace this build could not even
+    read; a source that has not published yet; a source that is late, stale
+    or failed today; a rights/coverage gate; and only then the structural
+    absence of a state_id at all (`status=ABSENT`, `null_reason=
+    NOT_APPLICABLE` — a workspace that publishes numbers, not a state).
+
+    Freshness trouble is checked BEFORE the structural cause because it is
+    the more urgent, more actionable fact: `rates_curves` publishes no axes
+    (structurally state-less, same as `monetary_policy`) AND its source
+    failed to arrive today — a reader needs "today's reading hasn't
+    arrived", not "this section never has a one-word read". Measured against
+    the live artifact in the design pin §11.2's frame observations.
+    """
+    if entry is None or not entry.get("snapshot"):
+        return "no_snapshot"
+    freshness = _freshness_state(entry["snapshot"])
+    if freshness == "NOT_YET_RELEASED":
+        return "not_released"
+    if freshness in ("LATE_WITHIN_TOLERANCE", "STALE_SOURCE", "SOURCE_FAILED"):
+        return "late"
+    if freshness == "RIGHTS_BLOCKED" or null_reason in ("RIGHTS_BLOCKED", "NOT_COVERED"):
+        return "rights"
+    return "no_state"
+
+
+def _chip_and_clause(chip_id: str, workspace_id: str, section_id: str,
+                     entry: Mapping[str, Any] | None,
+                     ) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """One chip (always) plus its Read clause (only when the state is known
+    and reviewed) for a single market workspace (design pin §4.3)."""
+    label = dict(L.CHIP_LABEL[chip_id])
+    meaning = dict(L.CHIP_MEANING[chip_id])
+    snapshot = entry.get("snapshot") if entry else None
+    headline = (snapshot.get("headline") or {}) if snapshot else {}
+    state_id = headline.get("state_id")
+    freshness = _freshness_state(snapshot)
+    effective_date = L.date_or_none(headline.get("effective_date"))
+    if effective_date:
+        effective_date = effective_date[:10]
+    freshness_note = (None if freshness in (None, "CURRENT")
+                      else L.FRESHNESS_NOTE.get(str(freshness)))
+
+    if state_id is None:
+        cause = _chip_null_cause(entry, headline.get("null_reason"))
+        chip = {
+            "id": chip_id, "section": section_id, "label": label,
+            "value": None, "tone": "neutral", "null": True,
+            "as_of": None, "as_of_display": None,
+            "note": dict(L.CHIP_NULL_NOTE[cause]),
+            "meaning": meaning,
+        }
+        return chip, None
+
+    key = str(state_id)
+    word_table = L.STATE_WORD.get(workspace_id) or {}
+    predicate_table = L.PREDICATE_FORM.get(workspace_id) or {}
+    tone_table = L.STATE_TONE.get(workspace_id) or {}
+
+    if key not in word_table or key not in predicate_table or key not in tone_table:
+        # Frozen spec §3.3 step 3 (red-team F4 — supersedes the design pin's
+        # own §4.3 rule 1 "raises" language; this packet's commission rules
+        # the frozen spec wins on this point): an unrecognised
+        # (workspace_id, state_id) NEVER blocks the build. It is recorded, the
+        # clause is omitted, and the chip shows the producer's OWN bilingual
+        # label rather than "Not available yet" — there IS a reading, it
+        # simply has no reviewed word yet.
+        L.record_unknown(f"macro_command_state:{workspace_id}:{key}")
+        print(
+            f"::warning title=macro-command-unknown-state::{workspace_id}:{key} has no "
+            "reviewed STATE_WORD/PREDICATE_FORM/STATE_TONE entry",
+            flush=True,
+        )
+        producer_label = _bilingual(headline.get("state_label")) or _pair(key, key)
+        chip = {
+            "id": chip_id, "section": section_id, "label": label,
+            "value": producer_label, "tone": "neutral", "null": False,
+            "as_of": effective_date,
+            "as_of_display": L.date_display_pair(effective_date) if effective_date else None,
+            "note": freshness_note,
+            "meaning": meaning,
+        }
+        return chip, None
+
+    chip = {
+        "id": chip_id, "section": section_id, "label": label,
+        "value": dict(word_table[key]), "tone": tone_table[key], "null": False,
+        "as_of": effective_date,
+        "as_of_display": L.date_display_pair(effective_date) if effective_date else None,
+        "note": freshness_note,
+        "meaning": meaning,
+    }
+    clause = {
+        "id": chip_id, "section": section_id, "tone": tone_table[key],
+        "topic": dict(label), "predicate": dict(predicate_table[key]),
+        "_effective_date": effective_date,
+    }
+    return chip, clause
+
+
+def _coverage_chip(available: int, total: int) -> dict[str, Any]:
+    complete = available == total
+    value = L.COVERAGE_WORD["complete" if complete else "partial"]
+    note = _pair(f"{available} of {total} sections have today's data",
+                f"{total} 个板块中 {available} 个已有今日数据")
+    return {
+        "id": "coverage", "section": "overview", "label": dict(L.CHIP_LABEL["coverage"]),
+        "value": dict(value), "tone": "ok" if complete else "warn", "null": False,
+        "as_of": None, "as_of_display": None,
+        "note": note,
+        "meaning": dict(L.CHIP_MEANING["coverage"]),
+    }
+
+
+def build_command_header(entries: Sequence[Mapping[str, Any]], *,
+                         page_built_at: str) -> dict[str, Any]:
+    """`read` + `strip` for the Macro Command header (design pin §4.3).
+
+    ``entries`` is the SAME list `build_hub` receives: one dict per
+    registered workspace, in registry order, each ``{"workspace_id",
+    "region", "output", "title", "subtitle", "snapshot" | None, "failure" |
+    None}``. Reads only the seven chip workspaces plus the coverage tally's
+    eleven representative workspaces; originates no score, rank or fusion.
+    """
+    by_workspace = {e["workspace_id"]: e for e in entries}
+
+    chips: list[dict[str, Any]] = []
+    clauses: list[dict[str, Any]] = []
+    for chip_id, workspace_id, section_id in _CHIP_WORKSPACES:
+        chip, clause = _chip_and_clause(chip_id, workspace_id, section_id,
+                                        by_workspace.get(workspace_id))
+        chips.append(chip)
+        if clause is not None:
+            clauses.append(clause)
+
+    n = len(clauses)
+    for index, clause in enumerate(clauses):
+        if index == n - 1:
+            punct_key = "last"
+        elif index == n - 2:
+            punct_key = "penultimate"
+        else:
+            punct_key = "mid"
+        clause["punct"] = dict(L.READ_PUNCT[punct_key])
+
+    dates = [c["_effective_date"] for c in clauses if c.get("_effective_date")]
+    read_as_of = min(dates) if dates else None
+    for clause in clauses:
+        del clause["_effective_date"]
+
+    # Coverage tally: `overview` (this page itself, always current) plus the
+    # eleven representative section workspaces that are readable AND CURRENT
+    # today. Freshness is the same conservative signal `_context` states the
+    # page's own header with — never inferred from whether a state_id exists.
+    sections_available = 1
+    for workspace_id in _COVERAGE_WORKSPACES:
+        entry = by_workspace.get(workspace_id)
+        if entry and entry.get("snapshot") and _freshness_state(entry["snapshot"]) == "CURRENT":
+            sections_available += 1
+    sections_total = len(_COVERAGE_WORKSPACES) + 1
+    chips.append(_coverage_chip(sections_available, sections_total))
+
+    return {
+        "read": {
+            "as_of": read_as_of,
+            "as_of_display": L.date_display_pair(read_as_of) if read_as_of else None,
+            "clauses": clauses,
+            "omitted": len(clauses) < len(_CHIP_WORKSPACES),
+        },
+        "strip": chips,
+        "coverage": {"available": sections_available, "total": sections_total},
+    }

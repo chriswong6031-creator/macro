@@ -36,6 +36,29 @@
   --mc-halo: 0.12;          /* radial wash behind a Read topic word — dark only */
   --mc-underline: 0px;      /* Read underline rule — light only */
   --mc-focus-inner: 0 0 0 0 transparent;
+
+  /* P2 tokens — theme-invariant */
+  --mc-title-size: var(--fs-h2);
+  /* Light-on-dark haloes read heavier on the console ground than the same
+     numeric weight on paper; The Read is the one place this is visible at
+     display size, so the weight is corrected per theme (460 on light,
+     below). Non-variable system faces round these to 400/500. */
+  --mc-read-weight: 440;
+
+  /* P2 DARK TREATMENT — the strip has no container: eight bordered readouts
+     on the console ground, separated by an edge because a luminance step
+     cannot separate them here. No shadow on dark: a shadow on near-black is
+     mud. The Read's emphasis is a tinted word plus a restrained radial wash. */
+  --mc-strip-gap: 8px;
+  --mc-strip-bg: transparent;
+  --mc-strip-border: none;
+  --mc-strip-shadow: none;
+  --mc-strip-radius: 0;
+  --mc-chip-border-w: 1px;
+  --mc-chip-radius: var(--mc-radius-sm);
+  --mc-chip-pad: 10px 12px;
+  --mc-lit-halo: .22;
+  --mc-lit-underline: 0;
 }
 
 html[data-theme="light"] {
@@ -54,6 +77,23 @@ html[data-theme="light"] {
   --mc-halo: 0;
   --mc-underline: 2px;
   --mc-focus-inner: 0 0 0 1px var(--panel);
+
+  /* P2 LIGHT TREATMENT — the strip becomes ONE white ledger card. gap:1px
+     over a hairline ground paints the column/row rules exactly at any
+     column count with no nth-child arithmetic. Square corners: a ruled
+     ledger has no radius. No glow anywhere; separation is edge plus a
+     short, low elevation. The Read's emphasis swaps the wash for a 2px rule. */
+  --mc-strip-gap: 1px;
+  --mc-strip-bg: var(--mq-line);
+  --mc-strip-border: 1px solid var(--mq-line);
+  --mc-strip-shadow: 0 1px 2px color-mix(in srgb, #1c2430 8%, transparent);
+  --mc-strip-radius: 0;
+  --mc-chip-border-w: 0;
+  --mc-chip-radius: 0;
+  --mc-chip-pad: 11px 13px;
+  --mc-lit-halo: 0;
+  --mc-lit-underline: 3px;
+  --mc-read-weight: 460;
 }
 
 /* ── shell ───────────────────────────────────────────────────────────────── */
@@ -110,7 +150,9 @@ html[data-theme="light"] {
   margin: 0 0 6px; font-size: var(--fs-micro, 11px);
   letter-spacing: .08em; color: var(--mq-muted);
 }
-.mc-eyebrow time { font-family: var(--font-mono); }
+/* F-7: the UI face with tabular figures, never mono — "4 Sep 2026" contains a
+   word, and mono is reserved for figures, tickers, code and axis ticks. */
+.mc-eyebrow time { font-family: inherit; font-variant-numeric: tabular-nums; }
 .mc-asof-word { letter-spacing: 0; }
 .mc-title {
   margin: 0 0 18px; font-size: var(--fs-h2, 22px); font-weight: 600;
@@ -123,51 +165,14 @@ html[data-theme="light"] {
   text-wrap: pretty;
 }
 .mc-read-clause { white-space: normal; }
-.mc-read-topic {
-  color: inherit; text-decoration: none; font-weight: 600;
-  padding: 0 .08em 1px;
-  border-bottom: var(--mc-underline) solid currentColor;
-  /* D4: the halo is painted ON the element. A z-index:-1 pseudo would paint behind the page canvas. */
-  background-image: radial-gradient(closest-side,
-    color-mix(in srgb, currentColor calc(var(--mc-halo) * 100%), transparent), transparent);
-  background-size: 100% 160%;
-  background-position: center;
-  background-repeat: no-repeat;
-}
+/* .mc-read-topic (F-1), the state strip (F-1b/F-2) and the ≤480 Read override
+   (F-3) are REPLACED, not declared here — see the P2 block appended at the
+   end of this file, which is the single source for all three. */
 .mc-read-state { color: var(--mq-ink); }
 .mc-read-omitted, .mc-read-fallback {
   margin: 0 0 22px; font-size: var(--fs-sm, 13px); line-height: 1.5; color: var(--mq-muted); max-width: 62ch;
 }
 .mc-read-fallback { font-size: 16px; color: var(--mq-ink); }
-
-/* ── state strip ─────────────────────────────────────────────────────────── */
-.mc-strip {
-  list-style: none; margin: 0 0 32px; padding: 0;
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
-}
-.mc-chip {
-  position: relative; border: 1px solid var(--mc-chip-border);
-  background: var(--mc-chip-bg); border-radius: var(--mc-radius-sm);
-  padding: 10px 12px; min-width: 0;
-}
-.mc-chip-link { display: grid; gap: 2px; text-decoration: none; color: inherit; }
-.mc-chip-label { font-size: var(--fs-micro, 11px); letter-spacing: .06em; text-transform: uppercase; color: var(--mq-muted); }
-.mc-chip-value { font-size: 14px; font-weight: 600; color: var(--mq-ink); overflow-wrap: anywhere; }
-.mc-chip-asof { font-size: 10.5px; color: var(--mq-muted); }
-.mc-chip-asof time { font-family: var(--font-mono); }
-/* freshness is a plain word in muted ink — it never colours the chip (§3.4) */
-.mc-chip-fresh { color: var(--mq-muted); font-style: normal; }
-.mc-chip.is-null .mc-chip-value { color: var(--mq-muted); font-weight: 500; }
-.mc-chip-help {
-  position: absolute; left: 0; top: calc(100% + 6px); z-index: 5;
-  width: max(220px, 100%); padding: 8px 10px; border-radius: 8px;
-  border: var(--mc-panel-border); background: var(--mc-panel-bg);
-  box-shadow: var(--mc-panel-shadow);
-  font-size: 12px; line-height: 1.45; color: var(--mq-muted);
-  opacity: 0; visibility: hidden; transition: opacity var(--mc-dur) ease;
-}
-.mc-chip:hover .mc-chip-help,
-.mc-chip:focus-within .mc-chip-help { opacity: 1; visibility: visible; }
 
 /* ── panel ───────────────────────────────────────────────────────────────── */
 .mc-panel {
@@ -262,17 +267,248 @@ html[data-theme="light"] {
   .mc-analyst { position: fixed; right: 16px; bottom: 16px; margin: 0; z-index: 6;
     background: var(--mc-panel-bg); box-shadow: var(--mc-panel-shadow); }
 }
-@media (max-width: 480px) {
-  .mc-read { font-size: var(--fs-h2, 21px); line-height: 1.4; }
-  .mc-title { font-size: var(--fs-h3, 18px); }
-  .mc-panel { padding: 16px; border-radius: 12px; }
-  .mc-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-  .mc-chip-help { position: static; opacity: 1; visibility: visible; margin-top: 6px; width: auto;
-    border: 0; box-shadow: none; padding: 0; background: none; }
-  .mc-figure { padding: 8px; margin: 0 -8px; }
+/* the ≤480 block (F-3/F-11) is REPLACED at the end of this file — it must
+   re-bind the --mc-read-size TOKEN rather than declare .mc-read font-size
+   directly, or the zh rule below (0,2,1) would keep outranking it. */
+/* F-3: letter-spacing/line-height only — the font-size half of this rule is
+   DELETED so the ≤480 token block governs both languages. Its (0,2,1)
+   specificity was what made EN (17px, --fs-h2) and ZH (21.2px, this rule)
+   disagree at 390. */
+html[data-lang="zh"] .mc-read { letter-spacing: 0; line-height: 1.55; }
+
+/* ═══ Macro Command P2 — The Read + the state strip ═══════════════════════
+   Replaces the three P1 spans named in the comments above (F-1/F-1b/F-2/F-3)
+   and adds everything else new in this packet. No rule below contains a hex
+   literal, and no rule below declares `display` on any descendant of
+   `.mc-read`/`.mc-strip` other than the flex/grid containers themselves — a
+   descendant `display` at specificity >= (0,2,1) would outrank
+   `html:not([data-lang="zh"]) .l-zh { display:none }` (theme.css) and print
+   both languages at once. ══════════════════════════════════════════════ */
+
+/* ── command header ───────────────────────────────────────────────────────── */
+.mc-title { font-size: var(--mc-title-size); }
+.mc-absent { color: var(--mq-muted); }
+
+/* ── THE READ ─────────────────────────────────────────────────────────────── */
+.mc-read { font-weight: var(--mc-read-weight); }
+
+/* F-1: no `color` declaration here. `.mq-tone-*` (macro_suite.css:88-91) is
+   the same specificity and loads FIRST, so a color set here would silently
+   kill the frozen tone mechanism and turn the wash into an ink-grey smudge. */
+.mc-read-topic {
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0 .08em 1px;
+  border-bottom: var(--mc-underline) solid currentColor;
+  /* D4: the wash is painted ON the anchor. A z-index:-1 pseudo-element would
+     paint behind the page canvas and disappear. */
+  background-image: radial-gradient(closest-side,
+    color-mix(in srgb, currentColor calc(var(--mc-halo) * 100%), transparent), transparent);
+  background-size: 100% 160%;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: border-bottom-width var(--mc-dur) ease, background-image var(--mc-dur) ease;
 }
-html[data-lang="zh"] .mc-read { letter-spacing: 0; line-height: 1.55; font-size: calc(var(--mc-read-size) * .92); }
-@media (prefers-reduced-motion: reduce) { .mc-rail-link, .mc-chip-help { transition: none; } }
+/* A neutral topic word takes full reading ink, never `--mq-muted`: a muted
+   word inside a live sentence reads as disabled. Specificity (0,2,0) beats
+   `.mq-tone-neutral`. */
+.mc-read-topic.mq-tone-neutral { color: var(--mq-ink); }
+/* F-10: the gap between a topic word and its predicate is CSS, never
+   template whitespace. EN needs a word space; ZH must not have one — a Latin
+   word space between a noun and its predicate is not Chinese typesetting.
+   The macro emits no whitespace at all, so inter-clause separation is
+   `punct` alone. */
+.mc-read-topic { margin-inline-end: .24em; }
+html[data-lang="zh"] .mc-read-topic { margin-inline-end: .06em; }
+
+/* SIGNATURE — the two registers are one reading. Hovering or focusing either
+   register raises the other in that theme's own carrier: dark steps the
+   wash, light steps the rule. Adds no information; inert without :has(). */
+.mc-command:has(.mc-chip[data-mc-topic="money"]:hover) .mc-read-topic[data-mc-topic="money"],
+.mc-command:has(.mc-chip[data-mc-topic="money"]:focus-within) .mc-read-topic[data-mc-topic="money"],
+.mc-command:has(.mc-read-topic[data-mc-topic="money"]:hover) .mc-chip[data-mc-topic="money"],
+.mc-command:has(.mc-read-topic[data-mc-topic="money"]:focus-within) .mc-chip[data-mc-topic="money"]
+  { --mc-halo: var(--mc-lit-halo); --mc-underline: var(--mc-lit-underline); }
+.mc-command:has(.mc-chip[data-mc-topic="policy"]:hover) .mc-read-topic[data-mc-topic="policy"],
+.mc-command:has(.mc-chip[data-mc-topic="policy"]:focus-within) .mc-read-topic[data-mc-topic="policy"],
+.mc-command:has(.mc-read-topic[data-mc-topic="policy"]:hover) .mc-chip[data-mc-topic="policy"],
+.mc-command:has(.mc-read-topic[data-mc-topic="policy"]:focus-within) .mc-chip[data-mc-topic="policy"]
+  { --mc-halo: var(--mc-lit-halo); --mc-underline: var(--mc-lit-underline); }
+.mc-command:has(.mc-chip[data-mc-topic="rates"]:hover) .mc-read-topic[data-mc-topic="rates"],
+.mc-command:has(.mc-chip[data-mc-topic="rates"]:focus-within) .mc-read-topic[data-mc-topic="rates"],
+.mc-command:has(.mc-read-topic[data-mc-topic="rates"]:hover) .mc-chip[data-mc-topic="rates"],
+.mc-command:has(.mc-read-topic[data-mc-topic="rates"]:focus-within) .mc-chip[data-mc-topic="rates"]
+  { --mc-halo: var(--mc-lit-halo); --mc-underline: var(--mc-lit-underline); }
+.mc-command:has(.mc-chip[data-mc-topic="inflation"]:hover) .mc-read-topic[data-mc-topic="inflation"],
+.mc-command:has(.mc-chip[data-mc-topic="inflation"]:focus-within) .mc-read-topic[data-mc-topic="inflation"],
+.mc-command:has(.mc-read-topic[data-mc-topic="inflation"]:hover) .mc-chip[data-mc-topic="inflation"],
+.mc-command:has(.mc-read-topic[data-mc-topic="inflation"]:focus-within) .mc-chip[data-mc-topic="inflation"]
+  { --mc-halo: var(--mc-lit-halo); --mc-underline: var(--mc-lit-underline); }
+.mc-command:has(.mc-chip[data-mc-topic="growth"]:hover) .mc-read-topic[data-mc-topic="growth"],
+.mc-command:has(.mc-chip[data-mc-topic="growth"]:focus-within) .mc-read-topic[data-mc-topic="growth"],
+.mc-command:has(.mc-read-topic[data-mc-topic="growth"]:hover) .mc-chip[data-mc-topic="growth"],
+.mc-command:has(.mc-read-topic[data-mc-topic="growth"]:focus-within) .mc-chip[data-mc-topic="growth"]
+  { --mc-halo: var(--mc-lit-halo); --mc-underline: var(--mc-lit-underline); }
+.mc-command:has(.mc-chip[data-mc-topic="jobs"]:hover) .mc-read-topic[data-mc-topic="jobs"],
+.mc-command:has(.mc-chip[data-mc-topic="jobs"]:focus-within) .mc-read-topic[data-mc-topic="jobs"],
+.mc-command:has(.mc-read-topic[data-mc-topic="jobs"]:hover) .mc-chip[data-mc-topic="jobs"],
+.mc-command:has(.mc-read-topic[data-mc-topic="jobs"]:focus-within) .mc-chip[data-mc-topic="jobs"]
+  { --mc-halo: var(--mc-lit-halo); --mc-underline: var(--mc-lit-underline); }
+.mc-command:has(.mc-chip[data-mc-topic="credit"]:hover) .mc-read-topic[data-mc-topic="credit"],
+.mc-command:has(.mc-chip[data-mc-topic="credit"]:focus-within) .mc-read-topic[data-mc-topic="credit"],
+.mc-command:has(.mc-read-topic[data-mc-topic="credit"]:hover) .mc-chip[data-mc-topic="credit"],
+.mc-command:has(.mc-read-topic[data-mc-topic="credit"]:focus-within) .mc-chip[data-mc-topic="credit"]
+  { --mc-halo: var(--mc-lit-halo); --mc-underline: var(--mc-lit-underline); }
+/* `coverage` has no counterpart in The Read and gets no group. */
+.mc-chip { transition: box-shadow var(--mc-dur) ease; }
+
+.mc-read-omitted, .mc-read-fallback { max-width: 62ch; }
+
+/* ── THE STATE STRIP ──────────────────────────────────────────────────────── */
+.mc-strip {
+  list-style: none;
+  margin: 0 0 32px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--mc-strip-gap);
+  background: var(--mc-strip-bg);
+  border: var(--mc-strip-border);
+  border-radius: var(--mc-strip-radius);
+  box-shadow: var(--mc-strip-shadow);
+}
+.mc-chip {
+  position: relative;
+  min-width: 0;
+  padding: var(--mc-chip-pad);
+  border: var(--mc-chip-border-w) solid var(--mc-chip-border);
+  border-radius: var(--mc-chip-radius);
+  background: var(--mc-chip-bg);
+}
+.mc-chip-link {
+  display: grid;
+  gap: 3px;
+  text-decoration: none;
+  color: inherit;
+}
+.mc-chip-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.mc-chip-label {
+  font-size: var(--fs-label, var(--fs-micro, 11px));
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--mq-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mc-chip-asof {
+  font-size: var(--fs-micro, 11px);
+  color: var(--mq-muted);
+  white-space: nowrap;
+  flex: none;
+}
+/* F-7: the UI face with tabular figures, never mono. */
+.mc-chip-asof time { font-family: inherit; font-variant-numeric: tabular-nums; }
+/* F-9: zh takes letter-spacing 0 and no uppercase on every caps label class —
+   uppercase mangles mixed CJK/Latin strings. */
+html[data-lang="zh"] .mc-chip-label { letter-spacing: 0; text-transform: none; }
+/* The state word is the only colour in the rail. Chip edges, labels and dates
+   stay achromatic: eight tinted BOXES would read as a heat map, and a heat
+   map invites the reader to fuse eight independent workspace readings into
+   one temperature — the optic G3 / DNR:KILL-FUSED-COMPOSITE exists to
+   prevent. */
+.mc-chip-value {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -.005em;
+  overflow-wrap: anywhere;
+}
+.mc-chip.is-null .mc-chip-value { color: var(--mq-muted); font-weight: 500; }
+/* Freshness is a plain word in muted ink and NEVER a tone (§3.4, judge D1). */
+.mc-chip-fresh { font-size: var(--fs-micro, 11px); line-height: 1.35; color: var(--mq-muted); }
+
+/* F-2: hidden by CLIP, not by visibility — an aria-describedby target must
+   stay in the accessibility tree in every AT, and `visibility:hidden` does
+   not guarantee that. Same primitive as `.mq-sr` (macro_suite.css:52-56). */
+.mc-chip-help {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 5;
+  width: max(230px, 100%);
+  padding: 9px 11px;
+  border-radius: var(--mc-radius-sm);
+  border: var(--mc-panel-border);
+  background: var(--mc-panel-bg);
+  box-shadow: var(--mc-panel-shadow);
+  font-size: var(--fs-sm, 13px);
+  line-height: 1.45;
+  color: var(--mq-muted);
+  opacity: 0;
+  clip-path: inset(50%);
+  transition: opacity var(--mc-dur) ease;
+}
+.mc-chip:hover .mc-chip-help,
+.mc-chip:focus-within .mc-chip-help { opacity: 1; clip-path: none; }
+/* In light the strip is a ruled card with no per-cell border, so a hovered
+   cell needs its own signal. An inset ring, not a shadow: the card already
+   owns the page's only elevation here. Dark needs nothing — the cell already
+   has an edge. */
+html[data-theme="light"] .mc-chip:hover,
+html[data-theme="light"] .mc-chip:focus-within {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-accent) 34%, transparent);
+}
+
+/* ── responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* F-3: re-bind the TOKEN, never `.mc-read { font-size }`. The zh rule above
+     is (0,2,1) and would otherwise beat a media-query font-size, leaving EN
+     at 17px and ZH at 21px on the same phone. Scoped to `.mc-shell` (the
+     page's own root container, which every consumer of these two tokens
+     sits inside) rather than a second `:root` block: `scripts/
+     check_design_system.py` rule 9 treats ANY `:root{}` outside theme.css as
+     a parallel palette root, even a pure derivation — `.mc-shell` is a
+     scoped, non-`:root` custom-property extension, which that rule's own
+     comment says is "how a surface is supposed to extend the palette". */
+  .mc-shell { --mc-read-size: 21px; --mc-title-size: var(--fs-h3); }
+  .mc-read { line-height: 1.36; }
+  .mc-panel { padding: 16px; border-radius: 12px; }
+  .mc-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 24px; }
+  /* F-11: stack UNIFORMLY here. Letting flex-wrap decide per cell makes some
+     cells one line and others two inside one ruled grid, which reads as a
+     bug. */
+  .mc-chip-top { flex-direction: column; align-items: flex-start; gap: 1px; }
+  .mc-chip-value { font-size: 14px; }
+  .mc-figure { padding: 8px; margin: 0 -8px; }
+
+  /* Touch has no hover and tapping the cell navigates, so the note is
+     unreachable at this width. Honesty is never demoted: a NULL chip's
+     reason is printed. A populated chip's note is a definition — Tier-2
+     material — and stays clipped-but-announced. */
+  .mc-chip.is-null .mc-chip-help {
+    position: static;
+    opacity: 1;
+    clip-path: none;
+    width: auto;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    font-size: var(--fs-micro, 11px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-rail-link, .mc-read-topic, .mc-chip, .mc-chip-help { transition: none; }
+}
 
 /* Notes the builder must not "clean up":
    - `--mc-stance-wash` is a percentage in both themes (`0%` dark, `6%` light).

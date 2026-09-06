@@ -666,10 +666,12 @@ def build_hub(entries: Sequence[Mapping[str, Any]], *, out_dir: Path,
 
     Macro Command (F01 Macro Command P1) supersedes the hub's prior markup
     entirely (frozen spec §2.7): `sections`, `analyst`, `read` and `strip` are
-    the new page's context. P1 ships no state computation (R3) — `read` and
-    `strip` are honest-empty so the page's own built-in fallback copy
-    ("Today's reading is incomplete...") renders rather than fabricated data.
+    the new page's context. P2 (design pin, F01 Macro Command P2) wires `read`
+    and `strip` to the real seven-workspace pass-through computed by
+    `macro_suite_view.build_command_header` — every clause and chip is a
+    verbatim single-workspace reading, never a fused or scored composite (G3).
     """
+    header = macro_suite_view.build_command_header(entries, page_built_at=page_built_at)
     html = env.get_template(HUB_PAGE.template).render(
         page_title="Macro & Monetary",
         page_seo_title=HUB_PAGE.seo_title,
@@ -680,8 +682,8 @@ def build_hub(entries: Sequence[Mapping[str, Any]], *, out_dir: Path,
         suite_nav=suite_nav(HUB_PAGE.output),
         sections=_macro_command_sections(entries),
         analyst=_macro_command_analyst(root),
-        read={"as_of": None, "as_of_display": None, "clauses": [], "omitted": False},
-        strip=[],
+        read=header["read"],
+        strip=header["strip"],
     )
     html = "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
 
