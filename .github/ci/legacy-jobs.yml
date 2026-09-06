@@ -5812,6 +5812,37 @@ jobs:
       - name: contagion-links session stamps + heal (forward-ledger audit 2026-08-05)
         run: python -m pytest tests/test_contagion_links.py tests/test_heal_contagion_links_ledger.py -q
 
+  sanctions-map-page:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # Packet A-F02-1: OFAC sanctions map engine + page + nav + worldmap base +
+    # collector parser. Zero network; fixtures + committed snapshot only.
+    paths:
+      - "collectors/ofac_sdn.py"
+      - "config/sanctions_ofac_programs.yml"
+      - "engine/sanctions_map.py"
+      - "scripts/build_sanctions_map.py"
+      - "scripts/gen_worldmap_svg.py"
+      - "templates/_worldmap_base.html.j2"
+      - "templates/sanctions_map.html.j2"
+      - "templates/_navlinks.html.j2"
+      - "tests/test_ofac_sdn_collector.py"
+      - "tests/test_sanctions_map_engine.py"
+      - "tests/test_sanctions_map_nav.py"
+      - "tests/test_sanctions_map_page.py"
+      - "tests/test_worldmap_base.py"
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyyaml jinja2 requests
+      - name: sanctions map engine + page + nav + worldmap + OFAC collector
+        run: python -m pytest tests/test_sanctions_map_engine.py tests/test_sanctions_map_page.py tests/test_sanctions_map_nav.py tests/test_worldmap_base.py tests/test_ofac_sdn_collector.py -q
+
   itr-turn-rotation:
     if: ${{ false }}
     gate: data

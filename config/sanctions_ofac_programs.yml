@@ -1,0 +1,512 @@
+# OFAC sanctions programmes -> country. Reviewed by hand against the committed
+# SDN snapshot codes (data/sanctions_ofac/sdn_snapshot.csv) and OFAC's published
+# programme / country pages. No inference, no model output, no heuristics.
+# Consumed by engine/sanctions_map.py. Country keys are ISO3 matching the
+# Natural Earth base map in templates/_worldmap_base.html.j2 (existing geospatial
+# identity plane — not a second country master).
+#
+# `thematic:` lists authorities that are not country-scoped (global terrorism,
+# narcotics, WMD, cyber, etc.). They count toward the programme total but do
+# NOT inflate "could not verify a country" and do NOT hatch the whole map.
+programs:
+  # ── Russia / Russia-related (incl. Ukraine-related EOs on OFAC's Russia page)
+  - code: RUSSIA-EO14024
+    iso3: RUS
+    country_name_en: Russia
+    country_name_zh: 俄罗斯
+    name_en: Russia — Executive Order 14024
+    name_zh: 俄罗斯 — 第14024号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-06'
+  - code: RUSSIA-EO14065
+    iso3: RUS
+    country_name_en: Russia
+    country_name_zh: 俄罗斯
+    name_en: Russia — Executive Order 14065
+    name_zh: 俄罗斯 — 第14065号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-06'
+  - code: CAATSA - RUSSIA
+    iso3: RUS
+    country_name_en: Russia
+    country_name_zh: 俄罗斯
+    name_en: Russia — CAATSA
+    name_zh: 俄罗斯 — CAATSA
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-06'
+  - code: UKRAINE-EO13662
+    iso3: RUS
+    country_name_en: Russia
+    country_name_zh: 俄罗斯
+    name_en: Russia/Ukraine — Executive Order 13662
+    name_zh: 俄罗斯/乌克兰 — 第13662号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-06'
+  - code: UKRAINE-EO13661
+    iso3: RUS
+    country_name_en: Russia
+    country_name_zh: 俄罗斯
+    name_en: Russia/Ukraine — Executive Order 13661
+    name_zh: 俄罗斯/乌克兰 — 第13661号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-06'
+  - code: UKRAINE-EO13660
+    iso3: RUS
+    country_name_en: Russia
+    country_name_zh: 俄罗斯
+    name_en: Russia/Ukraine — Executive Order 13660
+    name_zh: 俄罗斯/乌克兰 — 第13660号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-06'
+  - code: UKRAINE-EO13685
+    iso3: RUS
+    country_name_en: Russia
+    country_name_zh: 俄罗斯
+    name_en: Russia/Ukraine — Executive Order 13685
+    name_zh: 俄罗斯/乌克兰 — 第13685号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-06'
+  - code: PEESA-EO14039
+    iso3: RUS
+    country_name_en: Russia
+    country_name_zh: 俄罗斯
+    name_en: Russia — PEESA Executive Order 14039
+    name_zh: 俄罗斯 — PEESA 第14039号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions
+    reviewed: '2026-09-06'
+
+  # ── Iran
+  - code: IRAN
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran Sanctions
+    name_zh: 伊朗制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IRAN-EO13902
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — Executive Order 13902
+    name_zh: 伊朗 — 第13902号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IRAN-EO13846
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — Executive Order 13846
+    name_zh: 伊朗 — 第13846号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IRAN-HR
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — Human Rights
+    name_zh: 伊朗 — 人权制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IRAN-EO13876
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — Executive Order 13876
+    name_zh: 伊朗 — 第13876号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IRAN-EO13871
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — Executive Order 13871
+    name_zh: 伊朗 — 第13871号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IRAN-CON-ARMS-EO
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — Conventional Arms
+    name_zh: 伊朗 — 常规武器
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IRAN-TRA
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — TRA
+    name_zh: 伊朗 — TRA
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: CAATSA - IRAN
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — CAATSA
+    name_zh: 伊朗 — CAATSA
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IFSR
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — Financial Sanctions
+    name_zh: 伊朗 — 金融制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IRGC
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — IRGC
+    name_zh: 伊朗 — 伊斯兰革命卫队
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: IFCA
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — IFCA
+    name_zh: 伊朗 — IFCA
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+  - code: HRIT-IR
+    iso3: IRN
+    country_name_en: Iran
+    country_name_zh: 伊朗
+    name_en: Iran — Human Rights / IT
+    name_zh: 伊朗 — 人权/信息技术
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions
+    reviewed: '2026-09-06'
+
+  # ── North Korea
+  - code: DPRK
+    iso3: PRK
+    country_name_en: North Korea
+    country_name_zh: 朝鲜
+    name_en: North Korea Sanctions
+    name_zh: 朝鲜制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions
+    reviewed: '2026-09-06'
+  - code: DPRK4
+    iso3: PRK
+    country_name_en: North Korea
+    country_name_zh: 朝鲜
+    name_en: North Korea — DPRK4
+    name_zh: 朝鲜 — DPRK4
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions
+    reviewed: '2026-09-06'
+  - code: DPRK3
+    iso3: PRK
+    country_name_en: North Korea
+    country_name_zh: 朝鲜
+    name_en: North Korea — DPRK3
+    name_zh: 朝鲜 — DPRK3
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions
+    reviewed: '2026-09-06'
+  - code: DPRK2
+    iso3: PRK
+    country_name_en: North Korea
+    country_name_zh: 朝鲜
+    name_en: North Korea — DPRK2
+    name_zh: 朝鲜 — DPRK2
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions
+    reviewed: '2026-09-06'
+  - code: DPRK-NKSPEA
+    iso3: PRK
+    country_name_en: North Korea
+    country_name_zh: 朝鲜
+    name_en: North Korea — NKSPEA
+    name_zh: 朝鲜 — NKSPEA
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions
+    reviewed: '2026-09-06'
+
+  # ── Burma / Myanmar (snapshot code is BURMA-EO14014; bare MYANMAR is absent)
+  - code: BURMA-EO14014
+    iso3: MMR
+    country_name_en: Myanmar
+    country_name_zh: 缅甸
+    name_en: Burma-Related Sanctions — EO 14014
+    name_zh: 缅甸相关制裁 — 第14014号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/burma-related-sanctions
+    reviewed: '2026-09-06'
+
+  # ── Cuba
+  - code: CUBA
+    iso3: CUB
+    country_name_en: Cuba
+    country_name_zh: 古巴
+    name_en: Cuba Sanctions
+    name_zh: 古巴制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions
+    reviewed: '2026-09-06'
+  - code: CUBA-EO14404
+    iso3: CUB
+    country_name_en: Cuba
+    country_name_zh: 古巴
+    name_en: Cuba — Executive Order 14404
+    name_zh: 古巴 — 第14404号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions
+    reviewed: '2026-09-06'
+
+  # ── Venezuela
+  - code: VENEZUELA
+    iso3: VEN
+    country_name_en: Venezuela
+    country_name_zh: 委内瑞拉
+    name_en: Venezuela-Related Sanctions
+    name_zh: 委内瑞拉相关制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions
+    reviewed: '2026-09-06'
+  - code: VENEZUELA-EO13850
+    iso3: VEN
+    country_name_en: Venezuela
+    country_name_zh: 委内瑞拉
+    name_en: Venezuela — Executive Order 13850
+    name_zh: 委内瑞拉 — 第13850号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions
+    reviewed: '2026-09-06'
+  - code: VENEZUELA-EO13884
+    iso3: VEN
+    country_name_en: Venezuela
+    country_name_zh: 委内瑞拉
+    name_en: Venezuela — Executive Order 13884
+    name_zh: 委内瑞拉 — 第13884号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions
+    reviewed: '2026-09-06'
+
+  # ── Belarus
+  - code: BELARUS
+    iso3: BLR
+    country_name_en: Belarus
+    country_name_zh: 白俄罗斯
+    name_en: Belarus Sanctions
+    name_zh: 白俄罗斯制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/belarus-sanctions
+    reviewed: '2026-09-06'
+  - code: BELARUS-EO14038
+    iso3: BLR
+    country_name_en: Belarus
+    country_name_zh: 白俄罗斯
+    name_en: Belarus — Executive Order 14038
+    name_zh: 白俄罗斯 — 第14038号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/belarus-sanctions
+    reviewed: '2026-09-06'
+
+  # ── Syria (bare SYRIA absent from snapshot; use live codes)
+  - code: PAARSSR-EO13894
+    iso3: SYR
+    country_name_en: Syria
+    country_name_zh: 叙利亚
+    name_en: Syria — PAARSSR EO 13894
+    name_zh: 叙利亚 — PAARSSR 第13894号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/syria-sanctions
+    reviewed: '2026-09-06'
+  - code: HRIT-SY
+    iso3: SYR
+    country_name_en: Syria
+    country_name_zh: 叙利亚
+    name_en: Syria — Human Rights / IT
+    name_zh: 叙利亚 — 人权/信息技术
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/syria-sanctions
+    reviewed: '2026-09-06'
+
+  # ── Additional country-scoped codes present in the snapshot
+  - code: IRAQ2
+    iso3: IRQ
+    country_name_en: Iraq
+    country_name_zh: 伊拉克
+    name_en: Iraq Sanctions
+    name_zh: 伊拉克制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iraq-related-sanctions
+    reviewed: '2026-09-06'
+  - code: IRAQ3
+    iso3: IRQ
+    country_name_en: Iraq
+    country_name_zh: 伊拉克
+    name_en: Iraq — IRAQ3
+    name_zh: 伊拉克 — IRAQ3
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/iraq-related-sanctions
+    reviewed: '2026-09-06'
+  - code: NICARAGUA
+    iso3: NIC
+    country_name_en: Nicaragua
+    country_name_zh: 尼加拉瓜
+    name_en: Nicaragua Sanctions
+    name_zh: 尼加拉瓜制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/nicaragua-related-sanctions
+    reviewed: '2026-09-06'
+  - code: NICARAGUA-NHRAA
+    iso3: NIC
+    country_name_en: Nicaragua
+    country_name_zh: 尼加拉瓜
+    name_en: Nicaragua — NHRAA
+    name_zh: 尼加拉瓜 — NHRAA
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/nicaragua-related-sanctions
+    reviewed: '2026-09-06'
+  - code: DRCONGO
+    iso3: COD
+    country_name_en: DR Congo
+    country_name_zh: 刚果（金）
+    name_en: DR Congo Sanctions
+    name_zh: 刚果（金）制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/democratic-republic-of-the-congo-related-sanctions
+    reviewed: '2026-09-06'
+  - code: SUDAN-EO14098
+    iso3: SDN
+    country_name_en: Sudan
+    country_name_zh: 苏丹
+    name_en: Sudan — Executive Order 14098
+    name_zh: 苏丹 — 第14098号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/sudan-and-darfur-sanctions
+    reviewed: '2026-09-06'
+  - code: DARFUR
+    iso3: SDN
+    country_name_en: Sudan
+    country_name_zh: 苏丹
+    name_en: Sudan — Darfur
+    name_zh: 苏丹 — 达尔富尔
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/sudan-and-darfur-sanctions
+    reviewed: '2026-09-06'
+  # Natural Earth 1:110m has no separate SSD path — attribute to SDN on this
+  # coarse base map so the programme is visible rather than silently dropped.
+  - code: SOUTH SUDAN
+    iso3: SDN
+    country_name_en: Sudan
+    country_name_zh: 苏丹
+    name_en: South Sudan Sanctions
+    name_zh: 南苏丹制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/south-sudan-related-sanctions
+    reviewed: '2026-09-06'
+  - code: LIBYA2
+    iso3: LBY
+    country_name_en: Libya
+    country_name_zh: 利比亚
+    name_en: Libya Sanctions
+    name_zh: 利比亚制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/libya-sanctions
+    reviewed: '2026-09-06'
+  - code: LIBYA3
+    iso3: LBY
+    country_name_en: Libya
+    country_name_zh: 利比亚
+    name_en: Libya — LIBYA3
+    name_zh: 利比亚 — LIBYA3
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/libya-sanctions
+    reviewed: '2026-09-06'
+  - code: SOMALIA
+    iso3: SOM
+    country_name_en: Somalia
+    country_name_zh: 索马里
+    name_en: Somalia Sanctions
+    name_zh: 索马里制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/somalia-sanctions
+    reviewed: '2026-09-06'
+  - code: CAR
+    iso3: CAF
+    country_name_en: Central African Republic
+    country_name_zh: 中非共和国
+    name_en: Central African Republic Sanctions
+    name_zh: 中非共和国制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/central-african-republic-sanctions
+    reviewed: '2026-09-06'
+  - code: LEBANON
+    iso3: LBN
+    country_name_en: Lebanon
+    country_name_zh: 黎巴嫩
+    name_en: Lebanon Sanctions
+    name_zh: 黎巴嫩制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/lebanon-related-sanctions
+    reviewed: '2026-09-06'
+  - code: YEMEN
+    iso3: YEM
+    country_name_en: Yemen
+    country_name_zh: 也门
+    name_en: Yemen Sanctions
+    name_zh: 也门制裁
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/yemen-related-sanctions
+    reviewed: '2026-09-06'
+  - code: ETHIOPIA-EO14046
+    iso3: ETH
+    country_name_en: Ethiopia
+    country_name_zh: 埃塞俄比亚
+    name_en: Ethiopia — Executive Order 14046
+    name_zh: 埃塞俄比亚 — 第14046号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/ethiopia-related-sanctions
+    reviewed: '2026-09-06'
+  - code: MALI-EO13882
+    iso3: MLI
+    country_name_en: Mali
+    country_name_zh: 马里
+    name_en: Mali — Executive Order 13882
+    name_zh: 马里 — 第13882号行政命令
+    ofac_program_url: https://ofac.treasury.gov/sanctions-programs-and-country-information/mali-related-sanctions
+    reviewed: '2026-09-06'
+
+# Non-country authorities — counted in n_programs_total, never as "unresolved country".
+thematic:
+  - code: SDGT
+    name_en: Global Terrorism
+    name_zh: 全球恐怖主义
+  - code: SDNTK
+    name_en: Narcotics Trafficking (Kingpin)
+    name_zh: 毒枭制裁
+  - code: SDNT
+    name_en: Narcotics Trafficking
+    name_zh: 毒品贩运
+  - code: NPWMD
+    name_en: Non-Proliferation / WMD
+    name_zh: 防扩散 / 大规模杀伤性武器
+  - code: GLOMAG
+    name_en: Global Magnitsky
+    name_zh: 全球马格尼茨基
+  - code: MAGNIT
+    name_en: Magnitsky
+    name_zh: 马格尼茨基
+  - code: ILLICIT-DRUGS-EO14059
+    name_en: Illicit Drugs — EO 14059
+    name_zh: 非法药物 — 第14059号行政命令
+  - code: TCO
+    name_en: Transnational Criminal Organizations
+    name_zh: 跨国犯罪组织
+  - code: CYBER2
+    name_en: Cyber-Related Sanctions
+    name_zh: 网络相关制裁
+  - code: CYBER3
+    name_en: Cyber-Related Sanctions (CYBER3)
+    name_zh: 网络相关制裁（CYBER3）
+  - code: CYBER4
+    name_en: Cyber-Related Sanctions (CYBER4)
+    name_zh: 网络相关制裁（CYBER4）
+  - code: ICC-EO14203
+    name_en: International Criminal Court — EO 14203
+    name_zh: 国际刑事法院 — 第14203号行政命令
+  - code: PAIPA
+    name_en: Protecting Americans from Foreign Adversary Controlled Applications
+    name_zh: 保护美国人免受外国对手控制的应用程序影响
+  - code: FTO
+    name_en: Foreign Terrorist Organizations
+    name_zh: 外国恐怖组织
+  - code: ELECTION-EO13848
+    name_en: Election Interference — EO 13848
+    name_zh: 选举干预 — 第13848号行政命令
+  - code: HOSTAGES-EO14078
+    name_en: Hostages and Wrongful Detention — EO 14078
+    name_zh: 人质与不当拘押 — 第14078号行政命令
+  - code: BALKANS
+    name_en: Western Balkans
+    name_zh: 西巴尔干
+  - code: BALKANS-EO14033
+    name_en: Western Balkans — EO 14033
+    name_zh: 西巴尔干 — 第14033号行政命令
+  - code: NS-PLC
+    name_en: Non-SDN Palestinian Legislative Council
+    name_zh: 非 SDN 巴勒斯坦立法委员会
+  - code: SSIDES
+    name_en: Syrian Sanctions / SSIDES residual
+    name_zh: 叙利亚制裁 / SSIDES 残余
+  - code: UHRPA
+    name_en: Uyghur Human Rights Policy Act
+    name_zh: 维吾尔人权政策法

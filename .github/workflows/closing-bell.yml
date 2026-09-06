@@ -360,6 +360,7 @@ jobs:
           cl_markets() {
             brun commodities  "build commodity vector (build_commodities)"         scripts.build_commodities
             brun spr          "build strategic reserves (build_spr)"               scripts.build_spr
+            brun sanctions_map "sanctions map (build_sanctions_map)"                 scripts.build_sanctions_map
             brun forex        "build forex vector (build_forex)"                   scripts.build_forex
             brun bonds        "build bonds & bond-health (build_bonds)"            scripts.build_bonds
             brun crossasset   "cross-asset vector (build_crossasset)"              scripts.build_crossasset

@@ -1,0 +1,584 @@
+{
+  "as_of": "2026-09-06",
+  "source_url": "https://www.treasury.gov/ofac/downloads/sdn.csv",
+  "fetched_at": "2026-09-06T05:53:36Z",
+  "n_programs_total": 73,
+  "n_countries": 19,
+  "countries": [
+    {
+      "iso3": "IRN",
+      "name_en": "Iran",
+      "name_zh": "\u4f0a\u6717",
+      "n_programs": 13,
+      "programs": [
+        {
+          "code": "IRAN",
+          "name_en": "Iran Sanctions",
+          "name_zh": "\u4f0a\u6717\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IRGC",
+          "name_en": "Iran \u2014 IRGC",
+          "name_zh": "\u4f0a\u6717 \u2014 \u4f0a\u65af\u5170\u9769\u547d\u536b\u961f",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IFSR",
+          "name_en": "Iran \u2014 Financial Sanctions",
+          "name_zh": "\u4f0a\u6717 \u2014 \u91d1\u878d\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IRAN-EO13902",
+          "name_en": "Iran \u2014 Executive Order 13902",
+          "name_zh": "\u4f0a\u6717 \u2014 \u7b2c13902\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IRAN-CON-ARMS-EO",
+          "name_en": "Iran \u2014 Conventional Arms",
+          "name_zh": "\u4f0a\u6717 \u2014 \u5e38\u89c4\u6b66\u5668",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IRAN-HR",
+          "name_en": "Iran \u2014 Human Rights",
+          "name_zh": "\u4f0a\u6717 \u2014 \u4eba\u6743\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "HRIT-IR",
+          "name_en": "Iran \u2014 Human Rights / IT",
+          "name_zh": "\u4f0a\u6717 \u2014 \u4eba\u6743/\u4fe1\u606f\u6280\u672f",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IRAN-TRA",
+          "name_en": "Iran \u2014 TRA",
+          "name_zh": "\u4f0a\u6717 \u2014 TRA",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IFCA",
+          "name_en": "Iran \u2014 IFCA",
+          "name_zh": "\u4f0a\u6717 \u2014 IFCA",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IRAN-EO13876",
+          "name_en": "Iran \u2014 Executive Order 13876",
+          "name_zh": "\u4f0a\u6717 \u2014 \u7b2c13876\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IRAN-EO13871",
+          "name_en": "Iran \u2014 Executive Order 13871",
+          "name_zh": "\u4f0a\u6717 \u2014 \u7b2c13871\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "IRAN-EO13846",
+          "name_en": "Iran \u2014 Executive Order 13846",
+          "name_zh": "\u4f0a\u6717 \u2014 \u7b2c13846\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        },
+        {
+          "code": "CAATSA - IRAN",
+          "name_en": "Iran \u2014 CAATSA",
+          "name_zh": "\u4f0a\u6717 \u2014 CAATSA",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iran-sanctions"
+        }
+      ],
+      "rung": 3
+    },
+    {
+      "iso3": "RUS",
+      "name_en": "Russia",
+      "name_zh": "\u4fc4\u7f57\u65af",
+      "n_programs": 8,
+      "programs": [
+        {
+          "code": "RUSSIA-EO14024",
+          "name_en": "Russia \u2014 Executive Order 14024",
+          "name_zh": "\u4fc4\u7f57\u65af \u2014 \u7b2c14024\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        },
+        {
+          "code": "UKRAINE-EO13660",
+          "name_en": "Russia/Ukraine \u2014 Executive Order 13660",
+          "name_zh": "\u4fc4\u7f57\u65af/\u4e4c\u514b\u5170 \u2014 \u7b2c13660\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        },
+        {
+          "code": "UKRAINE-EO13661",
+          "name_en": "Russia/Ukraine \u2014 Executive Order 13661",
+          "name_zh": "\u4fc4\u7f57\u65af/\u4e4c\u514b\u5170 \u2014 \u7b2c13661\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        },
+        {
+          "code": "UKRAINE-EO13662",
+          "name_en": "Russia/Ukraine \u2014 Executive Order 13662",
+          "name_zh": "\u4fc4\u7f57\u65af/\u4e4c\u514b\u5170 \u2014 \u7b2c13662\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        },
+        {
+          "code": "RUSSIA-EO14065",
+          "name_en": "Russia \u2014 Executive Order 14065",
+          "name_zh": "\u4fc4\u7f57\u65af \u2014 \u7b2c14065\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        },
+        {
+          "code": "UKRAINE-EO13685",
+          "name_en": "Russia/Ukraine \u2014 Executive Order 13685",
+          "name_zh": "\u4fc4\u7f57\u65af/\u4e4c\u514b\u5170 \u2014 \u7b2c13685\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        },
+        {
+          "code": "PEESA-EO14039",
+          "name_en": "Russia \u2014 PEESA Executive Order 14039",
+          "name_zh": "\u4fc4\u7f57\u65af \u2014 PEESA \u7b2c14039\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        },
+        {
+          "code": "CAATSA - RUSSIA",
+          "name_en": "Russia \u2014 CAATSA",
+          "name_zh": "\u4fc4\u7f57\u65af \u2014 CAATSA",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/russia-related-sanctions"
+        }
+      ],
+      "rung": 3
+    },
+    {
+      "iso3": "PRK",
+      "name_en": "North Korea",
+      "name_zh": "\u671d\u9c9c",
+      "n_programs": 5,
+      "programs": [
+        {
+          "code": "DPRK2",
+          "name_en": "North Korea \u2014 DPRK2",
+          "name_zh": "\u671d\u9c9c \u2014 DPRK2",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions"
+        },
+        {
+          "code": "DPRK",
+          "name_en": "North Korea Sanctions",
+          "name_zh": "\u671d\u9c9c\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions"
+        },
+        {
+          "code": "DPRK3",
+          "name_en": "North Korea \u2014 DPRK3",
+          "name_zh": "\u671d\u9c9c \u2014 DPRK3",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions"
+        },
+        {
+          "code": "DPRK4",
+          "name_en": "North Korea \u2014 DPRK4",
+          "name_zh": "\u671d\u9c9c \u2014 DPRK4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions"
+        },
+        {
+          "code": "DPRK-NKSPEA",
+          "name_en": "North Korea \u2014 NKSPEA",
+          "name_zh": "\u671d\u9c9c \u2014 NKSPEA",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/north-korea-sanctions"
+        }
+      ],
+      "rung": 3
+    },
+    {
+      "iso3": "SDN",
+      "name_en": "Sudan",
+      "name_zh": "\u82cf\u4e39",
+      "n_programs": 3,
+      "programs": [
+        {
+          "code": "DARFUR",
+          "name_en": "Sudan \u2014 Darfur",
+          "name_zh": "\u82cf\u4e39 \u2014 \u8fbe\u5c14\u5bcc\u5c14",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/sudan-and-darfur-sanctions"
+        },
+        {
+          "code": "SOUTH SUDAN",
+          "name_en": "South Sudan Sanctions",
+          "name_zh": "\u5357\u82cf\u4e39\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/south-sudan-related-sanctions"
+        },
+        {
+          "code": "SUDAN-EO14098",
+          "name_en": "Sudan \u2014 Executive Order 14098",
+          "name_zh": "\u82cf\u4e39 \u2014 \u7b2c14098\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/sudan-and-darfur-sanctions"
+        }
+      ],
+      "rung": 2
+    },
+    {
+      "iso3": "VEN",
+      "name_en": "Venezuela",
+      "name_zh": "\u59d4\u5185\u745e\u62c9",
+      "n_programs": 3,
+      "programs": [
+        {
+          "code": "VENEZUELA",
+          "name_en": "Venezuela-Related Sanctions",
+          "name_zh": "\u59d4\u5185\u745e\u62c9\u76f8\u5173\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions"
+        },
+        {
+          "code": "VENEZUELA-EO13850",
+          "name_en": "Venezuela \u2014 Executive Order 13850",
+          "name_zh": "\u59d4\u5185\u745e\u62c9 \u2014 \u7b2c13850\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions"
+        },
+        {
+          "code": "VENEZUELA-EO13884",
+          "name_en": "Venezuela \u2014 Executive Order 13884",
+          "name_zh": "\u59d4\u5185\u745e\u62c9 \u2014 \u7b2c13884\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions"
+        }
+      ],
+      "rung": 2
+    },
+    {
+      "iso3": "CUB",
+      "name_en": "Cuba",
+      "name_zh": "\u53e4\u5df4",
+      "n_programs": 2,
+      "programs": [
+        {
+          "code": "CUBA",
+          "name_en": "Cuba Sanctions",
+          "name_zh": "\u53e4\u5df4\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions"
+        },
+        {
+          "code": "CUBA-EO14404",
+          "name_en": "Cuba \u2014 Executive Order 14404",
+          "name_zh": "\u53e4\u5df4 \u2014 \u7b2c14404\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/cuba-sanctions"
+        }
+      ],
+      "rung": 2
+    },
+    {
+      "iso3": "IRQ",
+      "name_en": "Iraq",
+      "name_zh": "\u4f0a\u62c9\u514b",
+      "n_programs": 2,
+      "programs": [
+        {
+          "code": "IRAQ2",
+          "name_en": "Iraq Sanctions",
+          "name_zh": "\u4f0a\u62c9\u514b\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iraq-related-sanctions"
+        },
+        {
+          "code": "IRAQ3",
+          "name_en": "Iraq \u2014 IRAQ3",
+          "name_zh": "\u4f0a\u62c9\u514b \u2014 IRAQ3",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/iraq-related-sanctions"
+        }
+      ],
+      "rung": 2
+    },
+    {
+      "iso3": "BLR",
+      "name_en": "Belarus",
+      "name_zh": "\u767d\u4fc4\u7f57\u65af",
+      "n_programs": 2,
+      "programs": [
+        {
+          "code": "BELARUS",
+          "name_en": "Belarus Sanctions",
+          "name_zh": "\u767d\u4fc4\u7f57\u65af\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/belarus-sanctions"
+        },
+        {
+          "code": "BELARUS-EO14038",
+          "name_en": "Belarus \u2014 Executive Order 14038",
+          "name_zh": "\u767d\u4fc4\u7f57\u65af \u2014 \u7b2c14038\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/belarus-sanctions"
+        }
+      ],
+      "rung": 2
+    },
+    {
+      "iso3": "SYR",
+      "name_en": "Syria",
+      "name_zh": "\u53d9\u5229\u4e9a",
+      "n_programs": 2,
+      "programs": [
+        {
+          "code": "PAARSSR-EO13894",
+          "name_en": "Syria \u2014 PAARSSR EO 13894",
+          "name_zh": "\u53d9\u5229\u4e9a \u2014 PAARSSR \u7b2c13894\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/syria-sanctions"
+        },
+        {
+          "code": "HRIT-SY",
+          "name_en": "Syria \u2014 Human Rights / IT",
+          "name_zh": "\u53d9\u5229\u4e9a \u2014 \u4eba\u6743/\u4fe1\u606f\u6280\u672f",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/syria-sanctions"
+        }
+      ],
+      "rung": 2
+    },
+    {
+      "iso3": "LBY",
+      "name_en": "Libya",
+      "name_zh": "\u5229\u6bd4\u4e9a",
+      "n_programs": 2,
+      "programs": [
+        {
+          "code": "LIBYA2",
+          "name_en": "Libya Sanctions",
+          "name_zh": "\u5229\u6bd4\u4e9a\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/libya-sanctions"
+        },
+        {
+          "code": "LIBYA3",
+          "name_en": "Libya \u2014 LIBYA3",
+          "name_zh": "\u5229\u6bd4\u4e9a \u2014 LIBYA3",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/libya-sanctions"
+        }
+      ],
+      "rung": 2
+    },
+    {
+      "iso3": "NIC",
+      "name_en": "Nicaragua",
+      "name_zh": "\u5c3c\u52a0\u62c9\u74dc",
+      "n_programs": 2,
+      "programs": [
+        {
+          "code": "NICARAGUA",
+          "name_en": "Nicaragua Sanctions",
+          "name_zh": "\u5c3c\u52a0\u62c9\u74dc\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/nicaragua-related-sanctions"
+        },
+        {
+          "code": "NICARAGUA-NHRAA",
+          "name_en": "Nicaragua \u2014 NHRAA",
+          "name_zh": "\u5c3c\u52a0\u62c9\u74dc \u2014 NHRAA",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/nicaragua-related-sanctions"
+        }
+      ],
+      "rung": 2
+    },
+    {
+      "iso3": "SOM",
+      "name_en": "Somalia",
+      "name_zh": "\u7d22\u9a6c\u91cc",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "SOMALIA",
+          "name_en": "Somalia Sanctions",
+          "name_zh": "\u7d22\u9a6c\u91cc\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/somalia-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "COD",
+      "name_en": "DR Congo",
+      "name_zh": "\u521a\u679c\uff08\u91d1\uff09",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "DRCONGO",
+          "name_en": "DR Congo Sanctions",
+          "name_zh": "\u521a\u679c\uff08\u91d1\uff09\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/democratic-republic-of-the-congo-related-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "LBN",
+      "name_en": "Lebanon",
+      "name_zh": "\u9ece\u5df4\u5ae9",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "LEBANON",
+          "name_en": "Lebanon Sanctions",
+          "name_zh": "\u9ece\u5df4\u5ae9\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/lebanon-related-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "CAF",
+      "name_en": "Central African Republic",
+      "name_zh": "\u4e2d\u975e\u5171\u548c\u56fd",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "CAR",
+          "name_en": "Central African Republic Sanctions",
+          "name_zh": "\u4e2d\u975e\u5171\u548c\u56fd\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/central-african-republic-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "YEM",
+      "name_en": "Yemen",
+      "name_zh": "\u4e5f\u95e8",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "YEMEN",
+          "name_en": "Yemen Sanctions",
+          "name_zh": "\u4e5f\u95e8\u5236\u88c1",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/yemen-related-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "MMR",
+      "name_en": "Myanmar",
+      "name_zh": "\u7f05\u7538",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "BURMA-EO14014",
+          "name_en": "Burma-Related Sanctions \u2014 EO 14014",
+          "name_zh": "\u7f05\u7538\u76f8\u5173\u5236\u88c1 \u2014 \u7b2c14014\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/burma-related-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "MLI",
+      "name_en": "Mali",
+      "name_zh": "\u9a6c\u91cc",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "MALI-EO13882",
+          "name_en": "Mali \u2014 Executive Order 13882",
+          "name_zh": "\u9a6c\u91cc \u2014 \u7b2c13882\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/mali-related-sanctions"
+        }
+      ],
+      "rung": 1
+    },
+    {
+      "iso3": "ETH",
+      "name_en": "Ethiopia",
+      "name_zh": "\u57c3\u585e\u4fc4\u6bd4\u4e9a",
+      "n_programs": 1,
+      "programs": [
+        {
+          "code": "ETHIOPIA-EO14046",
+          "name_en": "Ethiopia \u2014 Executive Order 14046",
+          "name_zh": "\u57c3\u585e\u4fc4\u6bd4\u4e9a \u2014 \u7b2c14046\u53f7\u884c\u653f\u547d\u4ee4",
+          "url": "https://ofac.treasury.gov/sanctions-programs-and-country-information/ethiopia-related-sanctions"
+        }
+      ],
+      "rung": 1
+    }
+  ],
+  "unresolved": [],
+  "thematic": [
+    {
+      "code": "SDGT",
+      "n_entries": 3259
+    },
+    {
+      "code": "SDNT",
+      "n_entries": 133
+    },
+    {
+      "code": "FTO",
+      "n_entries": 103
+    },
+    {
+      "code": "SDNTK",
+      "n_entries": 1365
+    },
+    {
+      "code": "ILLICIT-DRUGS-EO14059",
+      "n_entries": 729
+    },
+    {
+      "code": "GLOMAG",
+      "n_entries": 739
+    },
+    {
+      "code": "BALKANS",
+      "n_entries": 164
+    },
+    {
+      "code": "NPWMD",
+      "n_entries": 1195
+    },
+    {
+      "code": "NS-PLC",
+      "n_entries": 3
+    },
+    {
+      "code": "ELECTION-EO13848",
+      "n_entries": 111
+    },
+    {
+      "code": "TCO",
+      "n_entries": 415
+    },
+    {
+      "code": "CYBER2",
+      "n_entries": 260
+    },
+    {
+      "code": "HOSTAGES-EO14078",
+      "n_entries": 18
+    },
+    {
+      "code": "MAGNIT",
+      "n_entries": 64
+    },
+    {
+      "code": "SSIDES",
+      "n_entries": 2
+    },
+    {
+      "code": "BALKANS-EO14033",
+      "n_entries": 24
+    },
+    {
+      "code": "CYBER4",
+      "n_entries": 96
+    },
+    {
+      "code": "UHRPA",
+      "n_entries": 1
+    },
+    {
+      "code": "CYBER3",
+      "n_entries": 9
+    },
+    {
+      "code": "ICC-EO14203",
+      "n_entries": 17
+    },
+    {
+      "code": "PAIPA",
+      "n_entries": 3
+    }
+  ],
+  "coverage": {
+    "resolved": 52,
+    "unresolved": 0,
+    "thematic": 21
+  }
+}

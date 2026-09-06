@@ -1,0 +1,217 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% include "_interfonts.html.j2" %}
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Sanctions Map — Mastermind</title>
+{% set seo_title = 'Sanctions Map — Where US Sanctions Point | Mastermind' %}
+{% set seo_desc = 'A country map of active US Treasury (OFAC) sanctions programmes, with the public source and publication date printed, and uncovered countries marked as unknown rather than clear.' %}
+{% set seo_path = 'sanctions_map.html' %}
+{% include "_seo_head.html.j2" %}
+<style>
+.sm-desk h1{font-size:var(--fs-h1);font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+.sm-desk .eyebrow{font-size:var(--fs-label);font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.sm-stand{font-size:var(--fs-md);color:var(--text);margin:0 0 4px;max-width:62ch}
+.sm-stance{font-size:var(--fs-body);color:var(--muted);margin:0 0 12px}
+.sm-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;
+  font-size:var(--fs-sm);color:var(--muted);margin:0}
+.sm-count{font-family:var(--num);font-variant-numeric:tabular-nums;color:var(--text);font-weight:700}
+
+.sm-mapwrap{padding:16px 18px}
+.sm-map{margin:0;position:relative}
+.sm-map svg{display:block;width:100%;height:auto}
+
+.wm-c{fill:var(--panel2);stroke:var(--line);stroke-width:.5;
+  transition:fill-opacity .12s linear,fill .12s linear}
+.wm-c[data-rung="1"]{fill:var(--ink-act);fill-opacity:.22}
+.wm-c[data-rung="2"]{fill:var(--ink-act);fill-opacity:.46}
+.wm-c[data-rung="3"]{fill:var(--ink-act);fill-opacity:.78}
+.wm-c[data-rung="x"],.sm-map.is-unknown .wm-c{fill:url(#sm-hatch);fill-opacity:1}
+#sm-hatch line{stroke:var(--muted);stroke-width:.6;stroke-opacity:.30}
+.sm-map[data-hi] .wm-c[data-iso3]{fill-opacity:.14}
+.sm-map[data-hi] .wm-c.is-hi{fill-opacity:.85;stroke:var(--ink-link);stroke-width:1;
+  filter:drop-shadow(0 0 6px var(--ink-link))}
+
+html[data-theme="light"] .wm-c{fill:var(--panel);stroke:var(--line);stroke-width:.75}
+html[data-theme="light"] .wm-c[data-rung="1"]{fill:var(--ink-act);fill-opacity:.16}
+html[data-theme="light"] .wm-c[data-rung="2"]{fill:var(--ink-act);fill-opacity:.30}
+html[data-theme="light"] .wm-c[data-rung="3"]{fill:var(--ink-act);fill-opacity:.48}
+html[data-theme="light"] #sm-hatch line{stroke-opacity:.45}
+html[data-theme="light"] .sm-map{border:1px solid var(--line);
+  border-radius:var(--r-card,12px);box-shadow:var(--card-shadow)}
+html[data-theme="light"] .sm-map[data-hi] .wm-c.is-hi{fill-opacity:.52;
+  stroke:var(--ink-link);stroke-width:1.5;filter:none}
+
+.sm-legend{display:flex;flex-wrap:wrap;gap:14px;list-style:none;padding:0;
+  margin:12px 0 0;font-size:var(--fs-sm);color:var(--muted)}
+.sm-legend i{display:inline-block;width:14px;height:10px;margin-right:6px;
+  border:1px solid var(--line);border-radius:var(--r-ctl,8px);vertical-align:-1px;
+  background:var(--panel2)}
+.sm-legend [data-rung="0"] i{background:var(--panel2)}
+.sm-legend [data-rung="1"] i{background:var(--ink-act);opacity:.22}
+.sm-legend [data-rung="2"] i{background:var(--ink-act);opacity:.46}
+.sm-legend [data-rung="3"] i{background:var(--ink-act);opacity:.78}
+.sm-legend [data-rung="x"] i{background:repeating-linear-gradient(45deg,transparent 0 2px,var(--muted) 2px 2.6px);opacity:.30}
+html[data-theme="light"] .sm-legend [data-rung="0"] i{background:var(--panel)}
+html[data-theme="light"] .sm-legend [data-rung="1"] i{opacity:.16}
+html[data-theme="light"] .sm-legend [data-rung="2"] i{opacity:.30}
+html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
+html[data-theme="light"] .sm-legend [data-rung="x"] i{opacity:.45}
+
+.sm-null{margin:10px 0 0;font-size:var(--fs-sm);color:var(--muted)}
+
+.sm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px 18px}
+.sm-card{border:1px solid var(--line);border-radius:var(--r-card,12px);padding:12px}
+.sm-card .n{font-family:var(--num);font-variant-numeric:tabular-nums;font-weight:700}
+.sm-tbl{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+.sm-tbl th{font-size:var(--fs-micro);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+.sm-tbl td{padding:8px 10px;border-bottom:1px solid var(--line)}
+.sm-tbl tr:hover{background:var(--panel2)}
+.sm-tblwrap{overflow-x:auto;padding:0 18px 16px}
+.sm-disc{padding:16px 18px;border-top:1px solid var(--line)}
+
+@media (prefers-reduced-motion:reduce){.wm-c{transition:none}}
+@media (max-width:760px){
+  .sm-legend{gap:10px;font-size:var(--fs-micro)}
+  .sm-cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+{% include "_vector_polish.html.j2" %}
+{% include "_site_nav.html.j2" %}
+<main>
+<header class="sm-desk panel" style="padding:20px 18px">
+  <p class="eyebrow">{{ t('Policy & geography','政策与地理') }}</p>
+  <h1>{{ t('Sanctions map','制裁地图') }}</h1>
+  <p class="sm-stand">{{ t('Where US sanctions point today. Public OFAC list only.',
+                          '美国制裁当前指向何处。仅使用 OFAC 公开名单。') }}</p>
+  <p class="sm-stance">{{ t('Use this to read country risk, not to trade it.',
+                            '用于判读国别风险，不用于交易。') }}</p>
+  <p class="sm-meta">
+    <span class="dtp-asof">{{ t('OFAC list as of','OFAC 名单截至') }} {{ vm.as_of or t('unknown','未知') }}</span>
+    {% if vm.coverage is not none %}
+    <span class="sm-count tnum">{{ vm.n_programs_total }}</span>
+    <span>{{ t('sanctions programmes','项制裁计划') }}</span>
+    {% else %}
+    <span>{{ t('Programme count not available yet','计划数暂无') }}</span>
+    {% endif %}
+    {% if vm.source_url %}<a href="{{ vm.source_url }}" rel="noopener">{{ t('Source: US Treasury OFAC','来源：美国财政部 OFAC') }}</a>{% endif %}
+  </p>
+</header>
+
+<section class="panel sm-mapwrap">
+  <div class="mx-sec"><h2>{{ t('Countries named by an active programme','被现行制裁计划点名的国家') }}</h2></div>
+
+  <figure class="sm-map{% if vm.coverage is none %} is-unknown{% endif %}" role="img"
+          aria-label="World map of countries named by active US OFAC sanctions programmes / 现行美国 OFAC 制裁计划点名国家的世界地图">
+    {% include "_worldmap_base.html.j2" %}
+  </figure>
+
+  <ul class="sm-legend">
+    <li data-rung="3"><i></i>{{ t('Named in 4+ programmes','被 4 项以上计划点名') }}</li>
+    <li data-rung="2"><i></i>{{ t('2–3 programmes','2–3 项') }}</li>
+    <li data-rung="1"><i></i>{{ t('1 programme','1 项') }}</li>
+    <li data-rung="0"><i></i>{{ t('Not named','未被点名') }}</li>
+    <li data-rung="x"><i></i>{{ t('Coverage unknown','覆盖情况未知') }}</li>
+  </ul>
+
+  {% if vm.coverage is none %}
+  {% set fetched_day = (vm.fetched_at or '')[:10] %}
+  <p class="mx-empty-why sm-null">
+    {{ t('We could not read the OFAC list today. The last good read was ' ~ (fetched_day or 'unknown') ~ '.',
+         '今日无法读取 OFAC 名单。上次成功读取为 ' ~ (fetched_day or '未知') ~ '。') }}
+  </p>
+  {% elif vm.coverage.unresolved %}
+  <p class="mx-empty-why sm-null">
+    {{ t('We could not verify a country for', '我们无法核实其国别的制裁计划有') }}
+    <b class="tnum">{{ vm.coverage.unresolved }}</b>
+    {{ t('country-scoped programmes — they are not on the map.', '项国别计划 — 未在图上显示。') }}
+    {% if vm.coverage.thematic %}
+    {{ t('Global (non-country) programmes are counted separately and do not hatch the map.',
+         '全球（非国别）计划单独计数，不会把整张地图标为未知。') }}
+    {% endif %}
+  </p>
+  {% endif %}
+</section>
+
+{% if vm.coverage is not none %}
+<section class="sm-cards">
+  {% for c in vm.countries[:6] %}
+  <div class="sm-card">
+    <div>{{ t(c.name_en, c.name_zh) }}</div>
+    <div class="n tnum">{{ c.n_programs }}</div>
+    {% for p in c.programs[:2] %}
+    <div><a href="{{ p.url }}" rel="noopener">{{ t(p.name_en, p.name_zh) }}</a></div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</section>
+
+<div class="sm-tblwrap">
+<table class="sm-tbl">
+<thead><tr><th>{{ t('Country','国家') }}</th><th>{{ t('Programmes','计划数') }}</th></tr></thead>
+<tbody>
+{% for c in vm.countries %}
+<tr data-iso3="{{ c.iso3 }}"><td>{{ t(c.name_en, c.name_zh) }}</td><td class="tnum">{{ c.n_programs }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+
+<details class="sm-disc">
+  <summary>{{ t('Method — what this map is and is not (open for the source and limits)',
+                 '方法 — 本图的范围与局限（点击展开来源与限制）') }}</summary>
+  <p>{{ t('Not on this map: shipping chokepoints, military sites, satellite imagery. Those need rights we do not hold.',
+          '本图不包含：航运咽喉、军事设施、卫星影像。这些数据的使用权我们尚未取得。') }}</p>
+  <p>{{ t('Source', '来源') }}: {{ vm.source_url or t('unknown','未知') }} ·
+     {{ t('As of', '截至') }}: {{ vm.as_of or t('unknown','未知') }} ·
+     {{ t('Fetched', '抓取时间') }}: {{ vm.fetched_at or t('unknown','未知') }} ·
+     {{ t('Unresolved country programmes', '未核实国别计划数') }}:
+     <span class="tnum">{{ vm.coverage.unresolved if vm.coverage else (vm.unresolved|length) }}</span>
+     {% if vm.coverage and vm.coverage.thematic %}
+     · {{ t('Global programmes', '全球计划数') }}:
+     <span class="tnum">{{ vm.coverage.thematic }}</span>
+     {% endif %}
+  </p>
+</details>
+</main>
+<script>
+document.querySelectorAll('.sm-tbl tr[data-iso3]').forEach(function(row){
+  row.setAttribute('tabindex', '0');
+  var iso3 = row.getAttribute('data-iso3');
+  var map = document.querySelector('.sm-map');
+  if(!map) return;
+  function activate(){
+    map.setAttribute('data-hi', iso3);
+    map.querySelectorAll('.wm-c.is-hi').forEach(function(p){p.classList.remove('is-hi');});
+    var p = map.querySelector('.wm-c[data-iso3="'+iso3+'"]');
+    if(p) p.classList.add('is-hi');
+  }
+  function clear(){
+    map.removeAttribute('data-hi');
+    map.querySelectorAll('.wm-c.is-hi').forEach(function(p){p.classList.remove('is-hi');});
+  }
+  row.addEventListener('mouseenter', activate);
+  row.addEventListener('mouseleave', clear);
+  row.addEventListener('focus', activate);
+  row.addEventListener('blur', clear);
+  row.addEventListener('click', function(){
+    if(map.getAttribute('data-hi') === iso3){ clear(); } else { activate(); }
+  });
+});
+</script>
+<script src="theme.js"></script>
+<footer class="site-footer">
+  <span class="made">© 2026 Mastermind Inc</span>
+</footer>
+</body>
+</html>

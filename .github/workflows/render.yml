@@ -186,6 +186,7 @@ on:
       - "scripts/build_sp500_heatmap.py"
       - "scripts/build_special_situations.py"
       - "scripts/build_spr.py"
+      - "scripts/build_sanctions_map.py"
       - "scripts/build_spvector.py"
       - "scripts/build_stage_analysis_page.py"
       # TOP ANATOMY W1 (Winner Health) — beside its stage-analysis sibling: both
@@ -540,7 +541,7 @@ jobs:
               templates/international_macro.html.j2|scripts/build_international_macro.py|engine/international_macro_dashboard.py|collectors/intl_macro.py|data/intl_risk/cb_calendar.yml|docs/INTERNATIONAL_MACRO_DATA_CONTRACT.md) echo intl;;
               templates/hk.html.j2|scripts/build_hk.py) echo hk;;
               templates/canada.html.j2|templates/canada_stock.html.j2|templates/canada_history.html.j2|templates/canada_sector.html.j2|scripts/build_canada.py|scripts/build_canada_library.py) echo canada;;
-              templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
+              templates/commodities.html.j2|templates/spr.html.j2|templates/sanctions_map.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_sanctions_map.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
               # OIP E8 leaf-page narrowing — rationale in the step's YAML comment block.
               templates/options.html.j2|templates/options_screener.html.j2|scripts/build_options_command.py|scripts/build_options_screener.py) echo gex;;
@@ -901,6 +902,7 @@ jobs:
             cl_markets() {
               brun commodities  "build commodity vector (build_commodities)"         scripts.build_commodities
               brun spr          "build strategic reserves (build_spr)"               scripts.build_spr
+              brun sanctions_map "sanctions map (build_sanctions_map)"                 scripts.build_sanctions_map
               brun forex        "build forex vector (build_forex)"                   scripts.build_forex
               brun bonds        "build bonds & bond-health (build_bonds)"            scripts.build_bonds
               brun crossasset   "cross-asset vector (build_crossasset)"              scripts.build_crossasset
@@ -1045,6 +1047,7 @@ jobs:
             markets)
               run_py "build commodity vector (build_commodities)"         scripts.build_commodities
               run_py "build strategic reserves (build_spr)"               scripts.build_spr
+              run_py "sanctions map (build_sanctions_map)"                scripts.build_sanctions_map
               run_py "build forex vector (build_forex)"                   scripts.build_forex
               run_py "build bonds & bond-health (build_bonds)"            scripts.build_bonds
               run_py "cross-asset vector (build_crossasset)"              scripts.build_crossasset
