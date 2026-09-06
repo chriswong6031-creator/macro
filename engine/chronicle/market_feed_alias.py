@@ -96,8 +96,10 @@ REJECTED_PROXIES: tuple[dict[str, str], ...] = (
 
 EVENTS_REL = Path("data") / "chronicle" / "events.jsonl"  # mirrors spine.EVENTS_REL (spine.py:49)
 
+# Explicit direction keys only. Generic "impact" / "sign" were dropped: a free-
+# text value like "grey market feeds" must never count as a signed direction.
 DIRECTION_FIELD_CANDIDATES: tuple[str, ...] = (
-    "impact_direction", "direction", "impact", "sign", "polarity",
+    "impact_direction", "direction", "polarity",
 )
 
 # Explicit magnitude keys only — weight_hint / horizon_hint / themes stay in
@@ -106,31 +108,71 @@ MAGNITUDE_FIELD_CANDIDATES: tuple[str, ...] = (
     "impact_magnitude", "magnitude", "impact_size", "abs_impact",
 )
 
-_DISCLOSURE_EN: dict[str, str] = {
-    "NOT_SERVED": (
+# Closed domain for direction values (case-insensitive strings + numeric sign).
+_DIRECTION_ENUM: frozenset[str] = frozenset({
+    "up", "down", "positive", "negative", "+1", "-1", "1",
+})
+
+# SERVED requires real coverage, not a single stray row in a multi-thousand
+# event store. Absolute floor + share of ticker-bearing events.
+SERVED_MIN_CO_OCCURRENCE = 2
+SERVED_MIN_SHARE_OF_TICKER_EVENTS = 0.10
+
+# Cause-keyed disclosures (Front-End Clarity Law). PARTIALLY_SERVED has three
+# distinct causes; state-alone copy falsely claimed a live published feed.
+_DISCLOSURE_EN: dict[tuple[str, str | None], str] = {
+    ("NOT_SERVED", None): (
         "We don't publish a market feed yet. We track the events and which "
         "tickers they touch — we do not yet publish which way each "
         "event pushed a stock, so that column is blank on purpose."
     ),
-    "UNKNOWN": (
+    ("UNKNOWN", None): (
         "We can't read the event record right now, so we're not saying "
         "either way — this note updates when the record is back."
     ),
-    "PARTIALLY_SERVED": (
-        "Part of the market feed is live. Events and tickers are "
-        "published; the direction of each event's effect is still blank."
+    ("PARTIALLY_SERVED", "no_declared_projection"): (
+        "We don't publish a market feed yet. We've started recording which "
+        "way some events pushed a stock, but nothing is published until "
+        "that page is live."
     ),
-    "SERVED": (
+    ("PARTIALLY_SERVED", "claim_unsupported_by_store"): (
+        "We don't publish a market feed yet — we don't yet measure which "
+        "way each event pushed a stock."
+    ),
+    ("PARTIALLY_SERVED", "projection_incomplete"): (
+        "We don't publish a full market feed yet. Some fields are ready; "
+        "direction or size for each event is still incomplete."
+    ),
+    ("PARTIALLY_SERVED", "below_coverage_threshold"): (
+        "We don't publish a market feed yet. Direction and size data covers "
+        "only a thin slice of events, so the feed stays unpublished until "
+        "coverage is solid."
+    ),
+    ("SERVED", None): (
         "The market feed is live: each event, the tickers it touches, "
         "which way it pushed them, and how large that move was."
     ),
 }
 
-_DISCLOSURE_ZH: dict[str, str] = {
-    "NOT_SERVED": "我们暂未发布市场事件流。事件与所涉个股已在追踪，但每个事件对个股的方向影响尚未发布，因此该栏目前留空。",
-    "UNKNOWN": "目前无法读取事件记录，因此暂不作判断；记录恢复后此处会更新。",
-    "PARTIALLY_SERVED": "市场事件流已部分上线：事件与个股已发布，事件影响方向仍为空。",
-    "SERVED": "市场事件流已上线：事件、所涉个股、影响方向与影响幅度。",
+_DISCLOSURE_ZH: dict[tuple[str, str | None], str] = {
+    ("NOT_SERVED", None): (
+        "我们暂未发布市场事件流。事件与所涉个股已在追踪，但每个事件对个股的"
+        "方向影响尚未发布，因此该栏目前留空。"
+    ),
+    ("UNKNOWN", None): "目前无法读取事件记录，因此暂不作判断；记录恢复后此处会更新。",
+    ("PARTIALLY_SERVED", "no_declared_projection"): (
+        "我们暂未发布市场事件流。部分事件的方向影响已开始记录，但相关页面上线前不会发布。"
+    ),
+    ("PARTIALLY_SERVED", "claim_unsupported_by_store"): (
+        "我们暂未发布市场事件流——每个事件对个股的方向影响尚未测量。"
+    ),
+    ("PARTIALLY_SERVED", "projection_incomplete"): (
+        "我们暂未完整发布市场事件流。部分字段已就绪，但每个事件的方向或幅度仍不完整。"
+    ),
+    ("PARTIALLY_SERVED", "below_coverage_threshold"): (
+        "我们暂未发布市场事件流。方向与幅度数据仅覆盖少量事件，覆盖达标前不会发布。"
+    ),
+    ("SERVED", None): "市场事件流已上线：事件、所涉个股、影响方向与影响幅度。",
 }
 
 
@@ -188,6 +230,73 @@ def _projection_out(projection: Mapping[str, object] | None) -> dict:
     return proj_out
 
 
+def _is_valid_direction(value: object) -> bool:
+    """Closed domain: enum strings or a nonzero numeric sign. Never free text."""
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() in _DIRECTION_ENUM
+    return False
+
+
+def _is_valid_magnitude(value: object) -> bool:
+    """Magnitude must be a real number (bool is excluded — bool subclasses int)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _event_has_valid_direction(event: Mapping[str, object]) -> bool:
+    return any(
+        _is_valid_direction(event.get(k)) for k in DIRECTION_FIELD_CANDIDATES
+    )
+
+
+def _event_has_valid_magnitude(event: Mapping[str, object]) -> bool:
+    return any(
+        _is_valid_magnitude(event.get(k)) for k in MAGNITUDE_FIELD_CANDIDATES
+    )
+
+
+def _positive_count(value: object) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
+
+
+def _meets_served_coverage(coverage: Mapping[str, object]) -> bool:
+    """SERVED requires co-occurrence on >= N events AND >= share of ticker events."""
+    co = coverage.get("events_with_direction_and_magnitude")
+    tickers = coverage.get("events_with_tickers")
+    if not _positive_count(co) or co < SERVED_MIN_CO_OCCURRENCE:
+        return False
+    if not isinstance(tickers, (int, float)) or isinstance(tickers, bool) or tickers <= 0:
+        return False
+    return (float(co) / float(tickers)) >= SERVED_MIN_SHARE_OF_TICKER_EVENTS
+
+
+def _disclosure_cause(state: str, flags: set[str] | frozenset[str]) -> str | None:
+    """Map receipt flags to the disclosure cause key for PARTIALLY_SERVED."""
+    if state != "PARTIALLY_SERVED":
+        return None
+    for key in (
+        "below_coverage_threshold",
+        "claim_unsupported_by_store",
+        "no_declared_projection",
+        "projection_incomplete",
+    ):
+        if key in flags:
+            return key
+    return "projection_incomplete"
+
+
+def _lookup_disclosure(state: str, cause: str | None, lang: str) -> str:
+    table = _DISCLOSURE_ZH if lang == "zh" else _DISCLOSURE_EN
+    if (state, cause) in table:
+        return table[(state, cause)]
+    if (state, None) in table:
+        return table[(state, None)]
+    return table[("UNKNOWN", None)]
+
+
 def market_feed_field_coverage(root: Path | str | None = None) -> dict:
     """Deterministic census of the committed events.jsonl store.
 
@@ -195,6 +304,9 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
     not be shaped like emptiness; a sparse worktree omits data/, so a 0 here
     would read as a proven "no events" and would let a future SERVED/
     NOT_SERVED call be made on nothing.
+
+    Direction/magnitude counts require a closed value domain — key presence or
+    free-text values do not count.
     """
     out = {
         "store_path": str(EVENTS_REL),
@@ -228,23 +340,12 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
                 continue
         total = len(events)
         with_tickers = sum(1 for e in events if e.get("tickers"))
-
-        def _has_nonempty(event: dict, candidates: tuple[str, ...]) -> bool:
-            return any(
-                event.get(k) not in (None, "", [], {}) for k in candidates
-            )
-
-        with_direction = sum(
-            1 for e in events if _has_nonempty(e, DIRECTION_FIELD_CANDIDATES)
-        )
-        with_magnitude = sum(
-            1 for e in events if _has_nonempty(e, MAGNITUDE_FIELD_CANDIDATES)
-        )
+        with_direction = sum(1 for e in events if _event_has_valid_direction(e))
+        with_magnitude = sum(1 for e in events if _event_has_valid_magnitude(e))
         with_direction_and_magnitude = sum(
             1
             for e in events
-            if _has_nonempty(e, DIRECTION_FIELD_CANDIDATES)
-            and _has_nonempty(e, MAGNITUDE_FIELD_CANDIDATES)
+            if _event_has_valid_direction(e) and _event_has_valid_magnitude(e)
         )
         dates = sorted(
             d for e in events if (d := e.get("date"))
@@ -304,10 +405,6 @@ def _build_store_evidence(*, coverage: Mapping[str, object], as_of: str) -> dict
     }
 
 
-def _positive_count(value: object) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
-
-
 def resolve_market_feed_alias(
     root: Path | str | None = None,
     *,
@@ -325,6 +422,9 @@ def resolve_market_feed_alias(
         required = list(MARKET_FEED_REQUIRED_FIELDS)
         proj_out = _projection_out(projection)
         declared_fields = list(proj_out["declared_fields"])
+
+        if proj_out["unknown_fields"]:
+            flags.add("unknown_declared_fields")
 
         if not coverage["readable"]:
             state = "UNKNOWN"
@@ -347,6 +447,7 @@ def resolve_market_feed_alias(
             store_has_direction_and_magnitude = _positive_count(
                 coverage.get("events_with_direction_and_magnitude")
             )
+            store_meets_served_coverage = _meets_served_coverage(coverage)
 
             if projection is None or not declared_fields:
                 served_fields = schema_backed
@@ -381,16 +482,20 @@ def resolve_market_feed_alias(
                 # debugging but plays no part in the grant decision.
                 served_fields_set = set(schema_backed)
                 unsupported_claims: list[str] = []
+                below_threshold_claims: list[str] = []
                 for f in declared_fields:
                     if f not in MARKET_FEED_REQUIRED_FIELDS:
                         continue
                     if MARKET_FEED_FIELD_SOURCES.get(f) is not None:
                         served_fields_set.add(f)
                         continue
-                    if f == "impact_direction" and store_has_direction_and_magnitude:
-                        served_fields_set.add(f)
-                    elif f == "impact_magnitude" and store_has_direction_and_magnitude:
-                        served_fields_set.add(f)
+                    if f in ("impact_direction", "impact_magnitude"):
+                        if store_meets_served_coverage:
+                            served_fields_set.add(f)
+                        elif store_has_direction_and_magnitude:
+                            below_threshold_claims.append(f)
+                        else:
+                            unsupported_claims.append(f)
                     else:
                         unsupported_claims.append(f)
 
@@ -403,6 +508,16 @@ def resolve_market_feed_alias(
                     if missing_fields:
                         flags.add("projection_incomplete")
                     reason = "claim_unsupported_by_store: declared field(s) lack store support"
+                elif below_threshold_claims:
+                    state = "PARTIALLY_SERVED"
+                    flags.add("below_coverage_threshold")
+                    if missing_fields:
+                        flags.add("projection_incomplete")
+                    reason = (
+                        "below_coverage_threshold: co-occurrence exists but is "
+                        f"below SERVED_MIN_CO_OCCURRENCE={SERVED_MIN_CO_OCCURRENCE} "
+                        f"or share {SERVED_MIN_SHARE_OF_TICKER_EVENTS}"
+                    )
                 elif missing_fields:
                     state = "PARTIALLY_SERVED"
                     flags.add("projection_incomplete")
@@ -411,8 +526,9 @@ def resolve_market_feed_alias(
                     state = "SERVED"
                     reason = "projection_complete: all required fields schema-backed or store-supported"
 
-        disclosure_en = _DISCLOSURE_EN[state]
-        disclosure_zh = _DISCLOSURE_ZH[state]
+        cause = _disclosure_cause(state, flags)
+        disclosure_en = _lookup_disclosure(state, cause, "en")
+        disclosure_zh = _lookup_disclosure(state, cause, "zh")
 
         receipt = {
             "schema": SCHEMA_VERSION,
@@ -442,6 +558,7 @@ def resolve_market_feed_alias(
             "events_total": None, "events_with_tickers": None,
             "events_with_direction_field": None,
             "events_with_magnitude_field": None,
+            "events_with_direction_and_magnitude": None,
             "coverage_start": None,
             "coverage_end": None, "store_receipt": None,
         }
@@ -459,8 +576,8 @@ def resolve_market_feed_alias(
             "flags": ["resolve_failed"],
             "coverage": fallback_coverage,
             "reason": f"resolve_failed: {exc.__class__.__name__}",
-            "disclosure_en": _DISCLOSURE_EN["UNKNOWN"],
-            "disclosure_zh": _DISCLOSURE_ZH["UNKNOWN"],
+            "disclosure_en": _lookup_disclosure("UNKNOWN", None, "en"),
+            "disclosure_zh": _lookup_disclosure("UNKNOWN", None, "zh"),
             "evidence": _build_store_evidence(
                 coverage=fallback_coverage, as_of=fallback_as_of
             ),
@@ -468,11 +585,13 @@ def resolve_market_feed_alias(
 
 
 def alias_disclosure(receipt: Mapping[str, object], lang: str = "en") -> str:
-    """Return the plain-word disclosure string for a receipt's state. Never
-    raises: an unknown/missing state degrades to the UNKNOWN copy."""
+    """Return the plain-word disclosure string for a receipt. Never raises:
+    an unknown/missing state degrades to the UNKNOWN copy."""
     try:
-        state = receipt.get("state")
-        table = _DISCLOSURE_ZH if lang == "zh" else _DISCLOSURE_EN
-        return table.get(state, table["UNKNOWN"])
+        state = str(receipt.get("state") or "UNKNOWN")
+        flags_raw = receipt.get("flags") or []
+        flags = set(flags_raw) if isinstance(flags_raw, (list, tuple, set)) else set()
+        cause = _disclosure_cause(state, flags)
+        return _lookup_disclosure(state, cause, lang)
     except Exception:  # noqa: BLE001
-        return _DISCLOSURE_ZH["UNKNOWN"] if lang == "zh" else _DISCLOSURE_EN["UNKNOWN"]
+        return _lookup_disclosure("UNKNOWN", None, "zh" if lang == "zh" else "en")

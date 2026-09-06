@@ -2792,6 +2792,19 @@ def test_market_feed_alias_served_requires_supported_direction(tmp_path):
     assert receipt["projection"]["support"]["impact_magnitude"]["sample_n"] == 3
 
 
+def _append_co_occurring_impact_events(root: Path, n: int = 2) -> None:
+    """Write n events that each carry a valid direction + numeric magnitude."""
+    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
+        for i in range(n):
+            fh.write(json.dumps({
+                "id": f"co-occur-{i}",
+                "date": f"2026-08-{i + 2:02d}",
+                "tickers": [f"T{i}"],
+                "direction": "up" if i % 2 == 0 else "down",
+                "impact_magnitude": 0.5 + (0.1 * i),
+            }) + "\n")
+
+
 def test_market_feed_alias_census_counts_value_not_key_presence(tmp_path):
     """MAJOR-1 regression: a null/empty/zero-valued direction or magnitude
     field must not count as store support -- mirrors the tickers truthiness
@@ -2809,12 +2822,62 @@ def test_market_feed_alias_census_counts_value_not_key_presence(tmp_path):
         }) + "\n")
         fh.write(json.dumps({
             "id": "empty-string-field", "date": "2026-08-04", "tickers": ["X"],
-            "impact": "",
+            "direction": "",
+        }) + "\n")
+        # Free-text on a dropped generic key must not count either.
+        fh.write(json.dumps({
+            "id": "noise-impact", "date": "2026-08-05", "tickers": ["X"],
+            "impact": "grey market feeds", "magnitude": "large",
         }) + "\n")
 
     coverage = market_feed_field_coverage(root=root)
     assert coverage["events_with_direction_field"] == 0
     assert coverage["events_with_magnitude_field"] == 0
+    assert coverage["events_with_direction_and_magnitude"] == 0
+
+
+def test_market_feed_alias_free_text_direction_never_grants_served(tmp_path):
+    """Opus MAJOR-1: one unvalidated free-text row must not grant SERVED."""
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({
+            "id": "noise", "date": "2026-01-02", "tickers": ["X"],
+            "impact": "grey market feeds", "magnitude": "large",
+        }) + "\n")
+
+    receipt = resolve_market_feed_alias(
+        root=root,
+        projection={"name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS)},
+    )
+    assert receipt["state"] != "SERVED"
+    assert receipt["coverage"]["events_with_direction_and_magnitude"] == 0
+
+
+def test_market_feed_alias_single_co_occurrence_is_below_coverage(tmp_path):
+    """Opus MAJOR-1: SERVED needs a coverage gate, not a threshold of one."""
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+    _append_co_occurring_impact_events(root, n=1)
+
+    receipt = resolve_market_feed_alias(
+        root=root,
+        projection={"name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS)},
+    )
+    assert receipt["state"] == "PARTIALLY_SERVED"
+    assert "below_coverage_threshold" in receipt["flags"]
+    assert receipt["state"] != "SERVED"
 
 
 def test_market_feed_alias_requires_direction_and_magnitude_on_same_event(tmp_path):
@@ -2852,10 +2915,9 @@ def test_market_feed_alias_empty_projection_never_upgrades_from_not_served(tmp_p
     treated exactly like no declared projection at all, never upgraded to
     PARTIALLY_SERVED on the strength of an undeclared surface."""
     from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+    from engine.chronicle.governor import build_and_write
 
     root = _make_fixture_root(tmp_path)
-    build_and_write_fn = None
-    from engine.chronicle.governor import build_and_write
     build_and_write(root=root, rebuild=True)
 
     none_receipt = resolve_market_feed_alias(root=root, projection=None)
@@ -2868,20 +2930,15 @@ def test_market_feed_alias_empty_projection_never_upgrades_from_not_served(tmp_p
 
 def test_market_feed_alias_served_when_store_has_direction_and_magnitude(tmp_path):
     """MAJOR regression: SERVED must be reachable when the live store carries
-    both direction and magnitude candidates and a projection declares them."""
+    enough co-occurring direction+magnitude rows and a projection declares them."""
     from engine.chronicle.market_feed_alias import (
-        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS, _DISCLOSURE_EN, _DISCLOSURE_ZH,
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS, _lookup_disclosure,
     )
     from engine.chronicle.governor import build_and_write
 
     root = _make_fixture_root(tmp_path)
     build_and_write(root=root, rebuild=True)
-
-    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
-        fh.write(json.dumps({
-            "id": "b", "date": "2026-08-02", "tickers": ["Y"],
-            "direction": "up", "impact_magnitude": 0.5,
-        }) + "\n")
+    _append_co_occurring_impact_events(root, n=2)
 
     projection = {
         "name": "x",
@@ -2896,10 +2953,9 @@ def test_market_feed_alias_served_when_store_has_direction_and_magnitude(tmp_pat
     assert receipt["state"] == "SERVED"
     assert receipt["missing_fields"] == []
     assert set(receipt["served_fields"]) == set(MARKET_FEED_REQUIRED_FIELDS)
-    assert receipt["coverage"]["events_with_direction_field"] >= 1
-    assert receipt["coverage"]["events_with_magnitude_field"] >= 1
-    assert receipt["disclosure_en"] == _DISCLOSURE_EN["SERVED"]
-    assert receipt["disclosure_zh"] == _DISCLOSURE_ZH["SERVED"]
+    assert receipt["coverage"]["events_with_direction_and_magnitude"] >= 2
+    assert receipt["disclosure_en"] == _lookup_disclosure("SERVED", None, "en")
+    assert receipt["disclosure_zh"] == _lookup_disclosure("SERVED", None, "zh")
 
 
 def test_market_feed_alias_llm_claimed_support_never_grants_served(tmp_path):
@@ -2939,7 +2995,8 @@ def test_market_feed_alias_llm_claimed_support_never_grants_served(tmp_path):
 def test_market_feed_alias_no_projection_reflects_store_direction_data(tmp_path):
     """MAJOR regression: events_with_direction_field must not be measured and
     then ignored. A store that gains a direction-bearing field must not keep
-    reporting a blanket NOT_SERVED under projection=None."""
+    reporting a blanket NOT_SERVED under projection=None. Disclosure must not
+    claim the feed is live (Opus MAJOR-2)."""
     from engine.chronicle.market_feed_alias import resolve_market_feed_alias
     from engine.chronicle.governor import build_and_write
 
@@ -2953,6 +3010,70 @@ def test_market_feed_alias_no_projection_reflects_store_direction_data(tmp_path)
     receipt = resolve_market_feed_alias(root=root, projection=None)
     assert receipt["state"] == "PARTIALLY_SERVED"
     assert "store_has_direction_data_no_declared_projection" in receipt["flags"]
+    assert "no_declared_projection" in receipt["flags"]
+    assert "We don't publish a market feed yet" in receipt["disclosure_en"]
+    assert "Part of the market feed is live" not in receipt["disclosure_en"]
+    assert "我们暂未发布市场事件流" in receipt["disclosure_zh"]
+
+
+def test_market_feed_alias_disclosure_cause_claim_unsupported(tmp_path):
+    """Opus MAJOR-2: claim_unsupported_by_store must not claim a live feed."""
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    receipt = resolve_market_feed_alias(
+        root=root,
+        projection={"name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS)},
+    )
+    assert receipt["state"] == "PARTIALLY_SERVED"
+    assert "claim_unsupported_by_store" in receipt["flags"]
+    assert receipt["disclosure_en"] == (
+        "We don't publish a market feed yet — we don't yet measure which "
+        "way each event pushed a stock."
+    )
+    assert receipt["disclosure_zh"] == (
+        "我们暂未发布市场事件流——每个事件对个股的方向影响尚未测量。"
+    )
+
+
+def test_market_feed_alias_unknown_declared_fields_flag(tmp_path):
+    """Opus MINOR-2: unknown projection fields raise unknown_declared_fields."""
+    from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    receipt = resolve_market_feed_alias(
+        root=root,
+        projection={
+            "name": "x",
+            "route": "/x",
+            "fields": ["event_id", "event_time", "tickers", "password_hash"],
+        },
+    )
+    assert "password_hash" in receipt["projection"]["unknown_fields"]
+    assert "unknown_declared_fields" in receipt["flags"]
+
+
+def test_market_feed_alias_resolve_failed_fallback_coverage_shape(tmp_path, monkeypatch):
+    """Opus MINOR-1: outer except fallback coverage must match the normal keys."""
+    import engine.chronicle.market_feed_alias as mfa
+
+    def boom(*_a, **_k):
+        raise RuntimeError("forced")
+
+    monkeypatch.setattr(mfa, "market_feed_field_coverage", boom)
+    receipt = mfa.resolve_market_feed_alias(root=tmp_path)
+    assert receipt["state"] == "UNKNOWN"
+    assert "resolve_failed" in receipt["flags"]
+    assert "events_with_direction_and_magnitude" in receipt["coverage"]
+    assert receipt["coverage"]["events_with_direction_and_magnitude"] is None
 
 
 def test_market_feed_alias_evidence_is_honest_store_pointer_not_fake_k1(tmp_path):
@@ -2984,12 +3105,7 @@ def test_market_feed_alias_disclosure_is_plain_words_both_languages(tmp_path):
 
     root = _make_fixture_root(tmp_path)
     build_and_write(root=root, rebuild=True)
-
-    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
-        fh.write(json.dumps({
-            "id": "b", "date": "2026-08-02", "tickers": ["Y"],
-            "direction": "up", "impact_magnitude": 0.5,
-        }) + "\n")
+    _append_co_occurring_impact_events(root, n=2)
 
     forbidden = [
         "falsif", "证伪", "refut", "mo-delta", "mo-paid", "impact_direction",
@@ -3004,7 +3120,7 @@ def test_market_feed_alias_disclosure_is_plain_words_both_languages(tmp_path):
     partial = resolve_market_feed_alias(root=not_served_root, projection={
         "name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS),
     })
-    # Same declaration against a store that carries both candidates → SERVED.
+    # Same declaration against a store that meets the coverage gate → SERVED.
     served = resolve_market_feed_alias(root=root, projection={
         "name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS),
     })
