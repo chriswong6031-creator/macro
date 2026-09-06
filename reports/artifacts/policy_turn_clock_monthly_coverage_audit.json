@@ -1,0 +1,279 @@
+{
+  "hypotheses": [
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H1",
+      "missing_owners": [
+        "opex_calendar",
+        "options",
+        "session_calendar",
+        "treasury"
+      ],
+      "owners": [
+        "opex_calendar",
+        "session_calendar",
+        "options",
+        "treasury"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H10",
+      "missing_owners": [
+        "broad_flow",
+        "duration_calendar",
+        "duration_study",
+        "event_identity",
+        "migration",
+        "opex_calendar",
+        "options",
+        "quarterly_calendar",
+        "rebalance_pulse",
+        "relative_performance",
+        "replacement",
+        "session_calendar",
+        "sign_passport",
+        "treasury",
+        "volume_breadth",
+        "vx_calendar",
+        "vx_curve"
+      ],
+      "owners": [
+        "opex_calendar",
+        "session_calendar",
+        "options",
+        "treasury",
+        "replacement",
+        "sign_passport",
+        "relative_performance",
+        "volume_breadth",
+        "broad_flow",
+        "rebalance_pulse",
+        "duration_calendar",
+        "duration_study",
+        "quarterly_calendar",
+        "migration",
+        "vx_calendar",
+        "vx_curve",
+        "event_identity"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H2",
+      "missing_owners": [
+        "opex_calendar",
+        "options"
+      ],
+      "owners": [
+        "opex_calendar",
+        "options"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H3",
+      "missing_owners": [
+        "opex_calendar",
+        "options",
+        "replacement"
+      ],
+      "owners": [
+        "opex_calendar",
+        "options",
+        "replacement"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H4",
+      "missing_owners": [
+        "opex_calendar",
+        "options",
+        "sign_passport"
+      ],
+      "owners": [
+        "opex_calendar",
+        "options",
+        "sign_passport"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H5",
+      "missing_owners": [
+        "broad_flow",
+        "opex_calendar",
+        "rebalance_pulse",
+        "relative_performance",
+        "volume_breadth"
+      ],
+      "owners": [
+        "opex_calendar",
+        "relative_performance",
+        "volume_breadth",
+        "broad_flow",
+        "rebalance_pulse"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H6",
+      "missing_owners": [
+        "duration_calendar",
+        "duration_study"
+      ],
+      "owners": [
+        "duration_calendar",
+        "duration_study"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H7",
+      "missing_owners": [
+        "migration",
+        "quarterly_calendar"
+      ],
+      "owners": [
+        "quarterly_calendar",
+        "migration"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H8",
+      "missing_owners": [
+        "vx_calendar",
+        "vx_curve"
+      ],
+      "owners": [
+        "vx_calendar",
+        "vx_curve"
+      ],
+      "reason": "required source passport is absent or not present"
+    },
+    {
+      "availability": "UNAVAILABLE",
+      "cycle_count": null,
+      "cycles_by_era": {},
+      "id": "H9",
+      "missing_owners": [
+        "event_identity",
+        "opex_calendar"
+      ],
+      "owners": [
+        "opex_calendar",
+        "event_identity"
+      ],
+      "reason": "required source passport is absent or not present"
+    }
+  ],
+  "method": "monthly-cycle-source-coverage-only",
+  "schema": "policy_turn_clock.monthly_coverage_audit.r0.v1",
+  "semantic_digest": "6e289c1d633d3ccd64b92d3c3ac094b7236b407b1e30854dfa520a677a0ca60a",
+  "sources": [
+    {
+      "available_at": null,
+      "classification": "forward_only",
+      "correction_at": null,
+      "correction_id": null,
+      "cycle_count": 2,
+      "entity_count": 5,
+      "first_cycle": "2026-07",
+      "last_cycle": "2026-08",
+      "missingness": "unknown",
+      "observed_at": "2026-07-12T00:00:00+00:00",
+      "owner": "broad_flow",
+      "path": "data/flows/broad_flow_proxy.parquet",
+      "rights": "internal-metadata-only",
+      "root_count": 5,
+      "row_count": 130,
+      "schema": "macro.broad_flow_proxy.parquet.local",
+      "version": "unversioned-local-metadata"
+    },
+    {
+      "available_at": null,
+      "classification": "historical",
+      "correction_at": null,
+      "correction_id": null,
+      "cycle_count": 115,
+      "entity_count": 20,
+      "first_cycle": "2017-01",
+      "last_cycle": "2026-07",
+      "missingness": "unknown",
+      "observed_at": "2017-01-03T00:00:00+00:00",
+      "owner": "options",
+      "path": "data/options_surface/{index,sector,industry}_etf.parquet",
+      "rights": "internal-metadata-only",
+      "root_count": 20,
+      "row_count": 47539,
+      "schema": "macro.options_surface.parquet.local",
+      "version": "unversioned-local-metadata"
+    },
+    {
+      "available_at": null,
+      "classification": "forward_only",
+      "correction_at": null,
+      "correction_id": null,
+      "cycle_count": 4,
+      "entity_count": 64,
+      "first_cycle": "2026-06",
+      "last_cycle": "2026-09",
+      "missingness": "unknown",
+      "observed_at": "2026-06-15T00:00:00+00:00",
+      "owner": "treasury",
+      "path": "data/treasury_auctions/treasury_auction_runs.parquet",
+      "rights": "internal-metadata-only",
+      "root_count": 1,
+      "row_count": 64,
+      "schema": "macro.treasury_auction_runs.parquet.local",
+      "version": "unversioned-local-metadata"
+    },
+    {
+      "available_at": null,
+      "classification": "forward_only",
+      "correction_at": null,
+      "correction_id": null,
+      "cycle_count": 6,
+      "entity_count": 97,
+      "first_cycle": "2026-04",
+      "last_cycle": "2026-09",
+      "missingness": "unknown",
+      "observed_at": "2026-04-16T00:00:00+00:00",
+      "owner": "vx_curve",
+      "path": "data/cboe/vix_curve.parquet",
+      "rights": "internal-metadata-only",
+      "root_count": 6,
+      "row_count": 97,
+      "schema": "macro.vx_curve.parquet.local",
+      "version": "unversioned-local-metadata"
+    }
+  ]
+}
