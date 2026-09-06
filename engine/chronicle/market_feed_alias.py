@@ -306,7 +306,12 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
     NOT_SERVED call be made on nothing.
 
     Direction/magnitude counts require a closed value domain — key presence or
-    free-text values do not count.
+    free-text values do not count. events_with_direction_and_magnitude is
+    restricted to ticker-bearing events so it is a true subset of
+    events_with_tickers: the SERVED coverage ratio divides one by the
+    other, and a numerator drawn from the whole store (including tickerless
+    events) let the ratio exceed 1.0 and let SERVED fire with zero actual
+    stock impact (MAJOR-1, PR #6897 review).
     """
     out = {
         "store_path": str(EVENTS_REL),
@@ -345,7 +350,9 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
         with_direction_and_magnitude = sum(
             1
             for e in events
-            if _event_has_valid_direction(e) and _event_has_valid_magnitude(e)
+            if e.get("tickers")
+            and _event_has_valid_direction(e)
+            and _event_has_valid_magnitude(e)
         )
         dates = sorted(
             d for e in events if (d := e.get("date"))

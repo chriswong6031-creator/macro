@@ -2958,6 +2958,59 @@ def test_market_feed_alias_served_when_store_has_direction_and_magnitude(tmp_pat
     assert receipt["disclosure_zh"] == _lookup_disclosure("SERVED", None, "zh")
 
 
+def test_market_feed_alias_tickerless_impact_events_never_grant_served(tmp_path):
+    """MAJOR-1 regression (Meta-CEO A review, PR #6897): the SERVED coverage
+    ratio numerator must be a true subset of events_with_tickers. A store
+    with only TICKERLESS direction+magnitude events and a single
+    ticker-bearing event with neither must never satisfy the coverage gate
+    -- before the fix, the numerator counted store-wide co-occurrence while
+    the denominator counted ticker-bearing events only, so the ratio could
+    exceed 1.0 and grant SERVED with zero actual stock impact."""
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS,
+        market_feed_field_coverage,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
+        # Two tickerless events, each with valid direction + magnitude.
+        fh.write(json.dumps({
+            "id": "tickerless-1", "date": "2026-08-07", "tickers": [],
+            "direction": "up", "impact_magnitude": 0.4,
+        }) + "\n")
+        fh.write(json.dumps({
+            "id": "tickerless-2", "date": "2026-08-08", "tickers": [],
+            "direction": "down", "impact_magnitude": 0.6,
+        }) + "\n")
+        # One ticker-bearing event with neither direction nor magnitude.
+        fh.write(json.dumps({
+            "id": "ticker-no-impact", "date": "2026-08-09", "tickers": ["Z"],
+        }) + "\n")
+
+    coverage = market_feed_field_coverage(root=root)
+    assert coverage["events_with_tickers"] >= 1
+    # The numerator must never exceed the denominator it is divided by.
+    assert (
+        coverage["events_with_direction_and_magnitude"]
+        <= coverage["events_with_tickers"]
+    )
+
+    projection = {
+        "name": "x",
+        "route": "/x",
+        "fields": list(MARKET_FEED_REQUIRED_FIELDS),
+        "support": {
+            "impact_direction": {"produced_by": "stub", "sample_n": 1},
+            "impact_magnitude": {"produced_by": "stub", "sample_n": 1},
+        },
+    }
+    receipt = resolve_market_feed_alias(root=root, projection=projection)
+    assert receipt["state"] != "SERVED"
+
+
 def test_market_feed_alias_llm_claimed_support_never_grants_served(tmp_path):
     """BLOCKER regression (review of PR #6897): a caller-declared
     projection['support'][field]['sample_n'] must never grant SERVED when the
