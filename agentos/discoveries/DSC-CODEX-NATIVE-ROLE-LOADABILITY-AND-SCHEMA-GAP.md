@@ -24,9 +24,9 @@ kind: landmine
 verified_at: 2026-09-06
 verified_by: >
   Mastermind PR 513 head 137a8e490a9bb6e8c7eca225e53a3128971e9160;
-  full changed test module 52 passed; original artifact and guard REDs; three
-  in-memory guard mutations detected; comment 5562263619 records the canonical
-  CHECKPOINT_VERIFIED receipt and 14/14 nondiscriminating schema results.
+  full changed module 52 passed; meaningful original REDs and three guard mutations;
+  independent APPROVE 5126704695; refreshed hosted run 34062500773 passed503 modules;
+  comments 5562263619 and5562600431 preserve the schema gap and unresolved release.
 scope:
   - Mastermind/.codex/agents/*.toml
   - Mastermind/brain/codex_bridge.py
@@ -46,7 +46,7 @@ The original source is Mastermind protected
 `explorer`, `worker`, `deep-reasoner`, `narrative-analyst`, `quant-coder`, and
 `signal-scout`. Each had deny-only `bot`, `desk`, `china`, and `hk` MCP entries.
 
-The current implementation candidate is
+The implementation is
 [Mastermind PR #513](https://github.com/mastermindx-market-intelligence/Mastermind/pull/513),
 head `137a8e490a9bb6e8c7eca225e53a3128971e9160`, tree
 `9d33f5dc967f892f4073c41450d7aa16978c1e0c`, on
@@ -92,24 +92,74 @@ The native evidence directory is
 It contains test logs, mutation JUnit, exact-source manifests and the original
 failed environment/auth-input attempts. It is evidence, not another state plane.
 
-## Continuation and non-rebuild boundary
+## Review accepted; source release still blocked
 
-At this dated checkpoint #513 is Draft/Hold and `BUILT_NOT_PROVEN` for installed
-native use. The next source step is independent exact-head review plus current-base
-CI adjudication on that same branch. Native binary parsing and bounded child
-capability-inheritance proof remain unproven and separately gated; do not turn the
-static schema result into an installed acceptance claim.
+This section supersedes the earlier Draft/review-pending next action preserved at
+Macro commit `59df878fd05a284f2834f43cfb1c6b8fdc065393`, without changing the source
+finding or native-proof boundary.
+
+Independent reviewer MastermindX1 submitted APPROVE `5126704695` at21:43:33Z on
+exact head137a. The reviewer read the complete source and consumer, verified role
+preservation, and independently ran three positive and46negative extracted-guard
+controls. Those supporting controls are not a second full-module or native-parser
+run. The review child was explicitly accepted/STOPped; no watcher was created.
+
+At21:50:08Z, the unchanged canonical verifier returned `REMOTE_COMPLETE_VERIFIED`,
+digest `6739eb4d6c262f78926d5d8729a738d0e235f8c1c39cc2e086fb28012cee1914`.
+Local/remote head137a and tree9d33 matched, dirt/untracked/unpushed counts were zero,
+current base wasc5, and collisions wereDISJOINT. Comment5562429934 then explicitly
+accepted and STOPped the direct source-authoring child and declared
+`BRANCH_WRITER_RELEASED`. The receipt itself granted no such authority.
+
+A separate maintenance operation,
+`native-role-loadability-source-release-20260906-websol3`, marked the PR Ready.
+The first expected-head squash merge returned405, required test expected, with
+canonical readback proving not merged. One bounded same-PR close/reopen refresh
+was admitted and consumed; no source or review changed.
+
+That new natural run34062500773/job101565395500 completed SUCCESS at22:18:27Z.
+Its actual checkout was `31331874051c53afd81c9f9a5acfb3a393b0a191`, parents
+`[c5fe346fc6ffe865232454c07fc9aefec46951fe,137a8e490a9bb6e8c7eca225e53a3128971e9160]`,
+and integrated tree `4a8bc7357c01a218be0c82f7bfecca2171e0672d`. The full log reports
+503 discovered/0excluded/503running test modules, with skipped cases disclosed.
+Fresh source checks retained new test success plus CodeQL and three analyses green.
+
+The subsequent expected-head merge nevertheless returned the same405. Immediate
+PR readback again showed OPEN/READY/UNMERGED. Its synthetic merge ref moved to
+`fabba191fabf0c724742ebf4bc9e31819e85bb96`, created22:22:30Z, with the same exact
+ordered parents and integrated tree. This is an observed repeated required-check
+association gap; its full underlying cause is not established. A same-tree object
+must not be falsely described as the commit the runner actually executed.
+
+The explicit HOLD and exact identities are recorded in
+[comment5562600431](https://github.com/mastermindx-market-intelligence/Mastermind/pull/513#issuecomment-5562600431).
+The one refresh budget is spent: no repeated close/reopen, merge loop, empty commit,
+rebase, source join, alternate mutation carrier, admin bypass or direct status write.
+The accepted source and review stay terminal and immutable. The maintenance operation
+remains blocked, not silently completed. No merge or installation has occurred.
+
+## Exact continuation and non-rebuild boundary
+
+The immediate source-release action is for the existing GitHub release/CI owner to
+resolve required-check association for the actual current merge object and tested
+checkout, then obtain one fresh bounded release edge. Do not repeat semantic review
+or ask Chris to allocate accounts. Native binary parsing and bounded child
+capability inheritance remain independently unproven after any eventual source merge.
 
 The existing Personal first-read child remains
 `personal-mcp-first-read-e1-source-20260906-sol-001` on Slack
-`C0BSBM78V1N/1788719305.919709`, under its existing controller. Its later queued-entry
-repair at local `8a5c43a17705c7690cf5e5d1244b70f3a9683a76` supersedes the earlier
-Task 1 source result for that concern. This discovery neither accepts that result
-nor starts another worker on its occupied fourteen-file scope.
+`C0BSBM78V1N/1788719305.919709`, under its existing controller. Its queued-entry repair
+at local `8a5c43a17705c7690cf5e5d1244b70f3a9683a76` supersedes the earlier Task1 result
+for that concern; its separately started Task2 continues within the same fourteen-file
+scope. This discovery neither accepts that implementation nor starts another worker.
 
-Existing Runtime/Cockpit owners retain the authenticated-read and plural-observation
-integration; #508 is not reimplemented here. Existing #471/#455 provider harness,
-#491 return continuity, and #502/#509 browser census/packaging owners remain separate.
+Existing Runtime/Cockpit owners retain authenticated-read and plural-observation
+integration; #508 is not reimplemented here. The already-created consumer operation
+`connected-office-a1-authenticated-steward-consumer-20260906-sol-001` remains on root
+`C0BSBM78V1N/1788728906.514699`, last observed waiting on dependencies and capacity,
+not ACKed or STARTed. #471/#455 provider harness, #491 return continuity, and
+#502/#509 browser census/packaging owners remain separate.
+
 A repaired helper definition is not fleet completion. The original outcome remains
 real parent/child observations, attributable results, exact supervisor continuation,
 independent review/repair, visible capability and explicit terminal closure.
