@@ -19,9 +19,18 @@ Pure: no I/O, no clock read, no network. ``page_built_at`` is supplied.
 """
 from __future__ import annotations
 
+import math
+
 from typing import Any, Mapping, Sequence
 
 from lib import macro_suite_labels as L
+
+# Reading orders the shell can compose. The grammar order is merged architecture
+# section 6.3 and remains the default for every workspace; the decision-first
+# order is the narrowly amended one (see build_view's docstring).
+LAYOUT_GRAMMAR = "grammar"
+LAYOUT_DECISION_FIRST = "decision_first"
+_LAYOUTS = frozenset({LAYOUT_GRAMMAR, LAYOUT_DECISION_FIRST})
 
 EM_DASH = L.EM_DASH
 
@@ -127,7 +136,15 @@ def _context(snapshot: Mapping[str, Any], page_built_at: str) -> dict[str, Any]:
         "state_tone": L.tone("freshness", state),
         "worst_freshness": L.label("freshness", availability.get("worst_freshness")),
         "worst_freshness_tone": L.tone("freshness", availability.get("worst_freshness")),
+        # Raw token beside the label: a consumer that must DECIDE (rather than
+        # print) needs the token, and re-deriving it from a label is a bug.
+        "worst_freshness_token": availability.get("worst_freshness"),
         "coverage": L.fmt_ratio_pct(availability.get("coverage_ratio")),
+        # Same rule as the boundary distance: absent coverage must render as a
+        # typed absence, not as an unlabelled dash or an apparent 0%.
+        "coverage_ratio": availability.get("coverage_ratio") if _finite(availability.get("coverage_ratio")) else None,
+        "coverage_present": _finite(availability.get("coverage_ratio")),
+        "coverage_absence": None if _finite(availability.get("coverage_ratio")) else _absence(None),
         "required": required,
         "degraded": list(availability.get("degraded") or []),
         "reasons": list(availability.get("reasons") or []),
@@ -200,7 +217,13 @@ def _axis_view(axis: Mapping[str, Any]) -> dict[str, Any]:
             "raw": L.value_pair(component.get("raw_value")),
             "raw_absence": None if component.get("raw_value") is not None else _absence(component.get("null_reason")),
             "standardized": L.fmt_number(component.get("standardized_value")),
+            "standardized_present": _finite(component.get("standardized_value")),
+            "standardized_absence": (None if _finite(component.get("standardized_value"))
+                                     else _absence(component.get("null_reason"))),
             "contribution": L.fmt_signed(component.get("contribution")),
+            "contribution_present": _finite(component.get("contribution")),
+            "contribution_absence": (None if _finite(component.get("contribution"))
+                                     else _absence(component.get("null_reason"))),
             "contribution_sign": _sign(component.get("contribution")),
             "sign": component.get("sign"),
             "weight": L.fmt_number(component.get("weight")),
@@ -237,9 +260,12 @@ def _axis_view(axis: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _sign(value: Any) -> str:
-    if not isinstance(value, (int, float)) or isinstance(value, bool):
-        return "flat"
+def _sign(value: Any) -> str | None:
+    # None, never "flat". An absent value that renders as no-change is the whole
+    # defect: the reader cannot tell "we measured, nothing moved" from "we have
+    # no number", and the second is the one that should stop them.
+    if not _finite(value):
+        return None
     if value > 0:
         return "up"
     if value < 0:
@@ -283,6 +309,12 @@ def _headline(snapshot: Mapping[str, Any], axes: Sequence[Mapping[str, Any]]) ->
         "nearest_boundary": {
             "axis_label": boundary_axis["label"] if boundary_axis else None,
             "distance": L.fmt_number(boundary.get("distance")),
+            # The raw value and an explicit present flag, because the caller has
+            # to DECIDE on this: a missing distance formats to a truthy dash, and
+            # a genuine zero-distance boundary -- sitting exactly on the line, the
+            # most urgent case there is -- formats to a falsey "0".
+            "distance_raw": boundary.get("distance") if _finite(boundary.get("distance")) else None,
+            "distance_present": _finite(boundary.get("distance")),
             "absence": None if boundary.get("distance") is not None else _absence(boundary.get("null_reason")),
         },
         "vector": {
@@ -308,6 +340,20 @@ def _headline(snapshot: Mapping[str, Any], axes: Sequence[Mapping[str, Any]]) ->
 # 10 are x/y state models, so the map is shell furniture rather than a
 # liquidity-only widget. The letter grid follows the producer's classification
 # law: A = low-x/high-y, B = high-x/high-y, C = low-x/low-y, D = high-x/low-y.
+
+def _finite(value: Any) -> bool:
+    """A plottable coordinate: numeric, not a bool, and actually a number.
+
+    ``isinstance(True, int)`` is True in Python and ``json.loads`` parses a bare
+    ``NaN`` into a float, so the obvious numeric check accepts two values that
+    are not readings: ``true`` plotted at cx=1.0 and ``NaN`` rendered as
+    ``cx="nan"``, which most renderers drop. Either way the point disappears or
+    lands somewhere arbitrary while the page still claims a plotted state, which
+    is the "missing looks like zero" failure the typed-absence cell exists to
+    prevent.
+    """
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
 
 _QUADRANT_GRID = (
     # (letter, x-half, y-half, css position)
@@ -341,7 +387,7 @@ def _quadrant_map(headline: Mapping[str, Any], axes: Sequence[Mapping[str, Any]]
         })
 
     x_value, y_value = headline.get("x"), headline.get("y")
-    plotted = isinstance(x_value, (int, float)) and isinstance(y_value, (int, float))
+    plotted = _finite(x_value) and _finite(y_value)
     return {
         "x_axis": x_axis,
         "y_axis": y_axis,
@@ -365,13 +411,33 @@ def _changes(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     comparability = changes.get("comparability")
     deltas = []
     for delta in changes.get("deltas") or []:
+        prior_raw, current_raw = delta.get("prior_value"), delta.get("current_value")
+        delta_raw = delta.get("delta")
+        # Classify on the RAW values, format afterwards. Deciding from the
+        # formatted string is how an em dash became truthy and a real 0 became
+        # false-like; every consumer below branches on these booleans, never on
+        # the display text.
+        prior_present = _finite(prior_raw)
+        current_present = _finite(current_raw)
+        delta_present = _finite(delta_raw)
+        comparable_row = prior_present and current_present and delta_present
         deltas.append({
             "metric_id": delta.get("metric_id"),
             "label": L.label("metric", delta.get("metric_id")),
-            "prior": L.fmt_number(delta.get("prior_value")),
-            "current": L.fmt_number(delta.get("current_value")),
-            "delta": L.fmt_signed(delta.get("delta")),
-            "sign": _sign(delta.get("delta")),
+            "prior_raw": prior_raw if prior_present else None,
+            "current_raw": current_raw if current_present else None,
+            "delta_raw": delta_raw if delta_present else None,
+            "prior_present": prior_present,
+            "current_present": current_present,
+            "delta_present": delta_present,
+            "comparable": comparable_row,
+            # A real zero keeps its "0" and its flat class; an absent value gets
+            # neither a number nor a class that reads as success.
+            "prior": L.fmt_number(prior_raw) if prior_present else None,
+            "current": L.fmt_number(current_raw) if current_present else None,
+            "delta": L.fmt_signed(delta_raw) if delta_present else None,
+            "sign": _sign(delta_raw),
+            "absence": None if comparable_row else _absence(delta.get("null_reason")),
             "note": delta.get("note"),
         })
     comparable = comparability == "COMPARABLE"
@@ -471,7 +537,13 @@ def _drivers(snapshot: Mapping[str, Any], axes: Sequence[Mapping[str, Any]]) -> 
                 "absence": None if driver.get("value") is not None else _absence(None),
                 "unit": L.label("unit", driver.get("unit")),
                 "impact": signed,
-                "impact_sign": "up" if (sign or 0) > 0 else ("down" if (sign or 0) < 0 else "flat"),
+                # `(sign or 0)` collapsed an ABSENT sign to 0 and then to "flat",
+                # so a driver with no published impact wore the same styling as a
+                # driver measured at exactly no impact. Presence first, direction
+                # second: a real 0 keeps "flat", an absent one gets no sign at all.
+                "impact_present": signed is not None,
+                "impact_sign": (("up" if sign > 0 else "down" if sign < 0 else "flat")
+                                if signed is not None and isinstance(sign, int) else None),
                 "impact_absence": None if signed is not None else _absence(None),
                 "note": driver.get("note"),
                 "coverage": L.label("presence", driver.get("coverage_state")),
@@ -698,15 +770,173 @@ def _withheld_tabs(snapshot: Mapping[str, Any]) -> list[dict[str, Any]]:
     return out
 
 
+# --- next action -------------------------------------------------------------
+# The doctrine requires every signal surface to answer "so what do I do", and the
+# authority ceiling forbids this lane from answering with a position, a size or a
+# gate. The compliant answer is a RESEARCH action, and it is chosen by a total
+# function over typed tokens the producer already published — no model, no
+# weighting, no judgement. When the honest answer is "watch, don't chase", that
+# is what it says.
+
+#: Freshness tokens that mean this print cannot be read as today's answer.
+_NOT_TODAYS_ANSWER = frozenset({
+    "SOURCE_FAILED", "STALE_SOURCE", "RIGHTS_BLOCKED", "SIMULATED", "NOT_YET_RELEASED",
+})
+
+
+# Every route below points at a region that is present AND visible with client
+# state off: the default "current" tab panel, or the context detail block that
+# sits outside the tab system entirely. Routing into the Drivers or History panel
+# would look right in the markup and land on a JS-hidden target in a real
+# browser, and the evidence drawer ships `hidden inert` by design.
+_ROUTE_SOURCE_CLOCKS = ("#mq-contextdetail-title", _pair("Open source clocks and coverage", "查看数据源时钟与覆盖率"))
+_ROUTE_COMPONENTS = ("#mq-metrics-title", _pair("Open current components", "查看当前分项"))
+_ROUTE_STATE_MAP = ("#mq-map-title", _pair("Open the state map", "查看状态图"))
+
+
+def _route(target: tuple[str, dict[str, Any]]) -> dict[str, Any]:
+    href, label = target
+    return {"href": href, "label": label}
+
+
+def _next_action(context: Mapping[str, Any],
+                 headline: Mapping[str, Any]) -> dict[str, Any]:
+    """One typed research action, in a fixed precedence.
+
+    Precedence is deliberate and is the whole design: an unusable print outranks
+    a disagreement, a disagreement outranks a boundary watch, and a settled quiet
+    read says so plainly rather than manufacturing something to do.
+
+    Every branch carries a real route to a page region the reader already owns.
+    None of them is a trade instruction, a size, a rank or a composite -- the
+    action is always "go look at this", never "do this in the market".
+    """
+    heading = _pair("Next action", "下一步")
+
+    state = context.get("state")
+    if state in _NOT_TODAYS_ANSWER or context.get("worst_freshness_token") in _NOT_TODAYS_ANSWER:
+        return {
+            "token": "WAIT_FOR_SOURCES",
+            "heading": heading,
+            "tone": "warn",
+            "text": _pair(
+                "Do not read this as today's answer. A required source is not current — "
+                "wait for the next accepted print.",
+                "请勿将此视为今日读数。某项必需数据源并非最新 — 请等待下一次已接受的读数。"),
+            "route": _route(_ROUTE_SOURCE_CLOCKS),
+            "watch": None,
+        }
+
+    if context.get("contradiction"):
+        return {
+            "token": "TREAT_AS_UNSETTLED",
+            "heading": heading,
+            "tone": "warn",
+            "text": _pair(
+                "Required components disagree. Read them separately below — the summary "
+                "state is not settled while they conflict.",
+                "必需分项之间存在矛盾。请在下方分别查看 — 矛盾未消解前，汇总状态尚未确定。"),
+            "route": _route(_ROUTE_COMPONENTS),
+            "watch": None,
+        }
+
+    boundary = headline.get("nearest_boundary") or {}
+    # `distance_present`, never the formatted `distance`: an absent distance
+    # formats to a truthy em dash, and a boundary distance of exactly 0 -- the
+    # state sitting right on the line, the single most watch-worthy case -- is a
+    # falsey "0". Both were wrong in the obvious version of this test.
+    if boundary.get("distance_present") and boundary.get("axis_label"):
+        return {
+            "token": "WATCH_BOUNDARY",
+            "heading": heading,
+            "tone": "neutral",
+            # Plain words on purpose, and no "recommendation": the merged authority
+            # guard in tests/test_macro_suite_pages.py bans that vocabulary from
+            # the surface outright, and a denial is still a use.
+            "text": _pair(
+                "Watch the axis closest to changing this state. Nothing here tells "
+                "you to act.",
+                "关注最接近改变当前状态的坐标轴。此处不提供任何操作指示。"),
+            "route": _route(_ROUTE_STATE_MAP),
+            "watch": {
+                "label": _pair("Closest to changing", "最接近发生改变"),
+                "axis_label": boundary.get("axis_label"),
+                "distance": boundary.get("distance"),
+                "distance_raw": boundary.get("distance_raw"),
+            },
+        }
+
+    return {
+        "token": "WATCH_ONLY",
+        "heading": heading,
+        "tone": "neutral",
+        "text": _pair(
+            "Nothing here asks you to act. Watch — don't chase.",
+            "此处没有需要采取的操作。观察即可 — 不要追高杀跌。"),
+        "route": _route(_ROUTE_COMPONENTS),
+        "watch": None,
+    }
+
+
+def _glance(changes: Mapping[str, Any],
+            implications: Mapping[str, Any]) -> dict[str, Any]:
+    """The bounded brief: one change, one meaning, both owner-published.
+
+    Deliberately NOT "the biggest move". Selecting a lead row by magnitude would
+    be a new ranking over published values, which this commission forbids; the
+    hub already takes published order for the same reason, so this takes the
+    first comparable row in published order and states the denominators beside
+    it. A reader who wants the full table is one disclosure away.
+    """
+    deltas = list(changes.get("deltas") or [])
+    comparable = [d for d in deltas if d.get("comparable")]
+    entries = list(implications.get("entries") or [])
+    lead_implication = entries[0] if entries else None
+
+    return {
+        "change": {
+            "present": bool(comparable) and bool(changes.get("comparable")),
+            "lead": comparable[0] if comparable else None,
+            # Denominators always, present or not: "3 of 11 comparable" is the
+            # honest form of a partial table, and "0 of 11" is a real statement
+            # rather than an empty section the reader has to interpret.
+            "comparable_count": len(comparable),
+            "total_count": len(deltas),
+            "absence": None if comparable else _absence(changes.get("null_reason")),
+        },
+        "meaning": {
+            "present": lead_implication is not None,
+            "text": lead_implication.get("text") if lead_implication else None,
+            "evidence_label": lead_implication.get("evidence_label") if lead_implication else None,
+            "evidence_claim": lead_implication.get("evidence_claim") if lead_implication else None,
+            "remaining": max(0, len(entries) - 1) if entries else 0,
+            "absence_text": implications.get("absence_text"),
+        },
+    }
+
+
 # --- public entry points ------------------------------------------------------
 
 def build_view(snapshot: Mapping[str, Any], *, page_built_at: str,
-               artifact: Mapping[str, Any]) -> dict[str, Any]:
+               artifact: Mapping[str, Any],
+               layout: str = LAYOUT_GRAMMAR) -> dict[str, Any]:
     """The complete section 6.3 view for one validated snapshot.
 
     ``artifact`` carries the publication receipt the page shows in the evidence
     drawer: ``{"path", "sha256", "bytes", "manifest_path", "min_client_contract"}``.
+
+    ``layout`` selects the reading order the shell composes. ``LAYOUT_GRAMMAR``
+    is the merged architecture section 6.3 order and stays the default for every
+    workspace. ``LAYOUT_DECISION_FIRST`` leads with state / what changed / why it
+    matters / next action and demotes the expanded diagnostics behind disclosure;
+    it is authorized for the Liquidity Regime pattern-setter alone by the Sol
+    ruling of 2026-09-05, recorded in
+    ``research/market_intelligence_productization/MARKET_ONTOLOGY_F01_R1_DECISION_FIRST_AMENDMENT_2026-09-05.md``.
+    The selector is a rendering order only: it changes no producer semantics, no
+    metric, and no freshness or null verdict.
     """
+    if layout not in _LAYOUTS:
+        raise ValueError(f"unknown layout {layout!r}; expected one of {sorted(_LAYOUTS)}")
     axes = [_axis_view(a) for a in (snapshot.get("axes") or {}).get("items") or []]
     context = _context(snapshot, page_built_at)
     headline = _headline(snapshot, axes)
@@ -721,6 +951,10 @@ def build_view(snapshot: Mapping[str, Any], *, page_built_at: str,
 
     return {
         "ok": True,
+        "layout": layout,
+        "decision_first": layout == LAYOUT_DECISION_FIRST,
+        "next_action": _next_action(context, headline),
+        "glance": _glance(changes, _implications(snapshot)),
         "workspace": {
             "id": (snapshot.get("workspace") or {}).get("id"),
             "title": _bilingual((snapshot.get("workspace") or {}).get("title")),
@@ -762,6 +996,8 @@ def degraded_view(*, workspace_id: str, title: Mapping[str, str],
     """
     return {
         "ok": False,
+        "layout": LAYOUT_GRAMMAR,
+        "decision_first": False,
         "workspace": {"id": workspace_id, "title": dict(title), "subtitle": dict(subtitle)},
         "region": _region_view(region_code, region_display_name, True),
         "page_built_at": page_built_at,
@@ -781,4 +1017,240 @@ def degraded_view(*, workspace_id: str, title: Mapping[str, str],
                           "下一次生产端成功构建后，本页将自动恢复。"),
         },
         "artifact": dict(artifact),
+    }
+
+
+# ==========================================================================
+# Macro & Monetary suite hub (F01 / R1)
+# ==========================================================================
+#
+# The hub COMPOSES what each workspace owner already published. It runs the
+# same `_context`, `_headline` and `_changes` composers the workspace pages
+# use, so the hub and the page can never disagree about a state, a clock or a
+# delta. It originates nothing.
+#
+# Three constructions are deliberately absent, and must stay absent
+# (`DNR:KILL-FUSED-COMPOSITE`, `DNR:KILL-REGIME-SCORECARD`, and the Sol ruling
+# of 2026-09-05):
+#   * no cross-workspace normalized magnitude,
+#   * no fused composite or single "macro regime" verdict,
+#   * no importance score, ranking or reordering of the closed registry order.
+# Operational trouble is carried in its own attention notice precisely so that
+# "this source broke" is never rendered as "this matters most".
+
+#: How many change lines the hub prints before it defers to the workspaces.
+HUB_CHANGE_LIMIT = 5
+
+#: Freshness tokens that mean a reader must not treat the row as settled.
+_ATTENTION_FRESHNESS = frozenset({
+    "SOURCE_FAILED", "STALE_SOURCE", "RIGHTS_BLOCKED", "SIMULATED",
+})
+
+#: Null reasons that mean the same thing, in the null-reason vocabulary.
+_ATTENTION_NULL_REASON = frozenset({
+    "SOURCE_FAILED", "RIGHTS_BLOCKED", "DISAGREEMENT", "REVISION_PENDING_REBUILD",
+})
+
+#: Comparability states that mean a printed delta cannot be read as a like-for-like move.
+_ATTENTION_COMPARABILITY = frozenset({
+    "METHOD_CHANGED", "DEFINITION_INCOMPARABLE",
+})
+
+
+def _attention(vocabulary: str, token: Any) -> dict[str, Any]:
+    """One typed attention cell, labelled in the vocabulary it actually came from.
+
+    Resolving a comparability token through the null-reason table would mint an
+    unreviewed label and register an unknown token, so the namespace travels
+    with the token rather than being assumed at the call site.
+    """
+    return {
+        "namespace": vocabulary,
+        "token": str(token),
+        "label": L.label(vocabulary, token),
+        "tone": L.tone("freshness", token) if vocabulary == "freshness" else "warn",
+    }
+
+
+def _hub_attention_reason(context: Mapping[str, Any],
+                          changes: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The one typed reason this row needs attention, or None when it is settled.
+
+    Deterministic and token-driven: it reads the owner's own published freshness,
+    null-reason and comparability vocabularies in a fixed precedence. It never
+    weighs one workspace against another, and it never invents a severity — the
+    attention notice is an operational note, not an importance ordering.
+    """
+    for token in (context.get("state"), context.get("worst_freshness_token")):
+        if token in _ATTENTION_FRESHNESS:
+            return _attention("freshness", token)
+    if context.get("contradiction"):
+        return _attention("null_reason", "DISAGREEMENT")
+    for reason in context.get("reasons") or []:
+        if reason in _ATTENTION_NULL_REASON:
+            return _attention("null_reason", reason)
+    if changes.get("comparability") in _ATTENTION_COMPARABILITY:
+        return _attention("comparability", changes["comparability"])
+    return None
+
+
+def build_hub_view(entries: Sequence[Mapping[str, Any]], *,
+                   page_built_at: str) -> dict[str, Any]:
+    """The Macro & Monetary hub view.
+
+    ``entries`` arrive in the closed registry order and are rendered in that
+    order. Each entry is
+    ``{"workspace_id", "region", "output", "title", "subtitle",
+       "snapshot" | None, "failure" | None}``.
+    """
+    rows: list[dict[str, Any]] = []
+    changes_pool: list[dict[str, Any]] = []
+    attention: list[dict[str, Any]] = []
+    unavailable: list[dict[str, Any]] = []
+    effective_dates: list[str] = []
+
+    for entry in entries:
+        snapshot = entry.get("snapshot")
+        row: dict[str, Any] = {
+            "workspace_id": entry["workspace_id"],
+            "href": entry["output"],
+            "title": dict(entry["title"]),
+            "subtitle": dict(entry["subtitle"]),
+            "region": entry.get("region"),
+        }
+
+        if not snapshot:
+            failure = entry.get("failure") or {}
+            kind = failure.get("kind") or "UNKNOWN"
+            row.update({
+                "available": False,
+                "absence": _absence(kind),
+                # An unreadable workspace is NEVER calm and NEVER zero. It says
+                # so in words, and it says what would fix it.
+                "absence_text": _pair(
+                    "Not readable in this build — no state is shown for it.",
+                    "本次构建无法读取 — 因此不展示任何状态读数。"),
+                "recovery_text": _pair(
+                    "Recovers on the next accepted producer build.",
+                    "下一次生产端成功构建后自动恢复。"),
+            })
+            rows.append(row)
+            unavailable.append({"workspace_id": entry["workspace_id"],
+                                "title": dict(entry["title"]),
+                                "reason": _absence(kind)})
+            attention.append({"workspace_id": entry["workspace_id"],
+                              "title": dict(entry["title"]),
+                              "href": entry["output"],
+                              "reason": _attention("null_reason", kind),
+                              "tone": "bad"})
+            continue
+
+        axes = [_axis_view(a) for a in (snapshot.get("axes") or {}).get("items") or []]
+        context = _context(snapshot, page_built_at)
+        headline = _headline(snapshot, axes)
+        changes = _changes(snapshot)
+
+        if headline.get("effective_date"):
+            effective_dates.append(str(headline["effective_date"]))
+
+        row.update({
+            "available": True,
+            "state_id": headline.get("state_id"),
+            "state_label": headline.get("state_label"),
+            "effective_date": headline.get("effective_date"),
+            "freshness": context.get("state_label"),
+            "freshness_tone": context.get("state_tone"),
+            "coverage": context.get("coverage"),
+            "coverage_present": context.get("coverage_present"),
+            "coverage_absence": context.get("coverage_absence"),
+            "comparability_label": changes.get("comparability_label"),
+            "comparable": changes.get("comparable"),
+            "change_count": len(changes.get("deltas") or []),
+            "changes_absence": changes.get("absence"),
+        })
+        rows.append(row)
+
+        # Changes are pooled in registry order and truncated in registry order.
+        # No magnitude comparison decides what a reader sees first.
+        for delta in changes.get("deltas") or []:
+            # A row the producer published with no prior, no current and no delta
+            # is not a change — it is a metric that could not be compared. Putting
+            # it here would spend one of the few slots saying nothing, and would
+            # print a bare em dash where the reader expects a move. The workspace's
+            # own what-changed table still carries the row and its typed reason.
+            # The typed flag, not the formatted strings: an em dash is truthy
+            # and a formatted "0" is not, so the string test both admitted
+            # unavailable rows and dropped real no-change ones.
+            if not delta.get("comparable"):
+                continue
+            changes_pool.append({
+                "workspace_id": entry["workspace_id"],
+                "workspace_title": dict(entry["title"]),
+                "href": entry["output"],
+                "label": delta.get("label"),
+                "prior": delta.get("prior"),
+                "current": delta.get("current"),
+                "delta": delta.get("delta"),
+                "sign": delta.get("sign"),
+            })
+
+        reason = _hub_attention_reason(context, changes)
+        if reason:
+            attention.append({"workspace_id": entry["workspace_id"],
+                              "title": dict(entry["title"]),
+                              "href": entry["output"],
+                              "reason": reason,
+                              "tone": reason["tone"]})
+
+    available = [r for r in rows if r.get("available")]
+    shown = changes_pool[:HUB_CHANGE_LIMIT]
+
+    return {
+        "page_built_at": page_built_at,
+        "kicker": _pair("Macro & Monetary", "宏观与货币"),
+        "title": _pair("Macro & Monetary", "宏观与货币"),
+        "deck": _pair("Fourteen research workspaces, one current read.",
+                      "十四个研究工作区，一个当前读数。"),
+        "as_of": {
+            # The suite is only as current as its oldest accepted print.
+            "effective_date": min(effective_dates) if effective_dates else None,
+            "newest_effective_date": max(effective_dates) if effective_dates else None,
+            "label": _pair("Suite effective date", "套件生效日期"),
+            "note": _pair(
+                "The suite is dated by its oldest accepted workspace print, never its newest.",
+                "套件日期取自最旧的已接受工作区读数，而非最新读数。"),
+        },
+        "coverage": {
+            "available": len(available),
+            "total": len(rows),
+            "complete": len(available) == len(rows),
+            "label": _pair("Workspaces readable", "可读取工作区"),
+        },
+        "workspaces": rows,
+        "changes": {
+            "entries": shown,
+            "shown": len(shown),
+            "remaining": max(0, len(changes_pool) - len(shown)),
+            "total": len(changes_pool),
+            "heading": _pair("Recent changes", "近期变化"),
+            # Named honestly: these are the first N in the suite's own order, not
+            # a curated set of the N that matter most.
+            "note": _pair(
+                "The first few changes in suite order — not a ranking. Open a workspace for its full list.",
+                "按套件既定顺序列出的前几项变化 — 并非重要性排序。完整列表请进入相应工作区。"),
+            "empty_text": _pair(
+                "No workspace published a method-comparable change in this build.",
+                "本次构建中，没有工作区发布方法可比的变化。"),
+        },
+        "attention": {
+            "entries": attention,
+            "count": len(attention),
+            "heading": _pair("Needs data attention", "数据需要关注"),
+            "note": _pair(
+                "Source or revision trouble. This is an operational note, not a judgement about what matters.",
+                "数据源或修订问题。这是运行状态提示，不代表重要性判断。"),
+            "clear_text": _pair("Every workspace read cleanly in this build.",
+                                "本次构建中所有工作区均读取正常。"),
+        },
+        "unavailable": unavailable,
     }

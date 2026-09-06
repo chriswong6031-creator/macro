@@ -30,6 +30,8 @@
   toggled by html[data-lang]; exactly one language is on screen at a time.
 #}
 
+{% import "_macro_suite_nav.html.j2" as suitenav %}
+
 {%- macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro -%}
@@ -94,6 +96,13 @@
     <p class="mq-context-caveat">{{ t('Page build time is not an economic clock and never makes a source fresh. This page is a static publication — it does not poll for live data.', '页面生成时间并非经济时钟，不会使数据源变新。本页为静态发布 — 不会实时轮询数据。') }}</p>
   </div>
 
+  {{ source_clock_table(view) }}
+</header>
+{%- endmacro -%}
+
+{#- The required-component clock table. Shared by both layouts so the grammar
+    page and the decision-first page can never show different clocks. -#}
+{%- macro source_clock_table(view) -%}
   <details class="mq-sourcerow">
     <summary>{{ t('Required components and their source clocks', '必需分项及其数据源时钟') }}</summary>
     <table class="mq-table mq-table-compact">
@@ -115,7 +124,132 @@
       </tbody>
     </table>
   </details>
+{%- endmacro -%}
+
+{#- ── decision-first identity band ──────────────────────────────────────────
+    Same facts as context_header, different ORDER of arrival: identity, the
+    effective date, and one truthful freshness+coverage line stay in the default
+    reading path; the three clocks, the non-economic build stamps, the caveat and
+    the component table move one deliberate action away. Nothing is removed, and
+    nothing is harder to reach than a single click. -#}
+{%- macro context_header_compact(view) -%}
+{%- set ctx = view.context -%}
+{%- set head = view.headline -%}
+<header class="mq-context mq-context-compact" id="mq-context">
+  <div class="mq-context-id">
+    <p class="mq-kicker">{{ t('Macro & Monetary', '宏观与货币') }}</p>
+    <h1>{{ bl(view.workspace.title) }}</h1>
+    <p class="mq-deck">{{ bl(view.workspace.subtitle) }}</p>
+  </div>
+  <p class="mq-context-line">
+    <span class="mq-context-line-item">
+      <span class="mq-context-line-key">{{ t('Effective', '生效日期') }}</span>
+      {% if head.effective_date %}<time>{{ head.effective_date }}</time>{% else %}{{ absent(head.absence, True) }}{% endif %}
+    </span>
+    <span class="mq-context-line-item">
+      <span class="mq-context-line-key">{{ t('Sources', '数据源') }}</span>
+      <span class="mq-tone-{{ ctx.state_tone }}">{{ bl(ctx.state_label) }}</span>
+    </span>
+    <span class="mq-context-line-item">
+      <span class="mq-context-line-key">{{ t('Coverage', '覆盖率') }}</span>
+      {% if ctx.coverage_present %}{{ ctx.coverage }}{% else %}{{ absent(ctx.coverage_absence, True) }}{% endif %}
+    </span>
+    <span class="mq-context-line-item">
+      <span class="mq-context-line-key">{{ t('Region', '地区') }}</span>
+      {{ bl(view.region.display) }}
+    </span>
+  </p>
 </header>
+{%- endmacro -%}
+
+{#- Everything context_header shows above the fold that a decision-first reader
+    does not need before the state: kept, labelled, one action away. -#}
+{%- macro context_detail(view) -%}
+{%- set ctx = view.context -%}
+<section class="mq-contextdetail" aria-labelledby="mq-contextdetail-title">
+  <div class="mq-section-head">
+    <h3 id="mq-contextdetail-title">{{ t('Dates, coverage and source clocks', '日期、覆盖率与数据源时钟') }}</h3>
+    <span class="mq-section-note">{{ t('The same facts the reading above is built on, in full.', '上方读数所依据的全部事实。') }}</span>
+  </div>
+  <div class="mq-avail">
+    <span class="mq-avail-label">{{ t('Required-source availability', '必需数据源可用性') }}</span>
+    <strong class="mq-tone-{{ ctx.state_tone }}">{{ bl(ctx.state_label) }}</strong>
+    <span class="mq-avail-note">{{ t('Conservative over the required set — a degraded optional leg cannot turn this green.', '在必需分项集合上取最保守值 — 可选分项降级不会让此处转绿。') }}</span>
+  </div>
+  <dl class="mq-context-meta">
+    <div><dt>{{ t('Coverage', '覆盖率') }}</dt><dd>{% if ctx.coverage_present %}{{ ctx.coverage }}{% else %}{{ absent(ctx.coverage_absence, True) }}{% endif %}</dd></div>
+    <div><dt>{{ t('Last accepted source cut', '最近已接受数据截止') }}</dt>
+         <dd>{% if ctx.last_source_cut %}<time>{{ ctx.last_source_cut }}</time>{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+    <div><dt>{{ t('Calculation as-of', '计算截止') }}</dt>
+         <dd>{% if ctx.calculation_as_of %}<time>{{ ctx.calculation_as_of }}</time>{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
+    <div class="mq-nonclock"><dt>{{ t('Page built', '页面生成') }}</dt>
+         <dd><time>{{ ctx.page_built_at }}</time></dd></div>
+  </dl>
+  <p class="mq-context-caveat">{{ t('Page build time is not an economic clock and never makes a source fresh. This page is a static publication — it does not poll for live data.', '页面生成时间并非经济时钟，不会使数据源变新。本页为静态发布 — 不会实时轮询数据。') }}</p>
+  <div class="mq-idchips">
+    <span class="mq-chip mq-chip-key">{{ t('Frequency', '频率') }} · {{ t('Owner cadence, daily republish', '按所有者节奏，每日重新发布') }}</span>
+    <span class="mq-chip mq-chip-key">{{ t('Window', '窗口') }} · {{ t('Latest accepted print', '最新已接受读数') }}</span>
+  </div>
+  {{ source_clock_table(view) }}
+</section>
+{%- endmacro -%}
+
+{#- ── next action ───────────────────────────────────────────────────────────
+    The authority-safe answer to "so what do I do". Chosen deterministically by
+    lib.macro_suite_view._next_action from typed producer tokens; this macro only
+    prints what that function decided. -#}
+{%- macro glance_brief(view) -%}
+{%- set g = view.glance -%}
+<section class="mq-glance" aria-labelledby="mq-glance-title">
+  <h3 id="mq-glance-title" class="mq-sr">{{ t('In brief', '摘要') }}</h3>
+
+  <p class="mq-glance-row mq-glance-change">
+    <span class="mq-glance-key">{{ t('Changed', '变化') }}</span>
+    {%- if g.change.present %}
+    <span class="mq-glance-value">
+      <span class="mq-glance-metric">{{ bl(g.change.lead.label) }}</span>
+      <span class="mq-delta mq-delta-{{ g.change.lead.sign }}">{{ g.change.lead.delta }}</span>
+      <span class="mq-glance-from">{{ g.change.lead.prior }} → {{ g.change.lead.current }}</span>
+    </span>
+    {%- else %}
+    <span class="mq-glance-value">{{ absent(g.change.absence, True) }}</span>
+    {%- endif %}
+    {#- Denominators in the default path, not behind the disclosure: "2 of 11
+        comparable" is the difference between a short table and a broken one. -#}
+    <span class="mq-glance-denom">{{ g.change.comparable_count }}/{{ g.change.total_count }} {{ t('comparable', '可比') }}</span>
+  </p>
+
+  <p class="mq-glance-row mq-glance-meaning">
+    <span class="mq-glance-key">{{ t('Means', '含义') }}</span>
+    {%- if g.meaning.present %}
+    <span class="mq-glance-value">
+      {{ bl(g.meaning.text) }}
+      <span class="mq-glance-evidence">{{ bl(g.meaning.evidence_label) }}</span>
+    </span>
+    {%- else %}
+    <span class="mq-glance-value mq-glance-none">{{ bl(g.meaning.absence_text) }}</span>
+    {%- endif %}
+  </p>
+</section>
+{%- endmacro -%}
+
+{%- macro next_action(view) -%}
+{%- set act = view.next_action -%}
+<section class="mq-next mq-tone-{{ act.tone }}" aria-labelledby="mq-next-title">
+  <h3 id="mq-next-title">{{ bl(act.heading) }}</h3>
+  <p class="mq-next-text">{{ bl(act.text) }}</p>
+  {%- if act.watch %}
+  <p class="mq-next-watch">
+    <span class="mq-next-watch-key">{{ bl(act.watch.label) }}</span>
+    <span class="mq-next-watch-axis">{{ bl(act.watch.axis_label) }}</span>
+    <span class="mq-next-watch-distance">{{ act.watch.distance }}</span>
+  </p>
+  {%- endif %}
+  {#- A real anchor to a region of this page that is present AND visible with
+      scripting off. Not a button that needs client state, and not a decorative
+      CTA: every target is a section the reader already owns. -#}
+  <a class="mq-next-route" href="{{ act.route.href }}">{{ bl(act.route.label) }}<span class="mq-next-route-arrow" aria-hidden="true">→</span></a>
+</section>
 {%- endmacro -%}
 
 {# ─────────────────────── 2. causal implications ribbon ─────────────────── #}
@@ -346,9 +480,14 @@
       {%- for delta in changes.deltas %}
       <tr>
         <th scope="row">{{ bl(delta.label) }}</th>
-        <td>{{ delta.prior }}</td>
-        <td>{{ delta.current }}</td>
-        <td class="mq-delta mq-delta-{{ delta.sign }}">{{ delta.delta }}</td>
+        <td>{% if delta.prior_present %}{{ delta.prior }}{% else %}{{ absent(delta.absence, True) }}{% endif %}</td>
+        <td>{% if delta.current_present %}{{ delta.current }}{% else %}{{ absent(delta.absence, True) }}{% endif %}</td>
+        {#- No sign class at all when the delta is absent: `mq-delta-flat` is the
+            success styling for "we measured, nothing moved", and wearing it while
+            carrying no number is the defect this row exists to prevent. -#}
+        <td class="mq-delta{% if delta.delta_present %} mq-delta-{{ delta.sign }}{% else %} mq-delta-unavailable{% endif %}">
+          {%- if delta.delta_present %}{{ delta.delta }}{% else %}{{ absent(delta.absence, True) }}{% endif -%}
+        </td>
       </tr>
       {%- endfor %}
     </tbody>
@@ -463,7 +602,9 @@
           <th scope="row">{{ bl(row.label) }}<span class="mq-owner-field"><code>{{ row.owner_field }}</code></span></th>
           <td>{% if row.value %}{{ bl(row.value) }}{% else %}{{ absent(row.absence, True) }}{% endif %}</td>
           <td>{{ bl(row.unit) }}</td>
-          <td class="mq-delta mq-delta-{{ row.impact_sign }}">{% if row.impact %}{{ row.impact }}{% else %}{{ absent(row.impact_absence, True) }}{% endif %}</td>
+          <td class="mq-delta{% if row.impact_present %} mq-delta-{{ row.impact_sign }}{% else %} mq-delta-unavailable{% endif %}">
+            {%- if row.impact_present %}{{ row.impact }}{% else %}{{ absent(row.impact_absence, True) }}{% endif -%}
+          </td>
           <td>{{ chip(row.coverage, row.coverage_tone) }}</td>
         </tr>
         {%- endfor %}
@@ -508,9 +649,11 @@
         <tr>
           <th scope="row">{{ bl(component.label) }}<span class="mq-owner-field"><code>{{ component.owner_field }}</code></span></th>
           <td>{% if component.raw %}{{ bl(component.raw) }}{% else %}{{ absent(component.raw_absence, True) }}{% endif %}</td>
-          <td>{{ component.standardized }}</td>
+          <td>{% if component.standardized_present %}{{ component.standardized }}{% else %}{{ absent(component.standardized_absence, True) }}{% endif %}</td>
           <td>{{ component.weight }}</td>
-          <td class="mq-delta mq-delta-{{ component.contribution_sign }}">{{ component.contribution }}</td>
+          <td class="mq-delta{% if component.contribution_present %} mq-delta-{{ component.contribution_sign }}{% else %} mq-delta-unavailable{% endif %}">
+            {%- if component.contribution_present %}{{ component.contribution }}{% else %}{{ absent(component.contribution_absence, True) }}{% endif -%}
+          </td>
         </tr>
         {%- endfor %}
       </tbody>
@@ -652,6 +795,8 @@
 
 {# ─────────────────────────── assembled page body ───────────────────────── #}
 {%- macro body(view) -%}
+{{ suitenav.suite_bar(suite_nav) }}
+{%- if view.decision_first %}{{ decision_first_body(view) }}{% else %}
 <main class="mq-shell" id="mq-shell">
   {{ context_header(view) }}
   {{ implications_ribbon(view) }}
@@ -687,10 +832,79 @@
   {{ withheld(view) }}
 </main>
 {{ evidence_drawer(view) }}
+{%- endif %}
+{%- endmacro -%}
+
+{# ─────────────── assembled page body — decision-first ordering ─────────────
+   Authorized for the Liquidity Regime pattern-setter alone by the Sol ruling of
+   2026-09-05 (research/market_intelligence_productization/
+   MARKET_ONTOLOGY_F01_R1_DECISION_FIRST_AMENDMENT_2026-09-05.md).
+
+   Same macros, same view model, same facts — a different order of ARRIVAL:
+
+       state -> what changed -> why it matters -> next action
+             -> diagnostics, drivers, history, components, evidence on demand
+
+   Every page still enters through body()/degraded_body(), so the reuse contract
+   in tests/test_macro_suite_pages.py is untouched and extending the pattern to a
+   further workspace stays one flag in the builder.                            #}
+{%- macro decision_first_body(view) -%}
+<main class="mq-shell mq-shell-decision" id="mq-shell">
+  {{ context_header_compact(view) }}
+  {{ headline_band(view) }}
+  {{ glance_brief(view) }}
+  {{ next_action(view) }}
+
+  {#- Study depth. The full change table and the complete implications ribbon are
+      demoted, never removed, and never more than one deliberate action away.
+      They sit BELOW the action in DOM order on purpose: putting them above it is
+      what pushed the action 1377px down the desktop page and 2200px down mobile. -#}
+  <details class="mq-study">
+    <summary class="mq-study-summary">
+      <span class="mq-study-summary-label">{{ t('Full change table and implications', '完整变化表与推论') }}</span>
+      <span class="mq-study-summary-hint">{{ t('Every metric, every published implication', '全部指标与全部已发布推论') }}</span>
+    </summary>
+    <div class="mq-study-body">
+      {{ what_changed(view) }}
+      {{ implications_ribbon(view) }}
+    </div>
+  </details>
+
+  <div class="mq-workspace">
+    {{ tab_bar(view) }}
+    <button type="button" class="mq-evidence-button" data-mq-open-evidence>
+      <span aria-hidden="true">↗</span> {{ t('Evidence & sources', '证据与来源') }}
+    </button>
+
+    <section class="mq-panel" id="mq-panel-current" role="tabpanel"
+             aria-labelledby="mq-tab-current" data-mq-panel="current" tabindex="0">
+      {{ quadrant_map(view) }}
+      {{ diagnostics(view) }}
+      {{ component_metrics(view) }}
+    </section>
+
+    <section class="mq-panel" id="mq-panel-drivers" role="tabpanel"
+             aria-labelledby="mq-tab-drivers" data-mq-panel="drivers" tabindex="0">
+      {{ driver_tables(view) }}
+      {{ axis_method(view) }}
+    </section>
+
+    <section class="mq-panel" id="mq-panel-history" role="tabpanel"
+             aria-labelledby="mq-tab-history" data-mq-panel="history" tabindex="0">
+      {{ component_histories(view) }}
+      {{ lineage(view) }}
+    </section>
+  </div>
+
+  {{ context_detail(view) }}
+  {{ withheld(view) }}
+</main>
+{{ evidence_drawer(view) }}
 {%- endmacro -%}
 
 {# ───────────────────── honest refusal (fail-closed) body ───────────────── #}
 {%- macro degraded_body(view) -%}
+{{ suitenav.suite_bar(suite_nav) }}
 <main class="mq-shell mq-shell-degraded" id="mq-shell">
   <header class="mq-context">
     <div class="mq-context-id">
@@ -715,12 +929,20 @@
     <p class="mq-refusal-body">{{ bl(view.failure.body) }}</p>
     <dl class="mq-method-grid">
       <div><dt>{{ t('Typed reason', '类型化原因') }}</dt><dd>{{ bl(view.failure.label) }}</dd></div>
-      <div><dt>{{ t('Detail', '详情') }}</dt><dd><code class="mq-refusal-detail">{{ view.failure.detail }}</code></dd></div>
-      <div><dt>{{ t('Artifact path', '产物路径') }}</dt><dd><code>{{ view.artifact.path }}</code></dd></div>
-      <div><dt>{{ t('Manifest path', '清单路径') }}</dt><dd><code>{{ view.artifact.manifest_path }}</code></dd></div>
-      <div><dt>{{ t('Client contract', '客户端契约') }}</dt><dd><code>{{ view.artifact.min_client_contract }}</code></dd></div>
     </dl>
     <p class="mq-refusal-next">{{ bl(view.failure.next) }}</p>
+    {#- The reader is owed the refusal and what happens next. The paths, the
+        contract id and the raw detail string are for whoever repairs it, so they
+        are one deliberate action away rather than in the reading path. -#}
+    <details class="mq-refusal-receipt">
+      <summary>{{ t('Technical detail for whoever repairs this', '供修复者查看的技术细节') }}</summary>
+      <dl class="mq-method-grid">
+        <div><dt>{{ t('Detail', '详情') }}</dt><dd><code class="mq-refusal-detail">{{ view.failure.detail }}</code></dd></div>
+        <div><dt>{{ t('Artifact path', '产物路径') }}</dt><dd><code>{{ view.artifact.path }}</code></dd></div>
+        <div><dt>{{ t('Manifest path', '清单路径') }}</dt><dd><code>{{ view.artifact.manifest_path }}</code></dd></div>
+        <div><dt>{{ t('Client contract', '客户端契约') }}</dt><dd><code>{{ view.artifact.min_client_contract }}</code></dd></div>
+      </dl>
+    </details>
   </section>
 </main>
 {%- endmacro -%}

@@ -464,6 +464,15 @@ public:
     - /sector_cycles.css
     - /macro-desk.css
     - /markets.css
+    # The Macro & Monetary suite shell. These three are ONE unit: the pages are
+    # public HTML, so shipping them without the stylesheet and its boot script
+    # renders an unstyled, themeless skeleton to every anonymous reader — the
+    # exact symptom reported against production, where the HTML answered 200 and
+    # these answered 401. Presentation only: no snapshot JSON, no data path, and
+    # no prefix or wildcard is promoted with them.
+    - /macro_suite.css
+    - /macro_suite_boot.js
+    - /macro_suite.js
     - /odds.css
     - /capital_structure.css
     - /government-revenue-parity.css

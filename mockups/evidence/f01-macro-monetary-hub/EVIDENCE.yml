@@ -1,0 +1,23 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/macro_suite.css
+  - templates/_macro_suite_shell.html.j2
+  - templates/_macro_suite_nav.html.j2
+  - templates/macro_monetary.html.j2
+  - site/macro_suite.css
+  - site/macro_monetary.html
+  - site/macro_liquidity_regime.html
+  - site/macro_business_activity.html
+  - site/macro_capital_structure.html
+  - site/macro_consumer_payments.html
+  - site/macro_financial_conditions.html
+  - site/macro_growth_real_economy.html
+  - site/macro_housing_real_estate.html
+  - site/macro_inflation_system.html
+  - site/macro_labor_markets.html
+  - site/macro_liquidity_central_banks.html
+  - site/macro_monetary_policy.html
+  - site/macro_national_debt_liabilities.html
+  - site/macro_rates_curves.html
+  - site/macro_trade_flows.html
+manifest: mockups/evidence/f01-macro-monetary-hub/manifest.json

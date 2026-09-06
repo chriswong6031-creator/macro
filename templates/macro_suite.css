@@ -149,6 +149,10 @@ code { font-family: var(--font-mono); font-size: 10.5px; word-break: break-all; 
 .mq-delta-up { color: var(--ink-up); }
 .mq-delta-down { color: var(--ink-down); }
 .mq-delta-flat { color: var(--mq-muted); }
+/* Absent is not flat. Flat is a measured result and reads as success; an
+   unavailable cell must not borrow that styling, so it gets the muted-italic
+   treatment the typed absence cell already uses everywhere else. */
+.mq-delta-unavailable { color: var(--mq-muted); font-style: italic; }
 
 /* ── 2. implications ribbon ─────────────────────────────────────────────── */
 .mq-ribbon, .mq-headline, .mq-workspace, .mq-withheld, .mq-refusal {
@@ -320,6 +324,303 @@ code { font-family: var(--font-mono); font-size: 10.5px; word-break: break-all; 
 .mq-refusal-next { max-width: 74ch; margin: 0; color: var(--mq-muted); font-size: 11.5px; }
 .mq-refusal-detail { color: var(--ink-act); }
 
+/* ── in-suite navigation (F01 R1) ───────────────────────────────────────────
+   A third navigation LEVEL, not a third page header: the global site header is
+   untouched above it. It is a rail rather than a menu because fourteen sibling
+   destinations do not fit a bar and must not hide behind a control that needs
+   JavaScript. 44px minimum target on every pill. */
+.mq-suitenav {
+  width: min(100%, 1440px);
+  margin: 18px auto 0;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0 16px;
+}
+.mq-suitenav-home {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 44px; padding: 0 12px 0 8px;
+  border-radius: var(--r-btn,10px);
+  color: var(--mq-muted); text-decoration: none;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
+}
+.mq-suitenav-home:hover { color: var(--mq-ink); background: var(--mq-raised); }
+.mq-suitenav-home-mark { font-size: 14px; line-height: 1; }
+.mq-suitenav-label {
+  margin: 0; padding-left: 16px;
+  border-left: 1px solid var(--mq-line);
+  color: var(--mq-muted);
+  font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+}
+.mq-suitenav-rail {
+  display: flex; gap: 6px; margin: 0; padding: 4px 2px;
+  list-style: none; overflow-x: auto;
+  scrollbar-width: thin;
+  /* The rail is the only horizontally scrolling thing here; the page body is not. */
+  overscroll-behavior-x: contain;
+}
+.mq-suitenav-pill {
+  display: inline-flex; align-items: center;
+  min-height: 44px; padding: 0 12px;
+  border: 1px solid transparent; border-radius: var(--r-pill,999px);
+  color: var(--mq-muted); text-decoration: none;
+  font-size: 11.5px; white-space: nowrap;
+}
+.mq-suitenav-pill:hover { color: var(--mq-ink); border-color: var(--mq-line); background: var(--mq-raised); }
+.mq-suitenav-pill.is-current {
+  color: var(--mq-ink);
+  border-color: color-mix(in srgb, var(--mq-accent) 46%, transparent);
+  background: color-mix(in srgb, var(--mq-accent) 12%, transparent);
+  font-weight: 700;
+}
+html[data-theme="light"] .mq-suitenav-pill.is-current {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--mq-accent) 34%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+/* ── decision-first layout (Liquidity Regime pattern-setter) ─────────────────
+   Same regions as the shared grammar, reordered so state / what changed / why
+   it matters / next action arrive before the reader scrolls. Everything demoted
+   is one deliberate action away, never removed. */
+.mq-context-compact {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+}
+.mq-context-line {
+  display: flex; flex-wrap: wrap; gap: 8px 26px; margin: 0;
+  font-size: 12.5px;
+}
+.mq-context-line-item { display: inline-flex; align-items: baseline; gap: 8px; }
+.mq-context-line-key {
+  color: var(--mq-muted);
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.mq-contextdetail {
+  display: grid; gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--mq-line); border-radius: var(--r-panel, var(--mq-radius));
+  background: var(--mq-surface);
+}
+
+/* ── next action ────────────────────────────────────────────────────────────
+   The authority-safe answer to "so what do I do". Chosen deterministically in
+   lib/macro_suite_view.py; the tone token only colours what it decided. */
+.mq-next {
+  display: grid; gap: 8px;
+  padding: 18px 22px;
+  border: 1px solid var(--mq-line);
+  border-left: 3px solid var(--mq-line-strong);
+  border-radius: var(--r-panel, var(--mq-radius));
+  background: var(--mq-raised);
+}
+.mq-next.mq-tone-warn { border-left-color: var(--mq-warn); }
+.mq-next.mq-tone-neutral { border-left-color: var(--mq-accent); }
+.mq-next h3 { font-size: 13px; letter-spacing: .01em; }
+.mq-next-text { max-width: 74ch; margin: 0; color: var(--mq-ink); font-size: 13.5px; }
+.mq-next-watch {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 2px 0 0;
+}
+.mq-next-watch-key {
+  color: var(--mq-muted);
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.mq-next-watch-axis { font-weight: 700; }
+.mq-next-watch-distance { color: var(--mq-muted); font-variant-numeric: tabular-nums; }
+
+/* ── the compact brief ───────────────────────────────────────────────────────
+   Two rows, both one line at desktop width: what moved, and what it means. The
+   full table and the complete implications ribbon live one disclosure below the
+   action, because putting them above it is what pushed the action off the first
+   viewport. */
+.mq-glance {
+  display: grid; gap: 6px;
+  padding: 14px 22px;
+  border: 1px solid var(--mq-line);
+  border-radius: var(--r-panel, var(--mq-radius));
+  background: var(--mq-surface);
+}
+.mq-glance-row {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 0;
+  font-size: 13.5px; line-height: 1.5;
+}
+.mq-glance-key {
+  flex: 0 0 auto; min-width: 4.5rem;
+  color: var(--mq-muted);
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.mq-glance-value { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; min-width: 0; }
+.mq-glance-metric { font-weight: 700; }
+.mq-glance-from { color: var(--mq-muted); font-variant-numeric: tabular-nums; }
+.mq-glance-denom {
+  margin-left: auto; flex: 0 0 auto;
+  color: var(--mq-muted); font-variant-numeric: tabular-nums; font-size: 11.5px;
+}
+.mq-glance-evidence {
+  padding: 1px 7px;
+  border: 1px solid var(--mq-line); border-radius: var(--r-pill, 999px);
+  color: var(--mq-muted); font-size: 10.5px; white-space: nowrap;
+}
+.mq-glance-none { color: var(--mq-muted); }
+.mq-glance-meaning .mq-glance-value { max-width: 78ch; }
+
+/* The action's own route. A real link, sized as a target, never a bare word. */
+.mq-next-route {
+  justify-self: start;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 34px; padding: 6px 14px;
+  border: 1px solid var(--mq-line-strong); border-radius: var(--r-btn, 10px);
+  color: var(--mq-ink); font-size: 13px; font-weight: 650; text-decoration: none;
+}
+.mq-next-route:hover { border-color: var(--mq-accent); color: var(--mq-accent); }
+.mq-next-route:focus-visible { outline: 2px solid var(--mq-accent); outline-offset: 2px; }
+.mq-next-route-arrow { font-size: 12px; }
+
+/* ── study depth ─────────────────────────────────────────────────────────────
+   Native disclosure: keyboard operable, findable by in-page search in browsers
+   that support it, and correct with scripting off. */
+.mq-study {
+  border: 1px solid var(--mq-line);
+  border-radius: var(--r-panel, var(--mq-radius));
+  background: var(--mq-surface);
+}
+.mq-study-summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+  padding: 12px 22px; min-height: 40px;
+  cursor: pointer; list-style: none;
+}
+.mq-study-summary::-webkit-details-marker { display: none; }
+.mq-study-summary::after {
+  content: "\203A"; margin-left: auto;
+  color: var(--mq-muted); font-size: 16px; line-height: 1;
+  transform: rotate(90deg); transform-origin: center;
+}
+.mq-study[open] > .mq-study-summary::after { transform: rotate(-90deg); }
+.mq-study-summary:focus-visible { outline: 2px solid var(--mq-accent); outline-offset: -2px; }
+.mq-study-summary-label { font-size: 13px; font-weight: 700; }
+.mq-study-summary-hint { color: var(--mq-muted); font-size: 11.5px; }
+.mq-study-body { display: grid; gap: 18px; padding: 0 22px 18px; }
+.mq-study-body > * { border: 0; padding: 0; background: none; }
+
+@media (max-width: 720px) {
+  .mq-glance, .mq-study-summary { padding-left: 16px; padding-right: 16px; }
+  .mq-study-body { padding-left: 16px; padding-right: 16px; }
+  .mq-glance-denom { margin-left: 0; }
+}
+
+/* The refusal receipt is for whoever repairs the build, not for the reader. */
+.mq-refusal-receipt > .mq-method-grid { margin-top: 4px; }
+
+/* ── the suite hub (macro_monetary.html) ────────────────────────────────────
+   Dark = command center: luminance depth, hairline separation, restrained glow
+   on the current row. Light = research workspace: white card material, real
+   shadow instead of glow, cooler ground. The two share every semantic and every
+   word; they do not share material treatment. */
+.mq-hub { display: grid; gap: 22px; }
+.mq-hub-head {
+  padding: 26px 26px 22px;
+  border: 1px solid var(--mq-line); border-radius: var(--r-panel, var(--mq-radius));
+  background: var(--mq-surface); box-shadow: var(--mq-shadow);
+}
+.mq-hub-head h1 { font-size: clamp(28px, 4vw, 46px); line-height: 1.02; letter-spacing: -.045em; }
+.mq-hub-asof {
+  display: flex; flex-wrap: wrap; gap: 10px 30px; margin: 18px 0 0;
+  padding-top: 16px; border-top: 1px solid var(--mq-line);
+  font-size: 13px;
+}
+.mq-hub-asof-item { display: inline-flex; align-items: baseline; gap: 8px; }
+.mq-hub-asof-key {
+  color: var(--mq-muted);
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.mq-hub-asof-note { max-width: 68ch; margin: 8px 0 0; color: var(--mq-muted); font-size: 11px; }
+
+.mq-hub-changes, .mq-hub-attention, .mq-hub-suite {
+  padding: 22px 24px;
+  border: 1px solid var(--mq-line); border-radius: var(--r-panel, var(--mq-radius));
+  background: var(--mq-surface);
+}
+.mq-hub-changelist, .mq-hub-attentionlist { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.mq-hub-change {
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
+  align-items: baseline; gap: 6px 18px;
+  padding: 11px 10px; border-radius: var(--r-btn,10px);
+}
+.mq-hub-change + .mq-hub-change { border-top: 1px solid var(--mq-line); border-radius: 0; }
+.mq-hub-change-link { color: var(--mq-ink); text-decoration: none; font-weight: 700; }
+.mq-hub-change-link:hover { color: var(--mq-accent); text-decoration: underline; }
+.mq-hub-change-metric { color: var(--mq-muted); font-size: 12px; }
+.mq-hub-change-move {
+  display: inline-flex; align-items: baseline; gap: 8px; justify-self: end;
+  font-variant-numeric: tabular-nums; font-size: 12.5px;
+}
+.mq-hub-change-prior { color: var(--mq-muted); }
+.mq-hub-change-arrow { color: var(--mq-muted); }
+.mq-hub-remaining, .mq-hub-empty { margin: 14px 0 0; color: var(--mq-muted); font-size: 11.5px; }
+
+.mq-hub-attention-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  padding: 10px;
+}
+.mq-hub-attention-row + .mq-hub-attention-row { border-top: 1px solid var(--mq-line); }
+.mq-hub-attention-link { color: var(--mq-ink); text-decoration: none; font-weight: 700; font-size: 12.5px; }
+.mq-hub-attention-link:hover { color: var(--mq-accent); text-decoration: underline; }
+
+.mq-hub-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: 12px; margin: 0; padding: 0; list-style: none;
+}
+.mq-hub-card {
+  display: grid; align-content: start; gap: 8px;
+  padding: 16px 16px 18px;
+  border: 1px solid var(--mq-line); border-radius: var(--r-card,12px);
+  background: var(--mq-raised);
+}
+.mq-hub-card:hover { border-color: var(--mq-line-strong); }
+html[data-theme="light"] .mq-hub-card { background: var(--panel); box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 8%, transparent); }
+html[data-theme="light"] .mq-hub-card:hover { box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--text) 30%, transparent); }
+.mq-hub-card-link { text-decoration: none; }
+.mq-hub-card-title { margin: 0; color: var(--mq-ink); font-size: 14px; letter-spacing: -.012em; }
+.mq-hub-card-link:hover .mq-hub-card-title { color: var(--mq-accent); }
+.mq-hub-card-deck { margin: 0; color: var(--mq-muted); font-size: 11px; line-height: 1.45; }
+.mq-hub-card-state { margin: 4px 0 0; font-size: 13.5px; letter-spacing: -.01em; }
+.mq-hub-card-meta {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px;
+  margin: 6px 0 0; padding-top: 10px; border-top: 1px solid var(--mq-line);
+}
+.mq-hub-card-meta dt {
+  color: var(--mq-muted);
+  font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+.mq-hub-card-meta dd { margin: 2px 0 0; font-size: 11.5px; }
+
+/* An unreadable workspace must never read as calm, and never as a zero. It is
+   marked in the card's own material, not only in its words. */
+.mq-hub-absent {
+  border-color: color-mix(in srgb, var(--mq-bad) 40%, transparent);
+  background:
+    repeating-linear-gradient(135deg,
+      transparent 0 9px,
+      color-mix(in srgb, var(--mq-bad) 5%, transparent) 9px 18px),
+    var(--mq-raised);
+}
+html[data-theme="light"] .mq-hub-absent {
+  background:
+    repeating-linear-gradient(135deg,
+      transparent 0 9px,
+      color-mix(in srgb, var(--mq-bad) 7%, transparent) 9px 18px),
+    var(--panel);
+  box-shadow: none;
+}
+.mq-hub-card-absence { margin: 4px 0 0; }
+.mq-hub-card-absence-text { margin: 0; font-size: 11.5px; }
+.mq-hub-card-recovery { margin: 0; color: var(--mq-muted); font-size: 10.5px; }
+
+.mq-hub-foot {
+  max-width: 78ch; margin: 0;
+  color: var(--mq-muted); font-size: 11px;
+}
+.mq-hub-foot-built { display: block; margin-top: 4px; }
+
 /* ── responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 1080px) {
   .mq-context, .mq-headline { grid-template-columns: 1fr; }
@@ -341,6 +642,15 @@ code { font-family: var(--font-mono); font-size: 10.5px; word-break: break-all; 
   .mq-table { display: block; overflow-x: auto; white-space: nowrap; }
   .mq-table th, .mq-table td { white-space: normal; }
   .mq-clock { grid-template-columns: 1fr; gap: 2px; }
+  /* Nav: the home link keeps its row; the rail takes the full width below it. */
+  .mq-suitenav { grid-template-columns: 1fr; gap: 4px; margin-top: 14px; }
+  .mq-suitenav-label { padding-left: 0; border-left: 0; }
+  .mq-hub-head, .mq-hub-changes, .mq-hub-attention, .mq-hub-suite { padding: 16px; }
+  .mq-contextdetail, .mq-next { padding: 16px; }
+  .mq-hub-change { grid-template-columns: 1fr; gap: 3px; }
+  .mq-hub-change-move { justify-self: start; }
+  .mq-hub-grid { grid-template-columns: 1fr; }
+  .mq-context-line { gap: 6px 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

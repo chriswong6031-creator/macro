@@ -38,6 +38,8 @@ PAGE = builder.SUITE_PAGES[0]
 BUILT_AT = "2026-09-04T12:00:00Z"
 
 _TEMPLATE_NAMES = (
+    "macro_monetary.html.j2",
+    "_macro_suite_nav.html.j2",
     "macro_liquidity_regime.html.j2",
     "macro_growth_real_economy.html.j2",
     "macro_business_activity.html.j2",
@@ -90,8 +92,27 @@ def _build(tmp_path: Path, data_root: Path) -> str:
     root = _isolated_root(tmp_path)
     pages = builder.render(root, data_root=data_root, out_dir=tmp_path / "site",
                            page_built_at=BUILT_AT)
-    assert len(pages) == len(builder.SUITE_PAGES)
+    # The fourteen workspace pages plus the one suite hub.
+    assert len(pages) == len(builder.SUITE_PAGES) + 1
+    assert pages[-1].name == builder.HUB_PAGE.output
     return pages[0].read_text(encoding="utf-8")
+
+
+@pytest.fixture(scope="module")
+def built_pages(tmp_path_factory) -> dict[str, str]:
+    """Every suite page, rendered from the CURRENT templates.
+
+    Deliberately not the committed site/*.html. Reading the shipped artifact
+    would make these assertions depend on whether the render lane has run since
+    the last template change -- and it would drag site/macro_*.html into this
+    job's import closure, which `scope: exclusive` would then have to declare.
+    Staleness of the committed copies is already owned by
+    scripts/check_template_site_sync.py and the render lane.
+    """
+    out = tmp_path_factory.mktemp("macro_suite_all") / "site"
+    root = _isolated_root(tmp_path_factory.mktemp("macro_suite_all_root"))
+    pages = builder.render(root, data_root=DATA_ROOT, out_dir=out, page_built_at=BUILT_AT)
+    return {page.name: page.read_text(encoding="utf-8") for page in pages}
 
 
 @pytest.fixture(scope="module")
@@ -434,15 +455,6 @@ def _snapshot_at(state_id: Any, x: Any, y: Any) -> dict[str, Any]:
     return snapshot
 
 
-def _is_plain_finite_number(value: Any) -> bool:
-    """Deliberately re-stated here rather than imported from the view.
-
-    A test that borrows the implementation's own definition of "a number" agrees
-    with it by construction, including when it is wrong.
-    """
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
-
-
 # Independently chosen: the coordinates and the expected point are written out
 # by hand from the stated law (A = low-x/high-y, B = high/high, C = low/low,
 # D = high/low; SVG y grows downward, so cy = 100 - y). Nothing here is obtained
@@ -471,9 +483,9 @@ def test_the_quadrant_grid_follows_the_producer_classification_law(
     """The mapping law, on fixtures: every corner, at a coordinate we chose.
 
     This used to read the live snapshot and assert that C was current and that
-    the point sat at one night's numbers. Both were true of that publication, not
-    of the law: a legitimate A/B/D reading reddened this test -- and, because it
-    runs in a shared pack, every unrelated PR in that pack too.
+    the point sat in the lower half. Both were true of one night's data, not of
+    the law: a legitimate A/B/D publication would have reddened this test -- and,
+    because it runs in a shared pack, every unrelated PR in that pack too.
     """
     view = _view_of(_snapshot_at(state, x, y))
     cells = {cell["letter"]: cell for cell in view["quadrant_map"]["cells"]}
@@ -488,11 +500,11 @@ def test_the_quadrant_grid_follows_the_producer_classification_law(
 
 
 def test_the_current_artifact_agrees_with_itself() -> None:
-    """Live-data smoke: identity only, never today's letter, half-plane or value.
+    """Live-data smoke: identity only, never today's letter or half-plane.
 
-    Whatever the producer published, the page must show THAT -- not a state the
-    view decided on, and not a coordinate it invented. Every assertion below
-    holds for all four quadrants, so a regime change cannot red this test.
+    Whatever the producer published, the page must plot THAT -- not a state the
+    view decided on, and not a coordinate it invented. The assertions below hold
+    for all four quadrants, so a regime change cannot red this test.
     """
     snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
     view = _view_of(snapshot)
@@ -507,16 +519,23 @@ def test_the_current_artifact_agrees_with_itself() -> None:
         assert current == [], "an unclassified reading must not light up a quadrant"
 
     x, y = headline["quadrant"].get("x"), headline["quadrant"].get("y")
-    if _is_plain_finite_number(x) and _is_plain_finite_number(y):
+    if _is_finite_number(x) and _is_finite_number(y):
         assert quadrant_map["plotted"] is True
         assert quadrant_map["point"]["cx"] == pytest.approx(x)
         assert quadrant_map["point"]["cy"] == pytest.approx(100 - y)
-    elif x is None or y is None:
+    else:
         assert quadrant_map["plotted"] is False
         assert quadrant_map["point"] is None
-    # A NaN, infinite or boolean axis reading is deliberately NOT asserted here.
-    # Rejecting those requires the view-side finite-number guard, which is a
-    # product change owned by the held F01 R1 candidate, not by this repair.
+        assert quadrant_map["absence"] is not None
+
+
+def _is_finite_number(value: Any) -> bool:
+    """Deliberately re-stated here rather than imported from the view.
+
+    A test that borrows the implementation's own definition of "a number" agrees
+    with it by construction, including when it is wrong.
+    """
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 @pytest.mark.parametrize("state_id", [None, "", "Z", "AB", 0])
@@ -526,15 +545,15 @@ def test_an_unclassified_reading_never_invents_a_current_quadrant(state_id: Any)
     assert [c["letter"] for c in view["quadrant_map"]["cells"] if c["current"]] == []
 
 
-@pytest.mark.parametrize("value", [None, "20", "", [], {}])
+@pytest.mark.parametrize("value", [None, "20", "", True, False, float("nan"),
+                                   float("inf"), float("-inf"), [], {}])
 def test_a_non_numeric_axis_value_plots_no_point(value: Any) -> None:
     """missing != zero, on the axis itself.
 
-    Restricted to the non-numeric shapes the current view already classifies as
-    unavailable. `True`, `NaN` and the infinities are excluded on purpose: bool
-    is a subclass of int and json.loads parses a bare NaN, so today they still
-    plot. Closing that hole is a view-side change carried by the held F01 R1
-    candidate; this repair must not import it.
+    ``true`` and ``NaN`` are the two that slipped through the obvious numeric
+    check: bool is a subclass of int, and json.loads parses a bare NaN. The first
+    plotted at cx=1.0, the second emitted cx="nan" -- a point that silently
+    vanishes while the page still reports a plotted state.
     """
     for x, y in ((value, 80.0), (20.0, value)):
         view = _view_of(_snapshot_at("A", x, y))
@@ -649,3 +668,164 @@ def test_the_drawer_starts_closed_and_inert(live_html: str) -> None:
         assert token in js
     assert "https://" not in js, "the suite runtime must make no cross-origin read"
     assert "fetch(" not in js, "the page is server-rendered from a validated artifact"
+
+
+# --------------------------------------------------------------------------
+# absent is not zero, and absent is not no-change
+#
+# Every assertion below poisons ONE boundary and leaves the rest alone. The
+# defect these replace was not that the code was complicated: it was that three
+# separate renderers each decided from a FORMATTED string, where an em dash is
+# truthy and a real "0" is not.
+# --------------------------------------------------------------------------
+
+_NULL_PAGES = ("business_activity", "consumer_payments", "trade_flows")
+
+
+def _changes_view(prior: Any, current: Any, delta: Any,
+                  comparability: str = "COMPARABLE") -> dict[str, Any]:
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["changes"]["comparability"] = comparability
+    snapshot["changes"]["deltas"] = [{
+        "metric_id": "net_liquidity_4w", "prior_value": prior,
+        "current_value": current, "delta": delta, "null_reason": None,
+    }]
+    return _view_of(snapshot)["changes"]["deltas"][0]
+
+
+def test_a_real_zero_is_a_measurement_and_keeps_its_flat_class() -> None:
+    row = _changes_view(1.0, 1.0, 0.0)
+    assert row["comparable"] is True
+    assert row["delta_present"] is True
+    assert row["sign"] == "flat"
+    assert row["delta"] == "0", "a measured no-change must still print its zero"
+    assert row["absence"] is None
+
+
+def test_equal_values_are_no_change_not_an_absence() -> None:
+    row = _changes_view(763602.0, 763602.0, 0.0)
+    assert (row["sign"], row["comparable"]) == ("flat", True)
+
+
+@pytest.mark.parametrize("poison", [
+    {"prior": None}, {"current": None}, {"delta": None},
+    {"prior": "1.0"}, {"delta": float("nan")}, {"delta": True},
+])
+def test_one_absent_cell_makes_the_row_incomparable_and_never_flat(poison: dict) -> None:
+    values = {"prior": 1.0, "current": 2.0, "delta": 1.0} | poison
+    row = _changes_view(values["prior"], values["current"], values["delta"])
+    assert row["comparable"] is False
+    assert row["sign"] != "flat", "absent must never wear the no-change styling"
+    assert row["absence"] is not None, "an absent cell owes a typed reason"
+    for key in ("prior", "current", "delta"):
+        if not row[f"{key}_present"]:
+            assert row[key] is None, f"{key} must be absent, not the string 'None'"
+
+
+def test_a_method_incomparable_table_is_gated_even_though_its_rows_are_numeric() -> None:
+    """Comparability is a table-level verdict, not a per-cell one.
+
+    Every row here carries three real numbers. The table must still refuse to
+    show them as a comparison, because the method changed underneath -- a delta
+    across a method change is a fabricated baseline, not a measurement.
+    """
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["changes"]["comparability"] = "METHOD_CHANGED"
+    changes = _view_of(snapshot)["changes"]
+    assert changes["comparable"] is False
+    assert changes["absence"] is not None
+    assert all(row["comparable"] for row in changes["deltas"]), \
+        "the rows are individually fine; it is the COMPARISON that is refused"
+
+
+@pytest.mark.parametrize("page", _NULL_PAGES)
+def test_the_named_pages_never_print_python_none(page: str, built_pages: dict[str, str]) -> None:
+    """The exact three manifestations Sol named."""
+    html = built_pages[f"macro_{page}.html"]
+    assert ">None<" not in html
+    assert "-None\"" not in html
+    assert re.search(r'class="mq-delta mq-delta-(?:up|down|flat)"[^>]*>\s*<span class="mq-absent',
+                     html) is None, "an absent cell is wearing a success class"
+
+
+def _boundary_view(distance: Any) -> dict[str, Any]:
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["headline"]["nearest_boundary"] = {
+        "axis": snapshot["axes"]["items"][0]["axis_id"],
+        "distance": distance, "null_reason": None}
+    return _view_of(snapshot)["next_action"]
+
+
+def test_a_boundary_distance_of_exactly_zero_is_the_most_watchable_case() -> None:
+    """Sitting ON the line is not "no boundary" — but 0 is falsey."""
+    assert _boundary_view(0.0)["token"] == "WATCH_BOUNDARY"
+
+
+def test_a_missing_boundary_distance_does_not_become_a_watch() -> None:
+    """An em dash is truthy; the absence of a distance is not a reason to watch."""
+    assert _boundary_view(None)["token"] != "WATCH_BOUNDARY"
+
+
+def test_every_next_action_carries_a_real_route_to_an_owned_region(built_pages: dict[str, str]) -> None:
+    html = built_pages["macro_liquidity_regime.html"]
+    match = re.search(r'<a class="mq-next-route" href="(#[a-z0-9-]+)"', html)
+    assert match, "the action must offer a real link, not a decorative CTA"
+    target = match.group(1)[1:]
+    assert f'id="{target}"' in html, "the route must land on an id this page actually has"
+    # Never into a panel the tab script hides, and never into the evidence drawer,
+    # which ships `hidden inert`: both look correct in markup and fail in a browser.
+    assert target not in ("mq-panel-drivers", "mq-panel-history", "mq-evidence-drawer")
+
+
+def test_the_action_precedes_the_full_table_and_ribbon_in_dom_order(built_pages: dict[str, str]) -> None:
+    html = built_pages["macro_liquidity_regime.html"]
+    order = [m.group(1) for m in re.finditer(
+        r'class="(mq-glance|mq-next mq-tone-[a-z]+|mq-study|mq-changed|mq-ribbon)"', html)]
+    order = [o.split()[0] for o in order]
+    assert order[:3] == ["mq-glance", "mq-next", "mq-study"], order[:5]
+    assert order.index("mq-changed") > order.index("mq-next")
+    assert order.index("mq-ribbon") > order.index("mq-next")
+
+
+def test_absent_coverage_renders_a_typed_absence_not_an_unlabelled_dash() -> None:
+    snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
+    snapshot["availability"]["coverage_ratio"] = None
+    view = _view_of(snapshot)
+    context = view["context"]
+    assert context["coverage_present"] is False
+    assert context["coverage_absence"] is not None
+    assert context["coverage_absence"]["label"]["en"], "the dash owes the reader a word"
+
+    # This is the trap the docstring warns about: the view dict can be correct
+    # while the template still ships a bare, unlabelled dash. Render the actual
+    # markup and check it, not just the data that feeds it.
+    env = Environment(loader=FileSystemLoader(str(TEMPLATES)), autoescape=True,
+                      undefined=StrictUndefined)
+    shell = env.get_template("_macro_suite_shell.html.j2").module
+    detail_html = str(shell.context_detail(view))
+    meta_match = re.search(r'<dl class="mq-context-meta">.*?</dl>', detail_html, re.S)
+    assert meta_match, "context_detail must render the mq-context-meta block"
+    coverage_dd = re.search(r'<dt><span class="l-en">Coverage</span>.*?</dt><dd>(.*?)</dd>', meta_match.group(0), re.S)
+    assert coverage_dd, "context_detail must render a Coverage row"
+    cell = coverage_dd.group(1)
+    assert "mq-dash" in cell, "an absent coverage must still show the dash glyph"
+    assert "mq-absent-why" in cell, (
+        "a bare mq-dash with no mq-absent-why is an unlabelled dash -- "
+        "the exact defect this test exists to catch"
+    )
+
+
+@pytest.mark.parametrize("page", sorted(p.output for p in builder.SUITE_PAGES))
+def test_no_built_page_ever_emits_a_none_class_or_value(page: str, built_pages: dict[str, str]) -> None:
+    """One invariant covering all four `mq-delta-` emission sites at once.
+
+    Three of them are guarded by a `*_present` flag and the fourth sits inside a
+    presence check, so `mq-delta-None` cannot be reached today. This asserts the
+    OUTPUT rather than the guards, so it still fails if a later change moves a
+    selection rule and quietly reintroduces the class -- which is exactly how the
+    driver tables got there in the first place.
+    """
+    html = built_pages[page]
+    assert "mq-delta-None" not in html
+    assert ">None<" not in html
+    assert 'class="mq-delta mq-delta-"' not in html, "an empty sign class is the same bug"
