@@ -23,7 +23,11 @@ RECEIPT SOURCES, PER TYPE
     top-level ``last_run`` heartbeat. The collector status vocabulary
     (``collectors/base.py``'s ``FetchResult.status``: ok | stale | failed | dead |
     skipped | blocked) is mapped explicitly (repair 2026-09-04, findings C1/I5):
-      ok      -> last_attempted = last_successful = checked_at (a genuine success)
+      ok      -> last_attempted = last_successful = checked_at (a genuine success) —
+                 UNLESS a ``stale_series`` row also names this ref's group (see the
+                 ROUND-5 paragraph below): a genuinely frozen series then forces the
+                 SAME explicit ``state=stale`` override the ``stale`` status gets one
+                 bullet down, on top of the ok/fresh attempt+success clocks.
       stale   -> an EXPLICIT ``state=stale`` (the collector's own declared staleness
                  call, not a re-derivation from our own stale_after_hours budget)
       failed/dead -> last_attempted = checked_at ONLY. data/run_status.json retains only
@@ -57,6 +61,41 @@ RECEIPT SOURCES, PER TYPE
     no longer claim ``data_as_of`` either. A capability that needs a real as-of instant
     declares an ``output_health_artifact`` source instead (``resolve_output_health``'s
     already-judged ``source_asof`` genuinely IS bound to a point-in-time read).
+
+    ROUND-4 REVIEW FINDING, CORRECTED BY ROUND-5: the round-3 fix above stopped a real
+    false-corrupt bug but, taken alone, left the nightly-lane DATA axis with NOTHING to
+    say when a series is genuinely frozen. This docstring previously implied the
+    group-max ``status`` mapping above was the complete data-freshness signal for this
+    source type — that claim was FALSE for exactly the poisoned-group case round-3
+    protects: ``age = today - group_max_last`` can never exceed a cadence budget for a
+    group whose max is a forward-dated projection series (fred's FEDTARMD FOMC-dot-plot
+    shape), so ``status`` can never read anything but "ok" for that GROUP even when one
+    of its OTHER series (e.g. CPIAUCSL) has gone stale for months.
+
+    ROUND-5 REPAIR (this repair, item 1): the honest per-series receipt already exists
+    and is immune to the group-max poisoning. ``collectors/base.py``'s
+    ``detect_stale_series``/``_write_stale_series`` write named rows to
+    ``run_status.json``'s TOP-LEVEL ``stale_series`` array — explicitly "for the health
+    surface" per that module's own docstring — one row per ``(group, series)`` pair:
+    ``{group, series, last_obs, cadence_days, age_days, detected_at}``, each comparing
+    ONE series' own last observation against ITS OWN cadence budget, never the group
+    max. :func:`nightly_lane_facts` now joins a ref's matching ``stale_series`` rows by
+    EXACT ``group == ref`` string match (fred's rows carry ``group: "fred"``, identical
+    to the ``fred`` nightly_lane ref) and, for a ``status`` in {ok, stale}, forces an
+    explicit ``state=stale`` fact carrying a ``state_detail`` evidence string naming the
+    frozen series/last_obs/age_days (capped and reason-join-scrubbed by
+    ``engine.capability_health``'s ``_cap_foreign_text`` boundary — the same one round-3
+    item 4 already applies to ``blind_reason``/``rights_detail``). The ABSENCE of a
+    matching ``stale_series`` row, combined with ``status=ok``, is what actually
+    composes to "healthy" here: the OWNING collector's own staleness detector found
+    nothing wrong on EITHER axis it knows how to check (group-max attempt/success via
+    ``status``, AND per-series frozen-tail via ``stale_series``) — never a silent
+    omission of the data-freshness check. A malformed ``stale_series`` row (not a dict,
+    or missing/non-string ``group``) is skipped fail-safe and can never by itself brand
+    a source corrupt; a row that DOES match the group but carries unparseable
+    ``series``/``age_days``/``last_obs`` fields still forces the stale state — the JOIN
+    (the group match) is what matters, and a row with messy detail fields must never
+    silently read as though it had never matched at all.
 ``provider_rung`` / ``sentinel_probe``
     Declared in the closed receipt-source vocabulary and accepted by registry
     validation, but NOT wired to a live fetch in this V1 build: none of the seed cohort's
@@ -241,6 +280,62 @@ def output_health_facts(
     return out
 
 
+def _stale_series_index(doc: Any) -> dict[str, list[dict[str, Any]]]:
+    """``group`` -> every raw ``stale_series`` row naming that group.
+
+    ROUND-5 repair (item 1): ``collectors/base.py``'s ``detect_stale_series``/
+    ``_write_stale_series`` write named rows to ``run_status.json``'s top-level
+    ``stale_series`` array explicitly "for the health surface" — one row per
+    ``(group, series)`` pair, immune to the group-max ``last``/``status`` poisoning a
+    forward-dated projection series (fred's FEDTARMD shape) causes (see this module's
+    docstring, ROUND-5 paragraph). A malformed row — not a dict, or with a missing/
+    non-string ``group`` — is skipped FAIL-SAFE here: it can never by itself brand a
+    source corrupt. Only a row that genuinely NAMES a group is indexed at all; whether
+    ITS OTHER fields are also clean is decided by :func:`_stale_series_detail`, not
+    here — a row that matches the group must still force the stale state even when its
+    remaining fields are messy (never silently dropped for that reason).
+    """
+    index: dict[str, list[dict[str, Any]]] = {}
+    if not isinstance(doc, dict):
+        return index
+    rows = doc.get("stale_series")
+    if not isinstance(rows, list):
+        return index
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        group = row.get("group")
+        if not isinstance(group, str) or not group:
+            continue
+        index.setdefault(group, []).append(row)
+    return index
+
+
+def _stale_series_detail(ref: str, rows: list[dict[str, Any]]) -> str:
+    """One evidence-detail string naming every ``stale_series`` row joined onto *ref*.
+
+    A row that matched the group but carries an unparseable/missing ``series``,
+    ``age_days`` or ``last_obs`` still contributes a ``?`` placeholder for that field
+    rather than being dropped outright — the JOIN (the group match) is what forces the
+    stale state; a row with messy detail fields must never silently read as though it
+    had never matched at all (round-5 repair, item 1). Capped again at the engine
+    boundary (``engine.capability_health._cap_foreign_text``) before publication —
+    this builder-side text is not itself length-bounded, matching the existing
+    rights_detail precedent (MINOR-4: builder caps for its OWN known shape; the engine
+    boundary is the one guarantee that holds for every adapter).
+    """
+    parts: list[str] = []
+    for row in sorted(rows, key=lambda r: str(r.get("series") or "")):
+        series = row.get("series")
+        series_s = series if isinstance(series, str) and series else "?"
+        age = row.get("age_days")
+        age_s = str(age) if isinstance(age, (int, float)) and not isinstance(age, bool) else "?"
+        last_obs = row.get("last_obs")
+        last_obs_s = last_obs if isinstance(last_obs, str) and last_obs else "?"
+        parts.append(f"{series_s} last_obs={last_obs_s} age_days={age_s}")
+    return f"frozen-tail (stale_series) for {ref}: " + ", ".join(parts)
+
+
 def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[str, Any]]:
     """One fact per requested ``nightly_lane`` ref, from ``data/run_status.json``.
 
@@ -269,6 +364,14 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
     ``could_not_look`` forever. A ``nightly_lane`` fact now carries ONLY
     last_attempted/last_successful (+ an explicit stale ``state``, ``rights_blocked``, or
     ``blind_reason``) — never a ``data_as_of`` key.
+
+    ROUND-5 repair (item 1, see the module docstring's ROUND-5 paragraph for the full
+    rationale): a ``status`` of ``ok``/``stale`` also gets joined against
+    ``run_status.json``'s top-level ``stale_series`` array by exact ``group == ref``
+    match. A match forces ``state=stale`` (already implied for ``status=stale``; new
+    for ``status=ok``) plus a ``state_detail`` evidence string — this is the fact-level
+    mechanism that lets a genuinely frozen series in an otherwise "ok" group be
+    reported, since the group-max ``status`` alone can never see it.
     """
     doc = _load_json(receipts_root / RUN_STATUS_REL)
     out: dict[str, dict[str, Any]] = {}
@@ -277,6 +380,7 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
             out[ref] = {"readable": False}
         return out
     sources = doc.get("sources") if isinstance(doc.get("sources"), dict) else {}
+    stale_index = _stale_series_index(doc)
     for ref in refs:
         if ref == "__global__":
             last_run = doc.get("last_run")
@@ -341,6 +445,24 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
                 # only the LATEST row per source (no history), so there is no prior
                 # last_successful to compare against here — never invent one.
                 pass
+
+        # ROUND-5 repair (item 1): join the honest PER-SERIES data-freshness receipt
+        # onto a status=ok/stale ref. Restricted to these two statuses on purpose: a
+        # stale_series row is only ever written off a SUCCESSFUL fetch (collectors/
+        # base.py calls detect_stale_series after `frames = adapter.fetch(...)`
+        # succeeds), so a persisted row surviving into a run where THIS ref's status
+        # is failed/dead/blocked/skipped/unknown would be describing a PRIOR run's
+        # frozen tail, not this one's — forcing an explicit stale verdict there could
+        # silently downgrade what would otherwise be could_not_look (a worse, more
+        # honest verdict for "attempted, no prior success" or a rights block) into a
+        # milder stale. ok/stale is exactly the shape the round-4 review named: a
+        # fresh, "healthy-looking" attempt/success clock pair that the group-max
+        # `status` alone cannot tell apart from a genuinely frozen sibling series.
+        if status in (_STATUS_OK, _STATUS_STALE):
+            stale_rows = stale_index.get(ref)
+            if stale_rows:
+                fact["state"] = STATE_STALE
+                fact["state_detail"] = _stale_series_detail(ref, stale_rows)
         out[ref] = fact
     return out
 

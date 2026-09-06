@@ -360,7 +360,7 @@ def test_future_dated_clock_within_tolerance_is_not_corrupt():
 # bind_data_as_of_and_corrupt, immediately after).
 # ---------------------------------------------------------------------------
 
-def test_important1_live_repro_fred_shape_future_dated_data_as_of_never_reads_healthy():
+def test_important1_live_repro_fred_shape_lane_reads_healthy_without_data_as_of():
     """THE LIVE REPRO, CORRECTED: a lane entry with a valid, FRESH checked_at (so
     last_attempted and last_successful both read clean) and NO data_as_of key at all —
     the REAL fred/yahoo shape after round-3 (a nightly_lane fact never carries
@@ -527,20 +527,21 @@ def test_minor5_upstream_partial_with_no_state_is_named_truthfully():
 
 
 # ---------------------------------------------------------------------------
-# ROUND-3 item 3: date-grain FUTURE tolerance is widened to 26h (a bare calendar-date
-# value can legitimately lead a UTC `now` by as much as a UTC+14 timezone offset plus
-# ordinary skew); an INSTANT-grain value keeps the tight 1h tolerance pinned above by
-# test_future_dated_clock_within_tolerance_is_not_corrupt /
+# ROUND-3 item 3, window CORRECTED round-5 item 2: date-grain FUTURE tolerance is 16h
+# (14h — the true UTC+14 maximum legitimate calendar-date timezone lead — plus 2h of
+# ordinary clock/runner skew; round-3's original 26h had no derivation behind it at
+# all and was simply too wide). An INSTANT-grain value keeps the tight 1h tolerance
+# pinned above by test_future_dated_clock_within_tolerance_is_not_corrupt /
 # test_important1_data_as_of_boundary_just_inside_and_outside_future_tolerance.
 # ---------------------------------------------------------------------------
 
 def test_round3_date_grain_future_tolerance_boundary_just_inside_and_outside():
-    """Pin the exact 26h date-grain boundary the same way the 1h instant-grain boundary
+    """Pin the exact 16h date-grain boundary the same way the 1h instant-grain boundary
     is pinned elsewhere. A bare date resolves to midnight UTC on that date, so `now` is
-    chosen per-case to land the delta just inside/outside 26h."""
+    chosen per-case to land the delta just inside/outside 16h."""
     date_value = "2026-09-06"  # reads as midnight UTC 2026-09-06T00:00:00+00:00
-    now_inside = datetime(2026, 9, 4, 22, 0, 1, tzinfo=timezone.utc)     # 25h59m59s ahead
-    now_outside = datetime(2026, 9, 4, 21, 59, 59, tzinfo=timezone.utc)  # 26h00m01s ahead
+    now_inside = datetime(2026, 9, 5, 8, 0, 1, tzinfo=timezone.utc)     # 15h59m59s ahead
+    now_outside = datetime(2026, 9, 5, 7, 59, 59, tzinfo=timezone.utc)  # 16h00m01s ahead
 
     cap_inside = _cap("date_grain_inside", [{"type": "output_health_artifact", "ref": "a",
                                               "clocks": ["data_as_of"]}])
@@ -627,6 +628,48 @@ def test_round3_bare_date_object_far_future_is_still_corrupt():
     })
     assert rec["state"] is None
     assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
+
+
+# ---------------------------------------------------------------------------
+# ROUND-5 item 5: Python 3.11+ widened date.fromisoformat/datetime.fromisoformat to
+# accept most of ISO 8601 — including ISO WEEK dates ("2026-W36-1") and the COMPACT
+# basic format ("20260904"). No collector/adapter in this repo ever produces either
+# shape; the bare-date fallback must accept ONLY the canonical extended YYYY-MM-DD
+# form, never silently promote an unusual/malformed string into a plausible date.
+# ---------------------------------------------------------------------------
+
+def test_round5_week_date_string_is_unparseable_not_silently_accepted():
+    cap = _cap("week_date", [{"type": "output_health_artifact", "ref": "a",
+                                "clocks": ["data_as_of"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+        "assessment_status": "complete", "data_as_of": "2026-W36-1",
+    })
+    assert rec["state"] is None
+    assert any(c.startswith(CH.REASON_CLOCK_UNPARSEABLE) for c in rec["reason_codes"])
+
+
+def test_round5_compact_date_string_is_unparseable_not_silently_accepted():
+    cap = _cap("compact_date", [{"type": "output_health_artifact", "ref": "a",
+                                   "clocks": ["data_as_of"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+        "assessment_status": "complete", "data_as_of": "20260904",
+    })
+    assert rec["state"] is None
+    assert any(c.startswith(CH.REASON_CLOCK_UNPARSEABLE) for c in rec["reason_codes"])
+
+
+def test_round5_canonical_iso_date_string_still_parses_fine():
+    """Regression guard: the restriction must not touch the one shape this module
+    actually promises to read."""
+    cap = _cap("canonical_date", [{"type": "output_health_artifact", "ref": "a",
+                                     "clocks": ["data_as_of"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+        "assessment_status": "complete", "data_as_of": "2026-09-04",
+    })
+    assert rec["state"] == CH.STATE_HEALTHY
 
 
 # ---------------------------------------------------------------------------
@@ -720,6 +763,110 @@ def test_round3_foreign_text_short_clean_text_is_untouched():
         "rights_blocked": True, "rights_detail": "known bot-block",
     })
     assert any(row["detail"] == "known bot-block" for row in rec["evidence"])
+
+
+# ---------------------------------------------------------------------------
+# ROUND-5 item 3: the same "every third-party text is capped and join-safe" guarantee
+# round-3 item 4 gave blind_reason/rights_detail now also covers process_commit/
+# checkout_commit (deployment-skew evidence) and replay_of/data_as_of
+# (correction-replay evidence) — evidence ingresses that previously interpolated a
+# receipt-carried value straight into an f-string with no cap or scrub at all.
+# ---------------------------------------------------------------------------
+
+def test_round5_foreign_text_deployment_skew_commits_are_capped_and_join_safe():
+    huge_commit = ("commit-" * 50) + "; fabricated-extra-code"
+    assert len(huge_commit) > CH.FOREIGN_TEXT_MAX_CHARS
+    cap = _cap("skew_cap_huge", [{"type": "nightly_lane", "ref": "x",
+                                    "clocks": ["last_attempted", "last_successful"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "last_attempted": FRESH, "last_successful": FRESH,
+        "process_commit": huge_commit, "checkout_commit": "def2222",
+    })
+    assert rec["state"] == CH.STATE_DEGRADED
+    assert len(rec["reason"].split("; ")) == len(rec["reason_codes"])
+    for row in rec["evidence"]:
+        assert "; " not in row["detail"]
+        assert huge_commit not in row["detail"], (
+            "the raw, unbounded commit text must never ride uncapped into evidence"
+        )
+
+
+def test_round5_foreign_text_replay_of_and_data_as_of_are_capped_and_join_safe():
+    huge_replay = ("replay-" * 50) + "; fabricated-extra-code"
+    assert len(huge_replay) > CH.FOREIGN_TEXT_MAX_CHARS
+    cap = _cap("replay_cap_huge", [{"type": "nightly_lane", "ref": "x",
+                                      "clocks": ["last_attempted", "last_successful",
+                                                 "data_as_of"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "last_attempted": FRESH, "last_successful": FRESH,
+        "data_as_of": FRESH, "replay_of": huge_replay,
+    })
+    assert len(rec["reason"].split("; ")) == len(rec["reason_codes"])
+    for row in rec["evidence"]:
+        assert "; " not in row["detail"]
+        assert huge_replay not in row["detail"]
+
+
+def test_round5_foreign_text_skew_and_replay_short_clean_text_is_untouched():
+    """Regression guard: the round-5 cap must not touch the existing short, clean
+    process_commit/checkout_commit/replay_of shapes fixtures (e)/(f) already pin."""
+    cap = _cap("skew_clean", [{"type": "nightly_lane", "ref": "x",
+                                "clocks": ["last_attempted", "last_successful"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "last_attempted": FRESH, "last_successful": FRESH,
+        "process_commit": "abc1111", "checkout_commit": "def2222",
+    })
+    assert any(
+        "abc1111" in row["detail"] and "def2222" in row["detail"] for row in rec["evidence"]
+    )
+
+
+# ---------------------------------------------------------------------------
+# ROUND-5 item 1: the pure-engine half of the stale_series join — an adapter that
+# forces an explicit `state` onto a fact may attach a free-text `state_detail`, which
+# this module surfaces as capped, join-safe evidence (never as its own reason code).
+# The BUILDER-level wiring (nightly_lane_facts' actual stale_series join) is pinned in
+# tests/test_build_capability_health.py; this pins the engine's generic contract.
+# ---------------------------------------------------------------------------
+
+def test_round5_explicit_state_detail_surfaces_as_capped_join_safe_evidence():
+    cap = _cap("state_detail_cap", [{"type": "nightly_lane", "ref": "x",
+                                       "clocks": ["last_attempted", "last_successful"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "last_attempted": FRESH, "last_successful": FRESH,
+        "state": CH.STATE_STALE,
+        "state_detail": "frozen-tail (stale_series) for x: CPIAUCSL last_obs=2025-11-01 age_days=308",
+    })
+    assert rec["state"] == CH.STATE_STALE
+    assert any("CPIAUCSL" in row["detail"] for row in rec["evidence"])
+
+
+def test_round5_explicit_state_detail_is_capped_and_join_safe_when_huge():
+    huge_detail = ("frozen-tail-" * 40) + "; fabricated-extra-code"
+    assert len(huge_detail) > CH.FOREIGN_TEXT_MAX_CHARS
+    cap = _cap("state_detail_huge", [{"type": "nightly_lane", "ref": "x",
+                                        "clocks": ["last_attempted", "last_successful"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "last_attempted": FRESH, "last_successful": FRESH,
+        "state": CH.STATE_STALE, "state_detail": huge_detail,
+    })
+    assert rec["state"] == CH.STATE_STALE
+    for row in rec["evidence"]:
+        assert "; " not in row["detail"]
+        assert huge_detail not in row["detail"]
+
+
+def test_round5_absent_state_detail_never_fabricates_evidence():
+    """Regression guard: an explicit state with NO state_detail (e.g. the ordinary
+    collector status='stale' path) must be untouched — no phantom evidence row."""
+    cap = _cap("state_no_detail", [{"type": "nightly_lane", "ref": "x",
+                                      "clocks": ["last_attempted", "last_successful"]}])
+    rec = _resolve_single(cap, {
+        "readable": True, "last_attempted": FRESH, "last_successful": FRESH,
+        "state": CH.STATE_STALE,
+    })
+    assert rec["state"] == CH.STATE_STALE
+    assert rec["evidence"] == []
 
 
 # ---------------------------------------------------------------------------

@@ -44,11 +44,15 @@ def _write_registry(root: Path, capabilities: list[dict]) -> None:
     )
 
 
-def _write_run_status(root: Path, sources: dict, *, last_run: str | None = None) -> None:
+def _write_run_status(
+    root: Path, sources: dict, *, last_run: str | None = None, stale_series=None,
+) -> None:
     (root / "data").mkdir(parents=True, exist_ok=True)
     doc = {"sources": sources}
     if last_run is not None:
         doc["last_run"] = last_run
+    if stale_series is not None:
+        doc["stale_series"] = stale_series
     (root / "data" / "run_status.json").write_text(json.dumps(doc), encoding="utf-8")
 
 
@@ -541,6 +545,153 @@ def test_important1_live_repro_via_main_writes_healthy_not_could_not_look(tmp_pa
     assert doc["summary"]["by_state"] == {CH.STATE_HEALTHY: 1}
     assert doc["summary"]["by_assessment_status"] == {CH.ASSESSMENT_COMPLETE: 1}
     assert "data_as_of" not in rec["clocks"] or rec["clocks"]["data_as_of"] is None
+
+
+# ---------------------------------------------------------------------------
+# ROUND-5 repair (item 1, round-4 review finding): the round-3 removal of
+# `last_date` -> `data_as_of` left the nightly-lane DATA-FRESHNESS axis unrepresented —
+# `status` derives from the SAME group-max `last` a forward-dated projection series
+# poisons, so a genuinely frozen SIBLING series (e.g. CPIAUCSL stale 308d in the same
+# `fred` group as FEDTARMD) reads healthy/ok on run clocks alone. The honest per-series
+# receipt already exists: run_status["stale_series"], written by
+# collectors/base.py's detect_stale_series/_write_stale_series explicitly "for the
+# health surface" and immune to the group-max poisoning.
+# ---------------------------------------------------------------------------
+
+def test_round5_status_ok_plus_matching_stale_series_row_forces_stale_not_healthy(tmp_path):
+    """THE bug this repair fixes: a fresh, healthy-looking ok/checked_at pair for a
+    group that ALSO has a frozen sibling series must never read healthy."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[{
+            "group": "fred", "series": "CPIAUCSL", "last_obs": "2025-11-01",
+            "cadence_days": 30, "age_days": 308, "detected_at": FRESH,
+        }],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]
+    assert fact["last_attempted"] == FRESH
+    assert fact["last_successful"] == FRESH
+    assert fact.get("state") == CH.STATE_STALE, (
+        "a matching stale_series row must force an explicit stale state even though "
+        "the group-max status/checked_at pair reads ok/fresh"
+    )
+    assert "CPIAUCSL" in fact.get("state_detail", "")
+    assert "308" in fact.get("state_detail", "")
+
+    cap = _lane_cap("market_reference_repro", "fred")
+    view = CH.resolve_capability_health(
+        capabilities=[cap], receipts={"market_reference_repro": [fact]}, now=NOW,
+    )
+    rec = view["capabilities"][0]
+    assert rec["state"] == CH.STATE_STALE
+    assert rec["state"] != CH.STATE_HEALTHY
+    assert any(
+        "CPIAUCSL" in row["detail"] and "308" in row["detail"] for row in rec["evidence"]
+    )
+
+
+def test_round5_status_ok_with_no_matching_stale_series_row_still_reads_healthy(tmp_path):
+    """Composition law (round-5): absence of a matching stale_series row, plus
+    status=ok, IS the honest "healthy" read — a stale_series array that exists but
+    names a DIFFERENT group must never leak into this ref's verdict."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[{
+            "group": "yahoo", "series": "SPY", "last_obs": "2026-09-01",
+            "cadence_days": 1, "age_days": 3, "detected_at": FRESH,
+        }],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]
+    assert fact.get("state") is None
+    assert "state_detail" not in fact
+
+    cap = _lane_cap("market_reference_repro", "fred")
+    view = CH.resolve_capability_health(
+        capabilities=[cap], receipts={"market_reference_repro": [fact]}, now=NOW,
+    )
+    rec = view["capabilities"][0]
+    assert rec["state"] == CH.STATE_HEALTHY
+    assert rec["reason"] == "ok"
+
+
+def test_round5_status_ok_with_no_stale_series_key_at_all_still_reads_healthy(tmp_path):
+    """Older receipts (no `stale_series` key at all) must be tolerated, not treated as
+    malformed — the join is purely additive."""
+    _write_run_status(tmp_path, {"fred": {"status": "ok", "checked_at": FRESH,
+                                           "last_date": "2028-01-01"}})
+    assert "stale_series" not in json.loads((tmp_path / "data" / "run_status.json").read_text())
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]
+    assert fact.get("state") is None
+    cap = _lane_cap("market_reference_repro", "fred")
+    view = CH.resolve_capability_health(
+        capabilities=[cap], receipts={"market_reference_repro": [fact]}, now=NOW,
+    )
+    assert view["capabilities"][0]["state"] == CH.STATE_HEALTHY
+
+
+def test_round5_malformed_stale_series_rows_are_skipped_fail_safe(tmp_path):
+    """A non-dict row, and a row missing/carrying a non-string `group`, must never by
+    themselves brand a source corrupt or force a spurious stale verdict on an
+    unrelated ref."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[
+            "not-a-dict",
+            {"series": "NO_GROUP_FIELD", "age_days": 99},
+            {"group": 12345, "series": "NON_STRING_GROUP", "age_days": 99},
+            {"group": "", "series": "EMPTY_GROUP", "age_days": 99},
+        ],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]
+    assert fact.get("state") is None, "malformed rows must never match any real ref"
+    assert fact["readable"] is True
+    assert fact["corrupt"] is False
+
+
+def test_round5_matching_group_row_with_unparseable_detail_fields_still_forces_stale(tmp_path):
+    """A row that DOES match the group but carries unparseable/missing series/
+    age_days/last_obs must still force the stale state — the JOIN is the group match,
+    not the cleanliness of the row's other fields (never silently read as healthy)."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[{"group": "fred", "age_days": "not-a-number"}],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]
+    assert fact.get("state") == CH.STATE_STALE
+    assert isinstance(fact.get("state_detail"), str) and fact["state_detail"]
+
+    cap = _lane_cap("market_reference_repro", "fred")
+    view = CH.resolve_capability_health(
+        capabilities=[cap], receipts={"market_reference_repro": [fact]}, now=NOW,
+    )
+    assert view["capabilities"][0]["state"] == CH.STATE_STALE
+
+
+def test_round5_stale_series_join_does_not_apply_to_failed_status(tmp_path):
+    """Restricted scope: a stale_series row persisting from a PRIOR successful run
+    must never downgrade THIS run's failed/dead attempt into a milder explicit stale
+    — could_not_look (attempted, no prior success) is the more honest, worse verdict
+    and must not be silently softened."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "failed", "checked_at": FRESH, "error": "boom"}},
+        stale_series=[{
+            "group": "fred", "series": "CPIAUCSL", "last_obs": "2025-11-01",
+            "cadence_days": 30, "age_days": 308, "detected_at": FRESH,
+        }],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]
+    assert fact.get("state") is None
+    assert "state_detail" not in fact
+    cap = _lane_cap("market_reference_repro", "fred")
+    view = CH.resolve_capability_health(
+        capabilities=[cap], receipts={"market_reference_repro": [fact]}, now=NOW,
+    )
+    assert view["capabilities"][0]["state"] is None
 
 
 # ---------------------------------------------------------------------------
