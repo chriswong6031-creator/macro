@@ -185,7 +185,7 @@ body.cs-page.cs-modal-open { overflow: hidden; }
   margin: 12px 0 16px;
   padding: 11px 14px;
   border-color: color-mix(in srgb, var(--cs-cyan) 24%, var(--cs-line));
-  border-radius: 13px;
+  border-radius: var(--r-panel,13px);
   color: var(--cs-muted);
   background: color-mix(in srgb, var(--cs-cyan) 5%, var(--cs-surface));
   box-shadow: none;
