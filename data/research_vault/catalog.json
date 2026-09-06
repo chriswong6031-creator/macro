@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-09-06T13:15:35.516703+00:00",
-  "count": 1858,
+  "generated_at": "2026-09-06T16:32:40.062039+00:00",
+  "count": 1867,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -107,6 +107,89 @@
       "tickers": [],
       "top_pick": false,
       "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-irbqg9jsy0n-9b7d21",
+      "title": "Will AI displace India’s IT services sector",
+      "institution": "Eastspring",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-06T01:41:59Z",
+      "summary_points": [
+        "**AI Disruption Concerns Overstated**: AI broadens opportunities (data centers, IT modernization) supporting India's IT sector (6M employees, 8% GDP), countering displacement fears despite 2-4% AI-driven revenue deflation risk.",
+        "**Govt Policy Catalyst & Data Center Advantage**: $100bn+ hyperscale data center investment (Mumbai costs $6–$7M/MW, globally lowest) driven by policy incentives, domestic demand, and global tech diversification beyond China; frontier AI firms committed $8bn.",
+        "**RDI Fund & Strategic Tech Shift**: $12bn RDI Fund (2027–2034) targets AI/semiconductors/defense, positioning India as strategic latecomer; government crowds private capital to create 5-6 global \"new age\" tech firms.",
+        "**Elevated IT Valuation Premium**: MSCI India IT trades at mid-teens P/E vs.",
+        "low-teens US peers (Accenture/Cognizant), with premium remaining above historical average despite recent normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lqau2ztfy9g-ef3515",
+      "title": "Americas Business & Information Services August temp headcount grows y y for a second month, though structural AI risks persist",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T03:10:34Z",
+      "summary_points": [
+        "**Structural AI Threat to Temp Jobs**: US temp penetration flat at 1.58% (4th lowest in 6 years), with 55% of temps in AI-vulnerable white-collar roles, signaling persistent structural decline amid cyclical weakness (397k jobs below pre-COVID levels).",
+        "**Revenue Correlation Risk**: Strong link between US temp headcount growth and revenue at RHI/MAN; stagnant temp jobs directly pressure staffing firms' top-line performance, with RHI/MAN revenue more correlated to headcount than penetration.",
+        "**Margin Pressure from Wage Deceleration**: Temp wage growth slowed to 3.4% y/y (July), below June (3.9%) and 10-yr avg (4.7%), compressing bill-pay spreads and threatening gross margins as temp wages decelerate faster than permanent wages (3.2% y/y).",
+        "**RHI Earnings Vulnerability**: Provtivi revenue declining 5% y/y (Q2) and 6% y/y (Q3 guidance) due to AI risks, regulatory shifts, and macro uncertainty, risking downward earnings revisions amid 12.5x NTM valuation.",
+        "**Valuation & Risk Differentiation**: KFY (Buy, 13x NTM) outperforms RHI (Sell, 12.5x NTM) and MAN (Neutral, 10x NTM); key risks include AI disruption (RHI), geopolitical tensions (KFY), while KFY’s mix-driven growth offsets Middle East pressures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vnseuxdw45x-1f4140",
+      "title": "Shanghai Jinjiang Int'l Hotels (600754.SS) 2Q26 results inline Slower RevPar partly offset by higher CRS contribution.",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T03:10:31Z",
+      "summary_points": [
+        "**SELL Rating & Revenue Weakness**: SELL due to RevPar -2% yoy vs.",
+        "peers (HTHT +1.3%, ATAT +0.7%), domestic RevPar down -3% in July/flat Aug, pipeline growth lagging (650-700 signings vs.",
+        "8k target) amid franchisee caution on mid-upscale hotels.",
+        "**Valuation Gap vs.",
+        "Peers**: Trading at 7x EV/EBITDA (16x P/E) vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k3x25snf6wn-8bc8ce",
+      "title": "Market Intelligence US Morning Update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T03:10:07Z",
+      "summary_points": [
+        "**US Payrolls & Energy Pricing**: Nonfarm payrolls beat consensus (+40k vs +55k) with weak prior month (-23k), signaling labor market shift; US natural gas prices expected low until 2029, advising 2027 hedging for energy exposure.",
+        "**ECB Policy & Treasury Yields**: ECB likely to hike rates in September amid below-trend growth, while 10-year US Treasury yields remain elevated at 4.78%, creating cross-rate tension for portfolio positioning.",
+        "**Rating Shifts & Macro Risks**: Vodafone (VOD) and Neste OYJ (NESTE.HE) upgraded to Buy; key macro risks include US labor participation decline (Rindels) and ECB hike without guidance (Stehn).",
+        "**Geopolitical Risk Event**: Russia-NATO tensions analysis via upcoming ISG webinar (Sept 9) with UK Defence/CIA experts, critical for portfolio risk assessment and positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
@@ -235,6 +318,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-5rnicjibhem-1eaca3",
+      "title": "FI Outlook Inflation goes to extra time (slides)",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-04T21:39:48Z",
+      "summary_points": [
+        "**Inflation Persistence**: Core inflation remains above 2% until 2028, driven by oil (9), AI (10), deficits (7), tariffs (11), and second-round wage effects, creating policy tightening risks despite growth resilience.",
+        "**Term Premium Rebuilding**: Geopolitical tensions (US/Iran war) drive long-maturity yields to record highs, with term premiums overriding central bank guidance and distorting yield curves, critical for fixed income duration positioning.",
+        "**Bund 10y Yield Dynamics**: Yield reversal nearing pre-2014 levels (vs.",
+        "2014-2021 negative rates), with historical pattern showing 10y peak just before first rate hike (e.g., 2026-06), signaling ECB policy shifts.",
+        "**Fiscal Policy Divergence**: US fiscal deficit ($2.4tn) vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 77,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-aahl1xmxrwx-ddf21b",
+      "title": "Fixed Income Weekly Higher for longer",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-04T21:39:45Z",
+      "summary_points": [
+        "**Middle East Conflict**: Persistent geopolitical risk driving EGB volatility and energy price impacts, with de-escalation potential amplifying growth catalysts.",
+        "**ECB Rate Path Shift**: Markets now price 3 ECB hikes by mid-2027 (vs 2 previously), anchored by 3.3% headline inflation and energy surge, pushing 10y Bund yield ≥3.5% as key fade trigger.",
+        "**10y Bund Yield Threshold**: Consolidation likely near 3.40%, with fade recommended if yield exceeds 3.5% amid hawkish ECB communication and term premium rebuilding.",
+        "**Germany Growth Revisions**: 2026 growth forecast upgraded to 1.2% (from 0.5%), signaling above-potential momentum and altering ECB policy stance.",
+        "**UK 2y Swap Trade**: Target 0bp spread via UK 2y swaps vs US, leveraging BoE’s dovish stance (vs Fed’s hawkishness) and UK’s 1.3x oil price sensitivity beta."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-kdpqxd1itta-e1617a",
       "title": "Connecting the Dots Macro vs. Micro, Conviction List, Deutsche Bank, RE snippets and Telco leverage plus key research",
       "institution": "Goldman Sachs",
@@ -340,6 +465,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-5qmzoids2rk-a2badf",
+      "title": "MS Valuation Debates, ERCOT, Power Shortfalls, and Recommended Positioning",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-04T21:08:49Z",
+      "summary_points": [
+        "**Grid Scarcity Drives Data Center Leases**: AI compute shortage causes power/data center shortfalls, accelerating PSP-data center contracts by October 2026; 20+ year leases with rising yields (7.25% cap rate) and $11–17/watt valuation upside.",
+        "**ERCOT Policy Shifts Favor PSPs**: PUCT hearing approval of ERCOT’s 765 kV project (provisional designations by Aug 31, 2026) eases grid capacity constraints, bullish for GLXY, CIFR, MARA, HUT despite misinterpreted delays.",
+        "**Lease Rates Offset Interest Rate Risks**: WULF/RIOT lease rates surged from $1.83 to $2.37/watt, creating $3.50/watt value to offset 100bps interest rate hikes (vs.",
+        "discount rate impact).",
+        "**Construction Overruns Low Probability**: 14% contingency buffer mitigates labor cost overruns (67% above budget, low prob); cash flow sweeps overblown as project debt raised post-completion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-siaj0ptmoyl-0b779b",
+      "title": "JEF Macro Weekly Background Reading on Treasury Twists; In Our Time",
+      "institution": "Jefferies",
+      "side": "sell",
+      "desk": "Fear and Greed",
+      "published_at": "2026-09-04T20:56:28Z",
+      "summary_points": [
+        "**Treasury Policy Dominance & Yield Control**: Treasury's active buybacks and curve-twisting (targeting 4.75% on 10YR yield) suppress long-term rates, shift pressure from bonds to dollar, and position Treasury as dominant policy actor to support risk assets and weaken dollar.",
+        "**Fed Policy Hold & Disinflation Driver**: Fed holds rates through end of year (data-dependent), with disinflation in shelter prices, PCE methodology revisions, and subdued wage growth driving expectation of hold until 2026, avoiding hikes despite 2% PCE target.",
+        "**Geopolitical & Commodity Risk Catalyst**: Russia-Ukraine escalation (agriculture commodities), Super El Nino 2027, and elections (Europe/US midterms) drive populist policies, creating immediate portfolio hedging needs amid Treasury-Fed collaboration on long-end yields."
+      ],
+      "tags": [
+        "Fear and Greed"
+      ],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-8fml7fm4kca-f8a815",
       "title": "JEF Macro Weekly Intervention & Fiscal Tremors; The AI Momentum Rout",
       "institution": "Jefferies",
@@ -380,6 +547,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 87,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1klabt6p7od-9caae6",
+      "title": "Global Rates Weekly Bonds falling, autumn calling",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-04T20:53:37Z",
+      "summary_points": [
+        "**US Fed Policy Divergence**: Market prices 3 hikes by Dec 2026 vs BofA’s 4 hikes; Fed Funds target 4.375% through YE27, driving US long 5y UST and 5s30s steepener positioning.",
+        "**ECB Hike Limitations**: Energy prices constrain ECB beyond current expectations; market prices 3 hikes (Dec 2026/1H27) but inflation weakness and financial tightening limit further action (30y French OAT yields near 5%).",
+        "**UK Gilt Supply Shift**: DMO WAM falls to 8.9 years (Q4 2026); domestic banks increase holdings by £10bn (to £49bn), creating structural supply shift toward shorter tenors.",
+        "**RBA September Catalyst**: Strong July CPI and Q2 GDP justify 25bp hike; hawkish communication and productivity concerns drive timing (risk: global bond sell-off).",
+        "**Reversal Catalysts**: Soft growth/inflation data or >15% equity correction required to halt US Treasury selloff; Fed hawkishness and weak demand dominate current trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
       "language": "en",
       "needs_metadata": false
     },
