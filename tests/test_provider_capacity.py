@@ -24,6 +24,13 @@ from engine.neuralweb import key_pool
 ROOT = Path(__file__).resolve().parent.parent
 NOW = datetime(2026, 8, 23, 12, 0, tzinfo=timezone.utc)
 GROUND = pc.MaterialSourceReceipt("1" * 64, "2" * 40, True)
+UNCONFIGURED_FAMILIES = {
+    "alibaba_subscription": "alibaba",
+    "cursor_subscription": "cursor",
+    "glm_subscription": "glm",
+    "grok_subscription": "grok",
+    "openrouter_api_key": "openrouter",
+}
 
 
 def _cooling_false() -> dict:
@@ -42,11 +49,19 @@ def _unknown_observation(
     present: bool | None = False,
     enabled: bool | None = True,
 ) -> dict:
+    unconfigured = definition.capability_id in UNCONFIGURED_FAMILIES
     codes = [
         "PROVIDER_HEALTH_UNKNOWN",
         "PROVIDER_BUDGET_UNKNOWN",
         "PROVIDER_OUTCOME_UNKNOWN",
     ]
+    if unconfigured:
+        present = False
+        enabled = False
+        codes.extend([
+            "PROVIDER_CONFIGURATION_UNCONFIGURED",
+            "PROVIDER_COOLING_UNKNOWN",
+        ])
     if present is None:
         codes.append("PROVIDER_PRESENCE_UNKNOWN")
     if enabled is None:
@@ -56,8 +71,8 @@ def _unknown_observation(
         "present": present,
         "enabled": enabled,
         "health": pc._unknown_health(),
-        "cooling": _cooling_false(),
-        "quota_horizons": [] if definition.provider == "deepseek" else [
+        "cooling": pc._unknown_cooling() if unconfigured else _cooling_false(),
+        "quota_horizons": [] if definition.provider == "deepseek" or unconfigured else [
             pc._unknown_quota("five_hour", 5 * 3600),
             pc._unknown_quota("weekly", 7 * 24 * 3600),
         ],
@@ -89,6 +104,14 @@ def _slot(document: dict, capability_id: str) -> dict:
     return next(row for row in document["slots"] if row["capability_id"] == capability_id)
 
 
+def _observation(observations: list[dict], capability_id: str) -> dict:
+    return next(row for row in observations if row["capability_id"] == capability_id)
+
+
+def _definition(capability_id: str) -> pc.SlotDefinition:
+    return next(row for row in pc.SUPPORTED_SLOTS if row.capability_id == capability_id)
+
+
 def _rehash(document: dict) -> dict:
     document["snapshot_hash"] = pc.snapshot_hash(document)
     pc.validate_snapshot(document)
@@ -102,6 +125,7 @@ def test_strict_closed_contract_and_reviewed_inventory(monkeypatch):
         "slots", "degraded",
     }
     assert [row["capability_id"] for row in document["slots"]] == [
+        "alibaba_subscription",
         "claude_code_oauth",
         "claude_code_oauth_1",
         "claude_code_oauth_2",
@@ -113,7 +137,11 @@ def test_strict_closed_contract_and_reviewed_inventory(monkeypatch):
         "codex_account",
         "codex_account_2",
         "codex_account_3",
+        "cursor_subscription",
         "deepseek_api_key",
+        "glm_subscription",
+        "grok_subscription",
+        "openrouter_api_key",
     ]
     assert {(row["host_ref"], row["capability_id"]) for row in document["slots"]} == {
         (pc.HOST_REF, definition.capability_id)
@@ -126,6 +154,68 @@ def test_strict_closed_contract_and_reviewed_inventory(monkeypatch):
         pc.validate_snapshot(extra)
 
 
+def test_unconfigured_provider_families_are_explicit_without_implying_capacity(monkeypatch):
+    document = _snapshot(monkeypatch)
+    scoped_degradations = {
+        (row["code"], row["scope"])
+        for row in document["degraded"]
+    }
+
+    assert {
+        row["capability_id"]: row["provider"]
+        for row in document["slots"]
+        if row["capability_id"] in UNCONFIGURED_FAMILIES
+    } == UNCONFIGURED_FAMILIES
+    for capability_id in UNCONFIGURED_FAMILIES:
+        slot = _slot(document, capability_id)
+        assert (slot["present"], slot["enabled"]) == (False, False)
+        assert slot["health"] == pc._unknown_health()
+        assert slot["cooling"] == pc._unknown_cooling()
+        assert slot["quota_horizons"] == []
+        assert slot["last_outcome"] == {"class": "unknown", "observed_at": None}
+        assert (
+            "PROVIDER_CONFIGURATION_UNCONFIGURED",
+            capability_id,
+        ) in scoped_degradations
+        assert slot["health"]["state"] != "available"
+
+
+def test_unconfigured_provider_families_cannot_be_laundered_as_live(monkeypatch):
+    document = _snapshot(monkeypatch)
+    slot = _slot(document, "grok_subscription")
+    slot["present"] = True
+    slot["enabled"] = True
+    slot["health"] = {
+        "state": "available",
+        "error_class": None,
+        "observed_at": "2026-08-23T11:59:00Z",
+        "stale_after": "2026-08-23T12:09:00Z",
+        "evidence": "provider_reported",
+        "source_kind": "provider_attempt",
+        "freshness": "fresh",
+    }
+    with pytest.raises(pc.ProviderCapacityError, match="UNCONFIGURED_SLOT_STATE_INVALID"):
+        pc.validate_snapshot(document, check_hash=False)
+
+
+def test_unconfigured_provider_family_rows_are_producer_owned(monkeypatch):
+    observations = [
+        row for row in _observations()
+        if row["capability_id"] not in UNCONFIGURED_FAMILIES
+    ]
+    document = _snapshot(monkeypatch, observations)
+    for capability_id in UNCONFIGURED_FAMILIES:
+        slot = _slot(document, capability_id)
+        assert (slot["present"], slot["enabled"]) == (False, False)
+        assert (
+            "PROVIDER_CONFIGURATION_UNCONFIGURED",
+            capability_id,
+        ) in {
+            (row["code"], row["scope"])
+            for row in document["degraded"]
+        }
+
+
 def test_public_builder_owns_time_and_source_observations():
     assert tuple(inspect.signature(pc.build_snapshot).parameters) == ("repo_root",)
     with pytest.raises(TypeError):
@@ -136,8 +226,9 @@ def test_public_builder_owns_time_and_source_observations():
 
 def test_known_absent_and_disabled_slots_remain_distinct(monkeypatch):
     observations = _observations()
-    observations[0]["present"] = True
-    observations[0]["enabled"] = False
+    legacy_observation = _observation(observations, "claude_code_oauth")
+    legacy_observation["present"] = True
+    legacy_observation["enabled"] = False
     document = _snapshot(monkeypatch, observations)
     legacy = _slot(document, "claude_code_oauth")
     absent = _slot(document, "claude_code_oauth_1")
@@ -147,8 +238,12 @@ def test_known_absent_and_disabled_slots_remain_distinct(monkeypatch):
 
 def test_unreadable_presence_stays_null_and_requires_degradation(monkeypatch):
     observations = _observations()
-    observations[1] = _unknown_observation(
-        pc.SUPPORTED_SLOTS[1], present=None, enabled=True,
+    target = next(
+        index for index, row in enumerate(observations)
+        if row["capability_id"] == "claude_code_oauth_1"
+    )
+    observations[target] = _unknown_observation(
+        _definition("claude_code_oauth_1"), present=None, enabled=True,
     )
     document = _snapshot(monkeypatch, observations)
     assert _slot(document, "claude_code_oauth_1")["present"] is None
@@ -178,7 +273,10 @@ def test_dynamic_results_cannot_add_or_remove_reviewed_slots(monkeypatch):
         (row["code"], row["scope"]) for row in document["degraded"]
     } >= {("PROVIDER_INVENTORY_UNKNOWN", "producer")}
 
-    missing = _snapshot(monkeypatch, _observations()[1:])
+    missing = _snapshot(monkeypatch, [
+        row for row in _observations()
+        if row["capability_id"] != "claude_code_oauth"
+    ])
     legacy = _slot(missing, "claude_code_oauth")
     assert legacy["present"] is None and legacy["enabled"] is None
 
@@ -225,10 +323,11 @@ def test_semantic_mutations_change_hash(monkeypatch, mutation):
     document = _snapshot(monkeypatch)
     original = document["snapshot_hash"]
     changed = copy.deepcopy(document)
+    mutable_slot = _slot(changed, "claude_code_oauth")
     if mutation == "presence":
-        changed["slots"][0]["present"] = True
+        mutable_slot["present"] = True
     elif mutation == "health_freshness":
-        changed["slots"][0]["health"] = {
+        mutable_slot["health"] = {
             "state": "available",
             "error_class": None,
             "observed_at": "2026-08-23T11:00:00Z",
@@ -326,7 +425,7 @@ def test_429_affects_only_evidenced_horizon():
 
 
 def test_stale_health_is_not_restamped_fresh():
-    definition = pc.SUPPORTED_SLOTS[0]
+    definition = _definition("claude_code_oauth")
     health, codes = pc._health_from_sources(
         definition,
         {
@@ -372,7 +471,7 @@ def test_legacy_claude_health_identifier_is_canonicalized_and_consumed(tmp_path)
     source = ph.capacity_health_observations(root=tmp_path)
     assert source["rows"][0]["cap_id"] == "claude_code_oauth"
 
-    health, codes = pc._health_from_sources(pc.SUPPORTED_SLOTS[0], source, NOW)
+    health, codes = pc._health_from_sources(_definition("claude_code_oauth"), source, NOW)
     assert codes == []
     assert health["state"] == "available"
     assert health["evidence"] == "provider_reported"
@@ -380,7 +479,7 @@ def test_legacy_claude_health_identifier_is_canonicalized_and_consumed(tmp_path)
 
 def test_invalid_numbers_and_impossible_absolute_quota_refuse(monkeypatch):
     document = _snapshot(monkeypatch)
-    row = document["slots"][0]["quota_horizons"][0]
+    row = _slot(document, "claude_code_oauth")["quota_horizons"][0]
     row.update({
         "limit": 100,
         "used": 80,
