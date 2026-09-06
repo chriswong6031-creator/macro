@@ -89,6 +89,15 @@ def normalize_pref(key: str, value: Any) -> str | None:
     return val if val in allowed else None
 
 
+def default_tz_for_lang(lang: Any) -> str:
+    """The explicit default IANA zone for an account with no stored ``tz`` (freeze §8:
+    'explicit default = account locale or UTC'). ``lang`` is the account's own stored
+    display language — never a guess from the request — so an unset tz still resolves to
+    a concrete, disclosed zone rather than silently defaulting client-side.
+    """
+    return "Asia/Shanghai" if lang == "zh" else "UTC"
+
+
 def quiet_hours_shape_ok(value: Any) -> bool:
     """True iff ``value`` is a well-formed quiet-hours pair (exactly start/end, HH:MM each).
     Does NOT judge start==end — that is a legal value (normalizes to a clear), not a shape

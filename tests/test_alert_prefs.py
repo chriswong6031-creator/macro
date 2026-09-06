@@ -246,3 +246,27 @@ def test_read_user_prefs_returns_all_seven_keys():
 
 def test_pref_keys_starts_with_the_original_three():
     assert user_prefs.PREF_KEYS[:3] == ("lang", "theme", "brain_depth")
+
+
+def test_quiet_hours_off_sentinel_reaches_the_put_as_none(auth, store):
+    """A regression in validate_prefs/normalize_value that stopped converting the wire
+    sentinel "off" would previously go undetected with a green suite -- every existing
+    "off" test asserted only the route's response out["prefs"], never the actual PUT
+    body sent to GoTrue. Assert the real network payload instead."""
+    account_prefs.save_prefs(account_prefs.PrefsRequest(quiet_hours="off"), user=USER)
+    _, _, payload = auth.calls[0]
+    meta = payload["user_metadata"]
+    assert meta["quiet_hours"] is None
+    assert meta["quiet_hours"] != "off"
+
+
+def test_get_prefs_unauthenticated_is_401(monkeypatch):
+    from fastapi import HTTPException
+
+    def _deny(authorization=None):
+        raise HTTPException(401, "missing bearer token")
+
+    monkeypatch.setattr(account_prefs, "_current_user", _deny)
+    with pytest.raises(HTTPException) as ei:
+        account_prefs.read_prefs(user=account_prefs._current_user(None))
+    assert ei.value.status_code == 401

@@ -103,6 +103,7 @@
     al_none: ["No alert types chosen yet — you won't get any alert emails.",
       '尚未选择提醒类型 — 你不会收到提醒邮件。'],
     al_tz: ['Your time zone', '你的时区'],
+    al_tz_placeholder: ['Not set yet', '尚未设置'],
     al_tz_unset: ['Not saved yet — we’re using your browser’s time zone, ',
       '尚未保存 — 暂时使用你浏览器的时区：'],
     al_qh: ['Quiet hours', '免打扰时段'],
