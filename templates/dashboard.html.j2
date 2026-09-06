@@ -126,6 +126,7 @@
 {{ t(b[0], b[1]) }}<br><br>{{ t(s[0], s[1]) }}
 {%- endmacro %}
 {% import "_risk_radar_card.html.j2" as rrc %}
+{% import "_risk_envelope_band.html.j2" as gde %}
 {# rr_leg + risk_radar_card moved to the shared partial _risk_radar_card.html.j2
    (used by the US Macro/Stocks pages AND the China/HK/Canada Market-State boards). #}
 {# ignition-radar / mag7-panel / leadership-board imports removed 2026-07-23 (operator ruling; DO_NOT_REBUILD §2/§4) #}
@@ -8464,14 +8465,10 @@ html[data-theme="light"] :is(
   })();
   </script>
   {% endif %}
+  {# Compact Market Reads rail — last child of the regime hero, not a second
+     full-width panel. Live overlay hooks stay on #risk-envelope-band. #}
+  {% if mode != 'stocks' %}{{ gde.gde_context(risk_envelope) }}{% endif %}
   </div>{# /#regime-radar panel #}
-
-  {# ── THREE SEPARATE READS — Grey Deer settled risk envelope (macro mode only).
-       Sits immediately under the regime hero: the hero answers "what regime am I
-       in", this band answers the different question "do the reads agree", which
-       the page previously buried in a prose aside. Renders nothing when the
-       artifact is absent. ── #}
-  {% if mode != 'stocks' %}{% include "_risk_envelope_band.html.j2" %}{% endif %}
 
   {# ── V2 ROW-LEDGER SECTIONS (macro mode only) ── #}
   {% if mode != 'stocks' %}
@@ -12434,7 +12431,7 @@ html[data-theme="light"] :is(
     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
     <div class="mx5-dlg-panel">
       <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
+        <span class="mx5-dlg-title"><span class="l-en">Risk Detail</span><span class="l-zh">风险详情</span>
         {% set _rk_asof = (latest.date if (latest is defined and latest.date is defined and latest.date) else none) %}
         {% if _rk_asof %}<span class="riskdlg-asof">{{ _rk_asof }}</span>{% endif %}</span>
         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
@@ -17760,8 +17757,8 @@ window.__CHART_SWAP__ = {
 {# live_config.js + live.js already load via _navlinks.html.j2 on every page;
    live.js is __mmLiveInit-guarded so this second include was a no-op — dropped. #}
 <script src="risk_state_live.js"></script>
-{# GD-3: live-provisional Risk Envelope overlay — same mode gate as the band
-   include itself (_risk_envelope_band.html.j2, mode != 'stocks' above). #}
+{# GD-3: live-provisional Risk Envelope overlay — same mode gate as the
+   compact risk-context disclosure (gde.gde_context, mode != 'stocks' above). #}
 {% if mode != 'stocks' %}<script src="risk_envelope_live.js"></script>{% endif %}
 <script src="release_publications_live.js"></script>
 <script>

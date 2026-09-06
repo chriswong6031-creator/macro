@@ -1,0 +1,66 @@
+[
+  {
+    "command": [
+      "python3",
+      "scripts/check_title_i18n.py"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "scripts.check_template_site_sync"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_runtime_style_injection.py"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_design_system.py",
+      "--mode",
+      "enforce-added",
+      "--diff-file",
+      "mockups/refs/grey-deer-compact/sol-20260906/source-review-r2.diff"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ui_visual_evidence.py",
+      "--diff-file",
+      "mockups/refs/grey-deer-compact/sol-20260906/source-review-r2.diff"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "templates",
+      "tests",
+      ".github",
+      "agentos",
+      "research"
+    ],
+    "exit": 0
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/agentos.py",
+      "validate"
+    ],
+    "exit": 0
+  }
+]

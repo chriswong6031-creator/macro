@@ -1,0 +1,70 @@
+{
+  "classification": "LOCAL_FEED_FIXTURE_NOT_PRODUCTION",
+  "cases": [
+    {
+      "scenario": "healthy",
+      "theme": "dark",
+      "language": "en",
+      "clock_visible": true,
+      "rail_height": 113.375,
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "scenario": "degraded",
+      "theme": "dark",
+      "language": "en",
+      "clock_visible": true,
+      "rail_height": 113.375,
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "scenario": "stale",
+      "theme": "dark",
+      "language": "en",
+      "clock_visible": true,
+      "rail_height": 89.375,
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "scenario": "pending",
+      "theme": "dark",
+      "language": "en",
+      "clock_visible": true,
+      "rail_height": 130.375,
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "scenario": "pending",
+      "theme": "dark",
+      "language": "zh",
+      "clock_visible": true,
+      "rail_height": 89.375,
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "scenario": "pending",
+      "theme": "light",
+      "language": "en",
+      "clock_visible": true,
+      "rail_height": 130.375,
+      "overflow": false,
+      "page_errors": []
+    },
+    {
+      "scenario": "pending",
+      "theme": "light",
+      "language": "zh",
+      "clock_visible": true,
+      "rail_height": 89.375,
+      "overflow": false,
+      "page_errors": []
+    }
+  ],
+  "html_sha256": "b63e24b134deaa97598ce80db0435f24b2e48d65db00e606dcbb16af6bd24bc7",
+  "status": "PASS"
+}

@@ -1,0 +1,50 @@
+{
+  "1440-dark-en": {
+    "band_height": 472.86,
+    "band_top": 519.58,
+    "ticker_top": 1038.44,
+    "rack_top": 1012.44,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "overflow": false,
+    "innerWidth": 1440,
+    "innerHeight": 900,
+    "theme": "dark",
+    "lang": "en",
+    "band_in_hero": false,
+    "has_gde_band_class": true,
+    "has_gde_rail_class": false
+  },
+  "1280-dark-en": {
+    "band_height": 472.86,
+    "band_top": 637.67,
+    "ticker_top": 1156.53,
+    "rack_top": 1130.53,
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "overflow": false,
+    "innerWidth": 1280,
+    "innerHeight": 800,
+    "theme": "dark",
+    "lang": "en",
+    "band_in_hero": false,
+    "has_gde_band_class": true,
+    "has_gde_rail_class": false
+  },
+  "390-dark-en": {
+    "band_height": 749.86,
+    "band_top": 490.72,
+    "ticker_top": 1282.58,
+    "rack_top": 1256.58,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "overflow": false,
+    "innerWidth": 390,
+    "innerHeight": 844,
+    "theme": "dark",
+    "lang": "en",
+    "band_in_hero": false,
+    "has_gde_band_class": true,
+    "has_gde_rail_class": false
+  }
+}

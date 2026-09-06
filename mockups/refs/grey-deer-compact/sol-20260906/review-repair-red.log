@@ -1,0 +1,281 @@
+.........FFF..F................FFF.FFFFFFFFF                             [100%]
+=================================== FAILURES ===================================
+___________________ test_rail_opens_public_native_disclosure ___________________
+
+sample_html = '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...   <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>\n    </div>\n  </details>\n</section>'
+
+    def test_rail_opens_public_native_disclosure(sample_html):
+>       context = _slice_id(sample_html, "gde-context-disclosure")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_risk_envelope_presentation.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+html = '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...   <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>\n    </div>\n  </details>\n</section>'
+elem_id = 'gde-context-disclosure'
+
+    def _slice_id(html: str, elem_id: str) -> str:
+        start = html.find(f'id="{elem_id}"')
+>       assert start != -1, f"missing #{elem_id}"
+E       AssertionError: missing #gde-context-disclosure
+E       assert -1 != -1
+
+tests/test_risk_envelope_presentation.py:66: AssertionError
+______________ test_dashboard_places_rail_inside_the_regime_hero _______________
+
+dash_src = '{#- `pgate` is the adjacent-panel tier gate (docs/TIER_PREVIEW_PATTERN.md), set only\n    by build_site\'s stocks-mod...dif %}\n<footer class="site-footer">\n  <span class="made">© 2026 Mastermind Inc</span>\n</footer>\n</body>\n</html>\n'
+
+    def test_dashboard_places_rail_inside_the_regime_hero(dash_src):
+        hero_close = dash_src.index("</div>{# /#regime-radar panel #}")
+>       assert "gde.gde_context(" in dash_src[:hero_close]
+E       assert 'gde.gde_context(' in "{#- `pgate` is the adjacent-panel tier gate (docs/TIER_PREVIEW_PATTERN.md), set only\n    by build_site's stocks-mode...lay hooks stay on #risk-envelope-band. #}\n  {% if mode != 'stocks' %}{{ gde.gde_rail(risk_envelope) }}{% endif %}\n  "
+
+tests/test_risk_envelope_presentation.py:218: AssertionError
+________ test_member_risk_dialog_is_not_the_public_context_destination _________
+
+dash_src = '{#- `pgate` is the adjacent-panel tier gate (docs/TIER_PREVIEW_PATTERN.md), set only\n    by build_site\'s stocks-mod...dif %}\n<footer class="site-footer">\n  <span class="made">© 2026 Mastermind Inc</span>\n</footer>\n</body>\n</html>\n'
+
+    def test_member_risk_dialog_is_not_the_public_context_destination(dash_src):
+        at = dash_src.index('id="dlg-risk"')
+        window = dash_src[at : at + 8000]
+>       assert "gde.gde_detail(" not in window
+E       assert 'gde.gde_detail(' not in 'id="dlg-ris...h.\',\'当前无需追'
+E         
+E         'gde.gde_detail(' is contained here:
+E                  {{ gde.gde_detail(risk_envelope) }}
+E         ?           +++++++++++++++
+E                   </details>
+E           
+E                   {# — Risk Brief: one hero, not two — #}...
+E         
+E         ...Full output truncated (87 lines hidden), use '-vv' to show
+
+tests/test_risk_envelope_presentation.py:227: AssertionError
+____________ test_generated_macro_smoke_allows_explicit_no_envelope ____________
+
+    def test_generated_macro_smoke_allows_explicit_no_envelope():
+        if not SITE_MACRO.is_file():
+            pytest.skip("sparse checkout omits site/ (needs_full_checkout); fixture contracts still run")
+        html = SITE_MACRO.read_text(encoding="utf-8")
+        count = _count_id(html, "risk-envelope-band")
+        assert count in (0, 1)
+        for hook in ("gde-live-chip", "gde-pending-chip", "gde-live-receipt", "gde-context-disclosure", "gde-detail"):
+            assert _count_id(html, hook) == count, hook
+        if count:
+            hero = _slice_id(html, "regime-radar")
+>           assert 'id="gde-context-disclosure"' in hero
+E           assert 'id="gde-context-disclosure"' in '<div class="panel span12" id="regime-radar">\n  <input type="checkbox" id="ms-alerts-toggle" class="ms-alerts-cb" hid...Color" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>\n  </div>'
+
+tests/test_risk_envelope_presentation.py:258: AssertionError
+___________ test_absent_envelope_renders_no_public_disclosure[None] ____________
+
+envelope = None
+
+    @pytest.mark.parametrize("envelope", [None, {}, {"schema": "unrecognized"}])
+    def test_absent_envelope_renders_no_public_disclosure(envelope):
+        assert not _render_surfaces(envelope).strip()
+        # The dashboard must not supply an unguarded, empty wrapper of its own.
+>       assert 'id="gde-context-disclosure"' not in DASHBOARD.read_text()
+E       assert 'id="gde-con...-disclosure"' not in '{#- `pgate`...>\n</html>\n'
+E         
+E         'id="gde-context-disclosure"' is contained here:
+E           gde-disc" id="gde-context-disclosure">
+E                     <summary><span class="l-en">Why trend and risk can differ</span><span class="l-zh">为什么趋势与风险可能不同</span></summary>
+E                     {{ gde.gde_detail(risk_envelope) }}
+E                   </details>
+E           ...
+E         
+E         ...Full output truncated (7840 lines hidden), use '-vv' to show
+
+tests/test_risk_envelope_presentation.py:360: AssertionError
+_________ test_absent_envelope_renders_no_public_disclosure[envelope1] _________
+
+envelope = {}
+
+    @pytest.mark.parametrize("envelope", [None, {}, {"schema": "unrecognized"}])
+    def test_absent_envelope_renders_no_public_disclosure(envelope):
+        assert not _render_surfaces(envelope).strip()
+        # The dashboard must not supply an unguarded, empty wrapper of its own.
+>       assert 'id="gde-context-disclosure"' not in DASHBOARD.read_text()
+E       assert 'id="gde-con...-disclosure"' not in '{#- `pgate`...>\n</html>\n'
+E         
+E         'id="gde-context-disclosure"' is contained here:
+E           gde-disc" id="gde-context-disclosure">
+E                     <summary><span class="l-en">Why trend and risk can differ</span><span class="l-zh">为什么趋势与风险可能不同</span></summary>
+E                     {{ gde.gde_detail(risk_envelope) }}
+E                   </details>
+E           ...
+E         
+E         ...Full output truncated (7840 lines hidden), use '-vv' to show
+
+tests/test_risk_envelope_presentation.py:360: AssertionError
+_________ test_absent_envelope_renders_no_public_disclosure[envelope2] _________
+
+envelope = {'schema': 'unrecognized'}
+
+    @pytest.mark.parametrize("envelope", [None, {}, {"schema": "unrecognized"}])
+    def test_absent_envelope_renders_no_public_disclosure(envelope):
+        assert not _render_surfaces(envelope).strip()
+        # The dashboard must not supply an unguarded, empty wrapper of its own.
+>       assert 'id="gde-context-disclosure"' not in DASHBOARD.read_text()
+E       assert 'id="gde-con...-disclosure"' not in '{#- `pgate`...>\n</html>\n'
+E         
+E         'id="gde-context-disclosure"' is contained here:
+E           gde-disc" id="gde-context-disclosure">
+E                     <summary><span class="l-en">Why trend and risk can differ</span><span class="l-zh">为什么趋势与风险可能不同</span></summary>
+E                     {{ gde.gde_detail(risk_envelope) }}
+E                   </details>
+E           ...
+E         
+E         ...Full output truncated (7840 lines hidden), use '-vv' to show
+
+tests/test_risk_envelope_presentation.py:360: AssertionError
+_____ test_missing_hazard_source_is_visible_at_glance_and_detail[FRAGILE] ______
+
+stage = 'FRAGILE'
+
+    @pytest.mark.parametrize("stage", [None, "FRAGILE", "TRANSMITTING", "BREAKDOWN"])
+    def test_missing_hazard_source_is_visible_at_glance_and_detail(stage):
+        envelope = _gd1_envelope()
+        envelope["hazard_summary"].update(stage=stage, unreadable_sources=["missing_required"], unmapped_required_sources=[])
+        envelope["data_state"] = "DEGRADED"
+        html = _render_surfaces(envelope)
+        for surface in ("risk-envelope-band", "gde-detail"):
+>           assert "1 source unavailable" in _slice_id(html, surface)
+E           assert '1 source unavailable' in '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>'
+E            +  where '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>' = _slice_id('<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...   <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>\n    </div>\n  </details>\n</section>', 'risk-envelope-band')
+
+tests/test_risk_envelope_presentation.py:370: AssertionError
+___ test_missing_hazard_source_is_visible_at_glance_and_detail[TRANSMITTING] ___
+
+stage = 'TRANSMITTING'
+
+    @pytest.mark.parametrize("stage", [None, "FRAGILE", "TRANSMITTING", "BREAKDOWN"])
+    def test_missing_hazard_source_is_visible_at_glance_and_detail(stage):
+        envelope = _gd1_envelope()
+        envelope["hazard_summary"].update(stage=stage, unreadable_sources=["missing_required"], unmapped_required_sources=[])
+        envelope["data_state"] = "DEGRADED"
+        html = _render_surfaces(envelope)
+        for surface in ("risk-envelope-band", "gde-detail"):
+>           assert "1 source unavailable" in _slice_id(html, surface)
+E           assert '1 source unavailable' in '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>'
+E            +  where '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>' = _slice_id('<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...   <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>\n    </div>\n  </details>\n</section>', 'risk-envelope-band')
+
+tests/test_risk_envelope_presentation.py:370: AssertionError
+____ test_missing_hazard_source_is_visible_at_glance_and_detail[BREAKDOWN] _____
+
+stage = 'BREAKDOWN'
+
+    @pytest.mark.parametrize("stage", [None, "FRAGILE", "TRANSMITTING", "BREAKDOWN"])
+    def test_missing_hazard_source_is_visible_at_glance_and_detail(stage):
+        envelope = _gd1_envelope()
+        envelope["hazard_summary"].update(stage=stage, unreadable_sources=["missing_required"], unmapped_required_sources=[])
+        envelope["data_state"] = "DEGRADED"
+        html = _render_surfaces(envelope)
+        for surface in ("risk-envelope-band", "gde-detail"):
+>           assert "1 source unavailable" in _slice_id(html, surface)
+E           assert '1 source unavailable' in '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>'
+E            +  where '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>' = _slice_id('<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...   <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>\n    </div>\n  </details>\n</section>', 'risk-envelope-band')
+
+tests/test_risk_envelope_presentation.py:370: AssertionError
+_ test_aggregate_source_caveat_is_visible_without_a_missing_count[STALE-Sources older-\u6765\u6e90\u8f83\u65e7] _
+
+state = 'STALE', en = 'Sources older', zh = '来源较旧'
+
+    @pytest.mark.parametrize("state,en,zh", [("STALE", "Sources older", "来源较旧"), ("DEGRADED", "Limited coverage", "覆盖受限"), ("UNKNOWN", "Coverage unknown", "覆盖不明")])
+    def test_aggregate_source_caveat_is_visible_without_a_missing_count(state, en, zh):
+        envelope = _gd1_envelope()
+        envelope["data_state"] = state
+        rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
+>       assert en in rail and zh in rail
+E       assert ('Sources older' in '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>')
+
+tests/test_risk_envelope_presentation.py:378: AssertionError
+_ test_aggregate_source_caveat_is_visible_without_a_missing_count[DEGRADED-Limited coverage-\u8986\u76d6\u53d7\u9650] _
+
+state = 'DEGRADED', en = 'Limited coverage', zh = '覆盖受限'
+
+    @pytest.mark.parametrize("state,en,zh", [("STALE", "Sources older", "来源较旧"), ("DEGRADED", "Limited coverage", "覆盖受限"), ("UNKNOWN", "Coverage unknown", "覆盖不明")])
+    def test_aggregate_source_caveat_is_visible_without_a_missing_count(state, en, zh):
+        envelope = _gd1_envelope()
+        envelope["data_state"] = state
+        rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
+>       assert en in rail and zh in rail
+E       assert ('Limited coverage' in '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>')
+
+tests/test_risk_envelope_presentation.py:378: AssertionError
+_ test_aggregate_source_caveat_is_visible_without_a_missing_count[UNKNOWN-Coverage unknown-\u8986\u76d6\u4e0d\u660e] _
+
+state = 'UNKNOWN', en = 'Coverage unknown', zh = '覆盖不明'
+
+    @pytest.mark.parametrize("state,en,zh", [("STALE", "Sources older", "来源较旧"), ("DEGRADED", "Limited coverage", "覆盖受限"), ("UNKNOWN", "Coverage unknown", "覆盖不明")])
+    def test_aggregate_source_caveat_is_visible_without_a_missing_count(state, en, zh):
+        envelope = _gd1_envelope()
+        envelope["data_state"] = state
+        rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
+>       assert en in rail and zh in rail
+E       assert ('Coverage unknown' in '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>')
+
+tests/test_risk_envelope_presentation.py:378: AssertionError
+_ test_trend_source_health_is_visible_at_glance_and_detail[STALE-Trend source older-\u8d8b\u52bf\u6765\u6e90\u8f83\u65e7] _
+
+coverage = 'STALE', en = 'Trend source older', zh = '趋势来源较旧'
+
+    @pytest.mark.parametrize("coverage,en,zh", [("STALE", "Trend source older", "趋势来源较旧"), ("MISSING", "Trend source missing", "趋势来源缺失")])
+    def test_trend_source_health_is_visible_at_glance_and_detail(coverage, en, zh):
+        envelope = _gd1_envelope()
+        for source in envelope["provenance"]["sources"]:
+            if source["role"] == "measured_state":
+                source["coverage"] = coverage
+        html = _render_surfaces(envelope)
+        for surface in ("risk-envelope-band", "gde-detail"):
+            fragment = _slice_id(html, surface)
+>           assert en in fragment and zh in fragment
+E           assert ('Trend source older' in '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>')
+
+tests/test_risk_envelope_presentation.py:390: AssertionError
+_ test_trend_source_health_is_visible_at_glance_and_detail[MISSING-Trend source missing-\u8d8b\u52bf\u6765\u6e90\u7f3a\u5931] _
+
+coverage = 'MISSING', en = 'Trend source missing', zh = '趋势来源缺失'
+
+    @pytest.mark.parametrize("coverage,en,zh", [("STALE", "Trend source older", "趋势来源较旧"), ("MISSING", "Trend source missing", "趋势来源缺失")])
+    def test_trend_source_health_is_visible_at_glance_and_detail(coverage, en, zh):
+        envelope = _gd1_envelope()
+        for source in envelope["provenance"]["sources"]:
+            if source["role"] == "measured_state":
+                source["coverage"] = coverage
+        html = _render_surfaces(envelope)
+        for surface in ("risk-envelope-band", "gde-detail"):
+            fragment = _slice_id(html, surface)
+>           assert en in fragment and zh in fragment
+E           assert ('Trend source missing' in '<button type="button"\n        class="gde-rail is-split"\n        id="risk-envelope-band"\n        data-bundle-id="a4...e="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>\n    </svg>\n  </span>\n</button>')
+
+tests/test_risk_envelope_presentation.py:390: AssertionError
+_______________ test_active_policy_explains_its_separate_meaning _______________
+
+    def test_active_policy_explains_its_separate_meaning():
+        envelope = _gd1_envelope()
+        envelope["policy_summary"]["policy_count"] = 3
+        detail = _slice_id(_render_surfaces(envelope), "gde-detail")
+>       assert "Policy is separate from the market readings" in detail
+E       assert 'Policy is separate from the market readings' in '<section class="gde-detail is-split" id="gde-detail">\n  <h3 class="gde-detail-h">\n    <span class="l-en">Market rea...   <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>\n    </div>\n  </details>\n</section>'
+
+tests/test_risk_envelope_presentation.py:397: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_risk_envelope_presentation.py::test_rail_opens_public_native_disclosure
+FAILED tests/test_risk_envelope_presentation.py::test_dashboard_places_rail_inside_the_regime_hero
+FAILED tests/test_risk_envelope_presentation.py::test_member_risk_dialog_is_not_the_public_context_destination
+FAILED tests/test_risk_envelope_presentation.py::test_generated_macro_smoke_allows_explicit_no_envelope
+FAILED tests/test_risk_envelope_presentation.py::test_absent_envelope_renders_no_public_disclosure[None]
+FAILED tests/test_risk_envelope_presentation.py::test_absent_envelope_renders_no_public_disclosure[envelope1]
+FAILED tests/test_risk_envelope_presentation.py::test_absent_envelope_renders_no_public_disclosure[envelope2]
+FAILED tests/test_risk_envelope_presentation.py::test_missing_hazard_source_is_visible_at_glance_and_detail[FRAGILE]
+FAILED tests/test_risk_envelope_presentation.py::test_missing_hazard_source_is_visible_at_glance_and_detail[TRANSMITTING]
+FAILED tests/test_risk_envelope_presentation.py::test_missing_hazard_source_is_visible_at_glance_and_detail[BREAKDOWN]
+FAILED tests/test_risk_envelope_presentation.py::test_aggregate_source_caveat_is_visible_without_a_missing_count[STALE-Sources older-\u6765\u6e90\u8f83\u65e7]
+FAILED tests/test_risk_envelope_presentation.py::test_aggregate_source_caveat_is_visible_without_a_missing_count[DEGRADED-Limited coverage-\u8986\u76d6\u53d7\u9650]
+FAILED tests/test_risk_envelope_presentation.py::test_aggregate_source_caveat_is_visible_without_a_missing_count[UNKNOWN-Coverage unknown-\u8986\u76d6\u4e0d\u660e]
+FAILED tests/test_risk_envelope_presentation.py::test_trend_source_health_is_visible_at_glance_and_detail[STALE-Trend source older-\u8d8b\u52bf\u6765\u6e90\u8f83\u65e7]
+FAILED tests/test_risk_envelope_presentation.py::test_trend_source_health_is_visible_at_glance_and_detail[MISSING-Trend source missing-\u8d8b\u52bf\u6765\u6e90\u7f3a\u5931]
+FAILED tests/test_risk_envelope_presentation.py::test_active_policy_explains_its_separate_meaning
+16 failed, 28 passed in 108.77s (0:01:48)

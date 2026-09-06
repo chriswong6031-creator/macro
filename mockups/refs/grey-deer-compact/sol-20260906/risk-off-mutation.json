@@ -1,0 +1,7 @@
+{
+  "mutation": "remove both RISK_ON conditions from the hazard explanation",
+  "baseline_excludes_false_risk_on_clause": true,
+  "mutant_would_fail_actual_wording_assertions": true,
+  "source_sha256": "57d49f347118b82651cdb57bae8bee141811795f69a61c39670f9d37136d69b0",
+  "production_source_modified": false
+}
