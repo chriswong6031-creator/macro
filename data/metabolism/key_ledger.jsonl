@@ -1131,3 +1131,4 @@
 {"schema":"metabolism.key_ledger.v1","ts":"2026-09-05T14:18:30+00:00","key_id":"codex_account","cycle_id":"","stage":"narrative_brain","est_tokens":15397,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-09-05T14:18:58+00:00","key_id":"codex_account","cycle_id":"","stage":"risk_brain","est_tokens":15844,"outcome":"ok"}
 {"schema":"metabolism.key_ledger.v1","ts":"2026-09-05T14:29:13+00:00","key_id":"codex_account","cycle_id":"","stage":"altdata_brain","est_tokens":23588,"outcome":"ok"}
+{"schema":"metabolism.key_ledger.v1","ts":"2026-09-05T17:46:40+00:00","key_id":"codex_account","cycle_id":"","stage":"altdata_brain","est_tokens":16541,"outcome":"ok"}

@@ -6,14 +6,14 @@ Harness self-check — replicated base vs stored `alloc_optimal`: **1.000** agre
 
 | candidate | verdict | ΔSharpe full | pre21 | post21 | etf-era | regimes+ |
 |---|---|---:|---:|---:|---:|:--:|
-| `alloc_floor` funding_z<-1|oi_price_divergence<-0.10 | REJECT (hurts net Sharpe full-sample) | -0.160 | -0.22 | -0.07 | 0.09 | 2/3 |
-| `alloc_floor` funding_z<-1 | REJECT (hurts net Sharpe full-sample) | -0.160 | -0.22 | -0.09 | 0.03 | 2/3 |
-| `alloc_floor` vrp<-5 | REJECT (hurts net Sharpe full-sample) | -0.160 | -0.22 | -0.08 | -0.02 | 2/3 |
-| `alloc_floor` coinbase_premium_ema<-0.3 | REJECT (hurts net Sharpe full-sample) | -0.220 | -0.32 | -0.09 | 0.03 | 2/3 |
-| `alloc_floor` etf_flow_state==accumulation | REJECT (hurts net Sharpe full-sample) | -0.130 | -0.22 | 0.0 | 0.25 | 2/3 |
-| `alloc_cap` etf_flow_state==distribution | REJECT (hurts net Sharpe full-sample) | -0.140 | -0.22 | -0.05 | 0.12 | 2/3 |
-| `alloc_cap` cot_z>1.5 | REJECT (hurts net Sharpe full-sample) | -0.140 | -0.22 | -0.05 | 0.05 | 2/3 |
-| `alloc_cap` leverage_stress>75 | REJECT (hurts net Sharpe full-sample) | -0.160 | -0.22 | -0.1 | -0.01 | 2/3 |
-| `risk_reweight` {"etf_outflow": 1.0} | REGIME-CONCENTRATED (the overfit trap — do not hard-wire) | +0.000 | 0.01 | 0.0 | -0.06 | 1/3 |
+| `alloc_floor` funding_z<-1|oi_price_divergence<-0.10 | REJECT (hurts net Sharpe full-sample) | -0.140 | -0.22 | -0.06 | 0.11 | 2/3 |
+| `alloc_floor` funding_z<-1 | REJECT (hurts net Sharpe full-sample) | -0.150 | -0.22 | -0.07 | 0.05 | 2/3 |
+| `alloc_floor` vrp<-5 | REJECT (hurts net Sharpe full-sample) | -0.140 | -0.22 | -0.07 | 0.0 | 2/3 |
+| `alloc_floor` coinbase_premium_ema<-0.3 | REJECT (hurts net Sharpe full-sample) | -0.200 | -0.32 | -0.07 | 0.05 | 2/3 |
+| `alloc_floor` etf_flow_state==accumulation | REJECT (hurts net Sharpe full-sample) | -0.110 | -0.22 | 0.01 | 0.25 | 2/3 |
+| `alloc_cap` etf_flow_state==distribution | REJECT (hurts net Sharpe full-sample) | -0.130 | -0.22 | -0.04 | 0.15 | 2/3 |
+| `alloc_cap` cot_z>1.5 | REJECT (hurts net Sharpe full-sample) | -0.130 | -0.22 | -0.04 | 0.06 | 2/3 |
+| `alloc_cap` leverage_stress>75 | REJECT (hurts net Sharpe full-sample) | -0.150 | -0.22 | -0.09 | 0.02 | 2/3 |
+| `risk_reweight` {"etf_outflow": 1.0} | REGIME-CONCENTRATED (the overfit trap — do not hard-wire) | +0.010 | 0.01 | 0.0 | -0.06 | 1/3 |
 
 **Reading.** ELIGIBLE → hard-wire it. CONFIRMATION-ONLY → keep as a context signal / risk-index input only (no pre-2021 footprint ⇒ cannot clear the both-halves bar by construction). REGIME-CONCENTRATED / REJECT → the overfit trap; do not blend.

@@ -790,10 +790,29 @@ def test_the_action_precedes_the_full_table_and_ribbon_in_dom_order(built_pages:
 def test_absent_coverage_renders_a_typed_absence_not_an_unlabelled_dash() -> None:
     snapshot = json.loads(_body_path(DATA_ROOT).read_text(encoding="utf-8"))
     snapshot["availability"]["coverage_ratio"] = None
-    context = _view_of(snapshot)["context"]
+    view = _view_of(snapshot)
+    context = view["context"]
     assert context["coverage_present"] is False
     assert context["coverage_absence"] is not None
     assert context["coverage_absence"]["label"]["en"], "the dash owes the reader a word"
+
+    # This is the trap the docstring warns about: the view dict can be correct
+    # while the template still ships a bare, unlabelled dash. Render the actual
+    # markup and check it, not just the data that feeds it.
+    env = Environment(loader=FileSystemLoader(str(TEMPLATES)), autoescape=True,
+                      undefined=StrictUndefined)
+    shell = env.get_template("_macro_suite_shell.html.j2").module
+    detail_html = str(shell.context_detail(view))
+    meta_match = re.search(r'<dl class="mq-context-meta">.*?</dl>', detail_html, re.S)
+    assert meta_match, "context_detail must render the mq-context-meta block"
+    coverage_dd = re.search(r'<dt><span class="l-en">Coverage</span>.*?</dt><dd>(.*?)</dd>', meta_match.group(0), re.S)
+    assert coverage_dd, "context_detail must render a Coverage row"
+    cell = coverage_dd.group(1)
+    assert "mq-dash" in cell, "an absent coverage must still show the dash glyph"
+    assert "mq-absent-why" in cell, (
+        "a bare mq-dash with no mq-absent-why is an unlabelled dash -- "
+        "the exact defect this test exists to catch"
+    )
 
 
 @pytest.mark.parametrize("page", sorted(p.output for p in builder.SUITE_PAGES))

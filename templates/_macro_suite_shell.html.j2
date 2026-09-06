@@ -177,7 +177,7 @@
     <span class="mq-avail-note">{{ t('Conservative over the required set — a degraded optional leg cannot turn this green.', '在必需分项集合上取最保守值 — 可选分项降级不会让此处转绿。') }}</span>
   </div>
   <dl class="mq-context-meta">
-    <div><dt>{{ t('Coverage', '覆盖率') }}</dt><dd>{% if ctx.coverage %}{{ ctx.coverage }}{% else %}{{ absent(none) }}<span class="mq-dash">—</span>{% endif %}</dd></div>
+    <div><dt>{{ t('Coverage', '覆盖率') }}</dt><dd>{% if ctx.coverage_present %}{{ ctx.coverage }}{% else %}{{ absent(ctx.coverage_absence, True) }}{% endif %}</dd></div>
     <div><dt>{{ t('Last accepted source cut', '最近已接受数据截止') }}</dt>
          <dd>{% if ctx.last_source_cut %}<time>{{ ctx.last_source_cut }}</time>{% else %}<span class="mq-dash">—</span>{% endif %}</dd></div>
     <div><dt>{{ t('Calculation as-of', '计算截止') }}</dt>

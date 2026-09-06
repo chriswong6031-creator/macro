@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
-  "as_of": "2026-09-04",
-  "generated_utc": "2026-09-04T16:58:56Z",
+  "as_of": "2026-09-05",
+  "generated_utc": "2026-09-05T21:08:39Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -90,7 +90,7 @@
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
   "policy": {
-    "as_of": "2026-09-04",
+    "as_of": "2026-09-05",
     "policy_impulse": "neutral",
     "transmission_channel": [],
     "recent_event_count": 10,
@@ -128,15 +128,15 @@
     ],
     "staleness": {
       "per_source_days": {
-        "lpr": 15,
-        "rrr": 485,
-        "fr007": 0,
-        "communiques": 129
+        "lpr": 16,
+        "rrr": 486,
+        "fr007": 1,
+        "communiques": 130
       }
     }
   },
   "rotation": {
-    "as_of": "2026-09-04",
+    "as_of": "2026-09-05",
     "sector_phase_distribution": {
       "Bottoming": 39,
       "Topping": 7,
@@ -160,7 +160,7 @@
       "LAGGARD: Agriculture ranked #29/31 (-26.3%) — among the weakest this leg"
     ],
     "ths_heat": {
-      "as_of": "2026-09-04",
+      "as_of": "2026-09-05",
       "basket_count": 237,
       "above_200d_pct": 44.3,
       "hot_baskets": [
@@ -227,16 +227,16 @@
     "contradicting": [],
     "conditions": {
       "roro": {
-        "roro": -0.199,
-        "roro_raw": -0.202,
+        "roro": -0.191,
+        "roro_raw": -0.193,
         "roro_state": "neutral",
-        "china_roro_copper_gold": 1.169,
+        "china_roro_copper_gold": 1.274,
         "china_roro_breadth": 0.528,
         "china_roro_southbound": -1.485,
         "china_roro_m1_m2": -0.345,
         "china_roro_turnover": -1.261,
         "china_roro_qvix": 0.366,
-        "china_roro_usdcnh": -0.161,
+        "china_roro_usdcnh": -0.194,
         "china_roro_margin": -0.428,
         "china_roro_ah_premium": null,
         "legs": [
@@ -244,7 +244,7 @@
             "key": "copper_gold",
             "name_en": "Copper / Gold",
             "name_zh": "铜／金 比",
-            "value": 1.169,
+            "value": 1.274,
             "lean": "risk-on"
           },
           {
@@ -286,7 +286,7 @@
             "key": "usdcnh",
             "name_en": "Offshore yuan (20d)",
             "name_zh": "离岸人民币（20日）",
-            "value": -0.161,
+            "value": -0.194,
             "lean": "risk-off"
           },
           {
@@ -387,15 +387,15 @@
   "external": {
     "yield_curve": {
       "as_of": "2026-09-04",
-      "staleness_days": 0,
+      "staleness_days": 1,
       "cn_10y": 1.6804,
       "cn_2y": 1.243,
       "cn_slope_10_2": 0.4373999999999998,
-      "cn_us_10y_spread": null
+      "cn_us_10y_spread": -3.0996000000000006
     },
     "cgb_curve": {
       "as_of": "2026-09-04",
-      "staleness_days": 0,
+      "staleness_days": 1,
       "m3": 1.2095,
       "y1": 1.2337,
       "y5": 1.4014,
@@ -404,13 +404,13 @@
       "slope_10y_3m": 0.4709
     },
     "usdcnh": {
-      "quote": 6.7145,
-      "chg_pct": -0.2,
-      "as_of": "Sep 03, 2026"
+      "quote": 6.7045,
+      "chg_pct": -0.4,
+      "as_of": "Sep 05, 2026"
     },
     "dxy": {
-      "quote": 99.0,
-      "chg": -0.6,
+      "quote": 99.16,
+      "chg": -0.7,
       "label": "DXY"
     }
   },
