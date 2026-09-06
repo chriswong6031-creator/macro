@@ -265,6 +265,62 @@ def test_i5_status_skipped_supplies_no_clock_at_all(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# MINOR-1 repair: a collector status OUTSIDE the six-value vocabulary (or a source entry
+# with NO status key at all) must resolve to a typed `blind_reason` disclosure, never
+# the generic "attempted, no prior success" fallthrough. Live shape:
+# scripts/collect.py:891's `options_flow_creds` writes {"status": "check_failed", ...}.
+# ---------------------------------------------------------------------------
+
+def test_minor1_check_failed_status_yields_typed_unknown_status_disclosure(tmp_path):
+    _write_run_status(tmp_path, {"x": {"status": "check_failed", "checked_at": FRESH,
+                                        "error": "boom"}})
+    fact = BUILD.nightly_lane_facts(tmp_path, ["x"])["x"]
+    assert fact.get("blind_reason") == "unknown_collector_status:x:check_failed"
+
+    cap = _lane_cap("cap", "x")
+    view = CH.resolve_capability_health(capabilities=[cap], receipts={"cap": [fact]}, now=NOW)
+    rec = view["capabilities"][0]
+    assert rec["state"] is None
+    assert rec["assessment_status"] == CH.ASSESSMENT_COULD_NOT_LOOK
+    assert any(c.startswith(CH.REASON_UNKNOWN_COLLECTOR_STATUS) for c in rec["reason_codes"])
+    assert not any(c.startswith(CH.REASON_NO_PRIOR_SUCCESS) for c in rec["reason_codes"]), (
+        "an unrecognized status must never be laundered into the ordinary "
+        "'attempted, no prior success' read"
+    )
+    assert rec["reason"] != "ok"
+
+
+def test_minor1_missing_status_key_yields_typed_unknown_status_disclosure(tmp_path):
+    """No `status` key at all — not even an empty string — must ALSO be disclosed by
+    name, not silently treated as some other recognized status."""
+    _write_run_status(tmp_path, {"x": {"checked_at": FRESH}})
+    fact = BUILD.nightly_lane_facts(tmp_path, ["x"])["x"]
+    assert fact.get("blind_reason") == "unknown_collector_status:x:<missing>"
+
+    cap = _lane_cap("cap", "x")
+    view = CH.resolve_capability_health(capabilities=[cap], receipts={"cap": [fact]}, now=NOW)
+    rec = view["capabilities"][0]
+    assert rec["state"] is None
+    assert any(c.startswith(CH.REASON_UNKNOWN_COLLECTOR_STATUS) for c in rec["reason_codes"])
+
+
+def test_minor1_known_statuses_never_get_a_blind_reason(tmp_path):
+    """Regression guard: every RECOGNIZED status must be untouched by this repair."""
+    _write_run_status(tmp_path, {
+        "ok_src": {"status": "ok", "checked_at": FRESH, "last_date": "2026-09-04"},
+        "stale_src": {"status": "stale", "checked_at": FRESH, "last_date": "2020-01-01"},
+        "failed_src": {"status": "failed", "checked_at": FRESH},
+        "dead_src": {"status": "dead", "checked_at": FRESH},
+        "blocked_src": {"status": "blocked", "checked_at": FRESH},
+        "skipped_src": {"status": "skipped"},
+    })
+    refs = ["ok_src", "stale_src", "failed_src", "dead_src", "blocked_src", "skipped_src"]
+    facts = BUILD.nightly_lane_facts(tmp_path, refs)
+    for ref in refs:
+        assert "blind_reason" not in facts[ref], f"{ref} must not get a blind_reason"
+
+
+# ---------------------------------------------------------------------------
 # I6 — previous-state wiring through main(): transition diff is no longer dead
 # ---------------------------------------------------------------------------
 
@@ -349,6 +405,123 @@ def test_m5_sparse_guard_is_none_outside_a_git_worktree(tmp_path):
     # tmp_path is not a git repo at all — missing_dirs() must answer [] rather than
     # raising or falsely tripping the guard.
     assert BUILD._sparse_default_out_guard(tmp_path) is None
+
+
+def test_minor3_sparse_guard_refuses_default_out_when_data_dir_is_missing(tmp_path, monkeypatch):
+    """MINOR-3 repair: the suite previously had only the negative case above (a stub
+    that always returns None passed it trivially). This is the POSITIVE case — a
+    worktree where `data/` really is one of the sparse-omitted top-level dirs — and it
+    must both (a) make `_sparse_default_out_guard` return a non-None refusal message and
+    (b) make `main()` actually refuse to write the DEFAULT output path: exit non-zero,
+    write nothing."""
+    import scripts.worktree_sparse as WORKTREE_SPARSE
+
+    monkeypatch.setattr(WORKTREE_SPARSE, "missing_dirs", lambda root: {"data"})
+
+    guard = BUILD._sparse_default_out_guard(tmp_path)
+    assert guard is not None
+    assert "data" in guard
+
+    _write_registry(tmp_path, [_lane_cap("cap", "x")])
+    _write_run_status(tmp_path, {"x": {"status": "ok", "checked_at": FRESH,
+                                        "last_date": "2026-09-04"}})
+    default_out = tmp_path / "data" / "capability_health" / "state.json"
+    rc = BUILD.main([
+        "--root", str(tmp_path), "--receipts-root", str(tmp_path), "--now", NOW.isoformat(),
+        # deliberately NO --out — this must hit the DEFAULT-path guard
+    ])
+    assert rc == 2
+    assert not default_out.exists()
+
+
+def test_minor3_sparse_guard_never_fires_with_an_explicit_out(tmp_path, monkeypatch):
+    """The guard must never apply to an explicit --out, even when data/ is missing —
+    tests/evidence runs/CI all rely on this."""
+    import scripts.worktree_sparse as WORKTREE_SPARSE
+
+    monkeypatch.setattr(WORKTREE_SPARSE, "missing_dirs", lambda root: {"data"})
+    _write_registry(tmp_path, [_lane_cap("cap", "x")])
+    _write_run_status(tmp_path, {"x": {"status": "ok", "checked_at": FRESH,
+                                        "last_date": "2026-09-04"}})
+    out = tmp_path / "explicit.json"
+    rc = BUILD.main([
+        "--root", str(tmp_path), "--out", str(out), "--receipts-root", str(tmp_path),
+        "--now", NOW.isoformat(),
+    ])
+    assert rc == 0
+    assert out.exists()
+
+
+# ---------------------------------------------------------------------------
+# MINOR-4 repair: rights_detail is capped in length — an unbounded third-party error
+# string (collect.py's own additive status dicts bypass collectors/base.py's redactor)
+# must never ride, uncapped, into a COMMITTED artifact.
+# ---------------------------------------------------------------------------
+
+def test_minor4_rights_detail_is_capped_in_length(tmp_path):
+    huge_error = "leaky-third-party-text-" * 50   # well over 300 chars
+    assert len(huge_error) > BUILD._RIGHTS_DETAIL_MAX_CHARS
+    _write_run_status(tmp_path, {"x": {"status": "blocked", "checked_at": FRESH,
+                                        "error": huge_error}})
+    fact = BUILD.nightly_lane_facts(tmp_path, ["x"])["x"]
+    assert fact["rights_detail"] == huge_error[:BUILD._RIGHTS_DETAIL_MAX_CHARS]
+    assert len(fact["rights_detail"]) == BUILD._RIGHTS_DETAIL_MAX_CHARS
+
+
+def test_minor4_rights_detail_short_text_is_untouched(tmp_path):
+    _write_run_status(tmp_path, {"x": {"status": "blocked", "checked_at": FRESH,
+                                        "error": "known bot-block"}})
+    fact = BUILD.nightly_lane_facts(tmp_path, ["x"])["x"]
+    assert fact["rights_detail"] == "known bot-block"
+
+
+# ---------------------------------------------------------------------------
+# IMPORTANT-1 live repro, at the BUILDER level (2026-09-05 independent review): the
+# REAL fred/yahoo shape is a healthy, fresh checked_at paired with a `last_date` that
+# can drift arbitrarily far into the future on a bad upstream feed. Before this repair
+# the builder's nightly_lane_facts copied `last_date` into `data_as_of` with zero
+# validation, and the engine copied it straight into the published `clocks` block with
+# zero validation either — so this exact shape published state=healthy, reason="ok",
+# clocks.data_as_of="2028-01-01".
+# ---------------------------------------------------------------------------
+
+def test_important1_live_repro_fred_2028_shape_never_reads_healthy_end_to_end(tmp_path):
+    _write_run_status(tmp_path, {"fred": {"status": "ok", "checked_at": FRESH,
+                                           "last_date": "2028-01-01"}})
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]
+    assert fact["last_attempted"] == FRESH
+    assert fact["last_successful"] == FRESH
+    assert fact["data_as_of"] == "2028-01-01"   # the raw value IS still read off the fact
+
+    cap = _lane_cap("market_reference_repro", "fred")
+    view = CH.resolve_capability_health(capabilities=[cap], receipts={"market_reference_repro": [fact]}, now=NOW)
+    rec = view["capabilities"][0]
+    assert rec["state"] != CH.STATE_HEALTHY
+    assert rec["state"] is None, "a future-dated data_as_of is could_not_look, never healthy"
+    assert rec["reason"] != "ok"
+    assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
+    # the corrupt value must never be published in the display clocks block either
+    assert "data_as_of" not in rec["clocks"] or rec["clocks"]["data_as_of"] is None
+
+
+def test_important1_live_repro_via_main_writes_could_not_look_not_healthy(tmp_path):
+    """Same repro end-to-end through main(), asserting on the WRITTEN artifact — this is
+    the scratchpad evidence-run shape the commission asks for."""
+    _write_registry(tmp_path, [_lane_cap("market_reference_repro", "fred")])
+    _write_run_status(tmp_path, {"fred": {"status": "ok", "checked_at": FRESH,
+                                           "last_date": "2028-01-01"}})
+    out = tmp_path / "state.json"
+    rc = BUILD.main([
+        "--root", str(tmp_path), "--out", str(out), "--receipts-root", str(tmp_path),
+        "--now", NOW.isoformat(), "--json",
+    ])
+    assert rc == 0
+    doc = json.loads(out.read_text())
+    rec = doc["capabilities"][0]
+    assert rec["state"] is None
+    assert rec["reason"] != "ok"
+    assert doc["summary"]["by_state"] == {"null": 1}
+    assert doc["summary"]["by_assessment_status"] == {"could_not_look": 1}
 
 
 # ---------------------------------------------------------------------------

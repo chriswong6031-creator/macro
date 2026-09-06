@@ -342,6 +342,187 @@ def test_future_dated_clock_within_tolerance_is_not_corrupt():
 
 
 # ---------------------------------------------------------------------------
+# IMPORTANT-1 repair (2026-09-05 independent review): data_as_of/render_release must be
+# routed through the SAME corruption check as last_attempted/last_successful — a corrupt
+# value on EITHER of these two kinds must never enter the published `clocks` block and
+# must never sit beside state=healthy/reason="ok".
+# ---------------------------------------------------------------------------
+
+def test_important1_live_repro_fred_shape_future_dated_data_as_of_never_reads_healthy():
+    """THE LIVE REPRO: a lane entry with a valid, FRESH checked_at (so last_attempted
+    and last_successful both read clean) but a `last_date` far in the future — the real
+    fred/yahoo shape, where `last_date` rides straight into `data_as_of`. Before this
+    repair this published state=healthy, reason="ok", clocks.data_as_of=2028-01-01 —
+    exactly the false-green the review found."""
+    cap = _cap("fred_repro", [{"type": "nightly_lane", "ref": "fred",
+                                "clocks": ["last_attempted", "last_successful", "data_as_of"]}])
+    fact = {
+        "readable": True,
+        "last_attempted": FRESH,
+        "last_successful": FRESH,
+        "data_as_of": "2028-01-01",   # far beyond NOW (2026-09-04) — corrupt, not fresh
+    }
+    rec = _resolve_single(cap, fact)
+    assert rec["state"] is None, "a future-dated data_as_of must never read healthy"
+    assert rec["assessment_status"] == CH.ASSESSMENT_COULD_NOT_LOOK
+    assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
+    assert "data_as_of" not in rec["clocks"] or rec["clocks"]["data_as_of"] is None
+    assert rec["reason"] != "ok"
+
+
+def test_important1_data_as_of_unparseable_garbage_never_enters_clocks():
+    cap = _cap("da_garbage", [{"type": "output_health_artifact", "ref": "a",
+                                "clocks": ["data_as_of"]}])
+    fact = {
+        "readable": True, "corrupt": False,
+        "state": CH.STATE_HEALTHY, "assessment_status": "complete",
+        "data_as_of": "\x00\x01not-a-date-or-instant",
+    }
+    rec = _resolve_single(cap, fact)
+    assert rec["state"] is None
+    assert rec["assessment_status"] == CH.ASSESSMENT_COULD_NOT_LOOK
+    assert any(c.startswith(CH.REASON_CLOCK_UNPARSEABLE) and c.endswith(":data_as_of")
+               for c in rec["reason_codes"])
+    assert "data_as_of" not in rec["clocks"] or rec["clocks"]["data_as_of"] is None
+
+
+def test_important1_data_as_of_year9999_is_future_dated_not_healthy():
+    cap = _cap("da_9999", [{"type": "output_health_artifact", "ref": "a",
+                             "clocks": ["data_as_of"]}])
+    fact = {
+        "readable": True, "corrupt": False,
+        "state": CH.STATE_HEALTHY, "assessment_status": "complete",
+        "data_as_of": "9999-12-31T00:00:00+00:00",
+    }
+    rec = _resolve_single(cap, fact)
+    assert rec["state"] is None
+    assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec["reason_codes"])
+
+
+def test_important1_render_release_unparseable_and_future_dated_never_healthy():
+    """Same law, the OTHER previously-unchecked clock kind (render_release)."""
+    cap_bad = _cap("rr_garbage", [{"type": "output_health_artifact", "ref": "a",
+                                    "clocks": ["render_release"]}])
+    fact_garbage = {
+        "readable": True, "corrupt": False,
+        "state": CH.STATE_HEALTHY, "assessment_status": "complete",
+        "render_release": "not-a-timestamp-at-all",
+    }
+    rec_garbage = _resolve_single(cap_bad, fact_garbage)
+    assert rec_garbage["state"] is None
+    assert any(c.startswith(CH.REASON_CLOCK_UNPARSEABLE) for c in rec_garbage["reason_codes"])
+
+    cap_future = _cap("rr_future", [{"type": "output_health_artifact", "ref": "a",
+                                      "clocks": ["render_release"]}])
+    future = (NOW + timedelta(days=3000)).isoformat()
+    fact_future = {
+        "readable": True, "corrupt": False,
+        "state": CH.STATE_HEALTHY, "assessment_status": "complete",
+        "render_release": future,
+    }
+    rec_future = _resolve_single(cap_future, fact_future)
+    assert rec_future["state"] is None
+    assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec_future["reason_codes"])
+
+
+def test_important1_data_as_of_boundary_just_inside_and_outside_future_tolerance():
+    """Pin the exact FUTURE_CLOCK_TOLERANCE boundary for data_as_of, the same way
+    test_future_dated_clock_within_tolerance_is_not_corrupt pins it for last_attempted/
+    last_successful — the boundary law must be identical across all four clock kinds."""
+    just_inside = (NOW + timedelta(minutes=30)).isoformat()   # < 1h tolerance
+    just_outside = (NOW + timedelta(hours=2)).isoformat()      # > 1h tolerance
+
+    cap_inside = _cap("da_inside", [{"type": "output_health_artifact", "ref": "a",
+                                      "clocks": ["data_as_of"]}])
+    rec_inside = _resolve_single(cap_inside, {
+        "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+        "assessment_status": "complete", "data_as_of": just_inside,
+    })
+    assert rec_inside["state"] == CH.STATE_HEALTHY
+    assert rec_inside["clocks"]["data_as_of"] == just_inside
+
+    cap_outside = _cap("da_outside", [{"type": "output_health_artifact", "ref": "a",
+                                        "clocks": ["data_as_of"]}])
+    rec_outside = _resolve_single(cap_outside, {
+        "readable": True, "corrupt": False, "state": CH.STATE_HEALTHY,
+        "assessment_status": "complete", "data_as_of": just_outside,
+    })
+    assert rec_outside["state"] is None
+    assert any(c.startswith(CH.REASON_CLOCK_FUTURE_DATED) for c in rec_outside["reason_codes"])
+
+
+def test_important1_corrupt_clock_outranks_an_otherwise_healthy_explicit_state():
+    """A corrupt data_as_of must override an explicit upstream state=healthy — the whole
+    point of the repair is that this can no longer coexist with reason='ok'."""
+    cap = _cap("override_cap", [{"type": "output_health_artifact", "ref": "a",
+                                  "clocks": ["data_as_of"]}])
+    fact = {
+        "readable": True, "corrupt": False,
+        "state": CH.STATE_HEALTHY, "assessment_status": "complete",
+        "data_as_of": "2099-01-01T00:00:00+00:00",
+    }
+    rec = _resolve_single(cap, fact)
+    assert rec["state"] != CH.STATE_HEALTHY
+    assert rec["reason"] != "ok"
+
+
+# ---------------------------------------------------------------------------
+# MINOR-5 repair: an upstream `assessment_status: partial` with no explicit state and no
+# clock evidence must be named truthfully, not folded into the generic
+# REASON_NO_CLOCK_EVIDENCE bucket.
+# ---------------------------------------------------------------------------
+
+def test_minor5_upstream_partial_with_no_state_is_named_truthfully():
+    cap = _cap("partial_blind_cap", [{"type": "output_health_artifact", "ref": "a",
+                                       "clocks": ["data_as_of"]}])
+    fact = {"readable": True, "corrupt": False, "state": None, "assessment_status": "partial"}
+    rec = _resolve_single(cap, fact)
+    assert rec["state"] is None
+    assert rec["assessment_status"] == CH.ASSESSMENT_COULD_NOT_LOOK
+    assert any(c.startswith(CH.REASON_UPSTREAM_PARTIAL_BLIND) for c in rec["reason_codes"])
+    # the OLD misleading name must never appear for this specific cause
+    assert not any(c.startswith(CH.REASON_NO_CLOCK_EVIDENCE) for c in rec["reason_codes"])
+    assert rec["reason"] != "ok"
+
+
+# ---------------------------------------------------------------------------
+# MINOR-2 repair: validate_registry must fail closed on a LONGER depends_on cycle, not
+# just a self-loop.
+# ---------------------------------------------------------------------------
+
+def test_minor2_validate_registry_detects_two_node_depends_on_cycle():
+    caps = [
+        _cap("cyc_a", [{"type": "nightly_lane", "ref": "x"}], depends_on=["cyc_b"]),
+        _cap("cyc_b", [{"type": "nightly_lane", "ref": "y"}], depends_on=["cyc_a"]),
+    ]
+    problems = CH.validate_registry(caps)
+    assert any("cycle" in p.lower() for p in problems), (
+        "a -> b -> a must be reported; the pairwise self-loop/unresolvable-ref checks "
+        "cannot see a longer cycle"
+    )
+
+
+def test_minor2_validate_registry_detects_three_node_depends_on_cycle():
+    caps = [
+        _cap("c1", [{"type": "nightly_lane", "ref": "x"}], depends_on=["c2"]),
+        _cap("c2", [{"type": "nightly_lane", "ref": "y"}], depends_on=["c3"]),
+        _cap("c3", [{"type": "nightly_lane", "ref": "z"}], depends_on=["c1"]),
+    ]
+    problems = CH.validate_registry(caps)
+    assert any("cycle" in p.lower() for p in problems)
+
+
+def test_minor2_validate_registry_accepts_an_acyclic_dependency_chain():
+    """A straight-line dependency chain (never a cycle) must still validate clean."""
+    caps = [
+        _cap("root", [{"type": "nightly_lane", "ref": "x"}]),
+        _cap("mid", [{"type": "nightly_lane", "ref": "y"}], depends_on=["root"]),
+        _cap("leaf", [{"type": "nightly_lane", "ref": "z"}], depends_on=["mid"]),
+    ]
+    assert CH.validate_registry(caps) == []
+
+
+# ---------------------------------------------------------------------------
 # Registry-schema validation: every receipt_source type resolvable; unknown fails closed
 # ---------------------------------------------------------------------------
 

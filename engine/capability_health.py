@@ -51,6 +51,11 @@ THE JOIN PATTERN, EXTENDED FROM output_health.py
 * A clock value that is present but UNPARSEABLE, or that resolves to an instant more than
   one hour in the future, is a CORRUPT receipt on that source's axis — never silently
   treated as absent, and never able to read as fresh/healthy (repair findings I2/I4).
+  This applies to ALL FOUR clock kinds (last_attempted, last_successful, data_as_of,
+  render_release), not just the two that feed the ta/ts adjudication path (repair
+  IMPORTANT-1, 2026-09-05 independent review): a corrupt data_as_of/render_release can
+  never enter the published ``clocks`` display block either, and forces the SAME
+  could_not_look verdict on that source as a corrupt ta/ts would.
 * Dependency propagation is an UPPER BOUND, never an exact re-derivation and never a
   failover: a capability whose declared ``depends_on`` entry is not healthy is capped at
   ``degraded`` (never silently healed back to ``healthy`` by a fallback receipt, and
@@ -86,7 +91,7 @@ existing receipts (F13), not an evaluation or grading surface (qledger's domain)
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Mapping, Sequence
 
 from lib.dataos.temporal import TemporalError, utc
@@ -174,6 +179,13 @@ REASON_RECEIPT_CORRUPT = "receipt_corrupt"
 REASON_UNKNOWN_RECEIPT_TYPE = "unknown_receipt_type"
 REASON_NO_CLOCK_EVIDENCE = "no_clock_evidence"
 REASON_UPSTREAM_COULD_NOT_LOOK = "upstream_could_not_look"
+#: repair MINOR-5: an upstream module (output_health) reached only a PARTIAL assessment
+#: and recorded no explicit state for this source — distinct from
+#: :data:`REASON_NO_CLOCK_EVIDENCE` (this source declares no last_attempted/
+#: last_successful at all) so a reader is never told "no clock evidence" when the real
+#: cause is an upstream partial verdict with nothing derivable from it. The resolved
+#: state stays could_not_look either way — only the reason NAME changes.
+REASON_UPSTREAM_PARTIAL_BLIND = "upstream_partial_blind"
 REASON_NO_PRIOR_SUCCESS = "no_prior_success"
 REASON_CLOCK_UNPARSEABLE = "clock_value_unparseable"
 REASON_CLOCK_FUTURE_DATED = "clock_value_future_dated"
@@ -184,6 +196,13 @@ REASON_DEPENDENCY_DEGRADED = "dependency_not_healthy"
 REASON_DEPENDENCY_COULD_NOT_LOOK = "dependency_could_not_look"
 REASON_DEPLOYMENT_COMMIT_SKEW = "deployment_commit_skew"
 REASON_CORRECTION_REPLAY = "correction_replay"
+#: repair MINOR-1: an adapter (currently ``nightly_lane_facts``) that recognizes a
+#: receipt shape it has no honest verdict for (an unrecognized/absent collector status,
+#: e.g. ``check_failed`` from a non-Adapter collect.py step) supplies a fully-formatted
+#: ``blind_reason`` string on the fact — see ``fact.get("blind_reason")`` in
+#: :func:`_source_verdict`. The base code below is what :func:`reason_base` extracts
+#: from it; the adapter appends its own ``:<ref>:<status>`` detail.
+REASON_UNKNOWN_COLLECTOR_STATUS = "unknown_collector_status"
 
 REASON_CODES: frozenset[str] = frozenset({
     REASON_NO_RECEIPT_SOURCES,
@@ -192,6 +211,7 @@ REASON_CODES: frozenset[str] = frozenset({
     REASON_UNKNOWN_RECEIPT_TYPE,
     REASON_NO_CLOCK_EVIDENCE,
     REASON_UPSTREAM_COULD_NOT_LOOK,
+    REASON_UPSTREAM_PARTIAL_BLIND,
     REASON_NO_PRIOR_SUCCESS,
     REASON_CLOCK_UNPARSEABLE,
     REASON_CLOCK_FUTURE_DATED,
@@ -202,6 +222,7 @@ REASON_CODES: frozenset[str] = frozenset({
     REASON_DEPENDENCY_COULD_NOT_LOOK,
     REASON_DEPLOYMENT_COMMIT_SKEW,
     REASON_CORRECTION_REPLAY,
+    REASON_UNKNOWN_COLLECTOR_STATUS,
 })
 
 
@@ -277,7 +298,63 @@ def validate_registry(capabilities: Sequence[Mapping[str, Any]]) -> list[str]:
                     f"{cid}: depends_on {dep!r} is not a registered capability id"
                 )
 
+    problems.extend(_detect_depends_on_cycles(capabilities, ids_declared=ids_declared))
+
     return sorted(problems)
+
+
+def _detect_depends_on_cycles(
+    capabilities: Sequence[Mapping[str, Any]], *, ids_declared: set[str]
+) -> list[str]:
+    """MINOR-2 repair: the pairwise checks above (self-loop, unresolvable ref) cannot
+    see a LONGER cycle — ``a depends_on b`` and ``b depends_on a`` each look locally
+    valid; only walking the whole graph reveals the loop. ``_cap_by_dependency`` never
+    terminates on a cyclic ``depends_on`` graph (each side caps the other, forever), so
+    this must fail closed at validation time rather than let the resolver spin or
+    silently under/over-cap.
+
+    Only edges between two DECLARED, non-self ids are walked — a self-loop or an
+    unresolvable reference is already reported by the caller and would otherwise be
+    reported again here as a spurious "cycle".
+    """
+    graph: dict[str, list[str]] = {}
+    for cap in capabilities:
+        if not isinstance(cap, Mapping):
+            continue
+        cid = cap.get("id")
+        if not isinstance(cid, str) or cid not in ids_declared:
+            continue
+        graph[cid] = sorted({
+            str(dep) for dep in (cap.get("depends_on") or [])
+            if dep != cid and dep in ids_declared
+        })
+
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color: dict[str, int] = dict.fromkeys(graph, WHITE)
+    found: set[tuple[str, ...]] = set()
+    problems: list[str] = []
+
+    def visit(node: str, path: list[str]) -> None:
+        color[node] = GRAY
+        for dep in graph.get(node, []):
+            if color.get(dep, WHITE) == GRAY:
+                idx = path.index(dep) if dep in path else 0
+                cycle_nodes = [*path[idx:], dep]
+                key = tuple(sorted(set(cycle_nodes)))
+                if key not in found:
+                    found.add(key)
+                    problems.append(
+                        f"depends_on cycle detected: {' -> '.join(cycle_nodes)}"
+                    )
+            elif color.get(dep, WHITE) == WHITE:
+                visit(dep, [*path, dep])
+        color[node] = BLACK
+
+    for cid in sorted(graph):
+        if color.get(cid) == WHITE:
+            visit(cid, [cid])
+
+    return problems
 
 
 # ---------------------------------------------------------------------------
@@ -332,14 +409,33 @@ def _clock_reading(raw: Any, *, now: datetime) -> tuple[datetime | None, str | N
     """One raw clock value -> ``(instant_or_None, corrupt_reason_or_None)``.
 
     ``corrupt_reason`` is :data:`REASON_CLOCK_UNPARSEABLE` when *raw* is present but
-    cannot be read as an instant at all, or :data:`REASON_CLOCK_FUTURE_DATED` when it
-    parses but resolves more than :data:`FUTURE_CLOCK_TOLERANCE` beyond *now* (repair
-    findings I2/I4). A genuinely ABSENT value (``None``/``""``) is neither present-and-bad
-    NOR a reading — it returns ``(None, None)``, distinct from a corrupt one.
+    cannot be read as an instant (or a real calendar date — see below) at all, or
+    :data:`REASON_CLOCK_FUTURE_DATED` when it parses but resolves more than
+    :data:`FUTURE_CLOCK_TOLERANCE` beyond *now* (repair findings I2/I4). A genuinely
+    ABSENT value (``None``/``""``) is neither present-and-bad NOR a reading — it returns
+    ``(None, None)``, distinct from a corrupt one.
+
+    IMPORTANT-1 repair: ``data_as_of``/``render_release`` are frequently DATE-grain, not
+    instant-grain (a collector's ``last_date: "2026-09-04"`` is the real, common shape —
+    see ``scripts/build_capability_health.py::nightly_lane_facts``).
+    ``lib.dataos.temporal.utc()`` correctly REFUSES to promote a bare date to an instant
+    for point-in-time reads (§D3: a date has no timezone, doing so is a guess) — but a
+    corruption check only needs "is this a real calendar date, and is it implausibly far
+    in the future", never a real instant used anywhere else. A bare ISO date is read as
+    midnight UTC on that date SOLELY for that comparison; the ORIGINAL raw string is
+    still what gets published in the record's ``clocks`` block (see the caller) — this
+    function never invents a timestamp that overwrites what was actually received.
     """
     if raw is None or raw == "":
         return None, None
     dt = _as_utc(raw)
+    if dt is None and isinstance(raw, str):
+        try:
+            d = date.fromisoformat(raw.strip())
+        except ValueError:
+            d = None
+        if d is not None:
+            dt = datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
     if dt is None:
         return None, REASON_CLOCK_UNPARSEABLE
     if dt > now + FUTURE_CLOCK_TOLERANCE:
@@ -381,6 +477,41 @@ def _source_verdict(
     if fact.get("corrupt"):
         return None, [f"{REASON_RECEIPT_CORRUPT}:{label}"], evidence, display_clocks
 
+    # IMPORTANT-1 repair: route EVERY one of the four clock kinds through the same
+    # unparseable/future-dated corruption check, not just last_attempted/last_successful.
+    # Previously data_as_of/render_release were copied into the published `clocks` block
+    # VERBATIM with no check at all — a lane entry with a healthy, fresh checked_at but a
+    # garbage or future-dated `last_date` (the real fred/yahoo shape passes `last_date`
+    # straight through as data_as_of) could publish e.g. data_as_of=2028-01-01 right next
+    # to state=healthy, reason="ok". A corrupt clock of ANY kind is now a corrupt receipt
+    # on THIS source's axis — same severity as the fact-level `corrupt` flag above: it
+    # never enters `clocks`, and this source's own verdict becomes could_not_look,
+    # regardless of what any other field on the fact says (rights_blocked, an explicit
+    # state, deployment skew, ...). Every bad clock is reported, not just the first.
+    clock_bad_reasons: list[str] = []
+    for key in CLOCK_KEYS:
+        raw = fact.get(key)
+        _, bad = _clock_reading(raw, now=now)
+        if bad:
+            clock_bad_reasons.append(f"{bad}:{label}:{key}")
+        elif raw:
+            display_clocks[key] = raw
+    if clock_bad_reasons:
+        return None, clock_bad_reasons, evidence, display_clocks
+
+    # MINOR-1 repair: an adapter (nightly_lane_facts) that recognizes a receipt shape it
+    # has no honest verdict for (an unknown/absent collector status) supplies a
+    # fully-formatted `blind_reason` on the fact rather than leaving it to fall through
+    # to a generic no-clock-evidence read or a fabricated "attempted, no prior success".
+    # Domain knowledge of the actual ref/status value lives only in the adapter, so the
+    # engine treats this as an opaque, already-typed disclosure — never silently
+    # downgraded, never able to read healthy.
+    blind_reason = fact.get("blind_reason")
+    if isinstance(blind_reason, str) and blind_reason:
+        evidence.append(_evidence("receipt", label, blind_reason))
+        reasons.append(blind_reason)
+        return None, reasons, evidence, display_clocks
+
     # Clocks this source is DECLARED to bind, honoring a per-fact override (a source that
     # can only ever supply a subset of what the registry declares).
     bind = fact.get("clocks_bound")
@@ -388,10 +519,6 @@ def _source_verdict(
         bind if isinstance(bind, Sequence) and not isinstance(bind, (str, bytes))
         else (decl.get("clocks") or [])
     )
-    for key in CLOCK_KEYS:
-        val = fact.get(key)
-        if val:
-            display_clocks[key] = val
 
     if fact.get("rights_blocked"):
         detail = str(fact.get("rights_detail") or "rights-restricted")
@@ -432,6 +559,25 @@ def _source_verdict(
         reasons.append(f"{REASON_UPSTREAM_COULD_NOT_LOOK}:{label}")
         return None, reasons, evidence, display_clocks
 
+    if (
+        explicit is None
+        and str(fact.get("assessment_status") or "") == ASSESSMENT_PARTIAL
+        and CLOCK_LAST_ATTEMPTED not in bind
+        and CLOCK_LAST_SUCCESSFUL not in bind
+    ):
+        # MINOR-5 repair: an upstream module reached only a PARTIAL assessment and
+        # recorded no explicit state, and this source declares no last_attempted/
+        # last_successful of its own to fall back on. This used to fall through to the
+        # generic REASON_NO_CLOCK_EVIDENCE branch below, which reads as "this source
+        # declares no clock kind" — misleading when the real cause is an upstream
+        # partial verdict with nothing derivable from it. Name it truthfully; the
+        # resolved state is could_not_look either way (fail-closed, unchanged).
+        evidence.append(_evidence(
+            "receipt", label, "upstream assessment_status=partial, no derivable state",
+        ))
+        reasons.append(f"{REASON_UPSTREAM_PARTIAL_BLIND}:{label}")
+        return None, reasons, evidence, display_clocks
+
     if CLOCK_LAST_ATTEMPTED not in bind and CLOCK_LAST_SUCCESSFUL not in bind:
         # This source never even declares an attempt/success clock (e.g. it only ever
         # binds data_as_of/render_release, or nothing at all) and carried no explicit
@@ -440,16 +586,13 @@ def _source_verdict(
         return None, reasons, evidence, display_clocks
 
     # --- clock-derived verdict — THIS SOURCE'S OWN (ta, ts) pairing only (C2) ----------
+    # ta/ts are already known non-corrupt here (the IMPORTANT-1 sweep above returns
+    # early on any bad clock of any kind, ta/ts included), so `_clock_reading` can only
+    # ever hand back a real instant or a genuine absence — never a `bad` reason.
     ta_raw = fact.get(CLOCK_LAST_ATTEMPTED) if CLOCK_LAST_ATTEMPTED in bind else None
     ts_raw = fact.get(CLOCK_LAST_SUCCESSFUL) if CLOCK_LAST_SUCCESSFUL in bind else None
-    ta, ta_bad = _clock_reading(ta_raw, now=now)
-    ts, ts_bad = _clock_reading(ts_raw, now=now)
-    if ta_bad:
-        reasons.append(f"{ta_bad}:{label}:last_attempted")
-        return None, reasons, evidence, display_clocks
-    if ts_bad:
-        reasons.append(f"{ts_bad}:{label}:last_successful")
-        return None, reasons, evidence, display_clocks
+    ta, _ = _clock_reading(ta_raw, now=now)
+    ts, _ = _clock_reading(ts_raw, now=now)
 
     if ts is None:
         if ta is None:

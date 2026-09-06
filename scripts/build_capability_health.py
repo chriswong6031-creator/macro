@@ -85,6 +85,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yaml  # noqa: E402
 
 from engine.capability_health import (  # noqa: E402
+    REASON_UNKNOWN_COLLECTOR_STATUS,
     STATE_STALE,
     resolve_capability_health,
     validate_registry,
@@ -103,6 +104,21 @@ _STATUS_FAILED = "failed"
 _STATUS_DEAD = "dead"
 _STATUS_BLOCKED = "blocked"
 _STATUS_SKIPPED = "skipped"
+_KNOWN_STATUSES = frozenset({
+    _STATUS_OK, _STATUS_STALE, _STATUS_FAILED, _STATUS_DEAD, _STATUS_BLOCKED,
+    _STATUS_SKIPPED,
+})
+
+#: MINOR-4 repair: collectors/base.py's redactor scrubs credentials from
+#: FetchResult.error for the collectors it wraps, but collect.py's OWN additive status
+#: dicts (e.g. the "check_failed" shape read below) bypass that redactor entirely — the
+#: raw `str(exc)` text can ride straight into a COMMITTED artifact
+#: (data/capability_health/state.json). Capping length is a blast-radius bound, NOT a
+#: redaction — it cannot scrub a leaked secret out of the first 300 characters, it only
+#: limits how much of one (or of any other unbounded third-party text) ends up
+#: committed. Real redaction remains upstream's job (collectors/base.py); this is
+#: defense in depth for the paths that bypass it.
+_RIGHTS_DETAIL_MAX_CHARS = 300
 
 
 class RegistryError(RuntimeError):
@@ -219,6 +235,17 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
     ``last_attempted`` alone (no fabricated success); ``blocked`` sets
     ``rights_blocked``; ``stale`` sets an explicit ``state``; ``skipped`` supplies no
     clock at all.
+
+    MINOR-1 repair: a status OUTSIDE that six-value collectors/base.py vocabulary — or a
+    source entry with NO ``status`` key at all — is real, live shape:
+    ``scripts/collect.py``'s additive, non-Adapter steps (e.g. ``options_flow_creds``)
+    write statuses of their own, such as ``check_failed``, straight into
+    ``data/run_status.json["sources"]``. Previously this fell through to the same branch
+    as ``failed``/``dead`` ("attempted, no prior success"), which reads as an honest
+    attempt when it is actually an UNRECOGNIZED shape this adapter has no vocabulary
+    for. It is now a typed ``blind_reason`` disclosure the engine surfaces verbatim
+    (never silently downgraded to a generic no-clock-evidence/no-prior-success read, and
+    never healthy).
     """
     doc = _load_json(receipts_root / RUN_STATUS_REL)
     out: dict[str, dict[str, Any]] = {}
@@ -256,7 +283,24 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
 
         if status == _STATUS_BLOCKED:
             fact["rights_blocked"] = True
-            fact["rights_detail"] = str(entry.get("error") or "collector reports 'blocked'")
+            raw_detail = str(entry.get("error") or "collector reports 'blocked'")
+            fact["rights_detail"] = raw_detail[:_RIGHTS_DETAIL_MAX_CHARS]
+            if checked_at:
+                fact["last_attempted"] = checked_at
+            if last_date:
+                fact["data_as_of"] = last_date
+            out[ref] = fact
+            continue
+
+        if status not in _KNOWN_STATUSES:
+            # MINOR-1: an unrecognized (or entirely absent) collector status. Never
+            # fabricate a clock reading for a shape this adapter does not understand —
+            # disclose it by name so a reader sees exactly which status confused the
+            # build, and let the engine resolve it to could_not_look via the typed
+            # `blind_reason`, never a silent "attempted, no prior success".
+            fact["blind_reason"] = (
+                f"{REASON_UNKNOWN_COLLECTOR_STATUS}:{ref}:{status or '<missing>'}"
+            )
             if checked_at:
                 fact["last_attempted"] = checked_at
             if last_date:
