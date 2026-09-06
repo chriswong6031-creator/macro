@@ -1,0 +1,255 @@
+{
+  "as_of": "2026-09-06",
+  "coverage": {
+    "end": "2026-09-04",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-24 to 2026-09-04; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-24"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-09-04",
+      "events": [
+        {
+          "date": "2026-09-04",
+          "id": "cev-regime_flip-b429da6748fc",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-09-04#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q3 Stagflation → Q2 Reflation",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "events": [
+        {
+          "date": "2026-09-03",
+          "id": "cev-regime_flip-0ced0faa0211",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-09-03#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q1 Goldilocks → Q4 Growth-scare",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "events": []
+    },
+    {
+      "date": "2026-09-01",
+      "events": []
+    },
+    {
+      "date": "2026-08-31",
+      "events": [
+        {
+          "date": "2026-08-31",
+          "id": "cev-regime_flip-2b71e9b9c0b4",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-31#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q1 Goldilocks → Q3 Stagflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-31",
+          "id": "cev-regime_flip-582af2b47649",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-31#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q4 Growth-scare → Q1 Goldilocks",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "events": []
+    },
+    {
+      "date": "2026-08-27",
+      "events": []
+    },
+    {
+      "date": "2026-08-26",
+      "events": []
+    },
+    {
+      "date": "2026-08-25",
+      "events": []
+    },
+    {
+      "date": "2026-08-24",
+      "events": [
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-2874cacaea1a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-x6dm5a4kmqa-490e9f",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intelligence | Morning Briefing",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-d88008b734b8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-5dwsgxpu6vv-c81a79",
+          "tickers": [],
+          "title": "Goldman Sachs: Global Week Ahead August 24 – August 30",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-d967aabb33e2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-xf1qy9yxguo-cdeccb",
+          "tickers": [],
+          "title": "Morgan Stanley: HF Highlights 2026.08.21",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-dc6cd9ba7161",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vwrgnj7krwl-f56c80",
+          "tickers": [],
+          "title": "Rabobank: Global daily two wars and two economic wars",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-e01050da61f5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-olik15a1qfg-76d70b",
+          "tickers": [],
+          "title": "Goldman Sachs: US Week Ahead August 24 August 30",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-e214dfcbbf96",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-offpbbvqrbz-281308",
+          "tickers": [],
+          "title": "S&T: GS Duttenhoefer Charts at Goldman Sachs 24 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-e657b55891c0",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-do7vgyjotpz-563f5c",
+          "tickers": [],
+          "title": "UBS: What does the Warsh era mean for Fed policy",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-e78f5ca51687",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tdbewbuqgyc-245802",
+          "tickers": [],
+          "title": "Goldman Sachs: Brazil Lower 2026 Growth Expectations; Small Uptick in 2027 Inflation",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-e90b77ab116b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-onyp6ckv1li-c65156",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM European Semiconductors",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-eb386ae1344e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-en0l3z7yszz-c3ace2",
+          "tickers": [],
+          "title": "S&T: GS Singhal Hedge Funds Crowding Monitor US 24 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-f07169be5146",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-y2ngiukgrc1-de527d",
+          "tickers": [],
+          "title": "Goldman Sachs: GS Pasquariello markets macro two charts that stuck out from the weekend reading 24 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-f0db4d3c8e53",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ryitpzoueb9-db281f",
+          "tickers": [],
+          "title": "S&T: GS Arruda What Matters Today HFs and MFs differ on AI but converge on Financials 24 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-f37f3810d509",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-amjoyrz3fzw-b40f93",
+          "tickers": [],
+          "title": "Goldman Sachs: Americas Steel USCanada Suspend Trade Discussions Over Weekend",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-f3baffe9a70b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-qrovgbxrtzm-f08679",
+          "tickers": [],
+          "title": "S&T: GS Pasquariello markets macro two charts that stuck out from the weekend reading 24 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-fb8e5f67f615",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-lymmeyvn5ry-be9de3",
+          "tickers": [],
+          "title": "Deutsche Bank: Investor Positioning and Flows Aug 24",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-24",
+          "id": "cev-risk_band-aebc65ca34cc",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-08-24",
+          "tickers": [],
+          "title": "Risk radar: watch → calm",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}
