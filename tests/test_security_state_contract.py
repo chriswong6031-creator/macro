@@ -1547,3 +1547,99 @@ def test_producer_composes_listing_key_through_the_issuer_reader() -> None:
     assert subject.issuer_cik == "0000789019"
     assert ("listing_reader", "IssuerMaster.listing_key_of_security") in subject.owner_evidence
     assert ("cik_reader", "IssuerMaster.cik_of_issuer") in subject.owner_evidence
+
+
+def _producer_frames(*, bad_listing_key: bool = False, msft_missing_alias: bool = False) -> dict:
+    import pandas as pd
+
+    listing_key = "US-XNAS-AAPL" if bad_listing_key else "US-XNAS-MSFT"
+    security_master_rows = [{
+        "security_id": "SEC:US-XNAS-MSFT", "issuer_id": "ISS:US-XNAS-MSFT",
+        "issuer_state": "RESOLVED", "issuer_cik": "789019", "listing_key": listing_key,
+    }]
+    alias_rows = []
+    if not msft_missing_alias:
+        alias_rows.append({
+            "vendor": "store", "vendor_symbol": "MSFT", "security_id": "SEC:US-XNAS-MSFT",
+            "valid_from": None, "valid_to": None,
+        })
+    security_master_rows.append({
+        "security_id": "SEC:US-XNAS-AAPL", "issuer_id": "ISS:US-XNAS-AAPL",
+        "issuer_state": "RESOLVED", "issuer_cik": "320193", "listing_key": "US-XNAS-AAPL",
+    })
+    alias_rows.append({
+        "vendor": "store", "vendor_symbol": "AAPL", "security_id": "SEC:US-XNAS-AAPL",
+        "valid_from": None, "valid_to": None,
+    })
+    return {
+        "security_master.parquet": pd.DataFrame(security_master_rows),
+        "vendor_aliases.parquet": pd.DataFrame(alias_rows),
+        "issuer_master.parquet": pd.DataFrame([
+            {"issuer_id": "ISS:US-XNAS-MSFT", "cik": "0000789019",
+             "legal_name": "MICROSOFT CORP", "status": "active"},
+            {"issuer_id": "ISS:US-XNAS-AAPL", "cik": "0000320193",
+             "legal_name": "APPLE INC", "status": "active"},
+        ]),
+        "issuer_migrations.parquet": pd.DataFrame([], columns=["security_id"]),
+        "security_migrations.parquet": pd.DataFrame([], columns=["security_id"]),
+    }
+
+
+def _run_producer_with_fake_frames(frames: dict, tickers: tuple):
+    from datetime import date as _date
+
+    import pandas as pd
+
+    from scripts.security_state_producer import _read_security_state_identity_rows
+
+    class _FakeDataDir:
+        def __init__(self, fr: dict) -> None:
+            self._frames = fr
+
+        def __truediv__(self, name: str) -> "_FakePath":
+            return _FakePath(self._frames, name)
+
+    class _FakePath:
+        def __init__(self, fr: dict, name: str) -> None:
+            self._frames = fr
+            self._name = name
+
+        def __truediv__(self, name: str) -> "_FakePath":
+            return _FakePath(self._frames, name)
+
+    real_read_parquet = pd.read_parquet
+
+    def _fake_read_parquet(path, *a, **kw):
+        if isinstance(path, _FakePath):
+            return path._frames[path._name]
+        return real_read_parquet(path, *a, **kw)
+
+    pd.read_parquet = _fake_read_parquet
+    try:
+        return _read_security_state_identity_rows(
+            _FakeDataDir(frames), tickers, decision_date=_date(2026, 9, 4),
+        )
+    finally:
+        pd.read_parquet = real_read_parquet
+
+
+def test_producer_refuses_when_owner_listing_key_disagrees_with_alias_resolution() -> None:
+    frames = _producer_frames(bad_listing_key=True)
+    inputs, failures = _run_producer_with_fake_frames(frames, ("MSFT",))
+    assert "MSFT" not in inputs
+    assert "MSFT" in failures
+    assert "listing" in failures["MSFT"].lower() or "does not render" in failures["MSFT"].lower()
+
+
+def test_producer_isolates_one_tickers_owner_refusal() -> None:
+    frames = _producer_frames(msft_missing_alias=True)
+    inputs, failures = _run_producer_with_fake_frames(frames, ("AAPL", "MSFT"))
+    assert "AAPL" in inputs
+    assert "MSFT" not in inputs
+    assert "MSFT" in failures
+
+
+def test_disclosures_never_retire_the_open_limitations() -> None:
+    joined = "\n".join(ss.DISCLOSURES)
+    assert "ISSUERMASTER_CURRENT_IDENTITY_ONLY" in joined
+    assert "ALIAS_EPOCH_VALID_FROM" in joined
