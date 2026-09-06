@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-09-06T20:55:49.871811+00:00",
-  "count": 1880,
+  "generated_at": "2026-09-06T22:32:05.663600+00:00",
+  "count": 1885,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -83,6 +83,7 @@
     "WGC",
     "Week Ahead",
     "Weekly Preview",
+    "Westpac",
     "William Blair",
     "World Gold Council",
     "ZH AI",
@@ -129,6 +130,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-m3m5ln5fmrs-259c44",
+      "title": "Investment weekly 4 september 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-09-06T01:45:05Z",
+      "summary_points": [
+        "**G7 Bond Yields Surge Amidst Term Premium & Fiscal Risks**: US 10-yr Treasury at 4.8% (2023 high), Japan 10-yr at 3.0% (new high), UK Gilt at new highs driven by term premium, fiscal sustainability concerns, and geopolitical risks beyond inflation.",
+        "**Fed's Data-Driven Policy Shift Under Warsh**: Moving from pre-commitment to \"data-watchers\" approach, emphasizing 2% PCE target, signaling Greenspan-era framework with broad macro discussions impacting market pricing.",
+        "**Credit Market Resilience Amid Fiscal Risks**: US investment grade credit spreads near multi-decade highs despite sovereign volatility, supported by strong corporate fundamentals but pressured by fiscal trajectory and heavy government bond supply.",
+        "**EM Growth Catalysts & Divergence**: Middle East conflict (inflation shock) + China's AI boom drive EM growth; EM equities/credits favored but face trade fragmentation risk; Brazil/Mexico PMI contraction signals regional divergence.",
+        "**Asia Pacific ex Japan Surge**: MSCI AC Asia Pacific ex Japan Index at 32.7% 1-year return (vs global 21.0%), outperforming US indices, signaling robust regional fundamentals and strategic allocation opportunity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
@@ -213,6 +235,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l9na1pt6tcm-bc869f",
+      "title": "GS Utilities Daily Spain calls for EU levy on gas & oil profits for climate fund Vestas secures 50 MW orders in Germany",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T03:10:28Z",
+      "summary_points": [
+        "**Spain's EU Climate Levy**: New EU tax on oil/gas profits (€50bn cost) creates regulatory risk, reshapes energy market dynamics, and alters profit margins for energy firms.",
+        "**UK Gas Crisis**: Wholesale prices at 3-yr high (£64.5/MWh), storage at 1.7bn m³ (7 days winter demand), signaling critical supply risk and potential volatility.",
+        "**Electrification/AI Tailwinds**: Structural power demand growth (+5% pa) and Agentic AI (datacenter needs +25%) drive utility earnings super-cycle, reinforced by renewables exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -318,6 +359,48 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-3p1ffscx1p0-77103f",
+      "title": "Longer Term Investments",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T01:25:32Z",
+      "summary_points": [
+        "**Automation & Robotics**: AI transforms automation into flexible platform; structural drivers (labor shortages, aging population) support 8% CAGR to 2030; manufacturing PMI above 50 and US tariffs boost reshoring/earnings.",
+        "**Enabling Technologies**: Generative AI drives 90% of incremental growth; global AI capex to surge to $1.3T by 2030 (25% CAGR); broad market to $3.1T (30% CAGR).",
+        "**Energy Efficiency**: Market to reach $800bn by 2025; climate targets require $1.3T/year investment; Middle East crisis amplifies energy security demand for cost-saving tech.",
+        "**Genetic Therapies Downgrade**: Capital constraints and biotech bubble unwinding cause bottom quantitative ranking; no near-term catalysts; healthtech overcapitalized with weak profitability.",
+        "**Demographic Fundamentals**: Population growth (10B+ by 2100), urbanization (68% by 2050), and aging (1 in 6 over 65 by 2050) underpin all top themes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0lqy12vq9qq-863a04",
+      "title": "WestpacWeekly20260907",
+      "institution": "Westpac",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T01:22:12Z",
+      "summary_points": [
+        "**RBNZ Policy Timing**: Pause October, hike for Christmas (Dec) critical for NZD flows and regional positioning; OCR to 2.75% with Q3 CPI (Oct) pivotal for inflation assessment.",
+        "**Australia's Q2 GDP & Data Conflict**: Growth at 2.1% yr (above RBA) but momentum loss (CPI revisions dominate); prioritize labor market data over selective signals amid housing downturn and weak domestic demand.",
+        "**US PCE Inflation & FOMC**: PCE at 3.7% yr (Aug) drives market pricing of Sept rate hike; Fed policy tightening likely despite hold, with disinflation requiring sustained progress.",
+        "**Australian Housing & Geopolitical Risks**: Housing prices down 0.9% (Aug), approvals -3.6% (July); Middle East conflict disrupts tourism/energy flows, compounding housing market stagnation.",
+        "**US 10Y Bond Yield Rise**: Bond yield to 4.85% (Dec-28) pressures corporate debt valuations and rate-sensitive equities, necessitating defensive fixed income positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-hjsxd3atajn-a35b6f",
       "title": "InvestorsOutlook",
       "institution": "Other",
@@ -335,6 +418,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-b5hhsphk1ml-fc31c7",
+      "title": "Inview September 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-09-05T01:21:09Z",
+      "summary_points": [
+        "**Equity Resilience**: Equities maintain performance amid rising bond yields (e.g., MSCI World +2.7% Aug, +14.6% YTD), driven by US tech/growth leadership and sector-specific catalysts (US financials, healthcare, energy), directly impacting risk-return trade-offs.",
+        "**Allocation Shifts**: Trimmed US equity exposure (tech concentration/profit-taking), overweight Europe (improving macro/earnings), underweight Asia ex-Japan (China/HK neutral), with fixed income reduced to slight underweight (investment grade overweight for volatility cushion).",
+        "**Fixed Income Dynamics**: Bonds underperformed as yields rose (flattened curve); inflation-linked bonds attractive but early to add; EM hard currency credit cautious amid moderate rate hike expectations.",
+        "**FX & Currency Risk**: USDCHF medium-term implied FX change at -5.4% signals critical USD weakness; USDJPY stable (157-160) reflecting JPY resilience despite short-term breakout risk vs JPY.",
+        "**Key Risk Factors**: US midterm elections (Republican Senate loss), China/Hong Kong earnings lag, Middle East conflict, and crowded emerging markets drive sector caution (e.g., Consumer Discretionary down in Europe)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
