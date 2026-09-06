@@ -55,6 +55,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Mapping
 
+from lib.evidence_foundation import ALL_FALSE_AUTHORITY, compute_reference_id
+
 SCHEMA_VERSION = "chronicle.market_feed_alias.v1"
 LEDGER_ROW = "MO-DELTA-001"
 PARENT_ROW = "MO-PAID-017"
@@ -203,6 +205,101 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
         return out
 
 
+# NOTE: owner_store "chronicle.market_feed_alias" is not yet registered in
+# contracts/evidence_foundation/vocabulary.v1.json -- that registration is a
+# contracts/ change outside this module's owned paths (engine/chronicle/,
+# tests/) and is tracked as a follow-up, not silently taken here. The
+# structure below is schema-shape-complete against
+# contracts/evidence_foundation/reference.v1.schema.json (all 21 required K1
+# EvidenceRef fields, correct enums/shapes) so it stops emitting the bare
+# {kind, ref, as_of, receipt} ad hoc dict; full semantic validation via
+# lib.evidence_foundation.validate_reference additionally requires that
+# vocabulary registration.
+_K1_SCHEMA = "evidence_foundation.reference.v1"
+_K1_OWNER_STORE = "chronicle.market_feed_alias"
+_K1_NATIVE_SCHEMA = "chronicle.event.v1"
+
+
+def _build_k1_evidence_ref(*, coverage: Mapping[str, object], as_of: str) -> dict:
+    """A schema-shape K1 EvidenceRef over this module's own store census.
+
+    No LLM, no scoring: authority_class is "deterministic" and every
+    ``authority`` capability is hard False (ALL_FALSE_AUTHORITY), matching
+    this module's own no-origination law (module docstring above).
+    """
+    receipt = coverage.get("store_receipt")
+    sha_hex = None
+    if isinstance(receipt, str) and receipt.startswith("sha256:"):
+        sha_hex = receipt.split(":", 1)[1]
+    readable = bool(coverage.get("readable"))
+    coverage_end = coverage.get("coverage_end")
+
+    reference: dict = {
+        "schema": _K1_SCHEMA,
+        "version": "1.0.0",
+        "reference_id": "",
+        "object_class": "derived_view",
+        "owner_store": _K1_OWNER_STORE,
+        "native_identity": {"store_path": str(coverage.get("store_path") or EVENTS_REL)},
+        "native_schema": _K1_NATIVE_SCHEMA,
+        "native_digest": (
+            {"state": "known", "sha256": sha_hex} if sha_hex else {"state": "unknown", "sha256": None}
+        ),
+        "coverage_class": "current_only",
+        "subject": {"key_type": "chain_id", "key": "chronicle-market-feed-alias-store"},
+        "secondary_subjects": [],
+        "clocks": [
+            {
+                "class": "observed",
+                "field": "coverage.coverage_end",
+                "value_state": "known" if coverage_end else "unknown",
+                "value": coverage_end,
+                "grain": "date",
+            },
+        ],
+        "provenance": {
+            "pointer_only": True,
+            "body_embedded": False,
+            "owner_reader": "engine.chronicle.market_feed_alias.market_feed_field_coverage",
+            "owner_reader_kind": "parser",
+            "pointer": str(coverage.get("store_path") or EVENTS_REL),
+        },
+        "relations": [],
+        "missingness": (
+            {"state": "present", "reason": None, "zero_substituted": False}
+            if readable else
+            {"state": "absent", "reason": "source_missing", "zero_substituted": False}
+        ),
+        "correction": {
+            "kind": "none",
+            "predecessor_reference_ids": [],
+            "clock_field": None,
+            "chronology_state": "not_applicable",
+            "append_only": True,
+            "mutates_predecessor": False,
+        },
+        "replay": {
+            "mode": "live",
+            "cutoffs": {
+                clock_class: {"state": "unknown", "value": None, "grain": "datetime"}
+                for clock_class in (
+                    "world_valid", "source_published", "knowable", "observed",
+                    "system_recorded", "belief_or_build", "review_due",
+                )
+            },
+            "code_revision": None,
+            "input_digest": sha_hex,
+            "vintage_state": "owner_native",
+        },
+        "authority": dict(ALL_FALSE_AUTHORITY),
+        "freshness": {"state": "unknown", "clock_field": None, "policy_id": None},
+        "rights": {"state": "permitted", "policy_id": "market_os.chronicle.rights_default.v1"},
+        "authority_class": "deterministic",
+    }
+    reference["reference_id"] = compute_reference_id(reference)
+    return reference
+
+
 def resolve_market_feed_alias(
     root: Path | str | None = None,
     *,
@@ -264,15 +361,45 @@ def resolve_market_feed_alias(
                 support = dict(projection.get("support") or {})
 
             if projection is None:
-                state = "NOT_SERVED"
-                flags.add("no_declared_projection")
                 served_fields = schema_backed
                 missing_fields = sorted(set(required) - set(schema_backed))
-                reason = "no_declared_projection: only schema-backed fields available"
+                store_direction_n = coverage.get("events_with_direction_field")
+                store_has_direction = (
+                    isinstance(store_direction_n, (int, float)) and store_direction_n > 0
+                )
+                if store_has_direction:
+                    # The store itself has gained a direction-bearing field,
+                    # but no consumer has declared a projection that serves
+                    # it -- that is PARTIALLY_SERVED (store-side progress,
+                    # no confirmed surface), never a blanket NOT_SERVED that
+                    # ignores what the census just measured.
+                    state = "PARTIALLY_SERVED"
+                    flags.add("no_declared_projection")
+                    flags.add("store_has_direction_data_no_declared_projection")
+                    reason = (
+                        "store_has_direction_data_no_declared_projection: the store "
+                        "carries a direction-bearing field but no projection has "
+                        "declared a surface that serves it"
+                    )
+                else:
+                    state = "NOT_SERVED"
+                    flags.add("no_declared_projection")
+                    reason = "no_declared_projection: only schema-backed fields available"
             else:
                 # Schema-backed fields are always available; the projection's
                 # job is to supply the non-schema-backed ones (direction/
                 # magnitude) with store-measured support.
+                # A caller-supplied projection['support'][field]['sample_n'] is
+                # NEVER trusted as evidence of store support -- that would let
+                # any caller (including an LLM-originated one) grant SERVED by
+                # simply asserting a number. The only evidence this module
+                # accepts is its OWN store census (market_feed_field_coverage
+                # above): coverage["events_with_direction_field"], which it
+                # already read straight from data/chronicle/events.jsonl.
+                store_direction_n = coverage.get("events_with_direction_field")
+                store_has_direction = (
+                    isinstance(store_direction_n, (int, float)) and store_direction_n > 0
+                )
                 served_fields_set = set(schema_backed)
                 unsupported_claims: list[str] = []
                 for f in declared_fields:
@@ -281,9 +408,14 @@ def resolve_market_feed_alias(
                     if MARKET_FEED_FIELD_SOURCES.get(f) is not None:
                         served_fields_set.add(f)
                         continue
-                    entry = support.get(f) or {}
-                    sample_n = entry.get("sample_n") if isinstance(entry, Mapping) else None
-                    if isinstance(sample_n, (int, float)) and sample_n and sample_n > 0:
+                    # Non-schema-backed fields (impact_direction, impact_
+                    # magnitude): only the store's own direction-field census
+                    # can grant these. impact_magnitude has no store-side
+                    # measurement anywhere in this module, so it can never be
+                    # granted by a caller claim alone -- ``support`` is kept
+                    # in the receipt for audit/debugging but plays no part in
+                    # the grant decision.
+                    if f == "impact_direction" and store_has_direction:
                         served_fields_set.add(f)
                     else:
                         unsupported_claims.append(f)
@@ -324,39 +456,36 @@ def resolve_market_feed_alias(
             "reason": reason,
             "disclosure_en": disclosure_en,
             "disclosure_zh": disclosure_zh,
-            "evidence": {
-                "kind": "store",
-                "ref": str(EVENTS_REL),
-                "as_of": as_of_val,
-                "receipt": coverage.get("store_receipt"),
-            },
+            "evidence": _build_k1_evidence_ref(coverage=coverage, as_of=as_of_val),
         }
         return receipt
     except Exception as exc:  # noqa: BLE001
         state = "UNKNOWN"
+        fallback_as_of = as_of or _today()
+        fallback_coverage = {
+            "store_path": str(EVENTS_REL), "readable": False,
+            "reason": f"resolve_failed: {exc.__class__.__name__}",
+            "events_total": None, "events_with_tickers": None,
+            "events_with_direction_field": None, "coverage_start": None,
+            "coverage_end": None, "store_receipt": None,
+        }
         return {
             "schema": SCHEMA_VERSION,
             "ledger_row": LEDGER_ROW,
             "parent_row": PARENT_ROW,
             "state": state,
-            "as_of": as_of or _today(),
+            "as_of": fallback_as_of,
             "projection": {"declared": False, "name": None, "route": None, "declared_fields": [], "unknown_fields": []},
             "required_fields": list(MARKET_FEED_REQUIRED_FIELDS),
             "served_fields": [],
             "missing_fields": list(MARKET_FEED_REQUIRED_FIELDS),
             "rejected_proxies": [dict(p) for p in REJECTED_PROXIES],
             "flags": ["resolve_failed"],
-            "coverage": {
-                "store_path": str(EVENTS_REL), "readable": False,
-                "reason": f"resolve_failed: {exc.__class__.__name__}",
-                "events_total": None, "events_with_tickers": None,
-                "events_with_direction_field": None, "coverage_start": None,
-                "coverage_end": None, "store_receipt": None,
-            },
+            "coverage": fallback_coverage,
             "reason": f"resolve_failed: {exc.__class__.__name__}",
             "disclosure_en": _DISCLOSURE_EN["UNKNOWN"],
             "disclosure_zh": _DISCLOSURE_ZH["UNKNOWN"],
-            "evidence": {"kind": "store", "ref": str(EVENTS_REL), "as_of": as_of or _today(), "receipt": None},
+            "evidence": _build_k1_evidence_ref(coverage=fallback_coverage, as_of=fallback_as_of),
         }
 
 

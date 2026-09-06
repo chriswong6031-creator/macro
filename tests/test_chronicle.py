@@ -2756,6 +2756,10 @@ def test_market_feed_alias_served_requires_supported_direction(tmp_path):
     root = _make_fixture_root(tmp_path)
     build_and_write(root=root, rebuild=True)
 
+    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({"id": "synthetic-direction-1", "date": "2026-08-01",
+                             "tickers": ["TEST"], "direction": "up"}) + "\n")
+
     projection = {
         "name": "x",
         "route": "/x",
@@ -2766,8 +2770,88 @@ def test_market_feed_alias_served_requires_supported_direction(tmp_path):
         },
     }
     receipt = resolve_market_feed_alias(root=root, projection=projection)
-    assert receipt["state"] == "SERVED"
-    assert receipt["missing_fields"] == []
+    # impact_direction is granted by the STORE's own direction-field census
+    # (one synthetic direction-bearing row above), never by the caller's
+    # sample_n claim. impact_magnitude has no store-side measurement in this
+    # module and can never be granted by a caller claim alone.
+    assert receipt["state"] == "PARTIALLY_SERVED"
+    assert receipt["missing_fields"] == ["impact_magnitude"]
+    assert "impact_direction" in receipt["served_fields"]
+
+
+def test_market_feed_alias_llm_claimed_support_never_grants_served(tmp_path):
+    """BLOCKER regression (review of PR #6897): a caller-declared
+    projection['support'][field]['sample_n'] must never grant SERVED when the
+    module's own store census measures zero direction-bearing events. This is
+    the exact probe from the review: produced_by 'an LLM I made up',
+    sample_n=1, store with 0 direction fields -- must NOT be SERVED, and
+    impact_direction must remain in missing_fields."""
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    projection = {
+        "name": "x",
+        "route": "/x",
+        "produced_by": "an LLM I made up",
+        "fields": list(MARKET_FEED_REQUIRED_FIELDS),
+        "support": {
+            "impact_direction": {"produced_by": "an LLM I made up", "sample_n": 1},
+        },
+    }
+    receipt = resolve_market_feed_alias(root=root, projection=projection)
+    assert receipt["state"] != "SERVED"
+    assert "impact_direction" in receipt["missing_fields"]
+    assert "claim_unsupported_by_store" in receipt["flags"]
+
+
+def test_market_feed_alias_no_projection_reflects_store_direction_data(tmp_path):
+    """MAJOR regression: events_with_direction_field must not be measured and
+    then ignored. A store that gains a direction-bearing field must not keep
+    reporting a blanket NOT_SERVED under projection=None."""
+    from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({"id": "synthetic-direction-1", "date": "2026-08-01",
+                             "tickers": ["TEST"], "direction": "up"}) + "\n")
+
+    receipt = resolve_market_feed_alias(root=root, projection=None)
+    assert receipt["state"] == "PARTIALLY_SERVED"
+    assert "store_has_direction_data_no_declared_projection" in receipt["flags"]
+
+
+def test_market_feed_alias_evidence_is_k1_reference_shape(tmp_path):
+    """MAJOR regression: evidence must be a schema-shape K1 EvidenceRef (21
+    required fields), not the ad hoc {kind, ref, as_of, receipt} dict."""
+    import json as _json
+    from jsonschema import Draft202012Validator
+    from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    receipt = resolve_market_feed_alias(root=root, projection=None)
+    schema = _json.loads(
+        (Path(__file__).resolve().parents[1]
+         / "contracts" / "evidence_foundation" / "reference.v1.schema.json").read_text()
+    )
+    validator = Draft202012Validator(schema)
+    errors = list(validator.iter_errors(receipt["evidence"]))
+    assert not errors, [e.message for e in errors]
+    assert receipt["evidence"]["rights"]["state"] == "permitted"
+    assert receipt["evidence"]["authority"] == {
+        "can_rank": False, "can_gate": False, "can_size": False,
+        "can_originate": False, "can_open_entry": False,
+    }
 
 
 def test_market_feed_alias_disclosure_is_plain_words_both_languages(tmp_path):
