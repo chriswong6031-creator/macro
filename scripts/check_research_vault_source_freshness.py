@@ -4,6 +4,7 @@ import argparse, json, math, sys, urllib.error, urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+from urllib.parse import urlparse
 
 # Unconditional: an already-present root further down sys.path still loses to a
 # foreign package ahead of it, so this must pin position 0 every time (see
@@ -16,10 +17,14 @@ from engine.research_vault.catalog import source_clock_summary  # noqa: E402
 
 SCHEMA="research_vault.source_freshness.v1"
 CLOCK_SCHEMA="research_vault.source_clock.v1"
-DEFAULT_URL="https://www.mastermind-x.com/api/research/catalog?limit=3&offset=0"
+# No limit/offset — app/research.research_catalog ignores them; preview size is
+# chosen by tier via _catalog_preview. The whole-catalog source_clock lives on
+# summary regardless of the truncated items list.
+DEFAULT_URL="https://www.mastermind-x.com/api/research/catalog"
 DEFAULT_TIMEOUT_SECONDS=20.0
 DEFAULT_FUTURE_TOLERANCE_MINUTES=5.0
 MAX_RESPONSE_BYTES=8*1024*1024
+ALLOWED_URL_SCHEMES=frozenset({"http", "https"})
 
 def _iso(v): return v.astimezone(timezone.utc).isoformat() if v is not None else None
 
@@ -112,7 +117,11 @@ def evaluate(payload:Mapping[str,Any],*,now=None,source="catalog",max_age_hours=
             return refuse("CATALOG_UNAVAILABLE","source-clock aggregate latest timestamp is inconsistent")
         if count==0: return refuse("NO_REPORTS","catalog contains no report rows")
         common["latest_report_at"]=latest
-        if invalid or latest is None: return refuse("LATEST_REPORT_INVALID","one or more admitted reports have an unusable published_at clock")
+        # One dirty published_at must not replace PRODUCER_STALE: when any valid
+        # clock exists, grade the newest valid stamp and keep invalid_published_at
+        # as a side signal (emitted as a warning annotation).
+        if latest is None:
+            return refuse("LATEST_REPORT_INVALID","one or more admitted reports have an unusable published_at clock")
         age=(current-latest).total_seconds()/3600; common["age_hours"]=age
         if latest-current>tolerance: return refuse("FUTURE_REPORT_CLOCK","newest report exceeds the accepted future-clock tolerance")
         deadline=source_deadline(latest,max_age_hours); limit=(deadline-latest).total_seconds()/3600
@@ -136,6 +145,11 @@ def _load_local(path):
 
 def _load_url(url,timeout_seconds):
     timeout=_finite_number(timeout_seconds,positive=True)
+    if not isinstance(url,str) or not url.strip():
+        raise ValueError("URL must be a non-empty http(s) string")
+    scheme=(urlparse(url.strip()).scheme or "").lower()
+    if scheme not in ALLOWED_URL_SCHEMES:
+        raise ValueError(f"URL scheme must be http or https, got {scheme!r}")
     req=urllib.request.Request(url,headers={"Accept":"application/json","User-Agent":"MastermindX-research-source-health/1"})
     with urllib.request.urlopen(req,timeout=timeout) as r:
         try: announced=int(r.headers.get("Content-Length")) if r.headers.get("Content-Length") else None
@@ -148,11 +162,15 @@ def _load_url(url,timeout_seconds):
 def _annotation_text(v): return str(v).replace("%","%25").replace("\r","%0D").replace("\n","%0A")
 def _emit(report):
     print(json.dumps(dict(report),sort_keys=True,allow_nan=False))
+    invalid=report.get("invalid_published_at") or 0
+    if type(invalid) is int and invalid>0:
+        print("::warning title=research-vault-source::"+_annotation_text(
+            f"{invalid} admitted report(s) have an unusable published_at; graded newest valid clock"))
     if report.get("ok") is not True:
         print("::error title=research-vault-source::"+_annotation_text(f"{report.get('status')}: {report.get('reason')}"))
 
 def _selftest():
-    """Run 42 hermetic contract checks."""
+    """Run 44 hermetic contract checks."""
     import contextlib, copy, io, tempfile
     from unittest.mock import patch
     from engine.research_vault import catalog as catalog_mod
@@ -183,10 +201,22 @@ def _selftest():
     for v in (float("nan"),float("inf"),-1): check(f"tol-{v}",lambda v=v: expect(cat(),"CATALOG_UNAVAILABLE",future_tolerance_minutes=v))
     for v in (float("inf"),float("nan"),True,1.5,"1",-1): check(f"count-{v!r}",lambda v=v: expect(dict(cat(),count=v),"CATALOG_UNAVAILABLE"))
     for v in ("0001-01-01T00:00:00+01:00","9999-12-31T23:59:59-01:00","bad",None): check(f"stamp-{v}",lambda v=v: expect(cat(v),"LATEST_REPORT_INVALID"))
-    extras=[lambda:expect(dict(cat(),count=2,items=cat()["items"]+[{"id":"bad","published_at":"bad"}]),"LATEST_REPORT_INVALID"),
+    extras=[lambda:(lambda r: (req(r["status"]=="SOURCE_FRESH",r), req(r["invalid_published_at"]==1,r)))(
+                evaluate(dict(cat(),count=2,items=cat()["items"]+[{"id":"bad","published_at":"bad"}]),now=now)),
             lambda:expect(dict(cat(),count=100),"CATALOG_UNAVAILABLE"),lambda:expect(dict(cat(),preview=True),"CATALOG_UNAVAILABLE"),
             lambda:expect(dict(cat(),preview="yes"),"CATALOG_UNAVAILABLE"),lambda:req(evaluate(cat(),now="bad")["status"]=="CATALOG_UNAVAILABLE")]
     for i,fn in enumerate(extras): check(f"extra-{i}",fn)
+    def partial_stale():
+        p=dict(cat("2026-08-25T16:47:24Z"),count=2,
+               items=[{"id":"old","published_at":"2026-08-25T16:47:24Z"},{"id":"bad","published_at":"nope"}])
+        r=evaluate(p,now=now); req(r["status"]=="PRODUCER_STALE" and r["invalid_published_at"]==1,r)
+    check("partial-stale",partial_stale)
+    def schemes():
+        for bad in ("file:///etc/passwd","ftp://example.com/x","data:application/json,{}","","   "):
+            try: _load_url(bad,1.0)
+            except ValueError: continue
+            raise AssertionError(bad)
+    check("schemes",schemes)
     def aggregate():
         p=cat(); p["items"][0].update(title="PRIVATE",pdf_key="PRIVATE"); before=copy.deepcopy(p); c=catalog_mod.public_summary(p,now=now)["source_clock"]
         req(set(c)=={"schema","complete","report_count","valid_clock_count","invalid_clock_count","latest_report_published_at"},c); req("PRIVATE" not in json.dumps(c) and p==before,c)
@@ -202,8 +232,10 @@ def _selftest():
     check("badagg",badagg)
     def annotation():
         o=io.StringIO()
-        with contextlib.redirect_stdout(o): _emit({"ok":False,"status":"BAD","reason":"x%\r\n::error::forged"})
-        lines=[x for x in o.getvalue().splitlines() if x.startswith("::error")]; req(len(lines)==1 and all(x in lines[0] for x in ("%25","%0D","%0A")),lines)
+        with contextlib.redirect_stdout(o): _emit({"ok":False,"status":"BAD","reason":"x%\r\n::error::forged","invalid_published_at":2})
+        text=o.getvalue(); lines=[x for x in text.splitlines() if x.startswith("::error")]; warn=[x for x in text.splitlines() if x.startswith("::warning")]
+        req(len(lines)==1 and all(x in lines[0] for x in ("%25","%0D","%0A")),lines)
+        req(len(warn)==1 and "2 admitted" in warn[0],warn)
     check("annotation",annotation)
     def bounded():
         class R:
@@ -238,11 +270,11 @@ def _selftest():
                 r=evaluate(cat(start.isoformat()),now=start+timedelta(minutes=30*step)); req(not(stale and r["ok"]),(start,step,r)); stale=stale or r["status"]=="PRODUCER_STALE"
             req(stale,start)
     check("monotonic",monotonic)
-    if passed!=42: failures.append(f"accounting {passed}/42")
+    if passed!=44: failures.append(f"accounting {passed}/44")
     if failures:
         for f in failures: print(f"SELFTEST FAILURE: {f}",file=sys.stderr)
         return 1
-    print("research-vault source-freshness selftest: 42 passed"); return 0
+    print("research-vault source-freshness selftest: 44 passed"); return 0
 
 def build_parser():
     p=argparse.ArgumentParser(description="Grade source-content freshness separately from publication freshness.")

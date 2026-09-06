@@ -168,9 +168,41 @@ jobs:
           print("Research Vault hosted regressions passed")
           PY
 
+  # Hosted dead-man for Research Vault source-content silence. Runs on every
+  # schedule/dispatch even when vars.VPS_LIVE_PRIMARY is unset, so an offline
+  # Mac fleet cannot mask a dead producer (MAJOR 3). Deploy ordering (MINOR 4):
+  # the URL path requires summary.source_clock on the VPS — merge + VPS pull of
+  # this PR's app/engine before treating CATALOG_UNAVAILABLE as a producer
+  # signal. Outage ack: RESEARCH_VAULT_SOURCE_OUTAGE_ACK=true (same as ingest).
+  research-vault-source-url:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: verify Research Vault source-content freshness (public URL)
+        env:
+          RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS: ${{ vars.RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS }}
+          RESEARCH_VAULT_SOURCE_OUTAGE_ACK: ${{ vars.RESEARCH_VAULT_SOURCE_OUTAGE_ACK }}
+        run: |
+          set +e
+          args=(--url "https://www.mastermind-x.com/api/research/catalog")
+          if [ -n "${RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS:-}" ]; then
+            args+=(--max-age-hours "${RESEARCH_VAULT_SOURCE_MAX_AGE_HOURS}")
+          fi
+          python -m scripts.check_research_vault_source_freshness "${args[@]}"
+          rc=$?
+          if [ "$rc" != "0" ] && [ "${RESEARCH_VAULT_SOURCE_OUTAGE_ACK:-}" = "true" ]; then
+            echo "::warning title=research-vault-source::URL freshness FAILED (rc=$rc) but RESEARCH_VAULT_SOURCE_OUTAGE_ACK=true — acknowledged outage; clear the variable when the producer resumes"
+            exit 0
+          fi
+          exit "$rc"
+
   health:
     # This becomes the external dead-man only after the production soak. It uses
     # GitHub-hosted compute so an offline Mac fleet cannot mask a dead VPS.
+    # Research Vault URL freshness lives in research-vault-source-url above so it
+    # is not gated on VPS_LIVE_PRIMARY.
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.VPS_LIVE_PRIMARY == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
@@ -178,8 +210,3 @@ jobs:
       - uses: actions/checkout@v4
       - name: verify public VPS lane freshness
         run: python scripts/check_vps_live_health.py
-      - name: verify Research Vault source-content freshness
-        if: ${{ always() }}
-        run: >-
-          python -m scripts.check_research_vault_source_freshness
-          --url "https://www.mastermind-x.com/api/research/catalog?limit=3&offset=0"

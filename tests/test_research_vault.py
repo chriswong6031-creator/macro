@@ -419,6 +419,14 @@ def test_public_summary_describes_the_full_catalog_not_a_preview_slice():
     )
 
     assert summary == {
+        "source_clock": {
+            "schema": "research_vault.source_clock.v1",
+            "complete": True,
+            "report_count": 4,
+            "valid_clock_count": 4,
+            "invalid_clock_count": 0,
+            "latest_report_published_at": "2026-07-31T10:00:00+00:00",
+        },
         "total": 4,
         "new_this_week": 3,
         "desks_this_week": 2,
