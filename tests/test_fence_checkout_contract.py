@@ -210,3 +210,50 @@ def test_hold_wrapper_regressions_execute_inside_the_fast_fence() -> None:
             )
 
     hold.test_stop_hook_routes_through_wrapper_but_keeps_original_guard_as_delegate()
+
+
+def test_agent_os_record_contract_runs_inside_the_existing_fast_fence() -> None:
+    job = _document()["jobs"]["fence-pack"]
+    checkout = next(step for step in job["steps"] if step.get("uses") == "actions/checkout@v4")
+    sparse = {
+        line.strip()
+        for line in str(checkout["with"]["sparse-checkout"]).splitlines()
+        if line.strip()
+    }
+    assert "/agentos/" in sparse
+
+    step = _named_step(job, "agent-os record contract")
+    assert step["id"] == "agent_os_record_contract"
+    assert step["continue-on-error"] is True
+    assert step["run"] == "python3 scripts/agentos.py validate"
+
+
+def test_agent_os_record_contract_feeds_the_existing_self_mod_context() -> None:
+    job = _document()["jobs"]["fence-pack"]
+    publish = _named_step(job, "publish required fence contexts")
+    assert publish["env"]["AGENT_OS_RECORD_CONTRACT"] == (
+        "${{ steps.agent_os_record_contract.outcome }}"
+    )
+
+    script = publish["with"]["script"]
+    self_mod_start = script.index("name: 'self-mod-fence'")
+    capability_start = script.index("name: 'capability-broker'")
+    self_mod_block = script[self_mod_start:capability_start]
+    assert "process.env.AGENT_OS_RECORD_CONTRACT" in self_mod_block
+    assert script.count("process.env.AGENT_OS_RECORD_CONTRACT") == 1
+    assert "name: 'agent-os-record-contract'" not in script
+
+
+def test_agent_os_record_contract_failure_reaches_fence_pack_terminal_result() -> None:
+    job = _document()["jobs"]["fence-pack"]
+    aggregate = _named_step(job, "fail pack when any fence failed")
+    assert aggregate["env"]["AGENT_OS_RECORD_CONTRACT"] == (
+        "${{ steps.agent_os_record_contract.outcome }}"
+    )
+    assert '"$AGENT_OS_RECORD_CONTRACT"' in aggregate["run"]
+
+
+def test_fork_self_mod_fence_runs_the_same_canonical_agent_os_validator() -> None:
+    job = _document()["jobs"]["fork-self-mod-fence"]
+    commands = [step.get("run") for step in job["steps"]]
+    assert commands.count("python3 scripts/agentos.py validate") == 1
