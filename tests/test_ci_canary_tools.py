@@ -185,6 +185,8 @@ import sys
 import time
 
 args = sys.argv[1:]
+if os.environ.get("CACHE_UPDATE_GIT_ENTRY_MARKER"):
+    Path(os.environ["CACHE_UPDATE_GIT_ENTRY_MARKER"]).write_text("entered\\n")
 fault = os.environ.get("CACHE_UPDATE_GIT_FAULT")
 is_validation_rev_list = (
     "rev-list" in args
@@ -264,6 +266,15 @@ def cache_validation_receipt(result: subprocess.CompletedProcess[str]) -> dict[s
 def trace_argvs(trace: Path) -> list[list[str]]:
     records = [json.loads(line) for line in trace.read_text(encoding="utf-8").splitlines()]
     return [record["argv"] for record in records if isinstance(record.get("argv"), list)]
+
+
+def cache_seal_namespace() -> dict[str, object]:
+    script = CACHE_UPDATE.read_text(encoding="utf-8")
+    embedded = script.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+    definitions = embedded.split("\ntry:\n    action = sys.argv[1]", 1)[0]
+    namespace: dict[str, object] = {"__name__": "cache_seal_test"}
+    exec(compile(definitions, str(CACHE_UPDATE), "exec"), namespace)
+    return namespace
 
 
 def test_shared_cache_prewarm_materializes_without_origin(tmp_path: Path) -> None:
@@ -1484,6 +1495,8 @@ def test_cache_update_refuses_a_symlinked_lookup_file_before_following_it(
     _, _, cache, _ = cache_update_fixture(tmp_path)
     bin_dir = tmp_path / "bin"
     make_flock_shim(bin_dir)
+    real_git = make_git_fault_shim(bin_dir)
+    git_entry = tmp_path / "git-entered"
     victim = tmp_path / "unreadable-alternate"
     victim.write_text("must not be read\n", encoding="utf-8")
     victim.chmod(0o000)
@@ -1491,12 +1504,84 @@ def test_cache_update_refuses_a_symlinked_lookup_file_before_following_it(
     alternates.symlink_to(victim)
     try:
         result = run_cache_update(
-            cache, tmp_path / "cache.lock", bin_dir=bin_dir
+            cache,
+            tmp_path / "cache.lock",
+            bin_dir=bin_dir,
+            env_overrides={
+                "REAL_GIT": real_git,
+                "CACHE_UPDATE_GIT_ENTRY_MARKER": str(git_entry),
+            },
         )
     finally:
         victim.chmod(0o600)
     assert result.returncode == 78
     assert "symlink refused" in result.stderr
+    assert not git_entry.exists(), "unsafe lookup state reached Git before refusal"
+
+
+@pytest.mark.parametrize(
+    "unsafe_path",
+    ["config", "objects/info", "info", "objects/info/alternates"],
+)
+def test_cache_update_qualifies_config_lookup_and_ancestors_before_git(
+    tmp_path: Path, unsafe_path: str
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    real_git = make_git_fault_shim(bin_dir)
+    git_entry = tmp_path / "git-entered"
+    target = cache / unsafe_path
+    if unsafe_path.endswith("alternates"):
+        target.write_text("", encoding="utf-8")
+    target.chmod(target.stat().st_mode | stat.S_IWGRP)
+
+    result = run_cache_update(
+        cache,
+        tmp_path / "cache.lock",
+        bin_dir=bin_dir,
+        env_overrides={
+            "REAL_GIT": real_git,
+            "CACHE_UPDATE_GIT_ENTRY_MARKER": str(git_entry),
+        },
+    )
+
+    assert result.returncode == 78
+    assert "group/world-writable" in result.stderr
+    assert not git_entry.exists(), "unsafe config/lookup path reached Git"
+
+
+@pytest.mark.parametrize(
+    ("lookup_name", "value"),
+    [
+        ("alternates", "../../../../external-objects\n"),
+        ("http-alternates", "https://example.invalid/git/objects\n"),
+    ],
+)
+def test_cache_update_refuses_nonempty_external_alternates_before_git(
+    tmp_path: Path, lookup_name: str, value: str
+) -> None:
+    _, _, cache, _ = cache_update_fixture(tmp_path)
+    bin_dir = tmp_path / "bin"
+    make_flock_shim(bin_dir)
+    real_git = make_git_fault_shim(bin_dir)
+    git_entry = tmp_path / "git-entered"
+    (cache / "objects" / "info" / lookup_name).write_text(value, encoding="utf-8")
+
+    result = run_cache_update(
+        cache,
+        tmp_path / "cache.lock",
+        bin_dir=bin_dir,
+        env_overrides={
+            "REAL_GIT": real_git,
+            "CACHE_UPDATE_GIT_ENTRY_MARKER": str(git_entry),
+        },
+    )
+
+    assert result.returncode == 78
+    assert "external alternate" in result.stderr
+    assert not git_entry.exists(), "external alternate reached Git before refusal"
+    assert not (cache / ".last-update-ok").exists()
 
 
 @pytest.mark.parametrize("target", ["cache", "identity", "seal"])
@@ -1609,6 +1694,88 @@ def test_cache_update_publication_failure_leaves_no_usable_or_partial_seal(
         cache.chmod(0o755)
     assert result.returncode != 0
     assert not (cache / ".last-update-ok").exists()
+    assert list(cache.glob(".last-update-ok.tmp.*")) == []
+
+
+def test_cache_update_short_payload_write_cannot_publish_or_be_reused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    seal_tool = cache_seal_namespace()
+    lookup_digest = "a" * 64
+    state = seal_tool["expected_state"](str(cache), sha, lookup_digest)
+    fingerprint = seal_tool["state_fingerprint"](state)
+    real_write = os.write
+
+    def short_write(descriptor: int, payload: bytes) -> int:
+        short_count = max(1, len(payload) // 2)
+        return real_write(descriptor, payload[:short_count])
+
+    monkeypatch.setattr(os, "write", short_write)
+    with pytest.raises(seal_tool["UnsafeState"], match="short.*write"):
+        seal_tool["publish"](str(cache), sha, lookup_digest, fingerprint)
+
+    assert "FULL_VALIDATION" not in capsys.readouterr().out
+    assert not (cache / ".last-update-ok").exists()
+    assert list(cache.glob(".last-update-ok.tmp.*")) == []
+    with pytest.raises(SystemExit) as missed:
+        seal_tool["probe"](str(cache), sha, lookup_digest)
+    assert missed.value.code == 10
+
+
+def test_cache_update_post_rename_fsync_failure_removes_only_this_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    seal_tool = cache_seal_namespace()
+    lookup_digest = "b" * 64
+    state = seal_tool["expected_state"](str(cache), sha, lookup_digest)
+    fingerprint = seal_tool["state_fingerprint"](state)
+    real_fsync = os.fsync
+
+    def fail_directory_fsync(descriptor: int) -> None:
+        if stat.S_ISDIR(os.fstat(descriptor).st_mode):
+            raise OSError(5, "injected directory fsync failure")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(os, "fsync", fail_directory_fsync)
+    with pytest.raises(seal_tool["UnsafeState"], match="durability"):
+        seal_tool["publish"](str(cache), sha, lookup_digest, fingerprint)
+
+    assert "FULL_VALIDATION" not in capsys.readouterr().out
+    assert not (cache / ".last-update-ok").exists()
+    assert list(cache.glob(".last-update-ok.tmp.*")) == []
+    with pytest.raises(SystemExit) as missed:
+        seal_tool["probe"](str(cache), sha, lookup_digest)
+    assert missed.value.code == 10
+
+
+def test_cache_update_publication_settlement_refuses_a_foreign_seal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, _, cache, sha = cache_update_fixture(tmp_path)
+    seal_tool = cache_seal_namespace()
+    lookup_digest = "c" * 64
+    state = seal_tool["expected_state"](str(cache), sha, lookup_digest)
+    fingerprint = seal_tool["state_fingerprint"](state)
+    seal = cache / ".last-update-ok"
+    real_fsync = os.fsync
+    substituted = False
+
+    def substitute_before_directory_fsync(descriptor: int) -> None:
+        nonlocal substituted
+        if stat.S_ISDIR(os.fstat(descriptor).st_mode) and not substituted:
+            substituted = True
+            seal.unlink()
+            seal.write_text("foreign-state\n", encoding="utf-8")
+            raise OSError(5, "injected directory fsync failure")
+        real_fsync(descriptor)
+
+    monkeypatch.setattr(os, "fsync", substitute_before_directory_fsync)
+    with pytest.raises(seal_tool["UnsafeState"], match="foreign"):
+        seal_tool["publish"](str(cache), sha, lookup_digest, fingerprint)
+
+    assert seal.read_text(encoding="utf-8") == "foreign-state\n"
     assert list(cache.glob(".last-update-ok.tmp.*")) == []
 
 

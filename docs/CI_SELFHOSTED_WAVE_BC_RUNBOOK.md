@@ -71,14 +71,25 @@ whose entire validation key still matches:
   identities/timestamps plus pack-file identities, sizes, and timestamps.
 
 Missing, legacy, malformed, copied, or mismatched safe seals are misses and run the
-original full validation. A symlink, hard link, wrong owner, group/world-writable
-cache/marker/seal/lookup file, symlink-traversing cache path, or inherited Git object
-lookup override refuses. The updater removes a prior safe seal before a required full
-scan and publishes the replacement as a complete `0640` regular temporary file,
-`fsync`s it, atomically renames it in the same cache directory, and `fsync`s that
-directory. Fetch failure, either scan-pipeline failure, missing objects, publication
-failure, or validation-input movement during the scan cannot leave reusable prior
-success.
+original full validation. Validator revision v2 also makes every earlier v1 seal a
+miss. Before the first Git invocation, the updater qualifies `config`, every permitted
+lookup file, and the `objects/info` / `info` ancestors Git would traverse. A symlink,
+hard link, wrong owner, group/world-writable cache/marker/config/seal/lookup path,
+symlink-traversing cache path, or inherited Git object lookup override refuses before
+Git can consume it. Empty alternates metadata is harmless and remains bound; a nonempty
+`alternates` or `http-alternates` file refuses under the sole-cache contract rather
+than silently admitting an unqualified external object estate.
+
+The updater removes a prior safe seal before a required full scan and publishes the
+replacement as a complete `0640` regular temporary file. It requires `write(2)` to
+report the entire payload, `fsync`s the file, opens and identity-binds the cache
+directory before rename, atomically installs the exact temporary inode, and `fsync`s
+that directory. If final directory durability fails, settlement removes only that
+attempt's positively identified seal; a missing seal is already settled, while a
+substituted/foreign inode is preserved and refused. A short write, fetch failure,
+either scan-pipeline failure, missing objects, publication/settlement failure, or
+validation-input movement during the scan cannot emit `FULL_VALIDATION` or leave this
+attempt's result reusable.
 
 Receipts distinguish `FULL_VALIDATION` from `PRIOR_VALIDATION_REUSED`. A reuse receipt
 preserves the original full-validation time and reports a separate current reuse time;

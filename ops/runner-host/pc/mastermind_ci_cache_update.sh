@@ -23,7 +23,7 @@ from pathlib import Path
 
 SCHEMA = "mastermind.ci_git_cache_validation_seal.v1"
 RECEIPT_SCHEMA = "mastermind.ci_git_cache_validation_receipt.v1"
-VALIDATOR_REVISION = "reachable-main-batch-check.v1"
+VALIDATOR_REVISION = "reachable-main-batch-check.v2"
 KEYS = {
     "schema",
     "validator_revision",
@@ -83,6 +83,31 @@ def optional_file(path):
     return {"present": True, "sha256": digest_file(path)}
 
 
+def lookup_guard(cache):
+    owned(cache / "config", regular=True)
+    for relative in ("objects/info", "info"):
+        ancestor = cache / relative
+        if os.path.lexists(ancestor):
+            owned(ancestor, directory=True)
+    files = {}
+    for relative in (
+        "objects/info/alternates",
+        "objects/info/http-alternates",
+        "info/grafts",
+    ):
+        path = cache / relative
+        files[relative] = optional_file(path)
+        if relative in (
+            "objects/info/alternates",
+            "objects/info/http-alternates",
+        ) and files[relative]["present"]:
+            if owned(path, regular=True).st_size != 0:
+                raise UnsafeState(
+                    "nonempty external alternate lookup refused: %s" % path
+                )
+    return files
+
+
 def cache_guard(cache):
     absolute = Path(os.path.abspath(str(cache)))
     try:
@@ -99,7 +124,8 @@ def cache_guard(cache):
     seal = absolute / ".last-update-ok"
     if os.path.lexists(seal):
         owned(seal, regular=True)
-    return absolute, cache_stat, objects_stat
+    lookup_files = lookup_guard(absolute)
+    return absolute, cache_stat, objects_stat, lookup_files
 
 
 def object_context(cache, objects_stat):
@@ -136,16 +162,8 @@ def expected_state(cache_arg, main_oid, lookup_digest):
         raise UnsafeState("invalid main object id")
     if not re.fullmatch(r"[0-9a-f]{64}", lookup_digest):
         raise UnsafeState("invalid lookup-context digest")
-    cache, cache_stat, objects_stat = cache_guard(Path(cache_arg))
+    cache, cache_stat, objects_stat, lookup_files = cache_guard(Path(cache_arg))
     identity = cache / ".mastermind-cache-identity.json"
-    lookup_files = {
-        relative: optional_file(cache / relative)
-        for relative in (
-            "objects/info/alternates",
-            "objects/info/http-alternates",
-            "info/grafts",
-        )
-    }
     lookup_context = json.dumps(
         {"git_context_sha256": lookup_digest, "files": lookup_files},
         sort_keys=True,
@@ -209,7 +227,7 @@ def state_fingerprint(state):
 
 
 def invalidate(cache_arg):
-    cache, _, _ = cache_guard(Path(cache_arg))
+    cache, _, _, _ = cache_guard(Path(cache_arg))
     seal = cache / ".last-update-ok"
     if os.path.lexists(seal):
         os.unlink(seal)
@@ -247,6 +265,25 @@ def probe(cache_arg, main_oid, lookup_digest):
     )
 
 
+def settle_failed_publication(cache, seal, published_identity, directory_fd):
+    try:
+        os.lstat(seal)
+    except FileNotFoundError:
+        return
+    current = owned(seal, regular=True)
+    if (current.st_dev, current.st_ino) != published_identity:
+        raise UnsafeState(
+            "foreign seal replaced this publication; settlement refused"
+        )
+    os.unlink(seal)
+    try:
+        os.fsync(directory_fd)
+    except OSError:
+        # The failed publication is no longer usable in the current namespace.
+        # The caller still returns failure because its durability was not proven.
+        pass
+
+
 def publish(cache_arg, main_oid, lookup_digest, validated_state_fingerprint):
     state = expected_state(cache_arg, main_oid, lookup_digest)
     if state_fingerprint(state) != validated_state_fingerprint:
@@ -258,8 +295,21 @@ def publish(cache_arg, main_oid, lookup_digest, validated_state_fingerprint):
     full_validated_at = timestamp()
     state["full_validated_at"] = full_validated_at
     descriptor = None
+    directory_fd = None
     temporary = None
+    published_identity = None
     try:
+        directory_fd = os.open(
+            cache, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+        )
+        directory_stat = os.fstat(directory_fd)
+        cache_instance = state["cache_instance"]
+        if (
+            not stat.S_ISDIR(directory_stat.st_mode)
+            or directory_stat.st_dev != cache_instance["device"]
+            or directory_stat.st_ino != cache_instance["inode"]
+        ):
+            raise UnsafeState("cache directory identity changed before publication")
         descriptor, temporary = tempfile.mkstemp(
             prefix=".last-update-ok.tmp.", dir=str(cache)
         )
@@ -274,17 +324,36 @@ def publish(cache_arg, main_oid, lookup_digest, validated_state_fingerprint):
         payload = (
             json.dumps(state, sort_keys=True, separators=(",", ":")) + "\n"
         ).encode("utf-8")
-        os.write(descriptor, payload)
+        written = os.write(descriptor, payload)
+        if written != len(payload):
+            raise UnsafeState(
+                "short seal payload write: wrote %s of %s bytes"
+                % (written, len(payload))
+            )
         os.fsync(descriptor)
         os.close(descriptor)
         descriptor = None
         os.replace(temporary, seal)
         temporary = None
-        directory_fd = os.open(cache, os.O_RDONLY)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        published_identity = (temporary_stat.st_dev, temporary_stat.st_ino)
+        installed = owned(seal, regular=True)
+        if (installed.st_dev, installed.st_ino) != published_identity:
+            raise UnsafeState("foreign seal appeared during publication")
+        os.fsync(directory_fd)
+    except Exception as exc:
+        if published_identity is not None and directory_fd is not None:
+            try:
+                settle_failed_publication(
+                    cache, seal, published_identity, directory_fd
+                )
+            except UnsafeState as settlement_error:
+                raise settlement_error from exc
+            raise UnsafeState(
+                "seal publication failed before directory durability: %s" % exc
+            ) from exc
+        if isinstance(exc, UnsafeState):
+            raise
+        raise UnsafeState("seal publication failed: %s" % exc) from exc
     finally:
         if descriptor is not None:
             os.close(descriptor)
@@ -293,6 +362,8 @@ def publish(cache_arg, main_oid, lookup_digest, validated_state_fingerprint):
                 os.unlink(temporary)
             except FileNotFoundError:
                 pass
+        if directory_fd is not None:
+            os.close(directory_fd)
     print(receipt("FULL_VALIDATION", main_oid, full_validated_at, None))
 
 
