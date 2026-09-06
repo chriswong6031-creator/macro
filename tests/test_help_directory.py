@@ -45,6 +45,7 @@ def test_help_directory_renders_only_the_frozen_owner_targets(tmp_path: Path) ->
         "reference.html",
         "methodology.html",
         "measurement.html",
+        "glossary.html",
         "support.html",
         "plans.html",
         "plans.html?billing=portal",

@@ -1,0 +1,230 @@
+{% macro t(en, zh) -%}
+<span class="l-en">{{ en|replace('&amp;', '&')|forceescape }}</span><span class="l-zh">{{ zh|replace('&amp;', '&')|forceescape }}</span>
+{%- endmacro %}
+{% macro t_text(en, zh) -%}{{ en }} / {{ zh }}{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary — MastermindX</title>
+{% set seo_title = "Glossary — MastermindX" %}
+{% set seo_desc = "Plain-language definitions for every reading on the MastermindX dashboards." %}
+{% set seo_path = "glossary.html" %}
+{% include "_seo_head.html.j2" %}
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* DARK TREATMENT: a command-centre index — hairline-separated readings on an
+   open canvas, a recessed letter rail, and exactly one glow (search focus). */
+*{box-sizing:border-box}
+body{margin:0;padding-top:18px;background:var(--bg);color:var(--text);font:14.5px/1.55 var(--font-ui);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.gl-shell{max-width:1120px;margin:0 auto;padding:clamp(28px,5vw,64px) clamp(18px,4vw,44px) 80px}
+.gl-hero{max-width:760px;padding:18px 0 30px;position:relative}
+.gl-hero::before{content:"";position:absolute;left:-28px;top:10px;bottom:30px;width:2px;background:linear-gradient(180deg,var(--link),transparent)}
+.gl-kicker{display:block;margin:0 0 14px;color:var(--muted);font:650 11px/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase}
+.gl-hero h1{margin:0;font:760 clamp(34px,6vw,64px)/1 var(--font-ui);letter-spacing:-.045em}
+.gl-lede{margin:16px 0 0;max-width:56ch;color:var(--muted);font-size:clamp(14px,2vw,16px)}
+
+.gl-rail{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:2px;padding:10px 12px;background:var(--panel2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.gl-letter{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:26px;min-height:44px;padding:6px 4px;border-radius:var(--r-ctl,8px);color:var(--muted);font:650 11px/1 var(--font-mono);letter-spacing:.06em}
+.gl-letter:hover,.gl-letter:focus-visible{outline:none;color:var(--text);box-shadow:inset 0 -1px 0 var(--link)}
+.gl-tick{display:block;width:2px;height:calc(3px + var(--n) * 2px);max-height:16px;border-radius:1px;background:var(--link);opacity:.75}
+.gl-letter.is-empty{color:color-mix(in srgb,var(--muted) 45%,transparent);cursor:default}
+.gl-letter.is-empty .gl-tick{height:3px;background:var(--line);opacity:1}
+.gl-rail-note{margin:8px 0 22px;color:var(--muted);font:600 11px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+
+.gl-controls{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:14px;align-items:center;padding:16px 0 24px;border-top:1px solid var(--line)}
+.gl-search{position:relative;max-width:520px}
+.gl-search input{width:100%;min-height:44px;padding:10px 42px 10px 14px;border:1px solid var(--line);border-radius:var(--r-ctl,8px);background:var(--panel2);color:var(--text);font:inherit;outline:none}
+.gl-search input:focus{border-color:var(--link);box-shadow:0 0 16px -5px color-mix(in srgb,var(--link) 55%,transparent)}
+.gl-search svg{position:absolute;right:14px;top:13px;width:18px;height:18px;fill:none;stroke:var(--muted);stroke-width:1.8}
+.gl-filters{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:7px}
+.gl-filter{min-height:44px;padding:8px 13px;border:1px solid var(--line);border-radius:var(--r-pill,999px);background:transparent;color:var(--muted);font:650 12px/1 var(--font-ui);cursor:pointer}
+.gl-filter:hover,.gl-filter[aria-pressed="true"]{border-color:color-mix(in srgb,var(--link) 65%,var(--line));color:var(--text);background:var(--panel2)}
+.gl-meta{display:flex;justify-content:space-between;gap:16px;margin:0 0 20px;color:var(--muted);font:600 11px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+
+.gl-domain{margin:0 0 40px}
+.gl-domain[hidden]{display:none}
+.gl-domain-h{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:0;padding:0 0 12px;border-bottom:1px solid var(--line);font:680 clamp(20px,2.6vw,26px)/1.2 var(--font-ui);letter-spacing:-.02em}
+.gl-domain-n{color:var(--muted);font:650 11px/1 var(--font-mono);letter-spacing:.1em}
+.gl-list{margin:0}
+.gl-row{position:relative;display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:8px 28px;padding:18px 14px 18px 0;border-bottom:1px solid var(--line);transition:background .16s ease}
+.gl-row:hover{background:var(--panel)}
+.gl-row[hidden]{display:none}
+.gl-term{margin:0;display:flex;flex-direction:column;gap:7px;min-width:0}
+.gl-term-name{font:680 var(--fs-h2)/1.3 var(--font-ui);letter-spacing:-.01em}
+.gl-src{align-self:flex-start;padding:3px 8px;border:1px solid var(--line);border-radius:var(--r-pill,999px);color:var(--muted);font:650 var(--fs-micro)/1.5 var(--font-mono);letter-spacing:.07em;transition:border-color .16s ease,color .16s ease}
+.gl-row:hover .gl-src{border-color:color-mix(in srgb,var(--link) 45%,var(--line));color:var(--text)}
+.gl-def{margin:0;min-width:0;max-width:62ch}
+.gl-answer{margin:0;font-size:var(--fs-md)}
+.gl-why{margin:9px 0 0;color:var(--muted);font-size:var(--fs-sm)}
+.gl-why-k{display:inline-block;margin-right:8px;color:var(--link);font:650 var(--fs-micro)/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
+.gl-anchor{display:block;position:absolute;top:-96px;height:0;visibility:hidden}
+.gl-domain-empty{margin:0;padding:22px 0 0;color:var(--muted);font:650 12px/1.5 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+.gl-state-panel{padding:44px 22px;border:1px dashed var(--line);color:var(--muted);text-align:center;font:650 12px/1.5 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+.gl-domain-empty[hidden],.gl-state-panel[hidden]{display:none}
+
+/* LIGHT TREATMENT: a research workspace. Four mechanisms differ on purpose —
+   M1 separation moves from row rules to white card material; M2 hover reverses
+   direction; M3 the rail inverts from recessed slot to raised strip; M4 glow
+   becomes a flat halo. Everything else is byte-shared with dark. */
+html[data-theme="light"] .gl-hero::before{background:var(--link)}
+html[data-theme="light"] .gl-search input{background:var(--panel);box-shadow:0 1px 2px color-mix(in srgb,var(--text) 7%,transparent)}
+html[data-theme="light"] .gl-search input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent)}
+/* M1 */
+html[data-theme="light"] .gl-domain{padding:6px 20px 12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-card,12px);box-shadow:0 8px 24px color-mix(in srgb,var(--text) 7%,transparent)}
+html[data-theme="light"] .gl-domain-h{padding-top:16px}
+html[data-theme="light"] .gl-row{border-bottom-color:color-mix(in srgb,var(--line) 60%,transparent)}
+html[data-theme="light"] .gl-list .gl-row:last-child{border-bottom:0}
+/* M2 */
+html[data-theme="light"] .gl-row:hover{background:var(--panel2)}
+html[data-theme="light"] .gl-src{background:var(--panel2)}
+/* M3 */
+html[data-theme="light"] .gl-rail{background:var(--panel);border-top:0;box-shadow:0 6px 18px color-mix(in srgb,var(--text) 6%,transparent)}
+/* M4 */
+html[data-theme="light"] .gl-letter:hover,html[data-theme="light"] .gl-letter:focus-visible{box-shadow:0 0 0 2px color-mix(in srgb,var(--link) 18%,transparent)}
+
+@media (max-width:900px){
+  .gl-row{grid-template-columns:1fr;gap:10px;padding:16px 12px 16px 0}
+  .gl-def{max-width:none}
+}
+@media (max-width:760px){
+  .gl-controls{grid-template-columns:1fr;align-items:stretch}
+  .gl-search{max-width:none}
+  .gl-filters{justify-content:flex-start}
+}
+@media (max-width:600px){
+  .gl-shell{padding:24px 16px 58px}
+  .gl-hero{padding:12px 12px 26px}
+  .gl-hero::before{left:0;top:8px;bottom:26px}
+  .gl-rail{flex-wrap:nowrap;overflow-x:auto;gap:1px;padding:8px 6px;-webkit-overflow-scrolling:touch}
+  .gl-letter{min-width:24px}
+  html[data-theme="light"] .gl-domain{padding:4px 14px 10px}
+}
+@media (prefers-reduced-motion:reduce){.gl-row,.gl-src,.gl-letter{transition:none}}
+</style>
+{% set rel = '' %}
+{% include "_public_chrome_css.html.j2" %}
+</head>
+<body class="public-page">
+{% include "_public_nav.html.j2" %}
+
+<main class="gl-shell" id="glossary" data-glossary-state="{{ glossary_state }}">
+  <header class="gl-hero">
+    <span class="gl-kicker">{{ t('Reference', '参考') }}</span>
+    <h1>{{ t('Glossary', '词汇表') }}</h1>
+    <p class="gl-lede">{{ t('Every reading on the dashboards, in plain words — what it says, and what you do about it.', '仪表盘上的每一项读数，用平实语言解释：它说明什么，你该怎么做。') }}</p>
+  </header>
+
+{% if term_count %}
+  <nav class="gl-rail" id="gl-rail" aria-label="{{ t_text('Jump to letter', '按字母跳转') }}">
+{% for letter in letters %}
+{% if letter.count %}    <a class="gl-letter" data-letter="{{ letter.id }}" href="#gl-letter-{{ letter.id }}"><span class="gl-tick" style="--n:{{ letter.count }}"></span>{{ letter.label }}</a>
+{% else %}    <span class="gl-letter is-empty" data-letter="{{ letter.id }}" aria-disabled="true"><span class="gl-tick" style="--n:0"></span>{{ letter.label }}</span>
+{% endif %}{% endfor %}
+  </nav>
+  <p class="gl-rail-note">{{ t('Dimmed letters have no terms yet.', '灰色字母下暂无词条。') }}</p>
+
+  <section class="gl-controls" aria-label="{{ t_text('Search and filter', '搜索与筛选') }}">
+    <div class="gl-search">
+      <input id="gl-search" type="search" autocomplete="off"
+             aria-label="{{ t_text('Search terms', '搜索词条') }}"
+             data-ph-en="Search terms" data-ph-zh="搜索词条" placeholder="Search terms">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+    </div>
+    <div class="gl-filters" role="group" aria-label="{{ t_text('Filter by area', '按板块筛选') }}">
+      <button class="gl-filter" type="button" data-domain="all" aria-pressed="true">{{ t('All', '全部') }}</button>
+{% for domain in domains %}      <button class="gl-filter" type="button" data-domain="{{ domain.id }}" aria-pressed="false">{{ t(domain.label_en, domain.label_zh) }}</button>
+{% endfor %}    </div>
+  </section>
+
+  <div class="gl-meta">
+    <span>{{ t('Terms', '词条') }}</span>
+    <span id="gl-result-count" role="status" aria-live="polite">{{ term_count }}</span>
+  </div>
+
+{% for domain in domains %}
+  <section class="gl-domain" id="gl-domain-{{ domain.id }}" data-domain-section="{{ domain.id }}">
+    <h2 class="gl-domain-h"><span>{{ t(domain.label_en, domain.label_zh) }}</span><span class="gl-domain-n" data-domain-count>{{ domain.count }}</span></h2>
+    <dl class="gl-list">
+{% for term in domain.terms %}
+      <div class="gl-row" id="gl-{{ term.id }}" data-glossary-row data-domain="{{ domain.id }}" data-letter="{{ term.letter }}" data-search="{{ term.search }}">
+{% if term.letter_anchor %}        <span class="gl-anchor" id="gl-letter-{{ term.letter }}" aria-hidden="true"></span>
+{% endif %}        <dt class="gl-term">
+          <span class="gl-term-name">{{ t(term.name_en, term.name_zh) }}</span>
+          <a class="gl-src" href="{{ term.page_href }}">{{ t(term.page_en, term.page_zh) }}</a>
+        </dt>
+        <dd class="gl-def">
+          <p class="gl-answer">{{ t(term.answer_en, term.answer_zh) }}</p>
+{% if term.why_en %}          <p class="gl-why"><span class="gl-why-k">{{ t('Why it matters', '为何重要') }}</span>{{ t(term.why_en, term.why_zh) }}</p>
+{% endif %}        </dd>
+      </div>
+{% endfor %}
+    </dl>
+    <p class="gl-domain-empty" data-domain-empty hidden>{{ t('No matching terms in this section.', '本节没有匹配词条。') }}</p>
+  </section>
+{% endfor %}
+
+  <div class="gl-state-panel" data-empty-state="empty" role="status" aria-live="polite" hidden>{{ t('No matching terms', '没有匹配词条') }} · 0</div>
+{% else %}
+  <div class="gl-state-panel" data-empty-state="empty" role="status" aria-live="polite">{{ t('No terms available', '暂无词条') }} · 0</div>
+{% endif %}
+</main>
+
+{% include "_public_footer.html.j2" %}
+<script src="theme.js"></script>
+{% include "_public_chrome_js.html.j2" %}
+<script>
+(function(){
+  'use strict';
+  var root=document.getElementById('glossary'); if(!root) return;
+  var query=document.getElementById('gl-search'); if(!query) return;
+  var count=document.getElementById('gl-result-count');
+  var panel=root.querySelector('[data-empty-state]');
+  var rows=[].slice.call(root.querySelectorAll('[data-glossary-row]'));
+  var sections=[].slice.call(root.querySelectorAll('[data-domain-section]'));
+  var buttons=[].slice.call(root.querySelectorAll('[data-domain]'));
+  var letters=[].slice.call(root.querySelectorAll('.gl-letter'));
+  var domain='all';
+  function normal(v){return (v||'').toLocaleLowerCase().trim();}
+  function paint(){
+    var needle=normal(query.value), visible=0, live={};
+    rows.forEach(function(row){
+      var dm=domain==='all'||row.getAttribute('data-domain')===domain;
+      var sm=!needle||normal(row.getAttribute('data-search')).indexOf(needle)!==-1;
+      row.hidden=!(dm&&sm);
+      if(!row.hidden){visible+=1; live[row.getAttribute('data-letter')]=true;}
+    });
+    sections.forEach(function(section){
+      var shown=section.querySelectorAll('[data-glossary-row]:not([hidden])').length;
+      section.querySelector('[data-domain-count]').textContent=String(shown);
+      section.querySelector('[data-domain-empty]').hidden=shown!==0;
+    });
+    letters.forEach(function(letter){
+      var on=!!live[letter.getAttribute('data-letter')];
+      letter.classList.toggle('is-empty',!on);
+      if(on){letter.removeAttribute('aria-disabled');} else {letter.setAttribute('aria-disabled','true');}
+    });
+    count.textContent=String(visible);
+    panel.hidden=visible!==0;
+    root.setAttribute('data-glossary-state',visible?'complete':'empty');
+  }
+  buttons.forEach(function(b){b.addEventListener('click',function(){
+    domain=b.getAttribute('data-domain');
+    buttons.forEach(function(o){o.setAttribute('aria-pressed',String(o===b));});
+    paint();
+  });});
+  query.addEventListener('input',paint);
+  function paintLanguage(){
+    var zh=document.documentElement.getAttribute('data-lang')==='zh';
+    var ph=query.getAttribute(zh?'data-ph-zh':'data-ph-en');
+    query.setAttribute('placeholder',ph); query.setAttribute('aria-label',ph);
+  }
+  document.addEventListener('langchange',paintLanguage);
+  paintLanguage();
+})();
+</script>
+</body>
+</html>
