@@ -30,7 +30,7 @@ poll clock.  Callers inject every clock; this kernel does not sample wall time.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import lru_cache
 from hashlib import sha256
 from zoneinfo import ZoneInfo
@@ -688,6 +688,10 @@ def issuer_source_identity(manifest: Mapping[str, Any]) -> str:
         ),
         "previous_manifest_id": manifest.get("previous_manifest_id"),
     }
+    # This key is deliberately absent from older manifests.  Including an
+    # implicit empty list would rewrite their immutable identity on read.
+    if "filing_corrections" in manifest:
+        body["filing_corrections"] = manifest["filing_corrections"]
     return sha256(canonical_json(body).encode("utf-8")).hexdigest()
 
 
@@ -1928,6 +1932,255 @@ _FILING_FACT_FIELDS = (
     "is_inline_xbrl",
 )
 
+_SOURCE_CORRECTION_RULE_ID = "sec_acceptance_eastern_wallclock_labeled_utc/v1"
+_SOURCE_CORRECTION_DERIVATION = "america_new_york_wallclock_to_utc/v1"
+_SOURCE_CORRECTION_CLASS = "historical_sec_source_correction"
+_CORRECTION_UTC_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.000Z$")
+_CORRECTION_NON_TIME_FIELDS = tuple(
+    field for field in _FILING_FACT_FIELDS if field != "acceptance_datetime"
+)
+
+
+def _correction_source_record(store: BroadSecStore, source: Mapping[str, Any]) -> dict[str, Any]:
+    """Read and hash one immutable source object named by a correction record."""
+
+    digest = source.get("sha256")
+    key = source.get("object_key")
+    byte_count = source.get("bytes")
+    if (
+        not isinstance(digest, str)
+        or re.fullmatch(r"[a-f0-9]{64}", digest) is None
+        or key != object_key(digest)
+        or not isinstance(byte_count, int)
+        or byte_count < 1
+    ):
+        raise BroadSecError("issuer_manifest_invalid", "correction source identity is malformed")
+    packed = store.get_bytes_strict_bounded(key, MAX_SUBMISSIONS_BYTES)
+    try:
+        raw = _ungzip_bytes(packed) if packed is not None else None
+    except OSError as exc:
+        raise BroadSecError("issuer_manifest_invalid", "correction source object is not gzip") from exc
+    if raw is None or len(raw) != byte_count or sha256(raw).hexdigest() != digest:
+        raise BroadSecError("issuer_manifest_invalid", "correction source object is not immutable")
+    try:
+        payload = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise BroadSecError("issuer_manifest_invalid", "correction source is not JSON") from exc
+    if not isinstance(payload, dict):
+        raise BroadSecError("issuer_manifest_invalid", "correction source is not an object")
+    return payload
+
+
+def _source_correction_row(
+    store: BroadSecStore,
+    source: Mapping[str, Any],
+    *,
+    cik: str,
+    ticker: str,
+    accession: str,
+) -> dict[str, Any]:
+    payload = _correction_source_record(store, source)
+    admitted, _withheld, _historical_required = parse_relevant_filings(
+        payload,
+        cik=cik,
+        ticker=ticker,
+        selection_cutoff_at="9999-12-31T23:59:59.000Z",
+        recovery_from=None,
+    )
+    matches = [row for row in admitted if row.get("accession_number") == accession]
+    if len(matches) != 1:
+        raise BroadSecError("issuer_manifest_invalid", "correction source does not bind one filing")
+    return matches[0]
+
+
+def _derive_source_correction(
+    store: BroadSecStore,
+    *,
+    prior_row: Mapping[str, Any],
+    current_row: Mapping[str, Any],
+    prior_source: Mapping[str, Any],
+    current_source: Mapping[str, Any],
+    cik: str,
+    ticker: str,
+    manifest_generation: int,
+) -> dict[str, Any]:
+    """Admit the one narrow, historically observed SEC UTC-label correction.
+
+    This is intentionally not duplicate-row equivalence: every identity field,
+    both immutable source objects, a non-ambiguous Eastern wallclock conversion,
+    and its exact four/five-hour delta must all independently prove the claim.
+    """
+
+    accession = prior_row.get("accession_number")
+    if accession != current_row.get("accession_number") or not isinstance(accession, str):
+        raise BroadSecError("historical_submissions_conflict", "correction accession is not stable")
+    if any(prior_row.get(field) != current_row.get(field) for field in _CORRECTION_NON_TIME_FIELDS):
+        raise BroadSecError("historical_submissions_conflict", "correction changes a non-time filing fact")
+    prior_value = prior_row.get("acceptance_datetime")
+    current_value = current_row.get("acceptance_datetime")
+    if (
+        not isinstance(prior_value, str)
+        or not isinstance(current_value, str)
+        or _CORRECTION_UTC_RE.fullmatch(prior_value) is None
+        or _CORRECTION_UTC_RE.fullmatch(current_value) is None
+    ):
+        raise BroadSecError("historical_submissions_conflict", "correction acceptance values are not exact UTC seconds")
+    prior_source_row = _source_correction_row(
+        store, prior_source, cik=cik, ticker=ticker, accession=accession
+    )
+    current_source_row = _source_correction_row(
+        store, current_source, cik=cik, ticker=ticker, accession=accession
+    )
+    if prior_source_row != dict(prior_row) or current_source_row != dict(current_row):
+        raise BroadSecError("historical_submissions_conflict", "correction source bytes do not bind filing facts")
+    prior_dt = datetime.fromisoformat(prior_value.replace("Z", "+00:00"))
+    current_dt = datetime.fromisoformat(current_value.replace("Z", "+00:00"))
+    local_clock = prior_dt.replace(tzinfo=None)
+    eastern = ZoneInfo("America/New_York")
+    first = local_clock.replace(tzinfo=eastern, fold=0)
+    second = local_clock.replace(tzinfo=eastern, fold=1)
+    if first.utcoffset() != second.utcoffset():
+        raise BroadSecError("historical_submissions_conflict", "correction wallclock is DST-ambiguous")
+    reinterpreted = first.astimezone(timezone.utc)
+    if reinterpreted.astimezone(eastern).replace(tzinfo=None) != local_clock:
+        raise BroadSecError("historical_submissions_conflict", "correction wallclock is DST-nonexistent")
+    delta = int((current_dt - prior_dt).total_seconds())
+    if (
+        current_dt != reinterpreted
+        or delta not in {14_400, 18_000}
+        or int(first.utcoffset().total_seconds()) != -delta
+        or manifest_generation < 1
+    ):
+        raise BroadSecError("historical_submissions_conflict", "correction is not an exact Eastern UTC relabeling")
+    identity = {field: prior_row.get(field) for field in _CORRECTION_NON_TIME_FIELDS}
+    source_pair = {"prior_source": dict(prior_source), "current_source": dict(current_source)}
+    stable = {
+        "rule_id": _SOURCE_CORRECTION_RULE_ID,
+        "derivation": _SOURCE_CORRECTION_DERIVATION,
+        "manifest_generation": manifest_generation,
+        "accession_number": accession,
+        "prior_acceptance_datetime": prior_value,
+        "current_acceptance_datetime": current_value,
+        "observed_delta_seconds": delta,
+        "filing_identity": identity,
+        **source_pair,
+    }
+    return {
+        "correction_id": _sha_json(stable),
+        "correction_class": _SOURCE_CORRECTION_CLASS,
+        "field": "acceptance_datetime",
+        **stable,
+    }
+
+
+def _prepare_source_correction_merge(
+    store: BroadSecStore,
+    *,
+    prior_manifest: Mapping[str, Any] | None,
+    prior_relevant: list[dict[str, Any]],
+    admitted: list[dict[str, Any]],
+    withheld: list[dict[str, Any]],
+    current_source: Mapping[str, Any],
+    cik: str,
+    ticker: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return a local merge view plus append-only, fully proved corrections."""
+
+    _assert_no_duplicate_filing_conflicts(admitted, withheld)
+    if prior_manifest is None:
+        return prior_relevant, []
+    prior_source = {
+        "sha256": prior_manifest.get("submissions_sha256"),
+        "object_key": prior_manifest.get("submissions_object_key"),
+        "bytes": len(_correction_source_record(store, {
+            "sha256": prior_manifest.get("submissions_sha256"),
+            "object_key": prior_manifest.get("submissions_object_key"),
+            "bytes": 1,
+        })) if False else None,
+    }
+    # The immutable source byte count is stored on the current component for
+    # modern manifests; legacy manifests may not support this new lineage.
+    components = prior_manifest.get("submissions_components")
+    if isinstance(components, list):
+        matching = [item for item in components if isinstance(item, dict) and item.get("source_kind") == "recent" and item.get("sha256") == prior_source["sha256"]]
+        if matching:
+            prior_source["bytes"] = matching[0].get("bytes")
+    if not isinstance(prior_source["bytes"], int):
+        return prior_relevant, []
+    current_by_accession = {
+        row["accession_number"]: row
+        for row in admitted
+        if isinstance(row.get("accession_number"), str)
+    }
+    adjusted = [dict(row) for row in prior_relevant]
+    corrections: list[dict[str, Any]] = []
+    generation = len(prior_manifest.get("filing_corrections") or [])
+    for prior in adjusted:
+        accession = prior.get("accession_number")
+        current = current_by_accession.get(accession)
+        if current is None:
+            continue
+        try:
+            _merge_filing_rows([prior], [current])
+            continue
+        except BroadSecError:
+            pass
+        generation += 1
+        correction = _derive_source_correction(
+            store,
+            prior_row=prior,
+            current_row=current,
+            prior_source=prior_source,
+            current_source=current_source,
+            cik=cik,
+            ticker=ticker,
+            manifest_generation=generation,
+        )
+        prior["acceptance_datetime"] = current["acceptance_datetime"]
+        corrections.append(correction)
+    _assert_no_duplicate_filing_conflicts(adjusted, admitted, withheld)
+    return adjusted, corrections
+
+
+def _validate_source_correction_lineage(
+    store: BroadSecStore, manifest: Mapping[str, Any]
+) -> None:
+    """Re-derive every persisted correction; schema shape alone is not proof."""
+
+    corrections = manifest.get("filing_corrections")
+    if corrections is None:
+        return
+    if not isinstance(corrections, list):
+        raise BroadSecError("issuer_manifest_invalid", "correction ledger is not a list")
+    for correction in corrections:
+        if not isinstance(correction, dict):
+            raise BroadSecError("issuer_manifest_invalid", "correction ledger entry is not an object")
+        identity = correction.get("filing_identity")
+        if not isinstance(identity, dict):
+            raise BroadSecError("issuer_manifest_invalid", "correction filing identity is malformed")
+        accession = correction.get("accession_number")
+        prior_value = correction.get("prior_acceptance_datetime")
+        current_value = correction.get("current_acceptance_datetime")
+        if not all(isinstance(value, str) for value in (accession, prior_value, current_value)):
+            raise BroadSecError("issuer_manifest_invalid", "correction timing identity is malformed")
+        prior_row = {**identity, "accession_number": accession, "acceptance_datetime": prior_value}
+        current_row = {**identity, "accession_number": accession, "acceptance_datetime": current_value}
+        try:
+            expected = _derive_source_correction(
+                store,
+                prior_row=prior_row,
+                current_row=current_row,
+                prior_source=correction["prior_source"],
+                current_source=correction["current_source"],
+                cik=str(manifest.get("cik")),
+                ticker=str(manifest.get("ticker")),
+                manifest_generation=correction["manifest_generation"],
+            )
+        except (KeyError, TypeError) as exc:
+            raise BroadSecError("issuer_manifest_invalid", "correction ledger binding is malformed") from exc
+        if expected != correction:
+            raise BroadSecError("issuer_manifest_invalid", "correction ledger cannot be re-derived")
+
 
 def _filing_fact_values_are_compatible(field: str, left: Any, right: Any) -> bool:
     """Compare duplicate filing facts without rewriting their source representation."""
@@ -2313,6 +2566,7 @@ def _read_issuer_manifest(
             "issuer_manifest_invalid",
             f"{expected_ticker} pointer source identity disagrees with manifest body",
         )
+    _validate_source_correction_lineage(store, payload)
 
     previous_id = payload.get("previous_manifest_id")
     if isinstance(previous_id, str):
@@ -2351,6 +2605,17 @@ def _read_issuer_manifest(
             raise BroadSecError(
                 "issuer_manifest_invalid",
                 f"{expected_ticker} previous issuer manifest lineage is not monotone",
+            )
+        prior_corrections = previous.get("filing_corrections") or []
+        current_corrections = payload.get("filing_corrections") or []
+        if (
+            not isinstance(prior_corrections, list)
+            or not isinstance(current_corrections, list)
+            or current_corrections[: len(prior_corrections)] != prior_corrections
+        ):
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{expected_ticker} correction lineage is not append-only",
             )
     return payload
 
@@ -2623,6 +2888,7 @@ def _run_recovery_poll(
         "affected_issuers": 0,
         "objects_admitted": 0,
         "manifests_admitted": 0,
+        "source_corrections_admitted": 0,
     }
     failures: list[IssuerFailure] = []
     committed_this_run = 0
@@ -2673,6 +2939,7 @@ def _run_recovery_poll(
             "new_event_count": 0,
             "correction_event_count": 0,
             "submissions_fetched": False,
+            "source_correction_count": 0,
         }
 
     for issuer in universe.issuers:
@@ -3287,6 +3554,7 @@ def run_broad_sec_poll(
         "affected_issuers": 0,
         "objects_admitted": 0,
         "manifests_admitted": 0,
+        "source_corrections_admitted": 0,
     }
 
     try:
@@ -3502,6 +3770,7 @@ def run_broad_sec_poll(
             "new_event_count": len(new_by_cik.get(issuer.cik, [])),
             "correction_event_count": len(removed_by_cik.get(issuer.cik, [])),
             "submissions_fetched": False,
+            "source_correction_count": 0,
         }
 
     for issuer in universe.issuers:
@@ -3516,6 +3785,9 @@ def run_broad_sec_poll(
             continue
         try:
             body, headers = fetch_submissions(issuer.cik)
+            # This is transport telemetry: count a returned Submissions body
+            # even if later source binding or recomposition rejects it.
+            coverage["submissions_fetched"] += 1
             headers = _stamp_after_fetch(headers, now=now)
             url = _bind_sec_url(headers.get("url"), cik=issuer.cik, endpoint="submissions")
             try:
@@ -3789,12 +4061,22 @@ def run_broad_sec_poll(
                 for row in (prior_manifest.get("relevant_filings") if prior_manifest else []) or []
                 if isinstance(row, dict)
             ]
-            _assert_no_duplicate_filing_conflicts(
-                prior_relevant,
-                item["admitted"],
-                item["withheld"],
+            current_source = {
+                "sha256": item["submissions_sha"],
+                "object_key": object_key(item["submissions_sha"]),
+                "bytes": item["submissions_bytes"],
+            }
+            merge_prior, new_corrections = _prepare_source_correction_merge(
+                store,
+                prior_manifest=prior_manifest,
+                prior_relevant=prior_relevant,
+                admitted=item["admitted"],
+                withheld=item["withheld"],
+                current_source=current_source,
+                cik=issuer.cik,
+                ticker=issuer.ticker,
             )
-            merged_relevant = _merge_filing_rows(prior_relevant, item["admitted"])
+            merged_relevant = _merge_filing_rows(merge_prior, item["admitted"])
             cumulative: list[str] = []
             seen: dict[str, None] = {}
 
@@ -3875,10 +4157,17 @@ def run_broad_sec_poll(
                     default=None,
                 ),
             }
+            prior_corrections = (
+                list(prior_manifest.get("filing_corrections") or []) if prior_manifest else []
+            )
+            if prior_corrections or new_corrections:
+                manifest["filing_corrections"] = prior_corrections + new_corrections
+            observation["source_correction_count"] = len(new_corrections)
             item["manifest"] = manifest
             item["cumulative"] = cumulative
             item["snapshot_kind"] = snapshot_kind
             item["facts_sha"] = facts_sha
+            item["source_correction_count"] = len(new_corrections)
         except BroadSecError as exc:
             if exc.reason_code == "queue_overflow":
                 overflow = True
@@ -3979,6 +4268,9 @@ def run_broad_sec_poll(
                 issuer_latest_key(issuer.cik),
                 pointer,
                 expected_current=item["prior_pointer"],
+            )
+            change_summary["source_corrections_admitted"] += item.get(
+                "source_correction_count", 0
             )
             observation["manifest_id"] = manifest_id
             observation["manifest_key"] = issuer_manifest_key(issuer.cik, manifest_id)

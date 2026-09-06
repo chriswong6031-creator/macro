@@ -536,6 +536,159 @@ def test_amendment_keeps_prior_manifest_immutable_and_reachable(tmp_path: Path) 
     assert amendment["accession"] in new_manifest["cumulative_relevant_accessions"]
 
 
+def test_incremental_admits_bound_sec_timezone_correction_lineage_and_counts_fetch(
+    tmp_path: Path,
+) -> None:
+    """A proven EDGAR Eastern-wallclock relabeling is an append-only correction, not equality."""
+    cik = "0000745732"
+    ticker = "ROST"
+    accession = "0000745732-26-000032"
+    repo, universe, store = _layout(tmp_path, [(ticker, int(cik))])
+    fake = FakeSec()
+    prior = _filing(
+        accession,
+        "10-Q",
+        accepted="2026-06-02T16:37:27.000Z",
+        filed="2026-06-02",
+        document="rost-20260502.htm",
+    )
+    fake.set_index([])
+    assert _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo).exit_code == 0
+    fake.submissions[cik] = _submissions_bytes(cik, [prior])
+    fake.facts[cik] = _facts_bytes(cik, "prior")
+    fake.set_index([_idx_row(cik, "10-Q", "2026-06-02", accession, name=ticker)])
+    first = _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo)
+    assert first.exit_code == 0
+    prior_pointer = _load_json(store, issuer_latest_key(cik))
+    prior_manifest_bytes = store.get_bytes_strict(prior_pointer["manifest_key"])
+    assert prior_manifest_bytes is not None
+
+    corrected = _filing(
+        accession,
+        "10-Q",
+        accepted="2026-06-02T20:37:27.000Z",
+        filed="2026-06-02",
+        document="rost-20260502.htm",
+    )
+    amendment = _filing(
+        "0000745732-26-000041",
+        "10-Q",
+        accepted="2026-08-13T20:43:52.000Z",
+        filed="2026-08-13",
+        document="rost-20260802.htm",
+    )
+    current_body = _submissions_bytes(cik, [corrected, amendment])
+    fake.submissions[cik] = current_body
+    fake.facts[cik] = _facts_bytes(cik, "current")
+    fake.set_index(
+        [
+            _idx_row(cik, "10-Q", "2026-06-02", accession, name=ticker),
+            _idx_row(cik, "10-Q", "2026-08-13", amendment["accession"], name=ticker),
+        ]
+    )
+
+    result = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
+
+    assert result.exit_code == 0
+    assert result.receipt["coverage"]["submissions_fetched"] == 1
+    assert result.receipt["change_summary"]["source_corrections_admitted"] == 1
+    current_pointer = _load_json(store, issuer_latest_key(cik))
+    current = _load_json(store, current_pointer["manifest_key"])
+    assert _read_issuer_manifest(
+        store,
+        pointer=current_pointer,
+        expected_cik=cik,
+        expected_ticker=ticker,
+    )["manifest_id"] == current_pointer["manifest_id"]
+    assert current["previous_manifest_id"] == prior_pointer["manifest_id"]
+    assert store.get_bytes_strict(prior_pointer["manifest_key"]) == prior_manifest_bytes
+    assert len(current["filing_corrections"]) == 1
+    correction = current["filing_corrections"][0]
+    assert {
+        key: correction[key]
+        for key in (
+            "accession_number",
+            "field",
+            "prior_acceptance_datetime",
+            "current_acceptance_datetime",
+            "observed_delta_seconds",
+            "rule_id",
+        )
+    } == {
+        "accession_number": accession,
+        "field": "acceptance_datetime",
+        "prior_acceptance_datetime": prior["accepted"],
+        "current_acceptance_datetime": corrected["accepted"],
+        "observed_delta_seconds": 14_400,
+        "rule_id": "sec_acceptance_eastern_wallclock_labeled_utc/v1",
+    }
+    assert current["submissions_sha256"] == sha256(current_body).hexdigest()
+    assert current["filing_corrections"][0]["prior_source"]["sha256"] == prior_pointer[
+        "submissions_sha256"
+    ]
+    assert current["filing_corrections"][0]["current_source"]["sha256"] == sha256(
+        current_body
+    ).hexdigest()
+
+
+@pytest.mark.parametrize(
+    ("changed", "value"),
+    (
+        ("acceptance_datetime", "2026-06-02T19:37:27.000Z"),
+        ("acceptance_datetime", "2026-06-02T21:37:27.000Z"),
+        ("primary_document", "rost-other.htm"),
+    ),
+)
+def test_incremental_refuses_unbound_or_nonmechanical_timezone_correction_without_pointer_move(
+    tmp_path: Path, changed: str, value: str
+) -> None:
+    cik = "0000745732"
+    ticker = "ROST"
+    accession = "0000745732-26-000032"
+    repo, universe, store = _layout(tmp_path, [(ticker, int(cik))])
+    fake = FakeSec()
+    prior = _filing(
+        accession, "10-Q", accepted="2026-06-02T16:37:27.000Z", filed="2026-06-02"
+    )
+    fake.set_index([])
+    assert _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo).exit_code == 0
+    fake.submissions[cik] = _submissions_bytes(cik, [prior])
+    fake.facts[cik] = _facts_bytes(cik, "prior")
+    fake.set_index([_idx_row(cik, "10-Q", "2026-06-02", accession, name=ticker)])
+    assert _poll(store, universe, fake, _clocks(POLL_2), repo_root=repo).exit_code == 0
+    pointer_before = store.get_bytes_strict(issuer_latest_key(cik))
+
+    corrected = dict(prior)
+    corrected[changed] = value
+    if changed == "acceptance_datetime":
+        corrected["accepted"] = value
+    else:
+        corrected["document"] = value
+    amendment = _filing(
+        "0000745732-26-000041",
+        "10-Q",
+        accepted="2026-08-13T20:43:52.000Z",
+        filed="2026-08-13",
+    )
+    fake.submissions[cik] = _submissions_bytes(cik, [corrected, amendment])
+    fake.facts[cik] = _facts_bytes(cik, "current")
+    fake.set_index(
+        [
+            _idx_row(cik, "10-Q", "2026-06-02", accession, name=ticker),
+            _idx_row(cik, "10-Q", "2026-08-13", amendment["accession"], name=ticker),
+        ]
+    )
+
+    result = _poll(store, universe, fake, _clocks(POLL_3), repo_root=repo)
+
+    assert result.exit_code == 1
+    assert any(
+        failure["reason_code"] == "historical_submissions_conflict"
+        for failure in result.receipt["failures"]
+    )
+    assert store.get_bytes_strict(issuer_latest_key(cik)) == pointer_before
+
+
 def test_accession_after_selection_cutoff_is_not_admitted(tmp_path: Path) -> None:
     repo, universe, store = _layout(tmp_path, [(AAPL[0], 320193)])
     fake = FakeSec()

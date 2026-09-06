@@ -128,13 +128,15 @@
         "new_relevant_accessions",
         "affected_issuers",
         "objects_admitted",
-        "manifests_admitted"
+        "manifests_admitted",
+        "source_corrections_admitted"
       ],
       "properties": {
         "new_relevant_accessions": {"type": "integer", "minimum": 0},
         "affected_issuers": {"type": "integer", "minimum": 0},
         "objects_admitted": {"type": "integer", "minimum": 0},
-        "manifests_admitted": {"type": "integer", "minimum": 0}
+        "manifests_admitted": {"type": "integer", "minimum": 0},
+        "source_corrections_admitted": {"type": "integer", "minimum": 0}
       }
     },
     "failures": {
