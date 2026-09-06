@@ -1068,7 +1068,7 @@ jobs:
           python -m pytest
           tests/test_ai_desk.py tests/test_ai_desk_scorer.py
           tests/test_radar_scorer.py tests/test_narrative_brain.py
-          tests/test_demand_ledger.py tests/test_policy_intent_desk.py
+          tests/test_demand_ledger.py tests/test_policy_intent_desk.py tests/test_uk_policy_brain.py
           tests/test_desk_thesis_ids.py -q
 
   conviction-profile:

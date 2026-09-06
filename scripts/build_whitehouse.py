@@ -597,7 +597,16 @@ def main() -> int:
     reeval = "--reeval" in sys.argv
     page_only = "--page-only" in sys.argv
     try:
-        return build(reeval=reeval, page_only=page_only)
+        result = build(reeval=reeval, page_only=page_only)
+        # UK policy desk (engine.uk_policy_brain) -- a separate LEAF desk sharing this
+        # sentinel's schedule. Gated + degrade-never-raise: off without a key, and it
+        # can never fail this build.
+        try:
+            from engine import uk_policy_brain as _ukd
+            _ukd.run()
+        except Exception as e:  # noqa: BLE001
+            log.warning("uk policy desk skipped: %s", e)
+        return result
     except Exception as e:  # noqa: BLE001 — the desk must never break the build
         log.error("build_whitehouse failed: %s", e)
         return 0

@@ -1,0 +1,20 @@
+{
+  "results": [
+    {
+      "title": "Chancellor confirms new fiscal rules to support growth",
+      "link": "/government/news/chancellor-confirms-new-fiscal-rules-to-support-growth",
+      "public_timestamp": "2026-09-04T09:30:00.000+00:00",
+      "description": "The Chancellor set out updated fiscal rules aimed at supporting sustainable growth while keeping debt on a falling path over the forecast period.",
+      "content_store_document_type": "news_story",
+      "organisations": ["hm-treasury"]
+    },
+    {
+      "title": "HM Treasury publishes response to gilt market consultation",
+      "link": "/government/news/hm-treasury-publishes-response-to-gilt-market-consultation",
+      "public_timestamp": "2026-09-01T11:15:00.000+00:00",
+      "description": "HM Treasury published its response to the consultation on gilt issuance, confirming no material change to the funding remit for this quarter.",
+      "content_store_document_type": "press_release",
+      "organisations": ["hm-treasury"]
+    }
+  ]
+}
