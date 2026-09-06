@@ -4,7 +4,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import json  # noqa: E402
+
 import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
 
 from engine import options_skew as S  # noqa: E402
 
@@ -56,12 +59,155 @@ def test_compute_skew_degrades_empty():
     assert S.skew_map(None) == {}
 
 
-def test_build_snapshot_is_context_only():
-    # no gate file in a clean env → dormant 'measuring' state, never scored
+def test_build_snapshot_is_context_only(monkeypatch, tmp_path):
+    # no gate file, no store → dormant 'measuring' state, never scored
+    monkeypatch.delenv("THETADATA_STORE", raising=False)
+    monkeypatch.setattr("engine.thetadata_store.resolve_thetadata_store",
+                        lambda **kw: None)
     pay = S.build_snapshot()
     assert pay["is_context_only"] is True
     assert pay["scored"] is False
     assert pay["schema"] == S.SCHEMA
+
+
+# --------------------------------------------------------------------------- #
+# ThetaData chain store migration (A-F03-W2-1)
+# --------------------------------------------------------------------------- #
+
+def _write_theta_store(tmp_path, root="XYZ", date="2026-06-21", expiry="2026-07-21",
+                        spot=100.0, put_iv=0.40, call_iv=0.30):
+    """Synthetic ThetaData store: eod + oi + greeks tiers for one root/year,
+    documented columns per engine/thetadata_store.py:8-12."""
+    pa = pytest.importorskip("pyarrow")  # noqa: F841
+    year = date[:4]
+    strikes = [90.0, 95.0, 100.0, 105.0]
+    rights = ["P", "P", "C", "C"]
+    deltas = [-0.10, -0.25, 0.50, 0.25]
+    ivs = [put_iv + 0.05, put_iv, call_iv, call_iv - 0.02]
+
+    eod_rows, oi_rows, greeks_rows = [], [], []
+    for k, r, d, iv in zip(strikes, rights, deltas, ivs):
+        eod_rows.append(dict(root=root, expiration=expiry, strike=k, right=r, date=date,
+                              open=1.0, high=1.0, low=1.0, close=1.0, volume=10, count=1,
+                              bid=0.9, ask=1.1))
+        oi_rows.append(dict(root=root, expiration=expiry, strike=k, right=r, date=date,
+                             open_interest=50))
+        greeks_rows.append(dict(root=root, expiration=expiry, strike=k, right=r, date=date,
+                                 bid=0.9, ask=1.1, underlying_price=spot, delta=d,
+                                 theta=0.0, vega=0.0, rho=0.0, epsilon=0.0, lambda_=0.0,
+                                 implied_vol=iv, iv_error=0.0))
+
+    for tier, rows in (("eod", eod_rows), ("oi", oi_rows), ("greeks", greeks_rows)):
+        d = tmp_path / tier / root
+        d.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(rows).to_parquet(d / f"{year}.parquet")
+    return tmp_path
+
+
+def test_thetadata_chain_positive(tmp_path):
+    store = _write_theta_store(tmp_path, root="XYZ", put_iv=0.40, call_iv=0.30)
+    frame, state = S.load_chain(asof="2026-06-21", store=store, roots=["XYZ"])
+    assert state == "ok"
+    assert frame is not None
+    for col in ["underlying", "expiry", "K", "T", "iv", "delta", "is_call",
+                "spot", "oi", "volume", "asof"]:
+        assert col in frame.columns
+    m = S.skew_map(frame)
+    assert m["XYZ"]["skew"] == pytest.approx(0.10, abs=1e-6)
+    assert 25 <= m["XYZ"]["tenor_days"] <= 35
+
+
+def test_missing_chain_is_typed_null(tmp_path, capsys, monkeypatch):
+    monkeypatch.delenv("THETADATA_STORE", raising=False)
+    # Empty store dir → unresolved (no eod/oi/greeks subdirs at all).
+    monkeypatch.setattr("engine.thetadata_store.resolve_thetadata_store",
+                        lambda **kw: None)
+    pay = S.build_snapshot()
+    assert pay["names"] == {} and pay["n"] == 0 and pay["source"] is None
+    assert pay["source_state"] == "thetadata_store_unresolved"
+    out = capsys.readouterr().out
+    assert any(line.startswith("::warning") for line in out.splitlines())
+
+    # store with eod/ but no greeks/ → no_iv_tier
+    store = tmp_path / "eodonly"
+    (store / "eod" / "XYZ").mkdir(parents=True)
+    frame, state = S.load_chain(store=store)
+    assert frame is None and state == "no_iv_tier"
+
+    assert all(v is not None for v in [pay["source_state"], pay["names"], pay["ranked"]])
+    assert pay["source_state"] != "ok"
+
+
+def test_stale_chain_is_typed_null(tmp_path, capsys, monkeypatch):
+    from datetime import date as _date
+    store = _write_theta_store(tmp_path, root="XYZ", date="2026-06-21")
+    monkeypatch.setattr("engine.thetadata_store.resolve_thetadata_store",
+                        lambda **kw: store)
+    pay = S.build_snapshot(today=_date(2026, 7, 21))  # 30 days after the chain's asof
+    assert pay["source_state"] == "stale_chain"
+    assert pay["source_detail"]["stale_days"] >= 25
+    out = capsys.readouterr().out
+    assert any(line.startswith("::warning") for line in out.splitlines())
+
+
+def test_legacy_path_not_globbed_by_default(monkeypatch):
+    import glob as glob_mod
+    monkeypatch.delenv(S._LEGACY_CHAIN_ENV, raising=False)
+    monkeypatch.setattr("engine.thetadata_store.resolve_thetadata_store",
+                        lambda **kw: None)
+
+    def _boom(*a, **kw):
+        raise AssertionError("legacy path reached")
+    monkeypatch.setattr(glob_mod, "glob", _boom)
+
+    # must not raise: the legacy glob is never reached when the flag is unset
+    S.build_snapshot()
+
+    monkeypatch.setenv(S._LEGACY_CHAIN_ENV, "1")
+    with pytest.raises(AssertionError, match="legacy path reached"):
+        S._legacy_chain()
+
+
+def test_thetadata_and_legacy_overlap(tmp_path, monkeypatch):
+    """Cross-source equivalence: the same underlying facts fed through the legacy
+    polygon_gex schema and the ThetaData schema must drive the identical formula
+    to the same sign and comparable magnitude."""
+    spot, put_iv, call_iv = 100.0, 0.40, 0.30
+
+    legacy_rows = [
+        dict(underlying="XYZ", strike_ticker="O:XYZ", expiry="2026-07-21", K=95.0,
+             T=30 / 365.0, is_call=False, oi=100, iv=put_iv, gamma=0.01, delta=-0.25,
+             volume=10, spot=spot, asof="2026-06-21"),
+        dict(underlying="XYZ", strike_ticker="O:XYZ", expiry="2026-07-21", K=90.0,
+             T=30 / 365.0, is_call=False, oi=50, iv=put_iv + 0.05, gamma=0.01,
+             delta=-0.10, volume=5, spot=spot, asof="2026-06-21"),
+        dict(underlying="XYZ", strike_ticker="O:XYZ", expiry="2026-07-21", K=100.0,
+             T=30 / 365.0, is_call=True, oi=100, iv=call_iv, gamma=0.01, delta=0.50,
+             volume=10, spot=spot, asof="2026-06-21"),
+        dict(underlying="XYZ", strike_ticker="O:XYZ", expiry="2026-07-21", K=105.0,
+             T=30 / 365.0, is_call=True, oi=50, iv=call_iv - 0.02, gamma=0.01,
+             delta=0.25, volume=5, spot=spot, asof="2026-06-21"),
+    ]
+    legacy_chain = pd.DataFrame(legacy_rows)
+    skew_legacy = S.compute_skew(legacy_chain)["skew"]
+
+    store = _write_theta_store(tmp_path, root="XYZ", put_iv=put_iv, call_iv=call_iv)
+    frame, state = S.load_chain(asof="2026-06-21", store=store, roots=["XYZ"])
+    assert state == "ok"
+    skew_theta = S.skew_map(frame)["XYZ"]["skew"]
+
+    import math
+    assert math.copysign(1, skew_legacy) == math.copysign(1, skew_theta)
+    assert abs(skew_legacy - skew_theta) < 0.01
+
+
+def test_null_is_never_zero(tmp_path, monkeypatch):
+    for resolver in (lambda **kw: None,):
+        monkeypatch.setattr("engine.thetadata_store.resolve_thetadata_store", resolver)
+        pay = S.build_snapshot()
+        assert pay["source_state"] != "ok"
+        assert "skew" not in json.dumps(pay["names"])
+        assert pay["ranked"] == []
 
 
 # --------------------------------------------------------------------------- #

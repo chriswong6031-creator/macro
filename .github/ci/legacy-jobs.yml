@@ -1996,6 +1996,7 @@ jobs:
       - "tests/test_options_sparse_selector_bootstrap.py"
       - "tests/test_options_sparse_selector_runtime.py"
       - "tests/test_run_options_sparse_selector.py"
+      - "tests/test_options_skew.py"
       - "tests/test_options_structure_intraday.py"
       - "tests/test_private_auth_dict.py"
       - "tests/test_thetadata_store.py"
@@ -2027,6 +2028,8 @@ jobs:
         run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow jsonschema fastapi httpx requests
       - name: flow surface + dated archive cadence truth (poll floor, observed sparse spacing, retention)
         run: python -m pytest tests/test_flow_surface.py tests/test_flow_archive.py -q
+      - name: options skew (engine)
+        run: python -m pytest tests/test_options_skew.py -q
       # PRISM's daily matrix shares this options data-plane lane.  Keep the
       # exact-contract-side volume baseline suite distinct so PIT/no-zero-fill regressions
       # cannot hide inside a broader surface invocation.
