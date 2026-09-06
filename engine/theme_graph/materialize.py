@@ -519,6 +519,16 @@ class _Builder:
         history therefore means unavailable membership coverage, never a fallback to
         today's ``membership.json``.
         """
+        # Names/labels are NOT owned by the PIT history (it carries no basket
+        # name_en/name_zh) — mint basket + company nodes with their labels from
+        # the current membership document FIRST (first-writer-wins via _node),
+        # independently of whether the PIT history has any rows for them. This
+        # keeps THS concept baskets and THS-only companies bilingual even though
+        # build_family(THS_SUITE) is deliberately skipped for MEMBER_OF/TRACKS,
+        # and keeps the basket nodes (and therefore the EXPRESSES plane +
+        # crosswalk) alive when the PIT history is empty/absent.
+        self._seed_ths_labels()
+
         history = self.ths_history
         rows = (history.to_dict("records") if hasattr(history, "to_dict")
                 else list(history or ()))
@@ -540,6 +550,8 @@ class _Builder:
         basket_ids = sorted({iv.basket_id for iv in intervals})
         companies: set[str] = set()
         n_closed = 0
+        n_edges = 0
+        skipped_unidentifiable: list[str] = []
         for basket_id in basket_ids:
             self._node(
                 identity.basket_node_id(THS_SUITE, basket_id),
@@ -554,6 +566,7 @@ class _Builder:
             except ValueError as exc:
                 log.warning("theme_graph: THS PIT %s/%s skipped (%s)",
                             iv.basket_id, iv.ticker, exc)
+                skipped_unidentifiable.append(f"{iv.basket_id}/{iv.ticker}")
                 continue
             self._node(
                 company, kind="company", market_scope="cn",
@@ -586,13 +599,58 @@ class _Builder:
                 evidence_refs=refs, confidence_basis="membership_pit.ths.v1",
                 era=self._era_for(iv.closed_by or iv.valid_from),
             )
+            n_edges += 1
 
         self.out.per_suite[THS_SUITE] = {
             "baskets": len(basket_ids), "companies": len(companies),
-            "member_edges": len(intervals), "closed_member_edges": n_closed,
+            "member_edges": n_edges, "closed_member_edges": n_closed,
             "membership_pit_rows": len(membership_rows),
             "excluded_source_shapes": excluded_shapes,
+            "skipped_unidentifiable": skipped_unidentifiable,
         }
+
+    def _seed_ths_labels(self) -> None:
+        """Mint THS basket/company nodes with EN/ZH labels from membership.json.
+
+        Label-only: no MEMBER_OF/TRACKS edges are emitted here (those stay owned
+        solely by the PIT history per :meth:`build_ths_membership_history`'s own
+        docstring) — this exists only so THS nodes carry the same bilingual
+        labels ``build_family`` would have given them.
+        """
+        doc = self._membership(THS_SUITE)
+        if doc is None:
+            return
+        baskets = doc.get("baskets") or {}
+        if not baskets:
+            return
+        try:
+            symbol_key = self._symbol_key(THS_SUITE, baskets)
+        except ValueError:
+            symbol_key = "symbol"
+        for bid, basket in baskets.items():
+            self._node(
+                identity.basket_node_id(THS_SUITE, bid),
+                kind="basket", market_scope="cn",
+                provenance=f"membership_doc:{THS_SUITE}",
+                name_en=basket.get("name"), name_zh=basket.get("name_zh"),
+                external_ids={"suite": THS_SUITE, "basket_id": str(bid)},
+            )
+            for member in basket.get("members") or []:
+                symbol = member.get(symbol_key)
+                if not symbol:
+                    continue
+                try:
+                    c_node = identity.company_node_id(THS_SUITE, symbol, breaks=self.breaks)
+                except ValueError:
+                    continue
+                self._node(
+                    c_node, kind="company", market_scope="cn",
+                    provenance=f"membership_doc:{THS_SUITE}",
+                    name_en=member.get("name"), name_zh=member.get("name_zh"),
+                    external_ids={"symbol": str(symbol).strip().upper()},
+                    identity_epoch=identity.identity_epoch(
+                        "cn", symbol, breaks=self.breaks),
+                )
 
     def _concept_map(self) -> dict[str, str]:
         if not hasattr(self, "_cmap"):

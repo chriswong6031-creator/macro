@@ -207,6 +207,29 @@ def test_ths_owner_history_keeps_first_observed_boundary_and_reappearance():
     ]
 
 
+def test_ths_owner_history_staggered_multi_basket_collection_never_fabricates_exits():
+    """A date collected for basket A but not basket B must be a GAP for B, never
+    an absence that closes/reopens B's interval (the presence axis is PER-BASKET,
+    not the global set of snapshot dates)."""
+    history = pd.DataFrame([
+        {"snapshot_date": "2026-06-30", "basket_id": "B",
+         "ticker": "X", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-01", "basket_id": "A",
+         "ticker": "Y", "source_shape": "membership"},
+        {"snapshot_date": "2026-07-08", "basket_id": "B",
+         "ticker": "X", "source_shape": "membership"},
+    ])
+
+    intervals = local_sources.ths_membership_intervals(history)
+
+    assert [(iv.basket_id, iv.ticker, iv.valid_from, iv.valid_to)
+            for iv in intervals] == [
+        ("B", "X", "2026-06-30", None),
+        ("A", "Y", "2026-07-01", None),
+    ], ("neither basket was ever observed absent — a staggered collection date "
+        "for the OTHER basket must never fabricate an exit")
+
+
 def test_ths_graph_never_leaks_a_later_member_back_into_an_earlier_snapshot(tree):
     """D2C mutation guard: current membership must not fill an older PIT vintage."""
     root, _xwalk = tree

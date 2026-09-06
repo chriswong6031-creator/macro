@@ -358,10 +358,21 @@ def ths_membership_intervals(history) -> list[THSInterval]:
             continue
         snapshots.setdefault(date, {}).setdefault(
             (basket, ticker), str(row.get("source_shape") or "unknown"))
-    dates = sorted(snapshots)
     pairs = sorted({pair for entries in snapshots.values() for pair in entries})
+    # The presence axis MUST be the dates on which THAT basket was actually
+    # collected, never the global set of snapshot dates. A multi-basket THS
+    # store is collected per-basket and staggered: a date on which basket A
+    # was observed but basket B was not must read as a GAP for B, never as
+    # an absence that closes/reopens B's interval (see local_sources tests
+    # for a staggered-collection regression).
+    basket_dates: dict[str, list[str]] = {}
+    for date, entries in snapshots.items():
+        for basket, _ticker in entries:
+            basket_dates.setdefault(basket, set()).add(date)  # type: ignore[union-attr]
+    basket_dates = {basket: sorted(dates) for basket, dates in basket_dates.items()}
     out: list[THSInterval] = []
     for basket, ticker in pairs:
+        dates = basket_dates.get(basket, [])
         opened: int | None = None
         shape = "unknown"
         for index, present in enumerate(
