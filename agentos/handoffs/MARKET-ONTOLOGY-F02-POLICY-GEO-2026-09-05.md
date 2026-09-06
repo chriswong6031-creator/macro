@@ -34,7 +34,7 @@ verified:
     result: "PASS — rows found at lines 16/19/20/21/22/23 with the cited notes."
   - claim: "agentos records added by this packet introduce no new validate error."
     command: "python3 scripts/agentos.py validate 2>&1 | grep -E 'DEC-F02-POLICY-GEO-OWNER-MAP|MARKET-ONTOLOGY-F02-POLICY-GEO-2026-09-05'"
-    result: "PASS — zero matches; error count unchanged from the pre-change baseline (0 errors before, 0 errors after; exit code unchanged at 1, driven entirely by pre-existing warnings/inherited state)."
+    result: "PASS — zero matches; measured fresh at this PR head (2026-09-06): `python3 scripts/agentos.py validate` -> EXIT=0, 0 errors, 56 warnings, 1066 records. This packet adds zero new errors/warnings; it does not itself drive the exit code, whichever it is at any given base commit (the schema-error count on main has moved since this handoff was first drafted — see PR body Gate A for the corrected receipt)."
 unverified:
   - claim: "No non-China geopolitical event producer exists anywhere in the tree."
     what_would_verify: "A full engine/ + scripts/ census for region-scoped PIT producers beyond china_news_intel.py."
