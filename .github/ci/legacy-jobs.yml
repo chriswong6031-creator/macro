@@ -1588,6 +1588,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -1643,6 +1653,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/entry_signal.py"
       - "engine/equity_factors.py"
@@ -1831,6 +1842,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"
       - "engine/sector_pulse.py"
@@ -2389,6 +2401,7 @@ jobs:
           tests/test_stock_technicals.py
           tests/test_aibrief_page.py
           tests/test_aibrief_w4_panels.py
+          tests/test_market_reference.py
           tests/test_validated_claims_thirdparty.py
           tests/test_validated_claims_engine.py
           tests/test_validated_claims_surfaces.py
@@ -2444,6 +2457,10 @@ jobs:
       - "scripts/prophet_lab_baseline.py"
       - "tests/test_prophet_lab.py"
       - "tests/test_prophet_lab_api.py"
+      # D5 A7's manifest-authenticated N/N+1 correction chain is hermetic and
+      # load-bearing for the Prophet Lab adapter, so its PR owner must be this
+      # gate:code job rather than only neural-web-core's nightly data lane.
+      - "tests/test_company_intelligence_workspace_chain.py"
       - "tests/test_prophet_lab_timeparse.py"
       - "tests/test_prophet_lab_commissioning.py"
       - "tests/fixtures/prophet_lab/**"
@@ -2463,18 +2480,21 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         # fastapi + httpx: test_prophet_lab_api.py's FastAPI TestClient needs
-        # both (httpx importorskip'd). pandas: engine.prophet_board_read's
-        # enrichment path (boards.py's lazy import, LAB-0 §5's sanctioned
-        # reuse). boto3 is NOT needed: engine.entry_radar.spool imports it
-        # LAZILY inside `_r2_client()`, and every R2 path this suite exercises
-        # either deletes the R2 credential env vars or injects a fake client
-        # object directly — the real boto3 import is never reached.
-        run: pip install pytest pandas fastapi httpx pyyaml
-      - name: Prophet Operator Lab — projection, transport, timeparse, commissioning-prep
+        # both (httpx importorskip'd). pandas + pyarrow: the D5 API suite writes
+        # its canonical security-master parquet and app.prophet_lab imports the
+        # B1 episode module, whose parquet owner is unconditional. requests:
+        # D5's company-intelligence reader imports it at module scope. boto3 is
+        # NOT needed: engine.entry_radar.spool imports it LAZILY inside
+        # `_r2_client()`, and every R2 path this suite exercises either deletes
+        # the R2 credential env vars or injects a fake client object directly —
+        # the real boto3 import is never reached.
+        run: pip install pytest pandas pyarrow fastapi httpx pyyaml requests
+      - name: Prophet Operator Lab — projection, real-reader chain, transport, timeparse, commissioning-prep
         run: >
           python -m pytest
           tests/test_prophet_lab.py
           tests/test_prophet_lab_api.py
+          tests/test_company_intelligence_workspace_chain.py
           tests/test_prophet_lab_timeparse.py
           tests/test_prophet_lab_commissioning.py
           tests/test_caddy_hub_boundary.py -q
@@ -2645,8 +2665,45 @@ jobs:
       # subjects (lib/desk_guard.py, engine/flow_velocity.py,
       # scripts/build_flow_velocity.py, collectors/china_tushare.py) — a guard the
       # guarded change cannot trigger is not a guard (#3488).
+      # Wired 2026-09-02 (W1, PR #6780): tests/test_flow_observatory_contract.py guards
+      # the flow_observatory.v2 desk contract (quadrant axis consistency, market_read
+      # denominators incl. unscored, five-leg sources[] honesty, state_log idempotence,
+      # banned-vocabulary at rest) — same subject family as this lane's two flow suites.
+      # Wired 2026-09-02/03 (W2): tests/test_flow_observatory_quality.py guards the new
+      # engine/flow_observatory/quality.py state machine (per-leg HEALTHY/DEGRADED/STALE/
+      # UNAVAILABLE/HISTORICAL_ONLY/REVISED classification, the desk-wide wall-clock
+      # backstop, worst-of publication_state, and the ::error escalation annotation) — the
+      # W1 contract-delta lesson applies again: wired in the SAME commit that adds the file.
+      # Wired 2026-09-03 (W3): tests/test_flow_observatory_history.py guards the new
+      # engine/flow_observatory/history.py append-only observations ledger — byte-identical
+      # idempotent append, revision-safe corrections, deterministic replay, ledger-derived
+      # state age/onset/prior-state/rank-change with the stale-freeze and skip-gap rules,
+      # and the lane gate — same W1 contract-delta lesson, wired in the SAME commit.
+      # B1 repair (W4 review round): tests/test_flow_observatory_groups.py — the 416-line
+      # guard for official/curated lenses, coverage floor, overlap disclosure, and
+      # concentration/contribution — shipped in the W4 PR with NO job naming it in EITHER
+      # ci.yml or here, so all 20+ of its tests were dark from the merge onward and the
+      # PR's own "wired" claim was false (independent review, 2026-09-03). Wired here, in
+      # the SAME commit that also adds its ci.yml path-gate entries, per the standing W1
+      # contract-delta lesson this comment block already names three times over.
+      # Wired 2026-09-03 (W5): tests/test_flow_observatory_methods.py — small unit tests
+      # on the preregistered method-evaluation harness's math primitives (winsorization
+      # bounds, median/MAD scale, probit mapping, floor application, determinism). The
+      # harness itself (scripts/research_flow_observatory_methods.py) runs off this render
+      # path entirely; only its primitive-level unit tests are gated here, same W1
+      # contract-delta lesson, wired in the SAME commit as its ci.yml path-gate entries.
+      # B1 repair (W6 review round): tests/test_flow_observatory_workflow.py — the
+      # FOURTH wave in a row (after W2/W3/W4's own "wired ... same lesson" comments
+      # immediately above) to ship a new tests/test_flow_observatory_*.py suite with
+      # NO job naming it anywhere in CI, so all 13+ of its tests (history drawer, band
+      # geometry, compare, prior episodes, Terminal links, watch-store decision) sat
+      # dark from the W6 merge onward. Wired here, in the SAME commit that also adds
+      # its ci.yml path-gate entry AND the structural kill in
+      # tests/test_flow_observatory_contract.py
+      # (test_all_flow_observatory_suites_are_wired_into_the_ci_lane) that reads THIS
+      # run: line and fails closed the next time a sibling suite ships unwired.
       - name: flow-velocity measure guards + flow-desk staleness alarm (frozen-leg detection, heartbeat liveness)
-        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py -q
+        run: python -m pytest tests/test_flow_velocity.py tests/test_flow_desk_staleness.py tests/test_flow_observatory_contract.py tests/test_flow_observatory_quality.py tests/test_flow_observatory_history.py tests/test_flow_observatory_groups.py tests/test_flow_observatory_methods.py tests/test_flow_observatory_workflow.py -q
       # The market-score authority suite spans engine contracts, dashboard projection,
       # and forward-ledger provenance, so the render/engine guard lanes own it. It sits
       # here rather than in the sweep because it is one focused suite and because an
@@ -3178,7 +3235,7 @@ jobs:
       - name: factor boundary selftest (guard fires on planted violations)
         run: python3 scripts/check_factor_boundaries.py --selftest
       - name: synapse read-gate unit tests
-        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py tests/test_pricing_power_monitor.py tests/test_risk_envelope.py tests/test_live_risk_envelope.py -q
+        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py tests/test_pricing_power_monitor.py tests/test_risk_envelope.py tests/test_live_risk_envelope.py tests/test_risk_envelope_presentation.py -q
       - name: factor deescalation shadow + boundary guard tests
         run: python -m pytest tests/test_factor_deescalation_shadow.py -q
       - name: edgar 8-K item-code expansion unit tests (LHB-R7)
@@ -3325,6 +3382,10 @@ jobs:
       # B1A closure widening 2026-08-24 (contract-delta): lib/evidence_foundation enters via lib/dataos identity readers; the schema is read by the evidence-foundation validator surface.
       - "contracts/market_os/security_state.v1.schema.json"
       - "lib/evidence_foundation.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py now
+      # imports the macro-suite page builder (guarded hook), whose closure
+      # carries the workspace snapshot schema and the suite labels/view libs.
+      - "contracts/market_os/macro_workspace_snapshot.v1.schema.json"
       # Eval OS T4 additions. app/: reached through scripts/freshness_sentinel.py, which
       # T4's reader-plane adapter imports for the surface table rather than copying it;
       # the sentinel's alert path imports app.mailer lazily and the closure walker sees
@@ -3387,7 +3448,12 @@ jobs:
       - "lib/filing_value_units.py"
       - "lib/finra_knowable.py"
       - "lib/forex_link.py"
+      - "lib/help_directory.py"
       - "lib/hk_calendar.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): via build_site's
+      # macro-suite hook — see the contracts/market_os entry above.
+      - "lib/macro_suite_labels.py"
+      - "lib/macro_suite_view.py"
       - "lib/nyse_calendar.py"
       - "lib/options_context.py"
       - "lib/pages.py"
@@ -3408,6 +3474,9 @@ jobs:
       - "scripts/build_index_leadership.py"
       - "scripts/build_intelligence_registry.py"
       - "scripts/build_live_overlay.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): imported by
+      # scripts/build_site.py's guarded macro-suite hook.
+      - "scripts/build_macro_suite_pages.py"
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
@@ -3453,6 +3522,14 @@ jobs:
       - "site/master_brief.json"
       - "site/neuralwebdata/**"
       - "site/qledger/**"
+      # F13-X1: build_site imports the source-bound help directory, whose
+      # fail-closed contract reads these exact existing owner templates.
+      - "templates/_navlinks.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
+      - "templates/support.html.j2"
       - "tests/test_check_intelligence_registry.py"
       - "tests/test_intelligence_registry.py"
       - "tests/test_output_health.py"
@@ -4376,6 +4453,14 @@ jobs:
         run: pip install pytest pandas numpy pyarrow
       - name: broad ETF flow proxy unit tests
         run: python -m pytest tests/test_broad_etf_flows.py -q
+      # Rides here because this is the sector/broad-ETF unit-test job with the
+      # exact minimal deps the suite needs (pandas/numpy only — the harness
+      # imports engine.validation, which needs nothing heavier). The suite is
+      # 20 pure-function tests (universe dating, Friday-anchor arithmetic,
+      # confirm rule, RS rank logic) for the S-MLC-3 phase-0 harness; it shipped
+      # unwired in #6766 and contract-delta correctly refused the ci-gate.
+      - name: S-MLC-3 weekly-wait-cost harness unit tests
+        run: python -m pytest tests/test_s_mlc_3_weekly_wait_cost.py -q
 
   qledger-cluster-honest-ci:
     if: ${{ false }}
@@ -6376,6 +6461,34 @@ jobs:
       - name: pick lab liquidity gate regression tests
         run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py tests/test_pick_lab_hk_runner.py tests/test_pick_lab_hk_render.py -q
 
+  global-liquidity-transmission:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # W-LIQ.1 state-only producer. Both suites are offline and use synthetic
+    # inputs: the legacy global-liquidity calculations plus the new causal
+    # release-alignment, missing-data, contract-envelope, immutable-hash,
+    # historical-fixture, and walk-forward purge invariants. This lane has no
+    # trading, alerting, routing, or downstream transmission authority.
+    paths:
+      - "config/global_liquidity_transmission_v1.yml"
+      - "engine/global_liquidity.py"
+      - "engine/global_liquidity_transmission.py"
+      - "scripts/build_global_liquidity_transmission.py"
+      - "tests/fixtures/global_liquidity_transmission_wliq1_window.json"
+      - "tests/test_global_liquidity.py"
+      - "tests/test_global_liquidity_transmission.py"
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install state-producer test dependencies
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: global liquidity state producers — legacy parity and W-LIQ.1 contract
+        run: python -m pytest tests/test_global_liquidity.py tests/test_global_liquidity_transmission.py -q
+
   ric-w2-surface:
     if: ${{ false }}
     gate: code
@@ -6513,10 +6626,31 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py's
+      # guarded macro-suite hook imports the page builder, which carries the
+      # workspace contract/registry pair. Enumerated, not globbed — the checker
+      # named exactly these three; the composers themselves are NOT in this
+      # job's closure (thin __init__).
+      - "engine/market_os/macro_workspaces/__init__.py"
+      - "engine/market_os/macro_workspaces/contract.py"
+      - "engine/market_os/macro_workspaces/registry.py"
+      # Added-date closure widening 2026-09-01 (contract-delta): the serving
+      # path's builder imports now reach the Prophet board_since resolver.
+      - "engine/prophet_board_since.py"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -6619,6 +6753,7 @@ jobs:
       - "engine/earnings_blackout.py"
       - "engine/earnings_catalyst.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/election_cycle.py"
       - "engine/entity_resolver.py"
       - "engine/entry_primitives.py"
@@ -6749,6 +6884,7 @@ jobs:
       - "engine/qledger.py"
       - "engine/qledger_validity.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/rebalance_calendar.py"
       - "engine/regime.py"
       - "engine/regime_conditioning_coverage.py"
@@ -6893,6 +7029,9 @@ jobs:
       - "scripts/build_fundamental_forensics.py"
       - "scripts/build_index_leadership.py"
       - "scripts/build_live_overlay.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): imported by
+      # scripts/build_site.py's guarded macro-suite hook.
+      - "scripts/build_macro_suite_pages.py"
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
@@ -6938,6 +7077,14 @@ jobs:
       - "site/prophet/**"
       - "site/qledger/**"
       - "site/vol/**"
+      # F13-X1: build_site imports the source-bound help directory, whose
+      # fail-closed contract reads these exact existing owner templates.
+      - "templates/_navlinks.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
+      - "templates/support.html.j2"
       - "tests/test_biocatalyst_api.py"
       - "tests/test_biocatalyst_d0b_ui.py"
       - "tests/test_biocatalyst_deploy.py"
@@ -7074,6 +7221,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -7117,6 +7274,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/event_calendar.py"
       - "engine/forward_calendar_context.py"
@@ -7280,6 +7438,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/residual_alpha.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"
@@ -8501,6 +8660,21 @@ jobs:
         run: node --version
       - name: collect beacon throttle + growth-event registry + tape per-IP cap + generic billing/auth errors + dossier quote honesty
         run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py tests/test_company_intelligence_dossier_js.py tests/test_dossier_quote_api.py tests/test_dossier_live_quote_surface.py -q
+      # WS:COMMERCIAL-ACTIVATION CA1A (2026-09-04): the event-spine acceptance
+      # battery — registry-as-whitelist derivation (W2-1), envelope-v1 eid/schema/
+      # meta validation and replay identity through the mounted /api/collect route,
+      # producer near-miss source contracts incl. template/site shipping-pair
+      # parity, and the deterministic activation funnel report. Lives in this job
+      # because it owns the beacon/growth-registry subject, and needs exactly the
+      # same minimal FastAPI/httpx dependency closure as the beacon suite above.
+      - name: CA1A event spine — collector envelope v1 + producer contracts + funnel report
+        run: python -m pytest tests/test_commercial_activation_event_spine.py tests/test_ca1a_producers_contract.py tests/test_activation_funnel_report.py -q
+      # R1A-M (2026-09-02): the shared regular-quote projector both this job's
+      # dossier route AND the Intelligence Hub batch route now use, plus the
+      # deliberately public batch API itself — same minimal FastAPI/httpx
+      # dependency closure as the dossier suite immediately above.
+      - name: shared regular quote projector + Intelligence Hub market pulse batch API
+        run: python -m pytest tests/test_public_quote_projection.py tests/test_intelligence_hub_market_pulse_api.py -q
       # CCR-R0 (2026-08-28) belongs in this existing pre-launch security lane:
       # authenticated operator identity, a fixed admin iframe, Caddy's real
       # adapted handler order, and the bounded atomic GitHub-source publisher.
@@ -8608,7 +8782,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pyyaml jinja2
       - name: public fastlane split + rendered pricing copy pins
-        run: python -m pytest tests/test_public_render_fastlane.py -q
+        run: python -m pytest tests/test_public_render_fastlane.py tests/test_help_directory.py tests/test_help_directory_contract.py -q
 
   press-lane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
@@ -9091,6 +9265,14 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "engine/theme_graph/**"
+      # D5's app/prophet_lab route extends this curated app closure through the
+      # canonical issuer reader. Keep the measured stock-identity package files
+      # explicit; path-risk and the B1 episode reader are not in this job's
+      # derived closure and are intentionally not declared here.
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
@@ -9834,6 +10016,11 @@ jobs:
         run: python -m pytest tests/test_china_intel_hub_visits.py tests/test_china_intel_visits_render.py -q
       - name: Intelligence Hub PIT scope + W0 measurement heals + ticker-shape gate
         run: python -m pytest tests/test_intel_hub_universe_scope.py tests/test_intel_hub_w0_heals.py tests/test_ticker_shape.py -q
+      # R1A-M (2026-09-02): exact market pulse roster/markup (needs the same
+      # jinja2 + pandas closure scripts.build_intel_hub already pulls in this
+      # job) plus the route-scoped controller's node-executed contract.
+      - name: Intelligence Hub market pulse roster/markup + controller contract
+        run: python -m pytest tests/test_intelligence_hub_market_pulse_surface.py tests/test_intelligence_hub_market_pulse_client.py -q
 
   unrun-register-honesty:
     # The user-facing honesty register: falsifier/refutation vocabulary stays
@@ -10247,6 +10434,37 @@ jobs:
     # the declared-scope coverage audit re-checks them on every load.
     scope: exclusive
     paths:
+      # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py's
+      # guarded macro-suite hook imports the page builder, which carries the
+      # workspace contract/registry pair. Checker-named files only; the
+      # composers are not in this job's closure (thin __init__).
+      - "engine/market_os/macro_workspaces/__init__.py"
+      - "engine/market_os/macro_workspaces/contract.py"
+      - "engine/market_os/macro_workspaces/registry.py"
+      # Added-date closure widening 2026-09-01 (contract-delta): the surfaces
+      # census suite imports the intl builders, whose closure spans the intl
+      # engine stack. Widened, never narrowed.
+      - "engine/cb_desk.py"
+      - "engine/contagion.py"
+      - "engine/contagion_links.py"
+      - "engine/flow_regime.py"
+      - "engine/hk_global.py"
+      - "engine/hk_global_beta.py"
+      - "engine/international_macro_dashboard.py"
+      - "engine/intl_bonds.py"
+      - "engine/intl_compare.py"
+      - "engine/intl_equity_risk.py"
+      - "engine/intl_market_confirmation.py"
+      - "engine/intl_performance.py"
+      - "engine/intl_rates.py"
+      - "engine/intl_regime.py"
+      - "engine/intl_risk.py"
+      - "engine/intl_rotation.py"
+      - "engine/intl_run.py"
+      - "engine/intl_stocks.py"
+      - "engine/ird_velocity.py"
+      - "engine/rri_shadow.py"
+      - "scripts/build_international_macro.py"
       # B1A closure widening 2026-08-24 (contract-delta): the security_state producer stage in build_stock_library lazily imports the company-intelligence reader chain and Data OS identity.
       - "engine/company_intelligence/__init__.py"
       - "engine/company_intelligence/contracts.py"
@@ -10572,6 +10790,7 @@ jobs:
       - "engine/price_ladder.py"
       - "engine/prophet_arena.py"
       - "engine/prophet_board_read.py"
+      - "engine/prophet_board_since.py"
       - "engine/prophet_bridge.py"
       - "engine/prophet_doors.py"
       - "engine/prophet_integrity.py"
@@ -10588,6 +10807,7 @@ jobs:
       - "engine/qledger_validity.py"
       - "engine/quant_lab/**"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/rebalance_calendar.py"
       - "engine/reflexivity.py"
       - "engine/regime.py"
@@ -10744,6 +10964,7 @@ jobs:
       - "scripts/build_canada_library.py"
       - "scripts/build_capital_structure_page.py"
       - "scripts/build_chart_data.py"
+      - "scripts/build_china.py"
       - "scripts/build_china_library.py"
       - "scripts/build_china_masterminds.py"
       - "scripts/build_china_microstructure.py"
@@ -10752,9 +10973,15 @@ jobs:
       - "scripts/build_commodity_strategies.py"
       - "scripts/build_crossmarket.py"
       - "scripts/build_fundamental_forensics.py"
+      - "scripts/build_hk.py"
       - "scripts/build_index_leadership.py"
+      - "scripts/build_intl.py"
+      - "scripts/build_intl_library.py"
       - "scripts/build_ipo.py"
       - "scripts/build_live_overlay.py"
+      # F01 R1B closure widening 2026-09-04 (contract-delta): imported by
+      # scripts/build_site.py's guarded macro-suite hook.
+      - "scripts/build_macro_suite_pages.py"
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
@@ -10847,16 +11074,28 @@ jobs:
       - "site/qledger/track_record.json"
       - "site/sectordata/**"
       - "site/stocktable.js"
+      # F13-X1 help source-validation closure reached through build_site.
+      - "templates/_navlinks.html.j2"
       - "templates/_prophet_card.html.j2"
+      - "templates/_public_footer.html.j2"
+      - "templates/_public_nav.html.j2"
       - "templates/_stock_decision.css.j2"
       - "templates/_track_record_dlg.html.j2"
+      - "templates/_us_board_cards.html.j2"
+      - "templates/canada.html.j2"
       - "templates/china.html.j2"
       - "templates/dashboard.html.j2"
+      - "templates/hk.html.j2"
+      - "templates/intl.html.j2"
+      - "templates/measurement.html.j2"
+      - "templates/methodology.html.j2"
       - "templates/stocktable.js"
+      - "templates/support.html.j2"
       - "templates/theme.css"
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
+      - "tests/test_build_china_library_more_actionable_guard.py"
       - "tests/test_china_board_rank.py"
       - "tests/test_china_board_rank_v4.py"
       - "tests/test_china_continuation_watch.py"
@@ -10869,12 +11108,16 @@ jobs:
       - "tests/test_dashboard_template_render.py"
       - "tests/test_grade_us_board.py"
       - "tests/test_heal_stage_forward_ledger.py"
+      - "tests/test_macro_risk_dialog.py"
       - "tests/test_opportunity_timeline.py"
       - "tests/test_pick_lab_book.py"
       - "tests/test_pick_lab_cn_runner.py"
       - "tests/test_pick_lab_render.py"
       - "tests/test_pick_lab_runner.py"
       - "tests/test_prophet_board_read.py"
+      - "tests/test_prophet_board_since.py"
+      - "tests/test_prophet_candidate_added_date_surfaces.py"
+      - "tests/test_prophet_card_added_date.py"
       - "tests/test_prophet_card_live_change.py"
       - "tests/test_prophet_card_shared.py"
       - "tests/test_prophet_fusion_arena.py"
@@ -10965,6 +11208,17 @@ jobs:
       # synthetic LibraryIndex trees under tmp_path, no data/ or site/ reads.
       - name: prophet board read (G-D actionability join + honest absence)
         run: python -m pytest tests/test_prophet_board_read.py -q
+      # Prophet candidate "Added date" (prophet-candidate-added-date-fable-e2e,
+      # 2026-09-01). engine/prophet_board_since.py's resolver core + market
+      # adapters (test_prophet_board_since.py), the pv_card chip
+      # (test_prophet_card_added_date.py, real Jinja render via the harness
+      # tests/test_prophet_card_live_change.py already established), and the
+      # caller-census + freshness-header guards across all five markets
+      # (test_prophet_candidate_added_date_surfaces.py). Rides this step —
+      # same US/CN board-surface family, same venv (pandas for the CN/HK/CA
+      # parquet adapters, jinja2 already installed here for the card render).
+      - name: prophet candidate Added-date resolver + card + surfaces
+        run: python -m pytest tests/test_prophet_board_since.py tests/test_prophet_card_added_date.py tests/test_prophet_candidate_added_date_surfaces.py tests/test_build_china_library_more_actionable_guard.py -q
       - name: US track-ledger era boundary and frozen pre-era evidence
         run: python -m pytest tests/test_track_ledger_era.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
@@ -10998,7 +11252,7 @@ jobs:
       # No dependency widened: it renders Jinja templates only — jinja2 is already on
       # the install line above.  Measured 54s against this job's 245s body and 12m cap.
       - name: dashboard.html.j2 rendered-HTML contract (unrun backfill 2026-08-27)
-        run: python -m pytest tests/test_dashboard_template_render.py -q
+        run: python -m pytest tests/test_dashboard_template_render.py tests/test_macro_risk_dialog.py -q
   prophet-us-context-and-grades:
     # PROPHET US §W7 — the full-population candidate record: the PIT context store that
     # REMEMBERS each night's score, the forward grader that says what those names then did,
@@ -11230,7 +11484,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jsonschema jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
-        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py -q
+        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py tests/test_brain_exact_source_context.py tests/test_company_source_span.py -q
       - name: W1-A typed datapoint registry — owners, PIT, rights, consumers, mutations, batching
         run: >-
           python -m pytest
@@ -11274,7 +11528,7 @@ jobs:
       # borrowed reason.  No dependency widened: probed at RUN time it loads only
       # pandas/numpy/pyarrow/pyyaml, all already on the install line above.
       - name: commodities / forex / rates / news / policy panels and their calibration guards
-        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py tests/test_commodities_ignition_copy.py -q
+        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_yield_momentum.py tests/test_inputs_yield_curve.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py tests/test_commodities_ignition_copy.py -q
 
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
@@ -12128,6 +12382,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/theme_graph/identity.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -12171,6 +12435,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/event_calendar.py"
       - "engine/forward_calendar_context.py"
@@ -12334,6 +12599,7 @@ jobs:
       - "engine/provenance_sidecar.py"
       - "engine/pullback_zone.py"
       - "engine/rate_inflation_transmission.py"
+      - "engine/yield_momentum.py"
       - "engine/residual_alpha.py"
       - "engine/risk_sizing.py"
       - "engine/roc_blowoff.py"
@@ -12845,6 +13111,7 @@ jobs:
       - tests/test_massive_local_staleness.py
       - tests/test_price_pressure.py
       - tests/test_top_anatomy.py
+      - tests/test_top_anatomy_oot_receipt.py
       - tests/test_top_maturation.py
       - tests/test_winner_health_design_freeze.py
       - tests/test_winner_health_page.py
@@ -12906,6 +13173,23 @@ jobs:
       # Phase-0 contract.  The derived scope follows its engine/script/read closure.
       - name: TOP ANATOMY point-in-time engine and preregistration contracts
         run: python -m pytest tests/test_top_anatomy.py -q
+      # Wired 2026-09-02: tests/test_top_anatomy_oot_receipt.py shipped in #6723
+      # named by NO run: step in any workflow (contract-delta unrun-suite
+      # finding, inherited on main at dae473ed625e), so the guard over the
+      # FROZEN TOPA OOT prereg (research/top_anatomy/TOPA_OOT_PREREG.md —
+      # STRICT session-arithmetic boundary, per-cell eligibility, separate
+      # episode- and day-level labeled-unit blocks) sat dark from the day it
+      # merged. It belongs to this owner: the suite drives
+      # scripts/research_top_anatomy_oot_receipt.py and the Phase-0 harness
+      # over synthetic massive_stock_day stores in tmp_path (CI has no real
+      # data/ tree) through the same engine/top_anatomy closure the step above
+      # owns, and the shared install is a strict superset of its
+      # pandas/numpy/pyarrow needs. Path-gated in ci.yml on BOTH the test and
+      # its subjects (scripts/research_top_anatomy_oot_receipt.py,
+      # scripts/research_top_anatomy_phase0.py, engine/top_anatomy.py) — a
+      # guard the guarded change cannot trigger is not a guard (#3488).
+      - name: TOP ANATOMY OOT receipt — frozen prereg schema and boundary contracts
+        run: python -m pytest tests/test_top_anatomy_oot_receipt.py -q
       # The same harness's JSON write path, so it belongs to the same owner rather
       # than a second overlapping job. `default=str` does NOT catch NaN — it only
       # fires for values the encoder cannot serialize — so three shipped
@@ -13414,3 +13698,135 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: Cell B V2 buyback source-capacity census
         run: python -m pytest tests/test_cell_b_v2_buyback_source_census.py -q
+
+  market-os-macro-workspaces:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # Market Ontology F01 R1A: mastermind.macro_workspace_snapshot.v1 producer
+    # (US Liquidity Regime composer), fail-closed contract validator, atomic
+    # publisher, CLI exit-code law, and the bounded read-only machine consumer.
+    # All four suites are offline and synthetic-fixture driven; the only real
+    # input ever read at build time is data/regime/latest.json. This lane has
+    # no trading, alerting, routing, or downstream authority.
+    paths:
+      - "contracts/market_os/macro_workspace_snapshot.v1.schema.json"
+      - "engine/market_os/**"
+      - "scripts/build_macro_workspaces.py"
+      - "tests/test_macro_workspace_build.py"
+      - "tests/test_macro_workspace_business_activity.py"
+      - "tests/test_macro_workspace_capital_structure.py"
+      - "tests/test_macro_workspace_consumer.py"
+      # R6 2026-09-04: Consumer & Household + National Debt composer suites.
+      - "tests/test_macro_workspace_consumer_payments.py"
+      - "tests/test_macro_workspace_contract.py"
+      - "tests/test_macro_workspace_financial_conditions.py"
+      - "tests/test_macro_workspace_growth.py"
+      - "tests/test_macro_workspace_housing.py"
+      - "tests/test_macro_workspace_inflation.py"
+      - "tests/test_macro_workspace_labor.py"
+      - "tests/test_macro_workspace_liquidity_central_banks.py"
+      - "tests/test_macro_workspace_liquidity_regime.py"
+      - "tests/test_macro_workspace_monetary_policy.py"
+      - "tests/test_macro_workspace_national_debt.py"
+      # Expansion 2026-09-04: Rates & Curves + Trade Flows composer suites.
+      - "tests/test_macro_workspace_rates_curves.py"
+      - "tests/test_macro_workspace_trade_flows.py"
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install workspace-producer test dependencies
+        run: pip install pytest pyyaml jsonschema==4.26.0
+      - name: Market OS macro workspaces — contract, composer, publisher, consumer
+        run: >-
+          python -m pytest
+          tests/test_macro_workspace_build.py
+          tests/test_macro_workspace_business_activity.py
+          tests/test_macro_workspace_capital_structure.py
+          tests/test_macro_workspace_consumer.py
+          tests/test_macro_workspace_consumer_payments.py
+          tests/test_macro_workspace_contract.py
+          tests/test_macro_workspace_financial_conditions.py
+          tests/test_macro_workspace_growth.py
+          tests/test_macro_workspace_housing.py
+          tests/test_macro_workspace_inflation.py
+          tests/test_macro_workspace_labor.py
+          tests/test_macro_workspace_liquidity_central_banks.py
+          tests/test_macro_workspace_liquidity_regime.py
+          tests/test_macro_workspace_monetary_policy.py
+          tests/test_macro_workspace_national_debt.py
+          tests/test_macro_workspace_rates_curves.py
+          tests/test_macro_workspace_trade_flows.py
+          -q
+
+  market-os-macro-suite-pages:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    gate: code
+    # Market Ontology F01 R1B: the macro-native workspace page family — shared
+    # suite shell, closed-vocab EN/zh labels, snapshot->view model, and the
+    # registry-driven fail-closed page builder. Render-only: reads the
+    # published site/macrodata/workspaces artifacts, writes site/*.html, and
+    # renders a typed refusal rather than inventing state. No trading,
+    # alerting, routing, or downstream authority. engine/market_os/** is in
+    # scope deliberately: a composer change alters the artifacts these pages
+    # render, so it should re-prove the page suite.
+    #
+    # CURATED SCOPE (2026-09-04, at birth). `scope: exclusive` so the paths
+    # below REPLACE inference: the builder's jinja FileSystemLoader is an
+    # opaque construct whose fallback smear claimed `templates/**` and put
+    # templates/index.html at 132 jobs against the 131 ceiling in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs.
+    # The job reads five named templates, not the tree. Widening is the safe
+    # direction: when a new import lands, the closure-coverage audit names the
+    # exact uncovered file — add it here.
+    scope: exclusive
+    paths:
+      - "contracts/market_os/macro_workspace_snapshot.v1.schema.json"
+      - "engine/__init__.py"
+      - "engine/market_os/**"
+      - "templates/_macro_suite_shell.html.j2"
+      - "templates/macro_liquidity_regime.html.j2"
+      # R2 pages wave 2026-09-04: the six MCS/cycle workspace pages.
+      - "templates/macro_growth_real_economy.html.j2"
+      - "templates/macro_business_activity.html.j2"
+      - "templates/macro_labor_markets.html.j2"
+      - "templates/macro_inflation_system.html.j2"
+      - "templates/macro_monetary_policy.html.j2"
+      - "templates/macro_financial_conditions.html.j2"
+      # R3 2026-09-04: the Liquidity & Central Banks page.
+      - "templates/macro_liquidity_central_banks.html.j2"
+      # R4/R5 2026-09-04: Capital Structure + Housing pages.
+      - "templates/macro_capital_structure.html.j2"
+      - "templates/macro_housing_real_estate.html.j2"
+      # R6 2026-09-04: Consumer & Household + National Debt pages.
+      - "templates/macro_consumer_payments.html.j2"
+      - "templates/macro_national_debt_liabilities.html.j2"
+      # Expansion 2026-09-04: Rates & Curves + Trade Flows pages.
+      - "templates/macro_rates_curves.html.j2"
+      - "templates/macro_trade_flows.html.j2"
+      - "templates/macro_suite.css"
+      - "templates/macro_suite.js"
+      - "templates/macro_suite_boot.js"
+      - "lib/__init__.py"
+      - "lib/config.py"
+      - "lib/macro_suite_labels.py"
+      - "lib/macro_suite_view.py"
+      - "lib/pages.py"
+      - "scripts/__init__.py"
+      - "scripts/build_macro_suite_pages.py"
+      - "site/macrodata/workspaces/**"
+      - "tests/test_macro_suite_pages.py"
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install suite-page test dependencies
+        run: pip install pytest jinja2 pyyaml jsonschema==4.26.0
+      - name: Market OS macro suite pages — shell, labels, view model, builder
+        run: python -m pytest tests/test_macro_suite_pages.py -q

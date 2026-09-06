@@ -459,9 +459,22 @@ def _refresh_cortex_evaluator(e: dict) -> dict:
             "passed": "gate_open",
             "failed": "no_go",
             "insufficient-n": "accruing",
-            "budget-rejected": "accruing",
+            # terminal in metabolism (a rejected REGISTRATION never re-arms) —
+            # the old "accruing" mapping presented it as a live accrual forever
+            "budget-rejected": "no_go",
             "retired": "no_go",
             "invalid": "no_go",
+            # W7b-PR3 terminal instrument verdicts (metabolism.TERMINAL_STATUSES):
+            # the instrument refused to grade, and a corrected gate/query needs a
+            # NEW registration — so the row is concluded. Without these the map's
+            # "accruing" default presents a terminal row as accruing forever
+            # (come_back is cleared on terminal rows, so it never re-flags, but
+            # the panel line would still read as a live accrual).
+            "invalid-self-reference": "no_go",
+            "unresolvable-query": "no_go",
+            "invalid-gate": "no_go",
+            "uncomputable-metric": "no_go",
+            "expired-insufficient-n": "no_go",
         }
         out_status = status_map.get(status, "accruing")
         come_back = row.get("come_back")

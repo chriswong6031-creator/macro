@@ -1,0 +1,18 @@
+{
+  "phase": "before",
+  "observed_at": "2026-09-06T18:55:10.685021+00:00",
+  "url": "https://www.mastermind-x.com/macro.html?sol_observe=20260906T185510Z",
+  "classification": "PUBLIC_LIVE_BROWSER_NOT_MEMBER_SESSION",
+  "status": 200,
+  "html_sha256": "d781f9d37e2cd4590297f8887485151e0cab7b3b035201c8a175af7f964a3060",
+  "title": "Macro Regime Dashboard — 2026-09-04 | MastermindX",
+  "band_exists": true,
+  "band_inside_hero": false,
+  "band_text": "THREE READS, KEPT SEPARATE\nDo the market reads agree?\nSettled 2026-09-04\nLive · provisional\n\nNo — they disagree. The trend read and the damage read point opposite ways. Both are shown, unchanged.\n\nIS THE TREND STILL THERE?\n\nRisk-on▲\n\nSlow trend read, carried unchanged from the score above — 75/100.\n\n2026-09-04\nIS ANYTHING BREAKING?\n\nSomething's fragile\n\nLeadership cohort is damaged while the index holds — its own read has said so since 2026-07-07.\n\n2026-09-04\nEvidence — 3 sources, 2 disagreements\nCAPITAL POLICY\nNo Grey Deer policy active\nNothing is restricted. This is a market read — it carries no instruction, and it is not part of the agreement above.\n0 active\nEach read keeps its own clock, so a source that didn't settle can't vote \"calm\". Agreement above compares the two market reads only.",
+  "band_height": 496.109375,
+  "bundle": "8ed1b5c2b113ba4c",
+  "settled_session": "2026-09-04",
+  "tape_top": 1045.1875,
+  "overflow": false,
+  "page_errors": []
+}

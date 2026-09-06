@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FDX-BULL-20260810",
-  "asof": "2026-08-29",
+  "asof": "2026-09-05",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 56.5,
-  "raw_confidence": 52.0,
-  "delta_vs_base": -3.5,
+  "management_confidence": 47.6,
+  "raw_confidence": 47.4,
+  "delta_vs_base": -12.4,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 81.6,
+    "validity": 64.6,
     "progress": 0.0,
-    "pace": 41.0,
+    "pace": 10.1,
     "retention": 50.0,
-    "overlay": 58.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.86,
+    "dist_to_stop_r": 0.723,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 35.6,
-    "p1": -0.0931,
-    "p2": -0.0466,
+    "horizon_pct_used": 51.1,
+    "p1": -0.1845,
+    "p2": -0.0922,
     "p3": null,
-    "move_r": -0.14,
+    "move_r": -0.277,
     "mfe_r": 0.0,
-    "mae_r": -0.235
+    "mae_r": -0.375
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
-  "_mae": -14.320013427734352,
+  "_mae": -22.859991455078102,
   "_max_p1": 0.0,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 16,
-  "tau": 0.3556
+  "days_elapsed": 23,
+  "tau": 0.5111
 }

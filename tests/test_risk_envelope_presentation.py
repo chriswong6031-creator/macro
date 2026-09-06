@@ -339,3 +339,19 @@ def test_required_source_loss_is_unclear_without_daily_shape_skip():
     assert "Unclear" in rail
     assert "1 source unavailable" in rail
     assert "No breakage" not in rail
+
+
+def test_live_overlay_does_not_hide_the_settled_read_clock():
+    css = (TEMPLATES / "_risk_envelope_band.css.j2").read_text(encoding="utf-8")
+    # The live painter updates its status, not the underlying settled trend.
+    assert not re.search(
+        r"\.gde-rail:has\([^}]+\.gde-stamp-settled\s*\{\s*display:\s*none",
+        css,
+    )
+
+
+def test_homepage_names_the_customer_job_not_the_internal_composer():
+    rail = _slice_id(_render_surfaces(_gd1_envelope()), "risk-envelope-band")
+    assert "Risk context" in rail
+    assert "风险提示" in rail
+    assert "Market Reads" not in rail

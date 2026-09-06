@@ -104,3 +104,35 @@ def test_repair_sanitises_issuer_names_end_to_end():
     # ... and the neighbouring rows are untouched
     assert out.loc["T", "name"] == "AT&T Inc."
     assert out.loc["JNJ", "name"] == "Johnson & Johnson"
+
+
+def test_repair_drops_exit_ledger_symbols(monkeypatch):
+    """A delisted symbol that Wikipedia still lists must leave the universe.
+
+    LEG shape (2026-08): the merger closed 08-26 and the Form 25 was filed 08-27,
+    but the S&P 600 Wikipedia table still carried the row — every nightly scrape
+    re-admitted a symbol whose tape had ended. The exit ledger, not the page, is
+    the authority on existence."""
+    from collectors import breadth as breadth_mod
+
+    monkeypatch.setattr(breadth_mod.delisted_symbols, "tickers",
+                        lambda: frozenset({"LEG"}))
+    a = _adapter({})
+    df = pd.DataFrame({"symbol": ["AAPL", "LEG"],
+                       "name": ["Apple", "Leggett & Platt"],
+                       "sector": ["IT", "Cons"]})
+    out = a._repair(df)
+    assert list(out["symbol"]) == ["AAPL"]
+
+
+def test_repair_keeps_everything_when_exit_ledger_is_empty(monkeypatch):
+    """Fail-open: an unreadable ledger reads as empty and drops nothing."""
+    from collectors import breadth as breadth_mod
+
+    monkeypatch.setattr(breadth_mod.delisted_symbols, "tickers", lambda: frozenset())
+    a = _adapter({})
+    df = pd.DataFrame({"symbol": ["AAPL", "LEG"],
+                       "name": ["Apple", "Leggett & Platt"],
+                       "sector": ["IT", "Cons"]})
+    out = a._repair(df)
+    assert list(out["symbol"]) == ["AAPL", "LEG"]

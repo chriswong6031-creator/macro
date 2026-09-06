@@ -2,18 +2,18 @@
   "artifact": "data/macro/fed_net_liquidity.parquet",
   "formula": "netliq_bn = walcl_bn - rrp_bn - tga_bn (engine.canon.net_liquidity_bn, audit #28)",
   "component_last_obs": {
-    "rrp": "2026-08-28",
-    "tga": "2026-08-27",
-    "walcl": "2026-08-26"
+    "rrp": "2026-09-04",
+    "tga": "2026-09-03",
+    "walcl": "2026-09-02"
   },
   "components_missing": [],
   "stalest_component": "walcl",
   "stale_guard_bdays": 10,
-  "stale_guard_cutoff": "2026-09-09",
+  "stale_guard_cutoff": "2026-09-16",
   "rows_dropped_by_stale_guard": 0,
-  "rows": 5417,
+  "rows": 5422,
   "first_date": "2002-12-18",
-  "last_date": "2026-08-28",
+  "last_date": "2026-09-04",
   "columns": [
     "date",
     "walcl_bn",

@@ -1,0 +1,6 @@
+{
+  "method": "scripts.optimize_assets.make_optimizer + lib.pages.write_page",
+  "target": "site/macro.html",
+  "before_sha256": "908af1f72be44e3d8c1cf1f83cb01c66cb1e49d4997994ccc0c1b83c8550210a",
+  "after_sha256": "926f49e528efa01b63c58dd1eca8cf3458a29db15a1817b1aa83ad1ff85437ae"
+}

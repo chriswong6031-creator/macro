@@ -1,5 +1,4 @@
 {
-  "A": "ahead_of_consensus",
   "ATI": "consensus_at_risk",
   "AVAV": "ahead_of_consensus",
   "BA": "ahead_of_consensus",
@@ -14,9 +13,9 @@
   "MDT": "ahead_of_consensus",
   "MHK": "consensus_at_risk",
   "MTRN": "consensus_at_risk",
+  "NEE": "ahead_of_consensus",
   "NOW": "ahead_of_consensus",
   "NRG": "ahead_of_consensus",
-  "NTAP": "ahead_of_consensus",
   "OC": "consensus_at_risk",
   "PANW": "ahead_of_consensus",
   "PATH": "ahead_of_consensus",

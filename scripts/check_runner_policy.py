@@ -14,6 +14,16 @@ is ``orphaned`` may not be used by a scheduled workflow without a dated
 label lives only in GitHub's runners-API state, so deregistering a host silently
 orphans every label it carried, and a cron job queued on a dead label can hold its
 concurrency group hostage for 24h (research/PROPHET_OUTAGE_2026_08_17_POSTMORTEM.md).
+
+Rule R14 (added 2026-09-01) owns the live/pending capacity boundary for the PC CI
+pool. ``pool_topology.pc-ci.slots`` is the live, routable inventory and stays at
+three; the fourth slot is declared only as ``pending_slots``/``pending_carriers``/
+``pending_labels`` so the code can support four candidates without the policy file
+ever claiming four are carrying traffic. R14 refuses a fifth slot, an invented
+carrier name, a pending block on any other pool, a pending label outside platform
+identity, and — the activation act itself — pc-ci-4 entering any ``carried_by``
+roster. Making the fourth slot live is a separate audited carrier gated on a real
+GitHub online/idle receipt, never an edit to this file alone.
 """
 
 from __future__ import annotations
@@ -61,6 +71,10 @@ RUNTIME_WORKFLOWS = {
 TRUSTED_EXECUTOR_CALL = (
     "mastermindx-market-intelligence/macro/.github/workflows/"
     "trusted-ci-executor.yml@main"
+)
+FOUR_SLOT_PREFLIGHT_ROUTE = (
+    ".github/workflows/selfhosted-ci-canary.yml",
+    "four-slot-preflight",
 )
 SAME_REPO_PR = (
     "github.event.pull_request.head.repo.full_name == github.repository"
@@ -378,6 +392,171 @@ def _label_registry_findings(registry: dict, documents: dict[str, dict]) -> list
     return findings
 
 
+def _pending_capacity_findings(registry: dict) -> list[Finding]:
+    """R14: the fourth PC CI slot may be declared as architecture, never as capacity.
+
+    ``slots`` is the live, routable inventory; ``pending_slots``/``pending_carriers``/
+    ``pending_labels`` are the pending architecture. The two must never merge here.
+    Live activation — pc-ci-4 acquiring ``ci-linux`` or entering a ``carried_by``
+    roster — is a separately audited act gated on a real online/idle receipt, so
+    this guard refuses it from the policy file alone.
+    """
+
+    findings: list[Finding] = []
+    topology = registry.get("pool_topology") or {}
+    label_registry = registry.get("label_registry") or {}
+
+    # Only the PC CI pool may declare pending capacity. A pending block anywhere
+    # else is how a fifth slot, or a pending render listener, would enter sideways.
+    for name, pool in topology.items():
+        if name == "pc-ci" or not isinstance(pool, dict):
+            continue
+        declared = sorted(
+            key for key in ("pending_slots", "pending_carriers", "pending_labels")
+            if key in pool
+        )
+        if declared:
+            findings.append(
+                Finding(
+                    "R14",
+                    f"pool {name!r} may not declare pending capacity {declared}; "
+                    "only pc-ci carries a pending fourth slot",
+                )
+            )
+
+    # A whole second CI pool is the other way a fifth slot hides in YAML. The
+    # live CI inventory is `pc-ci.slots` and nothing else, so no other pool may
+    # carry the routable CI label at all.
+    for name, pool in topology.items():
+        if name == "pc-ci" or not isinstance(pool, dict):
+            continue
+        if "ci-linux" in set(pool.get("labels") or []):
+            findings.append(
+                Finding(
+                    "R14",
+                    f"pool {name!r} carries the live CI label 'ci-linux'; only pc-ci "
+                    f"may, or its {pool.get('slots')!r} slot(s) are CI capacity "
+                    "outside the declared inventory",
+                )
+            )
+
+    ci_pool = topology.get("pc-ci") or {}
+    missing = sorted(
+        key for key in ("pending_slots", "pending_carriers", "pending_labels")
+        if key not in ci_pool
+    )
+    if missing:
+        findings.append(
+            Finding(
+                "R14",
+                f"pc-ci must declare its pending fourth-slot contract; missing {missing}",
+            )
+        )
+        return findings
+
+    live_slots = ci_pool.get("slots")
+    pending_slots = ci_pool.get("pending_slots")
+    pending_carriers = ci_pool.get("pending_carriers")
+    pending_labels = ci_pool.get("pending_labels")
+
+    if not isinstance(pending_carriers, list) or not isinstance(pending_labels, list):
+        findings.append(
+            Finding("R14", "pc-ci pending_carriers and pending_labels must be lists")
+        )
+        return findings
+    if not all(isinstance(carrier, str) for carrier in pending_carriers):
+        findings.append(Finding("R14", "pc-ci pending_carriers must contain strings"))
+        return findings
+    if not all(isinstance(label, str) for label in pending_labels):
+        findings.append(Finding("R14", "pc-ci pending_labels must contain strings"))
+        return findings
+
+    # `type(...) is int` on purpose: bool is an int subclass, so `pending_slots:
+    # true` would satisfy `== 1`, and a float silently skipped the cross-check.
+    if type(pending_slots) is not int or pending_slots != 1:
+        findings.append(
+            Finding("R14", f"pc-ci must declare exactly one pending slot, not {pending_slots!r}")
+        )
+    if type(live_slots) is int and type(pending_slots) is int:
+        if live_slots + pending_slots != 4:
+            findings.append(
+                Finding(
+                    "R14",
+                    f"PC CI live+pending capacity must total exactly four, not "
+                    f"{live_slots}+{pending_slots}",
+                )
+            )
+    if len(pending_carriers) != pending_slots:
+        findings.append(
+            Finding(
+                "R14",
+                f"pc-ci declares {pending_slots!r} pending slot(s) but "
+                f"{len(pending_carriers)} pending carrier(s): {pending_carriers}",
+            )
+        )
+
+    # The pending carrier is the exact next slot name, never an invented host.
+    if type(live_slots) is int:
+        expected_carriers = [f"pc-ci-{live_slots + 1}"]
+        if pending_carriers != expected_carriers:
+            findings.append(
+                Finding(
+                    "R14",
+                    f"pc-ci pending_carriers must be exactly {expected_carriers}, "
+                    f"not {pending_carriers}",
+                )
+            )
+
+    # Platform/architecture identity only. `ci-linux` here would make the fourth
+    # slot routable on paper before any host receipt exists.
+    expected_pending_labels = ["self-hosted", "Linux", "X64"]
+    if pending_labels != expected_pending_labels:
+        findings.append(
+            Finding(
+                "R14",
+                f"pc-ci pending_labels must be exactly {expected_pending_labels}, "
+                f"not {pending_labels!r}",
+            )
+        )
+
+    # A pending carrier is by definition in no live roster. This is the rule that
+    # refuses the activation act — adding pc-ci-4 to ci-linux.carried_by.
+    for label, entry in label_registry.items():
+        if not isinstance(entry, dict):
+            continue
+        carried_by = entry.get("carried_by")
+        if not isinstance(carried_by, list):
+            continue
+        leaked = sorted(set(pending_carriers) & set(carried_by))
+        if leaked:
+            findings.append(
+                Finding(
+                    "R14",
+                    f"pending carrier(s) {leaked} appear in live label_registry "
+                    f"{label!r}.carried_by; activation requires a separate audited "
+                    "carrier with an online/idle receipt",
+                )
+            )
+
+    # Guarded: a non-integer slot count is R7's finding to report, and R7 can only
+    # report it if this does not raise first -- findings are printed after
+    # evaluate() returns, so a TypeError here replaces every message with a
+    # traceback.
+    if type(live_slots) is int:
+        ci_linux_roster = (label_registry.get("ci-linux") or {}).get("carried_by")
+        expected_roster = [f"pc-ci-{index}" for index in range(1, live_slots + 1)]
+        if ci_linux_roster != expected_roster:
+            findings.append(
+                Finding(
+                    "R14",
+                    f"ci-linux live roster must be exactly {expected_roster}, "
+                    f"not {ci_linux_roster!r}",
+                )
+            )
+
+    return findings
+
+
 def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Finding]:
     registry = load_yaml(registry_path)
     findings: list[Finding] = []
@@ -504,6 +683,13 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
                         f"{workflow}:{job_id} leaked generic M1 production label(s): {sorted(leaked)}",
                     )
                 )
+
+    # The fourth-slot preflight is deliberately source-defined rather than a
+    # live topology declaration: adding it to runner-policy.yml would make the
+    # pending carrier look registered/routable before C3R-B. Admit only this
+    # exact diagnostic job to R6; its blocking, no-checkout and strict-envelope
+    # shape is pinned by tests/test_ci_canary_workflows.py.
+    allowed_custom.add(FOUR_SLOT_PREFLIGHT_ROUTE)
 
     trusted_route = registry.get("trusted_executor_route") or {}
     expected_trusted_route = {
@@ -793,6 +979,7 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         findings.append(Finding("R7", "PC CI and render pools overlap beyond self-hosted"))
     if (topology.get("pc-ci") or {}).get("slots") != 3:
         findings.append(Finding("R7", "PC CI topology must reserve exactly three slots"))
+    findings.extend(_pending_capacity_findings(registry))
     if (topology.get("pc-render") or {}).get("slots") != 1:
         findings.append(Finding("R7", "PC render topology must reserve exactly one slot"))
     m1 = topology.get("m1-theta-canary") or {}

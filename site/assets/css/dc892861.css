@@ -1,0 +1,251 @@
+
+/* ═══ Market Reference — page-local composition over theme.css tokens ═══════════
+   Dark = command centre: rows on the open canvas, depth by luminance.
+   Light = research workspace: the same rows printed on one white sheet, depth by
+   structure and shadow. The two are different MATERIAL, not different values. */
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font:var(--fs-body)/1.6 var(--font-ui);
+       margin:0; padding:var(--sp-4,16px); }
+@media (min-width:1100px){ body { padding:var(--sp-6,24px) max(var(--sp-8,44px), calc((100vw - 1180px)/2)); } }
+a { color:var(--ink-link, var(--link)); text-decoration:none; }
+a:hover { text-decoration:underline; text-underline-offset:2px; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+           clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* ── page header (canvas plane) ─────────────────────────────────────────────── */
+.rf-head { max-width:74ch; margin:0 0 var(--sp-6,24px); }
+.rf-eb { display:block; margin-bottom:var(--sp-1,4px); }
+.rf-head h1 { font-size:var(--fs-h1); font-weight:800; letter-spacing:-.02em; margin:0 0 var(--sp-2,8px); }
+.rf-lead { font-size:var(--fs-md); color:var(--muted); margin:0; }
+.rf-return { margin:var(--sp-4,16px) 0 0; }
+.rf-back-arrow { margin-right:var(--sp-1,4px); }
+
+/* ── layout: rail + column. Methodology's proportions, one number each. ─────── */
+.rf-layout { display:grid; grid-template-columns:240px minmax(0,78ch);
+             gap:var(--sp-7,32px); align-items:start; }
+@media (max-width:999px){ .rf-layout { grid-template-columns:1fr; } .rf-rail { display:none; } }
+
+/* ── index rail ─────────────────────────────────────────────────────────────── */
+.rf-rail-inner { position:sticky; top:var(--sp-5,20px); display:flex; flex-direction:column;
+                 gap:var(--sp-5,20px); max-height:calc(100vh - var(--sp-8,44px)); overflow:auto;
+                 overscroll-behavior:contain; padding-right:var(--sp-3,12px); }
+/* DARK: the rail floats on the canvas — darkness is the separation. */
+.rf-rail { border-right:0; }
+/* LIGHT: the canvas is pale, so the rail needs a printed edge against the sheet. */
+html[data-theme="light"] .rf-rail { border-right:1px solid var(--line); }
+
+.segbtn-row { display:flex; }
+.rf-seg .segbtn { flex:1; appearance:none; background:var(--panel); color:var(--muted);
+  border:1px solid var(--line); border-right-width:0; padding:var(--sp-2,8px) var(--sp-1,4px);
+  font:600 var(--fs-sm)/1.2 var(--font-ui); cursor:pointer; border-radius:0; min-height:40px; }
+.rf-seg .segbtn:first-child { border-radius:var(--r-ctl,8px) 0 0 var(--r-ctl,8px); }
+.rf-seg .segbtn:last-child  { border-radius:0 var(--r-ctl,8px) var(--r-ctl,8px) 0; border-right-width:1px; }
+.rf-seg .segbtn[aria-pressed="true"] { color:var(--text); background:var(--panel2);
+  border-color:color-mix(in srgb, var(--link) 46%, var(--line)); }
+/* LIGHT: the estate's shared segmented hover is an accent BLOOM (theme.css:562).
+   On white a bloom is a pastel stain — swap it for a ring. Specificity beats the
+   shipped `html body :is(.segbtn…):hover`. */
+html[data-theme="light"] body .rf-seg .segbtn:hover {
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 16%, transparent); }
+
+.rf-q { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--line);
+  border-radius:var(--r-ctl,8px); padding:var(--sp-2,8px) var(--sp-3,12px); min-height:40px;
+  font:400 var(--fs-sm)/1.4 var(--font-ui); }
+.rf-q::placeholder { color:var(--muted); }
+.rf-q:focus { outline:none; border-color:var(--link); }
+/* DARK: focus is a soft accent bloom — luminance depth. */
+.rf-q:focus { box-shadow:0 0 14px -4px color-mix(in srgb, var(--link) 50%, transparent); }
+/* LIGHT: white panel + a crisp ring; and the field is WHITE, not a tint — on paper
+   an input is a ruled box, not a recessed well. */
+html[data-theme="light"] .rf-q { background:var(--panel); }
+html[data-theme="light"] .rf-q:focus { box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 18%, transparent); }
+
+.rf-fams { list-style:none; margin:var(--sp-2,8px) 0 0; padding:0; }
+.rf-fam { display:flex; width:100%; align-items:center; gap:var(--sp-2,8px); background:none;
+  border:0; border-left:2px solid transparent; color:var(--muted); cursor:pointer;
+  padding:var(--sp-2,8px) var(--sp-2,8px); font:500 var(--fs-sm)/1.3 var(--font-ui);
+  text-align:left; min-height:40px; border-radius:0; }
+.rf-fam:hover { color:var(--text); }
+.rf-fam[aria-pressed="true"] { color:var(--text); border-left-color:var(--link); font-weight:700; }
+.rf-fam-n { flex:1; min-width:0; }
+.rf-fam-c { color:var(--muted); font-size:var(--fs-label); flex:none; }
+.rf-fam.is-zero { opacity:.4; }
+
+.rf-az { display:flex; flex-wrap:wrap; gap:var(--sp-1,4px); margin-top:var(--sp-2,8px); }
+.rf-azb { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:1px solid transparent; color:var(--muted); cursor:pointer;
+  border-radius:var(--r-ctl,8px); font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.06em; }
+.rf-azb:hover { color:var(--text); border-color:var(--line); }
+.rf-azb[aria-pressed="true"] { color:var(--text); border-color:var(--link); background:var(--panel2); }
+.rf-azb.is-zero { opacity:.3; pointer-events:none; }
+
+/* ── mobile filter bar (<1000w). JS moves the live rail controls into these slots. */
+.rf-bar { position:sticky; top:0; z-index:5; background:var(--bg);
+  border-bottom:1px solid var(--line); padding:var(--sp-3,12px) 0;
+  display:flex; flex-direction:column; gap:var(--sp-2,8px); margin-bottom:var(--sp-3,12px); }
+@media (min-width:1000px){ .rf-bar { display:none !important; } }
+.rf-more > summary { cursor:pointer; color:var(--muted); font-size:var(--fs-sm);
+  padding:var(--sp-2,8px) 0; list-style:none; min-height:40px; display:flex; align-items:center; }
+.rf-more > summary::-webkit-details-marker { display:none; }
+.rf-more > summary::after { content:'▾'; margin-left:var(--sp-2,8px); }
+.rf-more[open] > summary::after { content:'▴'; }
+.rf-more-body { padding-bottom:var(--sp-3,12px); }
+
+/* ── result count ───────────────────────────────────────────────────────────── */
+.rf-count { color:var(--muted); font-size:var(--fs-sm); margin:0 0 var(--sp-3,12px); }
+
+/* ── empty / not-found states (shared .mx-empty machinery) ──────────────────── */
+.rf-miss, .rf-none { border:1px dashed var(--line); border-radius:var(--r-card,12px);
+  margin-bottom:var(--sp-5,20px); }
+
+/* ══ THE LIST — the biggest deliberate divergence between the two themes ══════
+   DARK: no container. Rows sit directly on the graphite canvas, ruled by
+   hairlines; depth arrives when a row lifts to --panel on hover / --panel2 on
+   target. A large panel slab behind 200 rows flattens a dark page.
+   LIGHT: one white sheet. Unbounded hairlines on a pale canvas read as a grid
+   with nothing holding it; on paper an index is printed on a page. The sheet also
+   gives the group bands a surface to sit on. */
+.rf-list { background:transparent; border:0; border-radius:0; padding:0; }
+html[data-theme="light"] .rf-list { background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-panel,14px); box-shadow:var(--card-shadow);
+  padding:var(--sp-2,8px) var(--sp-4,16px) var(--sp-4,16px); }
+
+/* ── family group header ────────────────────────────────────────────────────── */
+.rf-grp-h { display:flex; align-items:baseline; gap:var(--sp-2,8px);
+  font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); margin:var(--sp-6,24px) 0 var(--sp-2,8px);
+  padding-bottom:var(--sp-2,8px); border-bottom:1px solid var(--line); }
+.rf-group:first-child .rf-grp-h { margin-top:0; }
+.rf-grp-c { font-size:var(--fs-label); opacity:.7; }
+/* LIGHT: a band, not a rule — the way a printed index separates its sections.
+   (A fill band in dark would read as a selected row.) */
+html[data-theme="light"] .rf-grp-h { background:var(--panel2); border-bottom:0;
+  border-radius:var(--r-ctl,8px); padding:var(--sp-2,8px) var(--sp-3,12px);
+  margin-left:calc(var(--sp-3,12px) * -1); margin-right:calc(var(--sp-3,12px) * -1); }
+html[data-lang="zh"] .rf-grp-h { letter-spacing:0; text-transform:none; }
+
+/* ── the index line ─────────────────────────────────────────────────────────── */
+.rf-e { position:relative; scroll-margin-top:84px; border-radius:var(--r-card,12px); }
+.rf-e + .rf-e > .rf-sum { border-top:1px solid var(--line); }
+.rf-sum { display:grid; grid-template-columns:auto minmax(0,max-content) auto minmax(0,1fr);
+  align-items:baseline; gap:var(--sp-2,8px); min-height:40px;
+  padding:var(--sp-2,8px) var(--sp-3,12px); color:var(--text); }
+.rf-sum:hover { text-decoration:none; }
+/* DARK: hover = a luminance lift to --panel. LIGHT: the sheet is already white,
+   so hover tints DOWN to --panel2 instead — the same gesture, inverted material. */
+.rf-sum:hover { background:var(--panel); }
+html[data-theme="light"] .rf-sum:hover { background:var(--panel2); }
+.rf-hash { color:var(--muted); font-size:var(--fs-label); opacity:0; flex:none;
+  transition:opacity var(--t-fast,.16s) ease; }
+.rf-sum:hover .rf-hash, .rf-sum:focus-visible .rf-hash, .rf-e:target .rf-hash { opacity:1; }
+.rf-label { font-size:var(--fs-h2); font-weight:800; letter-spacing:-.01em; }
+html[data-lang="zh"] .rf-label { font-weight:700; letter-spacing:0; }
+.rf-gloss { color:var(--muted); font-size:var(--fs-sm); min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* kind: fill vs outline, never hue (§1 reserved-hue law — family/kind are categories). */
+.rf-kind { flex:none; font:600 var(--fs-label)/1 var(--font-ui); letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted); padding:3px var(--sp-2,8px);
+  border-radius:var(--r-pill,999px); border:1px solid transparent; white-space:nowrap; }
+.rf-kind--indicator { background:var(--panel2); }
+.rf-kind--glossary  { background:transparent; border-color:var(--line); }
+html[data-lang="zh"] .rf-kind { letter-spacing:0; text-transform:none; }
+
+/* ══ :target — deep-link open + focus state. ONE mechanism, two materials. ════ */
+.rf-body { display:none; }
+.rf-e:target .rf-body { display:block; padding:0 var(--sp-4,16px) var(--sp-5,20px) var(--sp-4,16px); }
+/* DARK: lift by LUMINANCE (--panel2) + a 3px accent rail. */
+.rf-e:target { background:var(--panel2); border-left:3px solid var(--link);
+  padding-left:var(--sp-2,8px); }
+/* LIGHT: a --panel2 step on a white sheet is the "dirty smudge" §12 names. Lift by
+   STRUCTURE instead — the card stays white, gains an accent hairline and a real
+   shadow, and keeps the same 3px rail so the semantic marker is identical. */
+html[data-theme="light"] .rf-e:target { background:var(--panel);
+  border:1px solid color-mix(in srgb, var(--link) 34%, var(--line));
+  border-left:3px solid var(--link); box-shadow:var(--card-shadow); }
+.rf-e:target .rf-label { font-weight:800; }
+.rf-e:target + .rf-e > .rf-sum, .rf-e:target > .rf-sum { border-top-color:transparent; }
+/* Close-affordance fallback (verified empirically in headless Chromium,
+   2026-09-02): history.replaceState() clearing location.hash does NOT make
+   :target stop matching in Chromium — it is "sticky" until a real navigation
+   (a hash-changing link click, location.hash assignment, or back/forward).
+   clearHashToBrowse() therefore also stamps .rf-closed on the entry it is
+   collapsing; this override wins regardless of :target's continued match,
+   and handleHash() removes the class the moment a real hash navigation
+   re-opens that (or any) entry. */
+.rf-e.rf-closed .rf-body { display:none !important; }
+.rf-e.rf-closed { background:none; border-left-color:transparent; padding-left:0; }
+html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow:none; }
+
+/* ── record blocks ──────────────────────────────────────────────────────────── */
+.rf-blk { margin:var(--sp-4,16px) 0 0; }
+.rf-blk p, .rf-blk li { margin:var(--sp-1,4px) 0 0; }
+.rf-def { font-size:var(--fs-md); }
+.rf-dep { margin:0 0 var(--sp-3,12px); padding:var(--sp-2,8px) var(--sp-3,12px);
+  border-left:2px solid var(--line); color:var(--muted); font-size:var(--fs-sm); }
+.rf-alias { margin:0; color:var(--muted); font-size:var(--fs-sm); }
+.rf-basis { margin:var(--sp-3,12px) 0 0; font-size:var(--fs-sm); }
+.rf-basis-v { margin-left:var(--sp-2,8px); color:var(--text); }
+
+/* ── THE SIGNATURE: direction ledger ────────────────────────────────────────── */
+.rf-ledger { margin:var(--sp-2,8px) 0 0; display:grid;
+  grid-template-columns:minmax(64px,max-content) minmax(0,1fr); gap:var(--sp-1,4px) var(--sp-3,12px); }
+.rf-lg-row { display:contents; }
+.rf-ledger dt { font:700 var(--fs-sm)/1.5 var(--font-ui); white-space:nowrap;
+  display:flex; align-items:baseline; gap:var(--sp-1,4px); }
+.rf-ledger dd { margin:0; font-size:var(--fs-sm); color:var(--text); }
+.rf-lg-mark { font-size:var(--fs-micro); }
+/* Direction ink flips under 红涨绿跌 for free; the MARK and the WORD carry the
+   direction so hue is never alone (§5). The meaning text keeps the --text token
+   (color:var(--text) above) — reading a move is not a goodness judgment. */
+.rf-lg--up   dt { color:var(--ink-up,   var(--up)); }
+.rf-lg--down dt { color:var(--ink-down, var(--down)); }
+.rf-lg--flat dt { color:var(--muted); }
+
+/* ── caveats: achromatic. A caveat is context, not a health state. ──────────── */
+.rf-caveats ul { margin:var(--sp-1,4px) 0 0; padding-left:var(--sp-4,16px); color:var(--muted); }
+.rf-caveats li { font-size:var(--fs-sm); }
+
+/* ── outbound links ─────────────────────────────────────────────────────────── */
+.rf-links { display:flex; flex-wrap:wrap; gap:var(--sp-2,8px); }
+.rf-owner { display:inline-flex; align-items:center; min-height:32px;
+  padding:var(--sp-1,4px) var(--sp-3,12px); border:1px solid var(--line);
+  border-radius:var(--r-pill,999px); font-size:var(--fs-sm); }
+.rf-owner:hover { border-color:color-mix(in srgb, var(--link) 50%, var(--line)); text-decoration:none; }
+.rf-src, .rf-rel { margin:var(--sp-3,12px) 0 0; font-size:var(--fs-sm); color:var(--muted);
+  overflow-wrap:anywhere; }
+.rf-src a, .rf-rel a { margin-right:var(--sp-3,12px); }
+.rf-ext { margin-left:3px; font-size:var(--fs-label); }
+.rf-closewrap { margin:var(--sp-4,16px) 0 0; }
+.rf-close { font-size:var(--fs-sm); color:var(--muted); }
+
+/* ── filter hiding ──────────────────────────────────────────────────────────── */
+.rf-e.is-off, .rf-group.is-off { display:none; }
+
+/* ── footer ─────────────────────────────────────────────────────────────────── */
+.rf-foot { color:var(--muted); font-size:var(--fs-sm); margin-top:var(--sp-8,44px);
+  border-top:1px solid var(--line); padding-top:var(--sp-4,16px); max-width:78ch; }
+
+/* ── 390w composition (the design floor) ────────────────────────────────────── */
+@media (max-width:640px){
+  body { padding:var(--sp-3,12px); }
+  .rf-head h1 { font-size:var(--fs-num-lg); }
+  /* the index line stacks: label row, then gloss row. Never truncate a label. */
+  .rf-sum { grid-template-columns:auto minmax(0,1fr) auto; row-gap:2px; min-height:52px;
+            align-items:center; }
+  .rf-gloss { grid-column:1 / -1; white-space:normal; overflow:visible;
+              display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .rf-label { font-size:var(--fs-md); }
+  .rf-e:target .rf-body { padding:0 var(--sp-3,12px) var(--sp-4,16px); }
+  .rf-ledger { grid-template-columns:minmax(56px,max-content) minmax(0,1fr); }
+  .rf-links { gap:var(--sp-1,4px); }
+  html[data-theme="light"] .rf-list { padding:var(--sp-2,8px) var(--sp-3,12px) var(--sp-3,12px); }
+}
+
+/* ── a11y floor ─────────────────────────────────────────────────────────────── */
+:where(.rf-sum, .rf-fam, .rf-azb, .rf-owner, .rf-close, .rf-q, .rf-more > summary):focus-visible {
+  outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){
+  .rf-hash { transition:none; }
+  .rf-sum, .rf-e, .rf-e::before, .rf-e::after, .rf-sum::before, .rf-sum::after { transition:none; animation:none; }
+}

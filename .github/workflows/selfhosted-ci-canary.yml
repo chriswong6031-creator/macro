@@ -8,9 +8,9 @@ on:
         type: string
         default: "0"
       slots:
-        description: "1 = parity/contamination canary; 3 = bounded CI capacity plus render reservation probe."
+        description: "1 = parity/contamination canary; 3 = bounded CI capacity plus render reservation probe; 4 = pending fourth-slot capacity diagnostic (requires an activated pc-ci-4)."
         type: choice
-        options: ["1", "3"]
+        options: ["1", "3", "4"]
         default: "1"
 
 permissions:
@@ -185,11 +185,11 @@ jobs:
           retention-days: 14
 
   hosted-control:
-    # slots=3 (spec item C.5): this becomes a matrix over the SAME selected
+    # slots=3|4 (spec item C.5): this becomes a matrix over the SAME selected
     # packs the self-hosted matrix below runs, instead of a single job pinned
-    # to the heaviest pack — three hosted controls for three self-hosted
-    # packs, so `compare` can require strict parity for every pack the run
-    # actually selected, not only the primary one.
+    # to the heaviest pack — one hosted control per self-hosted pack, so
+    # `compare` can require strict parity for every pack the run actually
+    # selected, not only the primary one.
     name: diagnostic-hosted-control-pack-${{ matrix.pack }}
     needs: plan
     runs-on: ubuntu-latest
@@ -322,10 +322,45 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  four-slot-preflight:
+    name: diagnostic-four-slot-parent-envelope-preflight
+    if: inputs.slots == '4'
+    needs: plan
+    runs-on: [self-hosted, ci-linux-canary]
+    timeout-minutes: 5
+    steps:
+      # No checkout and no candidate code: the installed root-owned guard
+      # proves the fixed aggregate envelope before four-way diagnostic fanout.
+      - name: require the parent CI-slice envelope before four-way fanout
+        run: |
+          /usr/local/libexec/mastermind-ci-resource-guard \
+            --path "$RUNNER_TEMP" \
+            --require-slice \
+            --preflight-profile four-slot-canary
+
   selfhosted-pack:
     name: diagnostic-selfhosted-pack-${{ matrix.pack }}
-    needs: plan
-    runs-on: ${{ fromJSON(inputs.slots == '1' && '["self-hosted","ci-linux-canary"]' || '["self-hosted","ci-linux"]') }}
+    needs: [plan, four-slot-preflight]
+    if: >-
+      always() && needs.plan.result == 'success' &&
+      (inputs.slots != '4' || needs.four-slot-preflight.result == 'success')
+    # slots=4 temporarily binds the existing canary label to its selected
+    # primary pack. The primary must be the canonical numeric identity of the
+    # selector's first entry: a missing, malformed, or inconsistent output
+    # therefore reaches fromJSON('') and fails before choosing a runner label.
+    runs-on: >-
+      ${{ fromJSON(
+        (inputs.slots == '1' ||
+          (inputs.slots == '4' &&
+            matrix.pack == fromJSON(
+              needs.plan.outputs.primary_pack ==
+                toJSON(fromJSON(needs.plan.outputs.selected_packs)[0].index) &&
+              needs.plan.outputs.primary_pack ||
+              ''
+            ))) &&
+        '["self-hosted","ci-linux-canary"]' ||
+        '["self-hosted","ci-linux"]'
+      ) }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -483,8 +518,11 @@ jobs:
           path: ${{ runner.temp }}/ci-semantic-fragments/selfhosted-fragment.json
           if-no-files-found: error
           retention-days: 14
-      - name: surface a red pack after preserving its three-slot receipt
-        if: inputs.slots == '3'
+      # Every MULTI-slot identity, not the literal '3'. Naming one count here is
+      # how a slots=4 run would upload its receipt and then exit green whatever
+      # pack.rc held, hiding a real red behind a capacity diagnostic.
+      - name: surface a red pack after preserving its multi-slot receipt
+        if: inputs.slots != '1'
         run: test "$(cat "$RUNNER_TEMP/pack.rc")" -eq 0
 
   cache-negative-control:
@@ -551,7 +589,10 @@ jobs:
 
   render-reservation-probe:
     name: diagnostic-render-reserved-slot
-    if: inputs.slots == '3'
+    # Fires for BOTH multi-slot identities: the whole point of the fourth slot is
+    # that render stays independently routable while CI saturates, so a slots=4
+    # run without this probe would prove nothing about coexistence.
+    if: inputs.slots != '1'
     needs: plan
     runs-on: [self-hosted, Linux, X64, render-linux]
     timeout-minutes: 10

@@ -1,259 +1,259 @@
 {
-  "asof": "2026-08-28",
+  "asof": "2026-09-04",
   "complex_regime": "Stagflation",
   "dollar_dir": "weakening",
   "growth_dir": "falling",
   "index": {
-    "ew": 1029.55,
-    "vw": 1335.67,
-    "chg_1m_pct": 10.8,
+    "ew": 1012.82,
+    "vw": 1319.6,
+    "chg_1m_pct": 6.0,
     "ts_trend": "up",
-    "ts_momentum": 0.837,
+    "ts_momentum": 0.786,
     "mtf": {
-      "grade": "BUY-THE-DIP",
-      "headline": "Healthy pullback within an uptrend",
-      "short_sign": -1,
+      "grade": "TREND-FOLLOW",
+      "headline": "Aligned uptrend across timeframes",
+      "short_sign": 1,
       "mid_sign": 1,
       "long_sign": 1,
       "regime": "bull",
-      "ladder_state": "TOP WATCH"
+      "ladder_state": "TURN SIGNALED"
     },
-    "shock_state": "blowoff",
-    "shock_z": 2.036,
+    "shock_state": "normal",
+    "shock_z": 0.342,
     "velocity": {
-      "r5": 2.5,
-      "r20": 11.1,
-      "r60": 12.5,
-      "r252": 36.3,
-      "accel": 0.048,
-      "impulse": 2.839
+      "r5": -1.2,
+      "r20": 4.2,
+      "r60": 12.0,
+      "r252": 31.8,
+      "accel": -0.004,
+      "impulse": 1.12
     },
     "benchmarks": {
       "DBC": {
-        "last": 30.79,
-        "chg_1m_pct": 4.7
+        "last": 31.9,
+        "chg_1m_pct": 12.0
       },
       "GSG": {
-        "last": 33.39,
-        "chg_1m_pct": 3.9
+        "last": 34.83,
+        "chg_1m_pct": 14.0
       }
     }
   },
   "breadth": {
     "n_members": 17,
-    "n_up_trend": 14,
-    "pct_up_trend": 0.824,
-    "n_bull_momentum": 13,
-    "n_low_risk": 6,
-    "trend_diversity": 0.531,
-    "breadth_pctile": 0.984
+    "n_up_trend": 13,
+    "pct_up_trend": 0.765,
+    "n_bull_momentum": 10,
+    "n_low_risk": 5,
+    "trend_diversity": 0.512,
+    "breadth_pctile": 0.883
   },
   "members": [
     {
       "name": "gold",
       "label": "Gold",
       "class": "precious",
-      "close": 4478.1,
-      "chg_1m_pct": 10.6,
+      "close": 4429.8,
+      "chg_1m_pct": 0.7,
       "ts_trend": "up",
-      "ts_momentum": 0.643,
-      "momentum_state": "bull",
-      "risk_index": 37.0,
+      "ts_momentum": 0.59,
+      "momentum_state": "neutral",
+      "risk_index": 55.7,
       "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": 1.396,
-      "cycle_position": 0.845,
+      "shock_z": -0.009,
+      "cycle_position": 0.547,
       "velocity": {
-        "r5": -4.0,
-        "r20": 9.3,
-        "r60": 2.8,
-        "r252": 22.9,
-        "accel": -0.131,
-        "impulse": 1.353
+        "r5": -1.9,
+        "r20": 1.1,
+        "r60": 5.1,
+        "r252": 20.3,
+        "accel": -0.16,
+        "impulse": 0.154
       }
     },
     {
       "name": "palladium",
       "label": "Palladium",
       "class": "precious",
-      "close": 1428.6,
-      "chg_1m_pct": 12.0,
+      "close": 1390.1,
+      "chg_1m_pct": 0.7,
       "ts_trend": "up",
-      "ts_momentum": 0.715,
+      "ts_momentum": 0.41,
       "momentum_state": "neutral",
-      "risk_index": 4.2,
+      "risk_index": 17.7,
       "risk_word": "Calm",
       "shock_state": "normal",
-      "shock_z": 1.01,
-      "cycle_position": 0.774,
+      "shock_z": -0.075,
+      "cycle_position": 0.728,
       "velocity": {
-        "r5": 5.6,
-        "r20": 5.4,
-        "r60": 16.1,
-        "r252": 26.9,
-        "accel": 0.131,
-        "impulse": 0.565
+        "r5": -4.1,
+        "r20": 1.8,
+        "r60": 9.1,
+        "r252": 13.1,
+        "accel": -0.24,
+        "impulse": 0.127
       }
     },
     {
       "name": "platinum",
       "label": "Platinum",
       "class": "precious",
-      "close": 1847.6,
-      "chg_1m_pct": 12.0,
+      "close": 1821.0,
+      "chg_1m_pct": 3.7,
       "ts_trend": "up",
-      "ts_momentum": 0.82,
-      "momentum_state": "bull",
-      "risk_index": 12.3,
-      "risk_word": "Calm",
+      "ts_momentum": 0.753,
+      "momentum_state": "neutral",
+      "risk_index": 27.2,
+      "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": 0.896,
-      "cycle_position": 0.844,
+      "shock_z": 0.187,
+      "cycle_position": 0.655,
       "velocity": {
-        "r5": -2.2,
-        "r20": 5.7,
-        "r60": 9.5,
-        "r252": 34.7,
-        "accel": 0.013,
-        "impulse": 0.751
+        "r5": -1.5,
+        "r20": 4.3,
+        "r60": 6.8,
+        "r252": 29.4,
+        "accel": -0.105,
+        "impulse": 0.465
       }
     },
     {
       "name": "silver",
       "label": "Silver",
       "class": "precious",
-      "close": 67.0,
-      "chg_1m_pct": 16.3,
+      "close": 66.05,
+      "chg_1m_pct": 3.4,
       "ts_trend": "up",
-      "ts_momentum": 0.972,
-      "momentum_state": "bull",
-      "risk_index": 38.1,
+      "ts_momentum": 0.96,
+      "momentum_state": "neutral",
+      "risk_index": 45.4,
       "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": 0.829,
-      "cycle_position": 0.779,
+      "shock_z": -0.059,
+      "cycle_position": 0.576,
       "velocity": {
-        "r5": -2.9,
-        "r20": 11.6,
-        "r60": -5.2,
-        "r252": 63.9,
-        "accel": -0.01,
-        "impulse": 1.258
+        "r5": -2.0,
+        "r20": 2.0,
+        "r60": 0.0,
+        "r252": 58.3,
+        "accel": -0.014,
+        "impulse": 0.212
       }
     },
     {
       "name": "copper",
       "label": "Copper",
       "class": "industrial",
-      "close": 6.56,
-      "chg_1m_pct": 2.0,
+      "close": 6.6,
+      "chg_1m_pct": -0.1,
       "ts_trend": "up",
-      "ts_momentum": 0.91,
-      "momentum_state": "bull",
-      "risk_index": 28.5,
+      "ts_momentum": 0.901,
+      "momentum_state": "neutral",
+      "risk_index": 23.7,
       "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": -0.772,
-      "cycle_position": 0.686,
+      "shock_z": -0.363,
+      "cycle_position": 0.63,
       "velocity": {
-        "r5": -0.2,
-        "r20": -0.9,
-        "r60": 0.2,
-        "r252": 45.8,
-        "accel": -0.011,
-        "impulse": -0.195
+        "r5": -0.7,
+        "r20": -0.2,
+        "r60": 3.8,
+        "r252": 44.3,
+        "accel": -0.003,
+        "impulse": -0.052
       }
     },
     {
       "name": "gasoline",
       "label": "Gasoline",
       "class": "energy",
-      "close": 3.49,
-      "chg_1m_pct": 8.3,
+      "close": 3.21,
+      "chg_1m_pct": 6.9,
       "ts_trend": "up",
-      "ts_momentum": 0.985,
+      "ts_momentum": 0.969,
       "momentum_state": "bull",
-      "risk_index": 35.7,
+      "risk_index": 55.4,
       "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": 0.697,
-      "cycle_position": 0.887,
+      "shock_z": 0.026,
+      "cycle_position": 0.602,
       "velocity": {
-        "r5": 15.6,
-        "r20": 22.4,
-        "r60": 15.5,
-        "r252": 73.5,
-        "accel": 0.03,
-        "impulse": 1.487
+        "r5": 5.2,
+        "r20": 2.5,
+        "r60": 10.5,
+        "r252": 62.4,
+        "accel": 0.029,
+        "impulse": 0.099
       }
     },
     {
       "name": "heating_oil",
       "label": "Heating Oil",
       "class": "energy",
-      "close": 4.36,
-      "chg_1m_pct": 5.7,
+      "close": 4.54,
+      "chg_1m_pct": 14.6,
       "ts_trend": "up",
-      "ts_momentum": 0.993,
+      "ts_momentum": 0.997,
       "momentum_state": "bull",
-      "risk_index": 22.8,
-      "risk_word": "Elevated",
+      "risk_index": 18.3,
+      "risk_word": "Calm",
       "shock_state": "normal",
-      "shock_z": 0.413,
-      "cycle_position": 0.789,
+      "shock_z": 0.322,
+      "cycle_position": 0.945,
       "velocity": {
-        "r5": 0.5,
-        "r20": 15.5,
-        "r60": 23.0,
-        "r252": 84.5,
-        "accel": -0.004,
-        "impulse": 1.833
+        "r5": 6.1,
+        "r20": 6.8,
+        "r60": 42.1,
+        "r252": 99.0,
+        "accel": 0.004,
+        "impulse": 0.721
       }
     },
     {
       "name": "natgas",
       "label": "Natgas",
       "class": "energy",
-      "close": 2.89,
-      "chg_1m_pct": 5.1,
+      "close": 2.97,
+      "chg_1m_pct": 9.4,
       "ts_trend": "down",
-      "ts_momentum": -0.199,
+      "ts_momentum": 0.039,
       "momentum_state": "neutral",
-      "risk_index": 7.8,
+      "risk_index": 3.8,
       "risk_word": "Calm",
       "shock_state": "normal",
-      "shock_z": 0.125,
-      "cycle_position": 0.659,
+      "shock_z": 0.291,
+      "cycle_position": 0.737,
       "velocity": {
-        "r5": 4.0,
-        "r20": 7.7,
-        "r60": -9.3,
-        "r252": -6.1,
-        "accel": -0.124,
-        "impulse": 0.958
+        "r5": 4.8,
+        "r20": 7.5,
+        "r60": -8.0,
+        "r252": 1.2,
+        "accel": 0.22,
+        "impulse": 0.882
       }
     },
     {
       "name": "oil",
       "label": "Oil",
       "class": "energy",
-      "close": 83.4,
-      "chg_1m_pct": -1.5,
+      "close": 91.48,
+      "chg_1m_pct": 16.0,
       "ts_trend": "up",
-      "ts_momentum": 0.802,
-      "momentum_state": "neutral",
-      "risk_index": 41.9,
+      "ts_momentum": 0.891,
+      "momentum_state": "bull",
+      "risk_index": 28.1,
       "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": -0.05,
-      "cycle_position": 0.683,
+      "shock_z": 0.55,
+      "cycle_position": 0.92,
       "velocity": {
-        "r5": -3.4,
-        "r20": 10.1,
-        "r60": 4.2,
-        "r252": 33.2,
-        "accel": 0.035,
-        "impulse": 1.251
+        "r5": 8.4,
+        "r20": 10.0,
+        "r60": 20.9,
+        "r252": 42.8,
+        "accel": 0.092,
+        "impulse": 1.208
       }
     },
     {
@@ -261,188 +261,188 @@
       "label": "Corn",
       "class": "grain",
       "close": 512.0,
-      "chg_1m_pct": 14.0,
+      "chg_1m_pct": 16.6,
       "ts_trend": "up",
-      "ts_momentum": 0.798,
+      "ts_momentum": 0.717,
       "momentum_state": "bull",
-      "risk_index": 35.1,
+      "risk_index": 33.9,
       "risk_word": "Elevated",
       "shock_state": "blowoff",
-      "shock_z": 2.462,
-      "cycle_position": 0.912,
+      "shock_z": 2.48,
+      "cycle_position": 0.915,
       "velocity": {
-        "r5": 5.8,
-        "r20": 16.2,
-        "r60": 20.6,
-        "r252": 32.8,
-        "accel": 0.165,
-        "impulse": 2.217
+        "r5": -4.4,
+        "r20": 16.8,
+        "r60": 24.0,
+        "r252": 27.0,
+        "accel": 0.007,
+        "impulse": 1.836
       }
     },
     {
       "name": "soybeans",
       "label": "Soybeans",
       "class": "grain",
-      "close": 1276.25,
-      "chg_1m_pct": 8.3,
+      "close": 1293.75,
+      "chg_1m_pct": 11.8,
       "ts_trend": "up",
-      "ts_momentum": 0.666,
+      "ts_momentum": 0.727,
       "momentum_state": "bull",
-      "risk_index": 26.9,
+      "risk_index": 16.6,
       "risk_word": "Elevated",
-      "shock_state": "normal",
-      "shock_z": 1.315,
-      "cycle_position": 0.929,
+      "shock_state": "blowoff",
+      "shock_z": 1.884,
+      "cycle_position": 0.958,
       "velocity": {
-        "r5": 4.2,
-        "r20": 8.9,
-        "r60": 13.0,
-        "r252": 24.1,
-        "accel": 0.169,
-        "impulse": 2.001
+        "r5": 0.7,
+        "r20": 11.7,
+        "r60": 16.2,
+        "r252": 27.7,
+        "accel": 0.206,
+        "impulse": 2.41
       }
     },
     {
       "name": "wheat",
       "label": "Wheat",
       "class": "grain",
-      "close": 767.0,
-      "chg_1m_pct": 16.1,
+      "close": 716.0,
+      "chg_1m_pct": 13.4,
       "ts_trend": "up",
-      "ts_momentum": 0.933,
+      "ts_momentum": 0.883,
       "momentum_state": "bull",
-      "risk_index": 26.0,
+      "risk_index": 36.2,
       "risk_word": "Elevated",
-      "shock_state": "blowoff",
-      "shock_z": 2.143,
-      "cycle_position": 0.933,
+      "shock_state": "normal",
+      "shock_z": 1.384,
+      "cycle_position": 0.878,
       "velocity": {
-        "r5": 12.5,
-        "r20": 20.0,
-        "r60": 31.8,
-        "r252": 50.3,
-        "accel": 0.12,
-        "impulse": 2.097
+        "r5": -7.3,
+        "r20": 11.8,
+        "r60": 22.5,
+        "r252": 41.6,
+        "accel": 0.059,
+        "impulse": 1.118
       }
     },
     {
       "name": "cocoa",
       "label": "Cocoa",
       "class": "soft",
-      "close": 6527.0,
-      "chg_1m_pct": 25.9,
+      "close": 6082.0,
+      "chg_1m_pct": 3.4,
       "ts_trend": "down",
       "ts_momentum": -0.477,
       "momentum_state": "bull",
-      "risk_index": 8.5,
+      "risk_index": 18.2,
       "risk_word": "Calm",
       "shock_state": "normal",
-      "shock_z": 1.434,
-      "cycle_position": 0.906,
+      "shock_z": 0.287,
+      "cycle_position": 0.843,
       "velocity": {
-        "r5": 9.0,
-        "r20": 20.9,
-        "r60": 60.3,
+        "r5": -6.8,
+        "r20": 5.2,
+        "r60": 61.9,
         "r252": -15.6,
-        "accel": 0.324,
-        "impulse": 1.329
+        "accel": 0.147,
+        "impulse": 0.371
       }
     },
     {
       "name": "coffee",
       "label": "Coffee",
       "class": "soft",
-      "close": 345.85,
-      "chg_1m_pct": 6.2,
-      "ts_trend": "up",
-      "ts_momentum": -0.385,
+      "close": 324.25,
+      "chg_1m_pct": -0.8,
+      "ts_trend": "down",
+      "ts_momentum": -0.486,
       "momentum_state": "bull",
-      "risk_index": 25.5,
+      "risk_index": 55.8,
       "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": 0.439,
-      "cycle_position": 0.795,
+      "shock_z": 0.019,
+      "cycle_position": 0.475,
       "velocity": {
-        "r5": -3.6,
-        "r20": 4.1,
-        "r60": 36.6,
-        "r252": -12.2,
-        "accel": -0.576,
-        "impulse": 0.33
+        "r5": -6.2,
+        "r20": -3.4,
+        "r60": 30.5,
+        "r252": -15.9,
+        "accel": -0.473,
+        "impulse": -0.288
       }
     },
     {
       "name": "cotton",
       "label": "Cotton",
       "class": "soft",
-      "close": 89.92,
-      "chg_1m_pct": 15.3,
+      "close": 82.42,
+      "chg_1m_pct": 0.7,
       "ts_trend": "up",
-      "ts_momentum": 0.848,
+      "ts_momentum": 0.723,
       "momentum_state": "bull",
-      "risk_index": 9.3,
-      "risk_word": "Calm",
+      "risk_index": 56.5,
+      "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": 1.564,
-      "cycle_position": 0.977,
+      "shock_z": -0.275,
+      "cycle_position": 0.57,
       "velocity": {
-        "r5": 3.3,
-        "r20": 11.7,
-        "r60": 17.2,
-        "r252": 37.5,
-        "accel": 0.15,
-        "impulse": 2.061
+        "r5": -8.3,
+        "r20": -1.0,
+        "r60": 15.9,
+        "r252": 27.4,
+        "accel": -0.048,
+        "impulse": -0.112
       }
     },
     {
       "name": "sugar",
       "label": "Sugar",
       "class": "soft",
-      "close": 17.56,
-      "chg_1m_pct": 21.1,
+      "close": 18.07,
+      "chg_1m_pct": 19.3,
       "ts_trend": "up",
-      "ts_momentum": 0.217,
+      "ts_momentum": 0.467,
       "momentum_state": "bull",
-      "risk_index": 9.5,
+      "risk_index": 22.9,
       "risk_word": "Calm",
       "shock_state": "blowoff",
-      "shock_z": 2.88,
-      "cycle_position": 0.976,
+      "shock_z": 1.922,
+      "cycle_position": 0.88,
       "velocity": {
-        "r5": -0.3,
-        "r20": 19.8,
-        "r60": 23.3,
-        "r252": 6.6,
-        "accel": 0.267,
-        "impulse": 2.035
+        "r5": 2.9,
+        "r20": 9.8,
+        "r60": 29.8,
+        "r252": 15.2,
+        "accel": 0.26,
+        "impulse": 1.056
       }
     },
     {
       "name": "live_cattle",
       "label": "Live Cattle",
       "class": "livestock",
-      "close": 219.25,
-      "chg_1m_pct": -3.8,
+      "close": 212.95,
+      "chg_1m_pct": -9.1,
       "ts_trend": "down",
-      "ts_momentum": -0.318,
+      "ts_momentum": -0.325,
       "momentum_state": "bear",
-      "risk_index": 36.2,
+      "risk_index": 37.2,
       "risk_word": "Elevated",
       "shock_state": "normal",
-      "shock_z": -0.998,
-      "cycle_position": 0.16,
+      "shock_z": -1.478,
+      "cycle_position": 0.157,
       "velocity": {
-        "r5": -1.7,
-        "r20": -5.4,
-        "r60": -11.1,
-        "r252": -9.9,
-        "accel": -0.15,
-        "impulse": -1.536
+        "r5": -2.9,
+        "r20": -8.1,
+        "r60": -14.9,
+        "r252": -10.1,
+        "accel": -0.112,
+        "impulse": -1.491
       }
     }
   ],
   "confluence": {
-    "asof": "2026-08-28",
+    "asof": "2026-09-04",
     "members": [
       {
         "name": "gold",
@@ -451,11 +451,11 @@
         "state": "Neutral",
         "null_reason": null,
         "bottom_score": 8.0,
-        "top_score": 31.8,
+        "top_score": 18.2,
         "capitulation_score": 0.0,
         "turn_score": 16.7,
         "euphoria_score": 30.8,
-        "rollover_score": 33.3,
+        "rollover_score": 0.0,
         "bottom_fired": [
           {
             "code": "cycle_bottom",
@@ -473,11 +473,6 @@
             "code": "cot_long",
             "label_en": "COT crowded long",
             "label_zh": "COT\u5927\u5e45\u504f\u591a"
-          },
-          {
-            "code": "curl_dn",
-            "label_en": "Momentum rolling over",
-            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
         "n_bottom_applicable": 9,
@@ -489,80 +484,6 @@
       {
         "name": "silver",
         "label": "Silver",
-        "class": "precious",
-        "state": "Neutral",
-        "null_reason": null,
-        "bottom_score": 8.0,
-        "top_score": 22.7,
-        "capitulation_score": 0.0,
-        "turn_score": 16.7,
-        "euphoria_score": 15.4,
-        "rollover_score": 33.3,
-        "bottom_fired": [
-          {
-            "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery",
-            "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
-          }
-        ],
-        "top_fired": [
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "curl_dn",
-            "label_en": "Momentum rolling over",
-            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
-          }
-        ],
-        "n_bottom_applicable": 9,
-        "n_top_applicable": 8,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
-        "name": "platinum",
-        "label": "Platinum",
-        "class": "precious",
-        "state": "Neutral",
-        "null_reason": null,
-        "bottom_score": 9.5,
-        "top_score": 22.7,
-        "capitulation_score": 0.0,
-        "turn_score": 25.0,
-        "euphoria_score": 15.4,
-        "rollover_score": 33.3,
-        "bottom_fired": [
-          {
-            "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery",
-            "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
-          }
-        ],
-        "top_fired": [
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "curl_dn",
-            "label_en": "Momentum rolling over",
-            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
-          }
-        ],
-        "n_bottom_applicable": 8,
-        "n_top_applicable": 8,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
-        "name": "palladium",
-        "label": "Palladium",
         "class": "precious",
         "state": "Neutral",
         "null_reason": null,
@@ -593,9 +514,318 @@
         "armed_recent": false
       },
       {
+        "name": "platinum",
+        "label": "Platinum",
+        "class": "precious",
+        "state": "Neutral",
+        "null_reason": null,
+        "bottom_score": 23.8,
+        "top_score": 9.1,
+        "capitulation_score": 0.0,
+        "turn_score": 62.5,
+        "euphoria_score": 15.4,
+        "rollover_score": 0.0,
+        "bottom_fired": [
+          {
+            "code": "curl",
+            "label_en": "Momentum curl up",
+            "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
+          },
+          {
+            "code": "cycle_bottom",
+            "label_en": "Cycle in trough/recovery",
+            "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
+          }
+        ],
+        "top_fired": [
+          {
+            "code": "overbought_htf",
+            "label_en": "Overbought longer-term",
+            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
+          }
+        ],
+        "n_bottom_applicable": 8,
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
+        "name": "palladium",
+        "label": "Palladium",
+        "class": "precious",
+        "state": "Neutral",
+        "null_reason": null,
+        "bottom_score": 36.0,
+        "top_score": 9.1,
+        "capitulation_score": 0.0,
+        "turn_score": 75.0,
+        "euphoria_score": 15.4,
+        "rollover_score": 0.0,
+        "bottom_fired": [
+          {
+            "code": "curl",
+            "label_en": "Momentum curl up",
+            "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
+          },
+          {
+            "code": "bc_conf",
+            "label_en": "Bottom-confidence high",
+            "label_zh": "\u5e95\u90e8\u4fe1\u5fc3\u9ad8"
+          },
+          {
+            "code": "cycle_bottom",
+            "label_en": "Cycle in trough/recovery",
+            "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
+          }
+        ],
+        "top_fired": [
+          {
+            "code": "overbought_htf",
+            "label_en": "Overbought longer-term",
+            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
+          }
+        ],
+        "n_bottom_applicable": 9,
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
         "name": "copper",
         "label": "Copper",
         "class": "industrial",
+        "state": "Neutral",
+        "null_reason": null,
+        "bottom_score": 14.3,
+        "top_score": 27.3,
+        "capitulation_score": 0.0,
+        "turn_score": 37.5,
+        "euphoria_score": 30.8,
+        "rollover_score": 22.2,
+        "bottom_fired": [
+          {
+            "code": "curl",
+            "label_en": "Momentum curl up",
+            "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
+          }
+        ],
+        "top_fired": [
+          {
+            "code": "overbought_htf",
+            "label_en": "Overbought longer-term",
+            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
+          },
+          {
+            "code": "cot_long",
+            "label_en": "COT crowded long",
+            "label_zh": "COT\u5927\u5e45\u504f\u591a"
+          },
+          {
+            "code": "cycle_top",
+            "label_en": "Cycle at peak/downturn",
+            "label_zh": "\u5468\u671f\u5904\u4e8e\u9876\u5cf0/\u4e0b\u884c"
+          }
+        ],
+        "n_bottom_applicable": 8,
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
+        "name": "oil",
+        "label": "Oil",
+        "class": "energy",
+        "state": "Neutral",
+        "null_reason": null,
+        "bottom_score": 16.0,
+        "top_score": 18.2,
+        "capitulation_score": 15.4,
+        "turn_score": 16.7,
+        "euphoria_score": 30.8,
+        "rollover_score": 0.0,
+        "bottom_fired": [
+          {
+            "code": "cot_short",
+            "label_en": "COT crowded short",
+            "label_zh": "COT\u5927\u5e45\u504f\u7a7a"
+          },
+          {
+            "code": "cycle_bottom",
+            "label_en": "Cycle in trough/recovery",
+            "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
+          }
+        ],
+        "top_fired": [
+          {
+            "code": "overbought_ltf",
+            "label_en": "Overbought short-term",
+            "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
+          },
+          {
+            "code": "overbought_htf",
+            "label_en": "Overbought longer-term",
+            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
+          }
+        ],
+        "n_bottom_applicable": 9,
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
+        "name": "natgas",
+        "label": "Natgas",
+        "class": "energy",
+        "state": "Neutral",
+        "null_reason": null,
+        "bottom_score": 26.1,
+        "top_score": 10.0,
+        "capitulation_score": 0.0,
+        "turn_score": 50.0,
+        "euphoria_score": 18.2,
+        "rollover_score": 0.0,
+        "bottom_fired": [
+          {
+            "code": "bc_conf",
+            "label_en": "Bottom-confidence high",
+            "label_zh": "\u5e95\u90e8\u4fe1\u5fc3\u9ad8"
+          },
+          {
+            "code": "cycle_bottom",
+            "label_en": "Cycle in trough/recovery",
+            "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
+          }
+        ],
+        "top_fired": [
+          {
+            "code": "overbought_ltf",
+            "label_en": "Overbought short-term",
+            "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
+          }
+        ],
+        "n_bottom_applicable": 8,
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
+        "name": "gasoline",
+        "label": "Gasoline",
+        "class": "energy",
+        "state": "Neutral",
+        "null_reason": null,
+        "bottom_score": 13.0,
+        "top_score": 10.0,
+        "capitulation_score": 0.0,
+        "turn_score": 30.0,
+        "euphoria_score": 15.4,
+        "rollover_score": 0.0,
+        "bottom_fired": [
+          {
+            "code": "curl",
+            "label_en": "Momentum curl up",
+            "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
+          }
+        ],
+        "top_fired": [
+          {
+            "code": "cot_long",
+            "label_en": "COT crowded long",
+            "label_zh": "COT\u5927\u5e45\u504f\u591a"
+          }
+        ],
+        "n_bottom_applicable": 8,
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
+        "name": "heating_oil",
+        "label": "Heating Oil",
+        "class": "energy",
+        "state": "Extended \u2014 late cycle",
+        "null_reason": null,
+        "bottom_score": 0.0,
+        "top_score": 44.4,
+        "capitulation_score": 0.0,
+        "turn_score": 0.0,
+        "euphoria_score": 45.5,
+        "rollover_score": 42.9,
+        "bottom_fired": [],
+        "top_fired": [
+          {
+            "code": "overbought_htf",
+            "label_en": "Overbought longer-term",
+            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
+          },
+          {
+            "code": "stretch",
+            "label_en": "Price stretched above 200-day",
+            "label_zh": "\u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf"
+          },
+          {
+            "code": "curl_dn",
+            "label_en": "Momentum rolling over",
+            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
+          }
+        ],
+        "n_bottom_applicable": 7,
+        "n_top_applicable": 6,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
+        "name": "corn",
+        "label": "Corn",
+        "class": "grain",
+        "state": "Blowing off \u2014 extended",
+        "null_reason": null,
+        "bottom_score": 0.0,
+        "top_score": 50.0,
+        "capitulation_score": 0.0,
+        "turn_score": 0.0,
+        "euphoria_score": 61.5,
+        "rollover_score": 33.3,
+        "bottom_fired": [],
+        "top_fired": [
+          {
+            "code": "shock_top",
+            "label_en": "Exogenous blow-off bid",
+            "label_zh": "\u5916\u751f\u5439\u9876\u4e70\u76d8"
+          },
+          {
+            "code": "overbought_htf",
+            "label_en": "Overbought longer-term",
+            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
+          },
+          {
+            "code": "cot_long",
+            "label_en": "COT crowded long",
+            "label_zh": "COT\u5927\u5e45\u504f\u591a"
+          },
+          {
+            "code": "curl_dn",
+            "label_en": "Momentum rolling over",
+            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
+          }
+        ],
+        "n_bottom_applicable": 9,
+        "n_top_applicable": 8,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
+        "name": "wheat",
+        "label": "Wheat",
+        "class": "grain",
         "state": "Neutral",
         "null_reason": null,
         "bottom_score": 0.0,
@@ -629,230 +859,23 @@
         "armed_recent": false
       },
       {
-        "name": "oil",
-        "label": "Oil",
-        "class": "energy",
-        "state": "Neutral",
-        "null_reason": null,
-        "bottom_score": 8.0,
-        "top_score": 0.0,
-        "capitulation_score": 0.0,
-        "turn_score": 16.7,
-        "euphoria_score": 0.0,
-        "rollover_score": 0.0,
-        "bottom_fired": [
-          {
-            "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery",
-            "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
-          }
-        ],
-        "top_fired": [],
-        "n_bottom_applicable": 9,
-        "n_top_applicable": 8,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
-        "name": "natgas",
-        "label": "Natgas",
-        "class": "energy",
-        "state": "Neutral",
-        "null_reason": null,
-        "bottom_score": 8.7,
-        "top_score": 0.0,
-        "capitulation_score": 0.0,
-        "turn_score": 16.7,
-        "euphoria_score": 0.0,
-        "rollover_score": 0.0,
-        "bottom_fired": [
-          {
-            "code": "cycle_bottom",
-            "label_en": "Cycle in trough/recovery",
-            "label_zh": "\u5468\u671f\u5904\u4e8e\u4f4e\u8c37/\u590d\u82cf"
-          }
-        ],
-        "top_fired": [],
-        "n_bottom_applicable": 8,
-        "n_top_applicable": 7,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
-        "name": "gasoline",
-        "label": "Gasoline",
-        "class": "energy",
-        "state": "Neutral",
-        "null_reason": null,
-        "bottom_score": 0.0,
-        "top_score": 25.0,
-        "capitulation_score": 0.0,
-        "turn_score": 0.0,
-        "euphoria_score": 38.5,
-        "rollover_score": 0.0,
-        "bottom_fired": [],
-        "top_fired": [
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "stretch",
-            "label_en": "Price stretched above 200-day",
-            "label_zh": "\u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf"
-          }
-        ],
-        "n_bottom_applicable": 8,
-        "n_top_applicable": 7,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
-        "name": "heating_oil",
-        "label": "Heating Oil",
-        "class": "energy",
-        "state": "Neutral",
-        "null_reason": null,
-        "bottom_score": 14.3,
-        "top_score": 27.8,
-        "capitulation_score": 0.0,
-        "turn_score": 30.0,
-        "euphoria_score": 45.5,
-        "rollover_score": 0.0,
-        "bottom_fired": [
-          {
-            "code": "curl",
-            "label_en": "Momentum curl up",
-            "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
-          }
-        ],
-        "top_fired": [
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "stretch",
-            "label_en": "Price stretched above 200-day",
-            "label_zh": "\u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf"
-          }
-        ],
-        "n_bottom_applicable": 7,
-        "n_top_applicable": 6,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
-        "name": "corn",
-        "label": "Corn",
-        "class": "grain",
-        "state": "Blowing off \u2014 extended",
-        "null_reason": null,
-        "bottom_score": 0.0,
-        "top_score": 45.5,
-        "capitulation_score": 0.0,
-        "turn_score": 0.0,
-        "euphoria_score": 76.9,
-        "rollover_score": 0.0,
-        "bottom_fired": [],
-        "top_fired": [
-          {
-            "code": "shock_top",
-            "label_en": "Exogenous blow-off bid",
-            "label_zh": "\u5916\u751f\u5439\u9876\u4e70\u76d8"
-          },
-          {
-            "code": "overbought_ltf",
-            "label_en": "Overbought short-term",
-            "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "cot_long",
-            "label_en": "COT crowded long",
-            "label_zh": "COT\u5927\u5e45\u504f\u591a"
-          }
-        ],
-        "n_bottom_applicable": 8,
-        "n_top_applicable": 8,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
-        "name": "wheat",
-        "label": "Wheat",
-        "class": "grain",
-        "state": "Blowing off \u2014 extended",
-        "null_reason": null,
-        "bottom_score": 0.0,
-        "top_score": 59.1,
-        "capitulation_score": 0.0,
-        "turn_score": 0.0,
-        "euphoria_score": 100.0,
-        "rollover_score": 0.0,
-        "bottom_fired": [],
-        "top_fired": [
-          {
-            "code": "shock_top",
-            "label_en": "Exogenous blow-off bid",
-            "label_zh": "\u5916\u751f\u5439\u9876\u4e70\u76d8"
-          },
-          {
-            "code": "overbought_ltf",
-            "label_en": "Overbought short-term",
-            "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "cot_long",
-            "label_en": "COT crowded long",
-            "label_zh": "COT\u5927\u5e45\u504f\u591a"
-          },
-          {
-            "code": "stretch",
-            "label_en": "Price stretched above 200-day",
-            "label_zh": "\u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf"
-          }
-        ],
-        "n_bottom_applicable": 8,
-        "n_top_applicable": 8,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
         "name": "soybeans",
         "label": "Soybeans",
         "class": "grain",
-        "state": "Neutral",
+        "state": "Blowing off \u2014 extended",
         "null_reason": null,
         "bottom_score": 0.0,
-        "top_score": 27.3,
+        "top_score": 50.0,
         "capitulation_score": 0.0,
         "turn_score": 0.0,
-        "euphoria_score": 46.2,
-        "rollover_score": 0.0,
+        "euphoria_score": 61.5,
+        "rollover_score": 33.3,
         "bottom_fired": [],
         "top_fired": [
           {
-            "code": "overbought_ltf",
-            "label_en": "Overbought short-term",
-            "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
+            "code": "shock_top",
+            "label_en": "Exogenous blow-off bid",
+            "label_zh": "\u5916\u751f\u5439\u9876\u4e70\u76d8"
           },
           {
             "code": "overbought_htf",
@@ -863,9 +886,14 @@
             "code": "cot_long",
             "label_en": "COT crowded long",
             "label_zh": "COT\u5927\u5e45\u504f\u591a"
+          },
+          {
+            "code": "curl_dn",
+            "label_en": "Momentum rolling over",
+            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
-        "n_bottom_applicable": 8,
+        "n_bottom_applicable": 9,
         "n_top_applicable": 8,
         "turn_developing": false,
         "basing": false,
@@ -913,23 +941,24 @@
         "class": "soft",
         "state": "Neutral",
         "null_reason": null,
-        "bottom_score": 0.0,
-        "top_score": 25.0,
-        "capitulation_score": 0.0,
+        "bottom_score": 8.7,
+        "top_score": 10.0,
+        "capitulation_score": 15.4,
         "turn_score": 0.0,
         "euphoria_score": 15.4,
-        "rollover_score": 42.9,
-        "bottom_fired": [],
+        "rollover_score": 0.0,
+        "bottom_fired": [
+          {
+            "code": "oversold_ltf",
+            "label_en": "Oversold short-term",
+            "label_zh": "\u77ed\u5468\u671f\u8d85\u5356"
+          }
+        ],
         "top_fired": [
           {
             "code": "overbought_htf",
             "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "curl_dn",
-            "label_en": "Momentum rolling over",
-            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
         "n_bottom_applicable": 8,
@@ -978,67 +1007,20 @@
         "name": "cocoa",
         "label": "Cocoa",
         "class": "soft",
-        "state": "Neutral",
-        "null_reason": null,
-        "bottom_score": 13.0,
-        "top_score": 25.0,
-        "capitulation_score": 0.0,
-        "turn_score": 30.0,
-        "euphoria_score": 38.5,
-        "rollover_score": 0.0,
-        "bottom_fired": [
-          {
-            "code": "curl",
-            "label_en": "Momentum curl up",
-            "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
-          }
-        ],
-        "top_fired": [
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "stretch",
-            "label_en": "Price stretched above 200-day",
-            "label_zh": "\u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf"
-          }
-        ],
-        "n_bottom_applicable": 8,
-        "n_top_applicable": 7,
-        "turn_developing": false,
-        "basing": false,
-        "armed_recent": false
-      },
-      {
-        "name": "cotton",
-        "label": "Cotton",
-        "class": "soft",
         "state": "Extended \u2014 late cycle",
         "null_reason": null,
         "bottom_score": 0.0,
-        "top_score": 60.0,
+        "top_score": 40.0,
         "capitulation_score": 0.0,
         "turn_score": 0.0,
-        "euphoria_score": 69.2,
+        "euphoria_score": 38.5,
         "rollover_score": 42.9,
         "bottom_fired": [],
         "top_fired": [
           {
-            "code": "overbought_ltf",
-            "label_en": "Overbought short-term",
-            "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
-          },
-          {
             "code": "overbought_htf",
             "label_en": "Overbought longer-term",
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
-          {
-            "code": "cot_long",
-            "label_en": "COT crowded long",
-            "label_zh": "COT\u5927\u5e45\u504f\u591a"
           },
           {
             "code": "stretch",
@@ -1051,7 +1033,38 @@
             "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
-        "n_bottom_applicable": 7,
+        "n_bottom_applicable": 8,
+        "n_top_applicable": 7,
+        "turn_developing": false,
+        "basing": false,
+        "armed_recent": false
+      },
+      {
+        "name": "cotton",
+        "label": "Cotton",
+        "class": "soft",
+        "state": "Neutral",
+        "null_reason": null,
+        "bottom_score": 0.0,
+        "top_score": 20.0,
+        "capitulation_score": 0.0,
+        "turn_score": 0.0,
+        "euphoria_score": 30.8,
+        "rollover_score": 0.0,
+        "bottom_fired": [],
+        "top_fired": [
+          {
+            "code": "overbought_htf",
+            "label_en": "Overbought longer-term",
+            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
+          },
+          {
+            "code": "cot_long",
+            "label_en": "COT crowded long",
+            "label_zh": "COT\u5927\u5e45\u504f\u591a"
+          }
+        ],
+        "n_bottom_applicable": 8,
         "n_top_applicable": 7,
         "turn_developing": false,
         "basing": false,
@@ -1062,36 +1075,20 @@
       "name": "index",
       "label": "Commodity Index",
       "class": "index",
-      "state": "Blowing off \u2014 extended",
+      "state": "Neutral",
       "null_reason": null,
-      "bottom_score": 17.6,
-      "top_score": 52.9,
+      "bottom_score": 0.0,
+      "top_score": 11.8,
       "capitulation_score": 0.0,
       "turn_score": null,
-      "euphoria_score": 64.3,
+      "euphoria_score": 14.3,
       "rollover_score": null,
-      "bottom_fired": [
-        {
-          "code": "curl",
-          "label_en": "Momentum curl up",
-          "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
-        }
-      ],
+      "bottom_fired": [],
       "top_fired": [
-        {
-          "code": "shock_top",
-          "label_en": "Exogenous blow-off bid",
-          "label_zh": "\u5916\u751f\u5439\u9876\u4e70\u76d8"
-        },
         {
           "code": "overbought_htf",
           "label_en": "Overbought longer-term",
           "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-        },
-        {
-          "code": "breadth_top",
-          "label_en": "Sector breadth euphoric",
-          "label_zh": "\u677f\u5757\u5e7f\u5ea6\u4ea2\u594b"
         }
       ],
       "n_bottom_applicable": 6,
@@ -1101,123 +1098,123 @@
   "cycle_positions": {
     "gold": {
       "cycle_ref": "gold",
-      "pos": 25.1,
+      "pos": 24.7,
       "phase": "Recovery",
       "phase_v2": "Expansion",
       "overdue": false,
-      "overdue_frac": 0.318,
-      "hazard_1m": 0.4449,
+      "overdue_frac": 0.369,
+      "hazard_1m": 0.4701,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-28"
+      "asof": "2026-09-04"
     },
     "silver": {
       "cycle_ref": "silver",
-      "pos": 11.4,
+      "pos": 11.7,
       "phase": "Recovery",
       "phase_v2": "Expansion",
       "overdue": false,
-      "overdue_frac": 0.314,
+      "overdue_frac": 0.365,
       "hazard_1m": 0.4878,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-28"
+      "asof": "2026-09-04"
     },
     "copper": {
       "cycle_ref": "copper",
-      "pos": 70.5,
-      "phase": "Expansion",
-      "phase_v2": "Expansion",
+      "pos": 66.7,
+      "phase": "Downturn",
+      "phase_v2": "Downturn",
       "overdue": true,
-      "overdue_frac": 2.781,
-      "hazard_1m": 0.3502,
-      "hazard_3m": 0.0474,
-      "hazard_6m": 0.0894,
-      "asof": "2026-08-28"
+      "overdue_frac": 2.831,
+      "hazard_1m": 0.6876,
+      "hazard_3m": 0.5595,
+      "hazard_6m": 0.5882,
+      "asof": "2026-09-04"
     },
     "oil": {
       "cycle_ref": "oil",
-      "pos": 29.7,
+      "pos": 30.4,
       "phase": "Recovery",
       "phase_v2": "Expansion",
       "overdue": false,
-      "overdue_frac": 0.358,
+      "overdue_frac": 0.368,
       "hazard_1m": 0.3908,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-25"
+      "asof": "2026-09-01"
     },
     "natgas": {
       "cycle_ref": "natural-gas",
-      "pos": 3.6,
+      "pos": 4.1,
       "phase": "Recovery",
       "phase_v2": "Expansion",
       "overdue": false,
-      "overdue_frac": 0.901,
+      "overdue_frac": 0.932,
       "hazard_1m": 0.5288,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-25"
+      "asof": "2026-09-01"
     },
     "platinum": {
       "cycle_ref": "pgms",
-      "pos": 14.3,
+      "pos": 14.8,
       "phase": "Recovery",
       "phase_v2": "Expansion",
       "overdue": false,
-      "overdue_frac": 0.283,
+      "overdue_frac": 0.317,
       "hazard_1m": 0.4878,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-28"
+      "asof": "2026-09-04"
     },
     "palladium": {
       "cycle_ref": "pgms",
-      "pos": 14.3,
+      "pos": 14.8,
       "phase": "Recovery",
       "phase_v2": "Expansion",
       "overdue": false,
-      "overdue_frac": 0.283,
+      "overdue_frac": 0.317,
       "hazard_1m": 0.4878,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-28"
+      "asof": "2026-09-04"
     },
     "corn": {
       "cycle_ref": "agriculture",
-      "pos": 78.0,
+      "pos": 91.4,
       "phase": "Expansion",
       "phase_v2": "Expansion",
       "overdue": true,
-      "overdue_frac": 11.1,
-      "hazard_1m": 0.2815,
+      "overdue_frac": 11.152,
+      "hazard_1m": 0.2416,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-28"
+      "asof": "2026-09-04"
     },
     "wheat": {
       "cycle_ref": "agriculture",
-      "pos": 78.0,
+      "pos": 91.4,
       "phase": "Expansion",
       "phase_v2": "Expansion",
       "overdue": true,
-      "overdue_frac": 11.1,
-      "hazard_1m": 0.2815,
+      "overdue_frac": 11.152,
+      "hazard_1m": 0.2416,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-28"
+      "asof": "2026-09-04"
     },
     "soybeans": {
       "cycle_ref": "agriculture",
-      "pos": 78.0,
+      "pos": 91.4,
       "phase": "Expansion",
       "phase_v2": "Expansion",
       "overdue": true,
-      "overdue_frac": 11.1,
-      "hazard_1m": 0.2815,
+      "overdue_frac": 11.152,
+      "hazard_1m": 0.2416,
       "hazard_3m": 0.0474,
       "hazard_6m": 0.0894,
-      "asof": "2026-08-28"
+      "asof": "2026-09-04"
     }
   }
 }

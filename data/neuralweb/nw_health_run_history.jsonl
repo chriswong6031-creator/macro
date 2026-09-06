@@ -44,3 +44,9 @@
 {"run_date": "2026-08-29", "degraded": true, "produced_at": "2026-08-29T09:55:19.378422+00:00", "reasons_count": 9}
 {"run_date": "2026-08-29", "degraded": true, "produced_at": "2026-08-29T13:06:11.015564+00:00", "reasons_count": 9}
 {"run_date": "2026-08-30", "degraded": true, "produced_at": "2026-08-30T06:10:46.543918+00:00", "reasons_count": 6}
+{"run_date": "2026-08-31", "degraded": true, "produced_at": "2026-08-31T06:13:12.275144+00:00", "reasons_count": 2}
+{"run_date": "2026-09-01", "degraded": true, "produced_at": "2026-09-01T07:08:29.319534+00:00", "reasons_count": 4}
+{"run_date": "2026-09-04", "degraded": true, "produced_at": "2026-09-04T12:58:47.854996+00:00", "reasons_count": 10}
+{"run_date": "2026-09-05", "degraded": true, "produced_at": "2026-09-05T03:23:54.157915+00:00", "reasons_count": 4}
+{"run_date": "2026-09-05", "degraded": true, "produced_at": "2026-09-05T14:44:49.121814+00:00", "reasons_count": 3}
+{"run_date": "2026-09-06", "degraded": true, "produced_at": "2026-09-06T08:02:08.716286+00:00", "reasons_count": 2}

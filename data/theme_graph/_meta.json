@@ -1,8 +1,8 @@
 {
-  "belief_time": "2026-08-30",
+  "belief_time": "2026-09-06",
   "capability_counts": {
-    "measurement_candidate": 499,
-    "semantic_only": 144
+    "measurement_candidate": 505,
+    "semantic_only": 138
   },
   "company_mint_refusals": [
     {
@@ -12,22 +12,22 @@
       "symbol": "IBIT"
     }
   ],
-  "computed_at": "2026-08-30T05:07:30Z",
+  "computed_at": "2026-09-06T06:27:26Z",
   "counts": {
     "capability": 644,
-    "edges": 14736,
-    "edges_latest_belief": 8292,
-    "evidence": 17,
-    "identity_resolution": 2806,
+    "edges": 16854,
+    "edges_latest_belief": 8293,
+    "evidence": 19,
+    "identity_resolution": 2807,
     "node_lifecycle": 2,
-    "nodes": 3881
+    "nodes": 3882
   },
   "engine_version": "theme_graph.v1",
   "era": "observed",
   "identity_resolution_state_counts": {
     "DEFERRED_IDENTITY_EXCEPTION": 1,
-    "NOT_IN_MASTER": 205,
-    "RESOLVED": 2365,
+    "NOT_IN_MASTER": 202,
+    "RESOLVED": 2369,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",
@@ -35,10 +35,10 @@
     "finviz": {
       "closed_member_edges": 26,
       "company_resolution": {
-        "minted_new": 529,
+        "minted_new": 530,
         "refused": [],
         "resolved_dot_dash_variant": 0,
-        "resolved_existing": 413,
+        "resolved_existing": 412,
         "variant_pairs": []
       },
       "dropped_adjacent_duplicates": [
@@ -53,7 +53,7 @@
       ]
     },
     "ths": {
-      "concept_map_asof": "2026-08-29",
+      "concept_map_asof": "2026-09-05",
       "concepts": 375,
       "expresses_edges": 237,
       "unresolved_concept_names": 0
@@ -120,9 +120,9 @@
   },
   "rows_appended": {
     "capability": 643,
-    "edges": 2564,
+    "edges": 2117,
     "evidence": 2,
-    "identity_resolution": 2804,
+    "identity_resolution": 2805,
     "nodes": 0
   },
   "skipped_suites": {},

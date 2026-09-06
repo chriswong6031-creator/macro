@@ -1,0 +1,1698 @@
+{
+  "alert_contract": {
+    "eligible_conditions": [
+      {
+        "condition_id": "glt_label_transition",
+        "kind": "state_transition",
+        "label": {
+          "en": "Global monetary state change",
+          "zh": "全球货币状态变化"
+        },
+        "params": [
+          "from_label",
+          "to_label"
+        ]
+      },
+      {
+        "condition_id": "breadth_shock",
+        "kind": "component_shock",
+        "label": {
+          "en": "Liquidity breadth shock",
+          "zh": "流动性广度冲击"
+        },
+        "params": [
+          "liquidity_breadth"
+        ]
+      },
+      {
+        "condition_id": "usd_funding_stress_shock",
+        "kind": "component_shock",
+        "label": {
+          "en": "USD funding stress shock",
+          "zh": "美元融资压力冲击"
+        },
+        "params": [
+          "usd_funding_impulse"
+        ]
+      },
+      {
+        "condition_id": "fed_balance_sheet_shock",
+        "kind": "component_shock",
+        "label": {
+          "en": "Central-bank balance-sheet shock",
+          "zh": "央行资产负债表冲击"
+        },
+        "params": [
+          "cb_id",
+          "pct_13w"
+        ]
+      },
+      {
+        "condition_id": "source_stale_or_failed",
+        "kind": "source_stale_or_failed",
+        "label": {
+          "en": "Source stale or failed",
+          "zh": "数据源过期或失败"
+        },
+        "params": [
+          "source_id"
+        ]
+      },
+      {
+        "condition_id": "global_vs_fed_disagreement_change",
+        "kind": "contradiction_change",
+        "label": {
+          "en": "Global-vs-Fed-desk disagreement change",
+          "zh": "全球与美联储台面分歧变化"
+        },
+        "params": [
+          "kind"
+        ]
+      }
+    ],
+    "note": "Eligible condition types are declared; this composer writes no alert (non-goal). Alerts extend the existing Terminal alert lifecycle later; a page shows the Alerts tab only once the service can create/list/evaluate/delete these real conditions.",
+    "service_available": false,
+    "status": "ABSENT"
+  },
+  "authority": {
+    "axis_authority_ceiling": "DESCRIPTIVE",
+    "can_execute": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false,
+    "class": "context_only",
+    "display_only": true
+  },
+  "availability": {
+    "contradiction": {
+      "components": [],
+      "en": null,
+      "kind": null,
+      "present": false,
+      "zh": null
+    },
+    "coverage_ratio": 1.0,
+    "degraded": [
+      "glt_monetary_impulse",
+      "glt_liquidity_breadth",
+      "glt_usd_funding_impulse"
+    ],
+    "reasons": [
+      "worst_required_source_freshness=LATE_WITHIN_TOLERANCE",
+      "glt_quality_status=degraded"
+    ],
+    "required": [
+      {
+        "component_id": "glt_monetary_impulse",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "label": {
+          "en": "Global monetary impulse",
+          "zh": "全球货币脉冲"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-08-28",
+        "status": "PARTIAL"
+      },
+      {
+        "component_id": "glt_liquidity_breadth",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "label": {
+          "en": "Global liquidity breadth",
+          "zh": "全球流动性广度"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-08-28",
+        "status": "PARTIAL"
+      },
+      {
+        "component_id": "glt_usd_funding_impulse",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "label": {
+          "en": "USD funding impulse",
+          "zh": "美元融资脉冲"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-08-28",
+        "status": "PARTIAL"
+      },
+      {
+        "component_id": "cb_fed_balance_sheet_impulse_13w",
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Fed balance-sheet impulse (13w)",
+          "zh": "美联储资产负债表脉冲（13周）"
+        },
+        "null_reason": null,
+        "required": true,
+        "source_asof": "2026-09-02",
+        "status": "PRESENT"
+      }
+    ],
+    "state": "LATE_WITHIN_TOLERANCE",
+    "worst_freshness": "LATE_WITHIN_TOLERANCE"
+  },
+  "axes": {
+    "items": []
+  },
+  "changes": {
+    "comparability": "COMPARABLE",
+    "deltas": [
+      {
+        "current_value": 0.003956,
+        "delta": 0.0,
+        "metric_id": "glt_monetary_impulse",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.003956
+      },
+      {
+        "current_value": 0.077032,
+        "delta": 0.0,
+        "metric_id": "glt_monetary_impulse_z",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.077032
+      },
+      {
+        "current_value": -0.144768,
+        "delta": 0.0,
+        "metric_id": "glt_usd_funding_impulse",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": -0.144768
+      },
+      {
+        "current_value": 0.333333,
+        "delta": 0.0,
+        "metric_id": "glt_liquidity_breadth",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.333333
+      },
+      {
+        "current_value": 0.38,
+        "delta": 0.0,
+        "metric_id": "cb_fed_balance_sheet_impulse_13w",
+        "note": "same method version; numeric comparison permitted",
+        "prior_value": 0.38
+      }
+    ],
+    "null_reason": null,
+    "prior_effective_date": "2026-08-28",
+    "prior_generation_id": "liquidity_central_banks-US-d70fba4d531327bd",
+    "prior_method_version": "liquidity_central_banks.compose.v1",
+    "status": "PRESENT"
+  },
+  "corrections": {
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "liquidity_central_banks-US-d70fba4d531327bd"
+  },
+  "drivers": {
+    "balance_sheet": [
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "cb_fed_balance_sheet_impulse_13w",
+        "impact_magnitude": 0.38,
+        "impact_sign": 1,
+        "label": {
+          "en": "Fed balance-sheet impulse (13w)",
+          "zh": "美联储资产负债表脉冲（13周）"
+        },
+        "note": "positive = balance sheet expanding over the trailing 13 weeks; negative = contracting",
+        "owner_field": "cb_desk.cbs[FED].bs_impulse.impulse_13w",
+        "unit": "percent",
+        "value": 0.38
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "cb_ecb_balance_sheet_impulse_13w",
+        "impact_magnitude": 4.0,
+        "impact_sign": -1,
+        "label": {
+          "en": "ECB balance-sheet impulse (13w)",
+          "zh": "欧洲央行资产负债表脉冲（13周）"
+        },
+        "note": "positive = balance sheet expanding over the trailing 13 weeks; negative = contracting",
+        "owner_field": "cb_desk.cbs[ECB].bs_impulse.impulse_13w",
+        "unit": "percent",
+        "value": -4.0
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "cb_boj_balance_sheet_impulse_13w",
+        "impact_magnitude": 10.64,
+        "impact_sign": -1,
+        "label": {
+          "en": "BoJ balance-sheet impulse (13w)",
+          "zh": "日本银行资产负债表脉冲（13周）"
+        },
+        "note": "positive = balance sheet expanding over the trailing 13 weeks; negative = contracting",
+        "owner_field": "cb_desk.cbs[BOJ].bs_impulse.impulse_13w",
+        "unit": "percent",
+        "value": -10.64
+      }
+    ],
+    "rate_side": [
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "glt_broad_dollar_contribution_z",
+        "impact_magnitude": 0.261985,
+        "impact_sign": 1,
+        "label": {
+          "en": "Broad dollar contribution (z)",
+          "zh": "广义美元贡献（z值）"
+        },
+        "note": "bucket reuse: published under drivers.rate_side because the contract's driver bucket pair is fixed as rate_side/balance_sheet; this is a USD funding leg, not a policy-rate driver -- see the driver_bucket_naming_note implication",
+        "owner_field": "freshness.component_snapshot.usd_funding.broad_dollar.current_contribution_z",
+        "unit": "z_score",
+        "value": 0.261985
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "glt_high_yield_oas_contribution_z",
+        "impact_magnitude": 0.05906,
+        "impact_sign": 1,
+        "label": {
+          "en": "HY OAS contribution (z)",
+          "zh": "高收益利差贡献（z值）"
+        },
+        "note": "bucket reuse: see glt_broad_dollar_contribution_z's note",
+        "owner_field": "freshness.component_snapshot.usd_funding.high_yield_oas.current_contribution_z",
+        "unit": "z_score",
+        "value": 0.05906
+      },
+      {
+        "coverage_state": "PRESENT",
+        "driver_id": "glt_real_yield_10y_contribution_z",
+        "impact_magnitude": 0.755348,
+        "impact_sign": -1,
+        "label": {
+          "en": "Real 10y yield contribution (z)",
+          "zh": "实际10年期收益率贡献（z值）"
+        },
+        "note": "bucket reuse: see glt_broad_dollar_contribution_z's note",
+        "owner_field": "freshness.component_snapshot.usd_funding.real_yield_10y.current_contribution_z",
+        "unit": "z_score",
+        "value": -0.755348
+      }
+    ]
+  },
+  "generation": {
+    "built_at": "2026-09-06T04:48:12Z",
+    "calculation_as_of": "2026-09-04T11:03:41.497178+00:00",
+    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
+    "content_sha256": "563c61e94c81b963835f622770fc31f6c8556a224e2cb6a5f1f260a85eb903ee",
+    "generation_id": "liquidity_central_banks-US-563c61e94c81b963",
+    "producer": "engine.market_os.macro_workspaces.liquidity_central_banks",
+    "rendered_at": null
+  },
+  "headline": {
+    "effective_date": "2026-08-28",
+    "hysteresis": {
+      "applied": false,
+      "band": 0.0,
+      "held_prior": false,
+      "note": "liquidity_central_banks has no headline model at all in architecture section 10.9 -- unlike liquidity_regime/financial_conditions/growth's explicit x/y quadrant blueprints or monetary_policy's own composition-list headline, section 10.9 has no headline-model subsection, only a required-composition list. headline.state_id stays null and this is not applicable by design, not by missing data; the real content (global monetary/funding impulse, Fed/ECB/BoJ balance-sheet impulses, the global-vs-Fed-desk agreement check) lives in metrics/drivers/implications instead. Region is published as US per every current Macro & Monetary page even though this composer's owner inputs are explicitly global -- see the region_scope_disclosure implication for the reader-facing version of this note."
+    },
+    "method_version": "liquidity_central_banks.compose.v1",
+    "nearest_boundary": {
+      "axis": null,
+      "distance": null,
+      "null_reason": "NOT_APPLICABLE"
+    },
+    "null_reason": "NOT_APPLICABLE",
+    "one_month_vector": {
+      "dx": null,
+      "dy": null,
+      "null_reason": "NOT_APPLICABLE",
+      "status": "ABSENT"
+    },
+    "prior_state": {
+      "effective_date": "2026-08-28",
+      "method_version": "liquidity_central_banks.compose.v1",
+      "state_id": null
+    },
+    "quadrant": {
+      "x": null,
+      "x_status": "ABSENT",
+      "y": null,
+      "y_status": "ABSENT"
+    },
+    "state_id": null,
+    "state_label": {
+      "en": null,
+      "zh": null
+    },
+    "status": "ABSENT",
+    "subtitle": {
+      "en": "Global monetary and USD-funding impulse, and Fed/ECB/BoJ balance-sheet stance",
+      "zh": "全球货币与美元融资脉冲，及美联储/欧央行/日央行资产负债表姿态"
+    },
+    "transition_distance": null
+  },
+  "implications": {
+    "items": [
+      {
+        "channels": [
+          "liquidity",
+          "funding",
+          "credit"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "global_liquidity_state_descriptive",
+        "text": {
+          "en": "Global monetary and USD-funding impulse reads flat this week (owner state-vs-quality read: mixed).",
+          "zh": "本周全球货币与美元融资脉冲读数为flat（数据源自身的状态与质量一致性读数为：mixed）。"
+        },
+        "trace_ref": "site/liquiditydata/global_liquidity_transmission.json#state"
+      },
+      {
+        "channels": [
+          "liquidity"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "glt_confidence_is_not_a_probability",
+        "text": {
+          "en": "The GLT confidence figure measures data lineage and coverage only (monetary coverage times the mean disclosed point-in-time reliability of contributing sources). It is never a predictive probability, an alpha confidence, or a promotion grade, and this composer never reports it as one.",
+          "zh": "GLT置信度数字仅衡量数据谱系与覆盖率（货币覆盖率乘以各数据源平均披露的时点可靠性），绝非预测概率、alpha置信度或晋升评级，本组合器也从不将其作为此类指标报告。"
+        },
+        "trace_ref": "site/liquiditydata/global_liquidity_transmission.json#quality.confidence"
+      },
+      {
+        "channels": [
+          "liquidity",
+          "credit"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "glt_quality_degraded_passthrough",
+        "text": {
+          "en": "The GLT owner itself marks this cycle's overall quality as degraded (global credit context: insufficient_comparable_pit_coverage). This composer passes that read through unchanged rather than smoothing it over or recomputing a cleaner-looking number.",
+          "zh": "GLT数据源自身将本周期的整体质量标记为降级（global credit context: insufficient_comparable_pit_coverage）。本组合器原样传递该判断，不做平滑处理，也不重新计算出一个更好看的数字。"
+        },
+        "trace_ref": "site/liquiditydata/global_liquidity_transmission.json#quality"
+      },
+      {
+        "channels": [
+          "liquidity"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "driver_bucket_naming_note",
+        "text": {
+          "en": "The drivers.rate_side bucket in this snapshot carries USD funding-side legs (broad dollar, HY OAS, real 10y yield), not policy rates. The contract's driver bucket pair is fixed as rate_side/balance_sheet and this workspace has no separate funding bucket to use, so the naming is cosmetic bucket reuse, disclosed here rather than left implicit.",
+          "zh": "本快照中drivers.rate_side分组承载的是美元融资端分项（广义美元、高收益利差、实际10年期收益率），而非政策利率。合约的驱动因素分组固定为rate_side/balance_sheet，本工作区没有独立的融资分组可用，因此命名属于用途借用，在此明确披露而非隐含处理。"
+        },
+        "trace_ref": "engine.market_os.macro_workspaces.liquidity_central_banks#drivers"
+      },
+      {
+        "channels": [
+          "liquidity"
+        ],
+        "confidence": {
+          "contradiction_state": "ABSENT",
+          "data_coverage": "HIGH",
+          "evidence_breadth": "MEDIUM",
+          "method_stability": "HIGH",
+          "revision_risk": "MEDIUM",
+          "source_health": "LOW"
+        },
+        "contradictions": [],
+        "evidence_class": "DESCRIPTIVE",
+        "horizon": "current",
+        "implication_id": "region_scope_disclosure",
+        "text": {
+          "en": "This workspace is published under the US region label like every current Macro & Monetary page, but its owner inputs are explicitly global: the GLT monetary/funding state spans the Fed, ECB, and BoJ, and the balance-sheet desk covers multiple central banks, not a US-only economic series.",
+          "zh": "本工作区与当前所有宏观与货币页面一样以US区域标签发布，但其数据源明确为全球性：GLT货币/融资状态涵盖美联储、欧央行与日本银行，资产负债表台面覆盖多家央行，而非单一美国经济序列。"
+        },
+        "trace_ref": "engine.market_os.macro_workspaces.liquidity_central_banks#region"
+      }
+    ]
+  },
+  "learning": {
+    "event_names": [
+      "macro_workspace_opened",
+      "macro_state_changed_seen",
+      "macro_driver_expanded",
+      "macro_source_opened",
+      "macro_degraded_state_seen",
+      "macro_unknown_or_refusal_seen"
+    ],
+    "instrumentation": "first_party",
+    "privacy_note": "Event definitions reuse the existing first-party analytics owner; no second analytics store, no user identity copied into the artifact."
+  },
+  "metrics": {
+    "items": [
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "weekly_change_in_expanding_z_score",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.monetary_impulse",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_monetary_impulse",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_monetary_impulse",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-native weekly first difference of the causal monetary stance z-score; a positive-vs-negative sign is the direction reading, not itself standardized",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "z_score_pts",
+        "value": 0.003956,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "prior_only_expanding_z_score_of_weekly_change",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.monetary_impulse_z",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_monetary_impulse_z",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_monetary_impulse_z",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": "causal, prior-only expanding z-score of the weekly monetary-impulse first difference; the owner's own design requires a 52-week warmup before this standardized figure is computable - an early-history week legitimately publishes the raw monetary_impulse without this standardized twin, and this composer never estimates one in its place",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": 0.077032,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "expanding_z_score",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.monetary_stance",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_monetary_stance",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_monetary_stance",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": 0.943266,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "causal_regression_residual_z_units",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.orthogonalised_impulse",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_orthogonalised_impulse",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_orthogonalised_impulse",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": 0.0165,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "share_of_components_agreeing_with_direction",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.liquidity_breadth",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_broader_agreement",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_liquidity_breadth",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_liquidity_breadth",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "share_0_to_1",
+        "value": 0.333333,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "expanding_z_score_positive_is_easier",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.usd_funding_impulse",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_easier_funding",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_usd_funding_impulse",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_usd_funding_impulse",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": -0.144768,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "weekly_change_in_expanding_z_score",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.policy_liquidity_impulse",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_policy_liquidity_impulse",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_policy_liquidity_impulse",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner's own policy-liquidity-impulse shock-family reading; by construction this coincides with monetary_impulse for the shock class this snapshot's owner artifact currently reports - published as its own field because it carries the owner-native shock_type semantics, not merged with glt_monetary_impulse",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "z_score_pts",
+        "value": 0.003956,
+        "value_type": "number"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "cross_country_credit_impulse_comparison",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.credit_impulse_global",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_credit_expansion",
+        "freshness": "NOT_COVERED",
+        "market_session": null,
+        "metric_id": "glt_credit_impulse_global",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": "NOT_COVERED",
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_credit_impulse_global",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "ABSENT",
+        "transformation": "owner-disclosed refusal: insufficient_comparable_pit_coverage - US C&I loans and China TSF are different constructs and are kept as separate context (quality.global_credit.components), never blended into a fabricated single global-credit scalar (architecture 10.9: 'separate credit contexts rather than a fabricated global credit scalar')",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": null,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "owner_native_categorical",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.label",
+        "definition_version": "1.0.0",
+        "direction_semantics": null,
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_state_label",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_state_label",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner label_enum member (expanding/flat/contracting/unknown); 'unknown' -- when the owner publishes it -- is itself a real disclosed value, not a null placeholder",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "flat",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "state_vs_us_quality_agreement_label",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "state.event_reference.quality",
+        "definition_version": "1.0.0",
+        "direction_semantics": null,
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_state_quality_label",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_state_quality_label",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": "a different vocabulary from glt_state_label: quality_enum (easing/tightening/mixed/unknown) is the owner's state-vs-US-quality agreement label, never a synonym for the expanding/flat/contracting direction reading, and never a data-quality score (see glt_confidence for that concept)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": null,
+        "value": "mixed",
+        "value_type": "categorical"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "quality.confidence.value",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_coverage_and_pit_reliability",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_confidence",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_confidence",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": "monetary coverage ratio times mean disclosed point-in-time reliability across contributing sources; the owner's own disclosure explicitly excludes this from being read as a predictive probability, an alpha confidence, or a promotion grade, and this composer never reports it as one (frequencies, never confidence, as a probability claim)",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio_0_1",
+        "value": 0.833333,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "freshness.monetary_coverage_ratio",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_coverage",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_monetary_coverage_ratio",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_monetary_coverage_ratio",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio_0_1",
+        "value": 1.0,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "freshness.funding_coverage_ratio",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_coverage",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_funding_coverage_ratio",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_funding_coverage_ratio",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "ratio_0_1",
+        "value": 1.0,
+        "value_type": "ratio"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "standardized_monetary_contribution",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "freshness.component_snapshot.monetary.fed.current_contribution_z",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_fed_monetary_contribution_z",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_fed_monetary_contribution_z",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": 0.970391,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "standardized_monetary_contribution",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "freshness.component_snapshot.monetary.ecb.current_contribution_z",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_ecb_monetary_contribution_z",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_ecb_monetary_contribution_z",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": 1.008565,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "standardized_monetary_contribution",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "freshness.component_snapshot.monetary.boj.current_contribution_z",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_boj_monetary_contribution_z",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_boj_monetary_contribution_z",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": 0.850842,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "standardized_funding_contribution",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "freshness.component_snapshot.usd_funding.broad_dollar.current_contribution_z",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_easier_funding",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_broad_dollar_contribution_z",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_broad_dollar_contribution_z",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": 0.261985,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "standardized_funding_contribution",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "freshness.component_snapshot.usd_funding.high_yield_oas.current_contribution_z",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_easier_funding",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_high_yield_oas_contribution_z",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_high_yield_oas_contribution_z",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": 0.05906,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "standardized_funding_contribution",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "freshness.component_snapshot.usd_funding.real_yield_10y.current_contribution_z",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_easier_funding",
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "market_session": null,
+        "metric_id": "glt_real_yield_10y_contribution_z",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.global_liquidity_transmission",
+        "reference_id": "mastermind.market_reference/v1#glt_real_yield_10y_contribution_z",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "engine.global_liquidity_transmission"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "stddev",
+        "value": -0.755348,
+        "value_type": "z_score"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.level",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_accommodative",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cb_fed_balance_sheet_level",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "engine.cb_desk[FED]",
+        "reference_id": "mastermind.market_reference/v1#cb_fed_balance_sheet_level",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:WALCL"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-native pass-through; unit exactly as disclosed by cb_desk, never corrected by this composer",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "USD billions",
+        "value": 6737.2,
+        "value_type": "currency_bn"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_13w_pct_change",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.impulse_13w",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cb_fed_balance_sheet_impulse_13w",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "engine.cb_desk[FED]",
+        "reference_id": "mastermind.market_reference/v1#cb_fed_balance_sheet_impulse_13w",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:WALCL"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 0.38,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_52w_pct_change",
+        "calculation_as_of": "2026-09-02",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.impulse_52w",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cb_fed_balance_sheet_impulse_52w",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-09-02",
+        "owner_ref": "engine.cb_desk[FED]",
+        "reference_id": "mastermind.market_reference/v1#cb_fed_balance_sheet_impulse_52w",
+        "reference_period": "2026-09-02",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:WALCL"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": 2.05,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.level",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_accommodative",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cb_ecb_balance_sheet_level",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.cb_desk[ECB]",
+        "reference_id": "mastermind.market_reference/v1#cb_ecb_balance_sheet_level",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:ECBASSETSW"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-native pass-through; unit exactly as disclosed by cb_desk, never corrected by this composer",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "EUR billions",
+        "value": 5915.3,
+        "value_type": "currency_bn"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_13w_pct_change",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.impulse_13w",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cb_ecb_balance_sheet_impulse_13w",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.cb_desk[ECB]",
+        "reference_id": "mastermind.market_reference/v1#cb_ecb_balance_sheet_impulse_13w",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:ECBASSETSW"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": -4.0,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_52w_pct_change",
+        "calculation_as_of": "2026-08-28",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.impulse_52w",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "CURRENT",
+        "market_session": null,
+        "metric_id": "cb_ecb_balance_sheet_impulse_52w",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-28",
+        "owner_ref": "engine.cb_desk[ECB]",
+        "reference_id": "mastermind.market_reference/v1#cb_ecb_balance_sheet_impulse_52w",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:ECBASSETSW"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": -2.86,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "level",
+        "calculation_as_of": "2026-08-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.level",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_accommodative",
+        "freshness": "STALE_SOURCE",
+        "market_session": null,
+        "metric_id": "cb_boj_balance_sheet_level",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-01",
+        "owner_ref": "engine.cb_desk[BOJ]",
+        "reference_id": "mastermind.market_reference/v1#cb_boj_balance_sheet_level",
+        "reference_period": "2026-08-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:JPNASSETS"
+        ],
+        "status": "PRESENT",
+        "transformation": "owner-native pass-through; unit exactly as disclosed by cb_desk, never corrected by this composer",
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "JPY billions",
+        "value": 644662.0,
+        "value_type": "currency_bn"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_13w_pct_change",
+        "calculation_as_of": "2026-08-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.impulse_13w",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "STALE_SOURCE",
+        "market_session": null,
+        "metric_id": "cb_boj_balance_sheet_impulse_13w",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-01",
+        "owner_ref": "engine.cb_desk[BOJ]",
+        "reference_id": "mastermind.market_reference/v1#cb_boj_balance_sheet_impulse_13w",
+        "reference_period": "2026-08-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:JPNASSETS"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": -10.64,
+        "value_type": "percent"
+      },
+      {
+        "authority_ceiling": "DESCRIPTIVE",
+        "available_at": null,
+        "basis": "trailing_52w_pct_change",
+        "calculation_as_of": "2026-08-01",
+        "collected_at": null,
+        "coverage": null,
+        "definition_id": "cb_desk.cbs.bs_impulse.impulse_52w",
+        "definition_version": "1.0.0",
+        "direction_semantics": "higher_more_expansionary",
+        "freshness": "STALE_SOURCE",
+        "market_session": null,
+        "metric_id": "cb_boj_balance_sheet_impulse_52w",
+        "model_version": "liquidity_central_banks.compose.v1",
+        "null_reason": null,
+        "observed_at": "2026-08-01",
+        "owner_ref": "engine.cb_desk[BOJ]",
+        "reference_id": "mastermind.market_reference/v1#cb_boj_balance_sheet_impulse_52w",
+        "reference_period": "2026-08-01",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_digest": null,
+        "source_refs": [
+          "FRED:JPNASSETS"
+        ],
+        "status": "PRESENT",
+        "transformation": null,
+        "uncertainty": {
+          "kind": null,
+          "value": null
+        },
+        "unit": "percent",
+        "value": -12.73,
+        "value_type": "percent"
+      }
+    ]
+  },
+  "region": {
+    "code": "US",
+    "display_name": "United States",
+    "supported": true
+  },
+  "scenario_contract": {
+    "assumptions": [
+      {
+        "assumption_id": "fed_balance_sheet_13w_pct",
+        "label": {
+          "en": "Fed balance-sheet 13w change",
+          "zh": "美联储资产负债表13周变化"
+        },
+        "max": 20.0,
+        "min": -20.0,
+        "owner_field": "cb_desk.cbs[FED].bs_impulse.impulse_13w",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "ecb_balance_sheet_13w_pct",
+        "label": {
+          "en": "ECB balance-sheet 13w change",
+          "zh": "欧洲央行资产负债表13周变化"
+        },
+        "max": 20.0,
+        "min": -20.0,
+        "owner_field": "cb_desk.cbs[ECB].bs_impulse.impulse_13w",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "boj_balance_sheet_13w_pct",
+        "label": {
+          "en": "BoJ balance-sheet 13w change",
+          "zh": "日本银行资产负债表13周变化"
+        },
+        "max": 20.0,
+        "min": -20.0,
+        "owner_field": "cb_desk.cbs[BOJ].bs_impulse.impulse_13w",
+        "step": 0.5,
+        "unit": "pct"
+      },
+      {
+        "assumption_id": "usd_funding_impulse_z",
+        "label": {
+          "en": "USD funding impulse",
+          "zh": "美元融资脉冲"
+        },
+        "max": 3.0,
+        "min": -3.0,
+        "owner_field": "state.usd_funding_impulse",
+        "step": 0.1,
+        "unit": "z"
+      },
+      {
+        "assumption_id": "global_monetary_impulse_z",
+        "label": {
+          "en": "Global monetary impulse (z)",
+          "zh": "全球货币脉冲（z值）"
+        },
+        "max": 3.0,
+        "min": -3.0,
+        "owner_field": "state.monetary_impulse_z",
+        "step": 0.1,
+        "unit": "z"
+      }
+    ],
+    "execution_available": false,
+    "note": "Assumption vocabulary is declared and closed; this composer ships no scenario execution endpoint (non-goal). A future owner-native pure scenario function produces mastermind.macro_workspace_scenario_result.v1 with no canonical write.",
+    "result_schema": "mastermind.macro_workspace_scenario_result.v1",
+    "status": "PARTIAL"
+  },
+  "schema": {
+    "contract": "mastermind.macro_workspace_snapshot.v1",
+    "version": "1.0.0"
+  },
+  "series": {
+    "items": [],
+    "null_reason": "INSUFFICIENT_HISTORY",
+    "status": "ABSENT"
+  },
+  "sources": {
+    "items": [
+      {
+        "artifact_ref": "site/liquiditydata/global_liquidity_transmission.json#state",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "label": {
+          "en": "Global Liquidity Transmission state (monetary + funding impulse)",
+          "zh": "全球流动性传导状态（货币+融资脉冲）"
+        },
+        "owner_ref": "engine.global_liquidity_transmission",
+        "provider": "Macro/Data Producer W-LIQ.1",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "glt_state",
+        "transform": null
+      },
+      {
+        "artifact_ref": "site/liquiditydata/global_liquidity_transmission.json#quality",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "label": {
+          "en": "GLT quality & coverage disclosure",
+          "zh": "GLT质量与覆盖率披露"
+        },
+        "owner_ref": "engine.global_liquidity_transmission",
+        "provider": "Macro/Data Producer W-LIQ.1",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "glt_quality",
+        "transform": null
+      },
+      {
+        "artifact_ref": "site/liquiditydata/global_liquidity_transmission.json#freshness",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "LATE_WITHIN_TOLERANCE",
+        "label": {
+          "en": "GLT per-component freshness receipts",
+          "zh": "GLT分项新鲜度回执"
+        },
+        "owner_ref": "engine.global_liquidity_transmission",
+        "provider": "Macro/Data Producer W-LIQ.1",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "glt_component_receipts",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/global_liquidity_transmission/state_history_meta.json",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "HISTORICAL_AS_KNOWN",
+        "label": {
+          "en": "GLT state-history metadata",
+          "zh": "GLT状态历史元数据"
+        },
+        "owner_ref": "engine.global_liquidity_transmission",
+        "provider": "Macro/Data Producer W-LIQ.1",
+        "reference_period": "2026-08-28",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "glt_state_history",
+        "transform": null
+      },
+      {
+        "artifact_ref": "data/intl_risk/latest.json#cb_desk",
+        "collected_at": null,
+        "correction_state": "unknown",
+        "definition_id": null,
+        "definition_version": null,
+        "first_known_at": null,
+        "freshness": "CURRENT",
+        "label": {
+          "en": "Central-bank balance sheets (WALCL/ECBASSETSW/JPNASSETS)",
+          "zh": "央行资产负债表（WALCL/ECBASSETSW/JPNASSETS）"
+        },
+        "owner_ref": "engine.cb_desk",
+        "provider": "FRED",
+        "reference_period": "2026-09-04",
+        "released_at": null,
+        "revised_at": null,
+        "rights_state": "OPEN",
+        "source_id": "cb_balance_sheets",
+        "transform": null
+      }
+    ]
+  },
+  "workspace": {
+    "id": "liquidity_central_banks",
+    "subtitle": {
+      "en": "Global monetary impulse x Fed/ECB/BoJ balance-sheet stance",
+      "zh": "全球货币脉冲 × 美联储/欧央行/日央行资产负债表姿态"
+    },
+    "title": {
+      "en": "Liquidity & Central Banks",
+      "zh": "流动性与央行"
+    }
+  }
+}

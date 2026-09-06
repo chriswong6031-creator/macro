@@ -187,6 +187,20 @@
       }
       window.mmTrack = track;
 
+      /* CA1A growth envelope (WS:COMMERCIAL-ACTIVATION, config/growth_events.yml
+         `envelope: v1`): registry events ride the SAME queue/beacon with a stable
+         event id — the collector seats `eid` in the analytics_events.eid unique
+         column, so an exact replay is ONE row — plus the frozen schema tag and a
+         closed typed `meta`. No crypto.randomUUID (older WebViews) means no eid,
+         and an unidentifiable growth event is dropped HERE rather than minting an
+         unreplayable row. Fire-and-forget like everything else on this beacon. */
+      window.mmTrackGrowth = function (wire, meta) {
+        try {
+          if (!(window.crypto && crypto.randomUUID)) return;
+          track(wire, { eid: crypto.randomUUID(), schema: 'growth_events.v1', meta: meta || {} });
+        } catch (e) { /* telemetry must never break the page */ }
+      };
+
       var enter = Date.now(), maxScroll = 0;
       if (fresh) track('session_start');
       track('pageview', { ref: document.referrer || undefined });
@@ -382,6 +396,29 @@
       };
     } catch (e) { return null; }
   }
+  // Intelligence Hub emits inert <span class="tk">SYMBOL</span>. Promote those
+  // labels to canonical analyzer anchors so the existing terminalTarget()
+  // pointerover/touch/click router consumes them. Do not open Terminal here.
+  function initHubTerminalTickerLinks() {
+    if (!document.body || !document.body.classList.contains('page-hub')) return;
+    var interactive = 'a,button,input,select,textarea,[role="button"],[role="link"]';
+    var ok = /^[A-Z0-9][A-Z0-9.-]{0,15}$/;
+    var nodes = document.body.querySelectorAll('.tk');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.closest(interactive)) continue;
+      var ticker = (el.textContent || '').trim();
+      if (!ok.test(ticker)) continue;
+      var a = document.createElement('a');
+      a.className = 'mm-terminal-ticker-link';
+      a.href = 'stock.html#' + encodeURIComponent(ticker);
+      a.style.color = 'inherit';
+      a.style.textDecoration = 'none';
+      el.parentNode.insertBefore(a, el);
+      a.appendChild(el);
+    }
+  }
+  initHubTerminalTickerLinks();
   // Warm the SPECIFIC destination on hover / touch intent so the click navigation lands
   // on an already-fetched document (the origin is pre-connected above; this adds the
   // ?sym= page itself). Deduped per ticker; a failed/uncacheable prefetch is a silent no-op.

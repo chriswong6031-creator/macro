@@ -1,27 +1,27 @@
 {
   "n": 4,
-  "built": "2026-08-29 15:34 UTC",
+  "built": "2026-09-06 12:44 UTC",
   "cards": [
     {
       "key": "income_vector",
       "name": "China Income Vector",
-      "cagr": 8.07,
-      "sharpe": 0.98,
+      "cagr": 7.97,
+      "sharpe": 0.96,
       "maxdd": -17.2,
       "experimental": false
     },
     {
       "key": "cn_credit_vol",
       "name": "Credit-Impulse + Vol-Managed",
-      "cagr": 7.12,
-      "sharpe": 0.61,
+      "cagr": 7.11,
+      "sharpe": 0.6,
       "maxdd": -23.3,
       "experimental": true
     },
     {
       "key": "cn_volmanaged",
       "name": "Volatility-Managed CSI 300",
-      "cagr": 7.04,
+      "cagr": 7.03,
       "sharpe": 0.59,
       "maxdd": -31.1,
       "experimental": true
@@ -29,7 +29,7 @@
     {
       "key": "cn_credit_margin",
       "name": "Credit + Margin-Euphoria Guard",
-      "cagr": 3.7,
+      "cagr": 3.69,
       "sharpe": 0.42,
       "maxdd": -22.3,
       "experimental": true

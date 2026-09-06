@@ -1,5 +1,5 @@
 {
- "as_of": "2026-08-28",
+ "as_of": "2026-09-04",
  "rows": [
   {
    "ticker": "U",
@@ -21,7 +21,7 @@
    "surfaced_price": 10.8,
    "last_price": 14.35,
    "pct_since": 32.9,
-   "days_on_board": 1,
+   "days_on_board": 2,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "running",
@@ -38,6 +38,19 @@
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "HP",
+   "sector": "Energy",
+   "first_surfaced": "2026-07-30",
+   "surfaced_price": 34.38,
+   "last_price": 42.73,
+   "pct_since": 24.3,
+   "days_on_board": 3,
+   "exit_date": "2026-08-12",
+   "mark_date": "2026-08-12",
+   "status": "running",
    "lane": "buy"
   },
   {
@@ -60,7 +73,7 @@
    "surfaced_price": 151.36,
    "last_price": 183.36,
    "pct_since": 21.1,
-   "days_on_board": 2,
+   "days_on_board": 4,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "running",
@@ -93,6 +106,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "NXE",
+   "sector": "Energy",
+   "first_surfaced": "2026-07-30",
+   "surfaced_price": 9.15,
+   "last_price": 10.43,
+   "pct_since": 14.0,
+   "days_on_board": 2,
+   "exit_date": "2026-08-07",
+   "mark_date": "2026-08-07",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "ELAN",
    "sector": "Health Care",
    "first_surfaced": "2026-07-31",
@@ -102,19 +128,6 @@
    "days_on_board": 2,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "MIR",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-07-24",
-   "surfaced_price": 16.85,
-   "last_price": 14.57,
-   "pct_since": -13.5,
-   "days_on_board": 3,
-   "exit_date": "2026-07-29",
-   "mark_date": "2026-07-29",
    "status": "stopped",
    "lane": "buy"
   },
@@ -135,8 +148,8 @@
    "ticker": "LBRT",
    "sector": "Energy",
    "first_surfaced": "2026-08-13",
-   "surfaced_price": 22.01,
-   "last_price": 19.36,
+   "surfaced_price": 21.91,
+   "last_price": 19.27,
    "pct_since": -12.0,
    "days_on_board": 6,
    "exit_date": "2026-08-21",
@@ -249,6 +262,32 @@
    "lane": "buy"
   },
   {
+   "ticker": "VYX",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-26",
+   "surfaced_price": 9.18,
+   "last_price": 8.38,
+   "pct_since": -8.7,
+   "days_on_board": 3,
+   "exit_date": "2026-08-31",
+   "mark_date": "2026-08-31",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "FN",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-07",
+   "surfaced_price": 527.07,
+   "last_price": 571.88,
+   "pct_since": 8.5,
+   "days_on_board": 1,
+   "exit_date": "2026-08-12",
+   "mark_date": "2026-08-12",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "PL",
    "sector": "Industrials",
    "first_surfaced": "2026-08-13",
@@ -340,6 +379,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "EU",
+   "sector": "Energy",
+   "first_surfaced": "2026-08-07",
+   "surfaced_price": 1.31,
+   "last_price": 1.21,
+   "pct_since": -7.6,
+   "days_on_board": 6,
+   "exit_date": "2026-08-14",
+   "mark_date": "2026-08-14",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
    "ticker": "USAR",
    "sector": "Materials",
    "first_surfaced": "2026-08-12",
@@ -350,19 +402,6 @@
    "exit_date": "2026-08-14",
    "mark_date": "2026-08-14",
    "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "FN",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-07-21",
-   "surfaced_price": 513.67,
-   "last_price": 476.04,
-   "pct_since": -7.3,
-   "days_on_board": 2,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
-   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -457,19 +496,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "CNH",
-   "sector": "Industrials",
-   "first_surfaced": "2026-07-24",
-   "surfaced_price": 11.08,
-   "last_price": 10.32,
-   "pct_since": -6.9,
-   "days_on_board": 4,
-   "exit_date": "2026-07-30",
-   "mark_date": "2026-07-30",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
    "ticker": "FHI",
    "sector": "Financials",
    "first_surfaced": "2026-07-29",
@@ -496,6 +522,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "AGCO",
+   "sector": "Industrials",
+   "first_surfaced": "2026-08-26",
+   "surfaced_price": 110.9,
+   "last_price": 118.31,
+   "pct_since": 6.7,
+   "days_on_board": 3,
+   "exit_date": "2026-08-31",
+   "mark_date": "2026-08-31",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "AXTA",
    "sector": "Materials",
    "first_surfaced": "2026-07-30",
@@ -509,6 +548,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "GLXY",
+   "sector": "Financials",
+   "first_surfaced": "2026-08-14",
+   "surfaced_price": 21.87,
+   "last_price": 20.43,
+   "pct_since": -6.6,
+   "days_on_board": 5,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
    "ticker": "MRNA",
    "sector": "Health Care",
    "first_surfaced": "2026-08-07",
@@ -518,19 +570,6 @@
    "days_on_board": 2,
    "exit_date": "2026-08-12",
    "mark_date": "2026-08-12",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "IT",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-07-21",
-   "surfaced_price": 132.1,
-   "last_price": 140.5,
-   "pct_since": 6.4,
-   "days_on_board": 1,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
    "status": "running",
    "lane": "buy"
   },
@@ -548,6 +587,19 @@
    "lane": "buy"
   },
   {
+   "ticker": "XRAY",
+   "sector": "Health Care",
+   "first_surfaced": "2026-08-31",
+   "surfaced_price": 10.76,
+   "last_price": 11.43,
+   "pct_since": 6.2,
+   "days_on_board": 1,
+   "exit_date": "2026-09-03",
+   "mark_date": "2026-09-03",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "FLS",
    "sector": "Industrials",
    "first_surfaced": "2026-07-29",
@@ -557,19 +609,6 @@
    "days_on_board": 3,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "GM",
-   "sector": "Consumer Discretionary",
-   "first_surfaced": "2026-07-21",
-   "surfaced_price": 82.13,
-   "last_price": 87.04,
-   "pct_since": 6.0,
-   "days_on_board": 2,
-   "exit_date": "2026-07-27",
-   "mark_date": "2026-07-27",
    "status": "running",
    "lane": "buy"
   },
@@ -613,19 +652,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "ROST",
-   "sector": "Consumer Discretionary",
-   "first_surfaced": "2026-07-21",
-   "surfaced_price": 238.21,
-   "last_price": 251.96,
-   "pct_since": 5.8,
-   "days_on_board": 4,
-   "exit_date": "2026-07-29",
-   "mark_date": "2026-07-29",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "LVS",
    "sector": "Consumer Discretionary",
    "first_surfaced": "2026-07-30",
@@ -652,16 +678,16 @@
    "lane": "buy"
   },
   {
-   "ticker": "BKR",
-   "sector": "Energy",
-   "first_surfaced": "2026-07-27",
-   "surfaced_price": 58.25,
-   "last_price": 61.55,
-   "pct_since": 5.7,
-   "days_on_board": 5,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "running",
+   "ticker": "VIR",
+   "sector": "Health Care",
+   "first_surfaced": "2026-08-18",
+   "surfaced_price": 9.77,
+   "last_price": 9.21,
+   "pct_since": -5.7,
+   "days_on_board": 8,
+   "exit_date": "2026-08-20",
+   "mark_date": "2026-08-20",
+   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -743,69 +769,46 @@
    "lane": "buy"
   },
   {
-   "ticker": "SITM",
-   "sector": "Information Technology",
-   "first_surfaced": "2026-08-13",
-   "surfaced_price": 711.91,
-   "last_price": 749.44,
-   "pct_since": 5.3,
-   "days_on_board": 2,
-   "exit_date": "2026-08-17",
-   "mark_date": "2026-08-17",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "LUNR",
-   "sector": "Industrials",
-   "first_surfaced": "2026-08-14",
-   "surfaced_price": 20.38,
-   "last_price": 19.31,
+   "ticker": "GNL",
+   "sector": "Real Estate",
+   "first_surfaced": "2026-08-07",
+   "surfaced_price": 9.25,
+   "last_price": 8.76,
    "pct_since": -5.3,
-   "days_on_board": 2,
-   "exit_date": "2026-08-18",
-   "mark_date": "2026-08-18",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "NVST",
-   "sector": "Health Care",
-   "first_surfaced": "2026-07-27",
-   "surfaced_price": 26.96,
-   "last_price": 28.37,
-   "pct_since": 5.2,
    "days_on_board": 3,
-   "exit_date": "2026-07-29",
-   "mark_date": "2026-07-29",
-   "status": "running",
+   "exit_date": "2026-08-14",
+   "mark_date": "2026-08-14",
+   "status": "stopped",
    "lane": "buy"
   }
  ],
  "summary": {
-  "n_running": 79,
-  "n_stopped": 83,
-  "n_flat": 299,
-  "n_total": 461,
+  "n_running": 74,
+  "n_stopped": 79,
+  "n_flat": 307,
+  "n_total": 460,
   "n_shown": 60,
   "median_pct": 0.0,
-  "n_skipped_no_price": 12,
+  "n_skipped_no_price": 19,
   "skipped_no_price": [
-   "BRX",
    "CAR",
    "CE",
    "DAR",
    "EGP",
    "ELS",
+   "EZPW",
+   "FAF",
    "FCN",
+   "IDA",
    "MAT",
+   "MPT",
    "NYT",
    "OHI",
-   "REXR",
-   "SLGN"
+   "POST",
+   "REXR"
   ],
-  "win_rate": 0.171,
-  "avg_pct": 0.2,
+  "win_rate": 0.161,
+  "avg_pct": 0.3,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",
    "mark": "close on the date the name left the buy board, not today's",

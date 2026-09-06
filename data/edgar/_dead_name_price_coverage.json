@@ -1,22 +1,22 @@
 {
  "schema": "dead_name_price_coverage.v3",
- "generated_utc": "2026-08-22T14:34:19.073387+00:00",
+ "generated_utc": "2026-09-05T17:18:23.976372+00:00",
  "n_dead_universe": 1081,
- "n_cik_resolved": 211,
- "n_with_prices": 422,
- "price_coverage_frac": 0.3904,
+ "n_cik_resolved": 261,
+ "n_with_prices": 424,
+ "price_coverage_frac": 0.3922,
  "by_source": {
-  "polygon": 353,
-  "yfinance": 71
+  "polygon": 341,
+  "yfinance": 85
  },
  "delisting_reason": {
-  "bankruptcy": 15,
-  "acquisition": 136,
-  "unknown": 60,
-  "n_classified": 211
+  "bankruptcy": 19,
+  "acquisition": 167,
+  "unknown": 75,
+  "n_classified": 261
  },
- "n_imputed_bankruptcies": 3,
- "residual_bias": "Acquisition skew is now PARTLY corrected: 3 bankruptcy delistings (8-K Item 1.03) carry an imputed \u2212100% terminal close (source=imputed_bankruptcy), so the price\u21920 tail is no longer a silent survivorship gap. RESIDUAL: bankruptcy names with no recovered price anchor can't be imputed (no from-price), and the recovered set still skews to ACQUISITIONS for names not yet reason-classified.",
+ "n_imputed_bankruptcies": 5,
+ "residual_bias": "Acquisition skew is now PARTLY corrected: 5 bankruptcy delistings (8-K Item 1.03) carry an imputed \u2212100% terminal close (source=imputed_bankruptcy), so the price\u21920 tail is no longer a silent survivorship gap. RESIDUAL: bankruptcy names with no recovered price anchor can't be imputed (no from-price), and the recovered set still skews to ACQUISITIONS for names not yet reason-classified.",
  "universe_basis": {
   "basis": "sp1500_pit_membership.end_date NOT NULL (INDEX EXIT, not death)",
   "measured": true,

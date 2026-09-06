@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "NVR-BULL-20260818",
-  "asof": "2026-08-29",
+  "asof": "2026-09-05",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 56.2,
-  "raw_confidence": 56.5,
-  "delta_vs_base": -3.8,
+  "management_confidence": 46.1,
+  "raw_confidence": 44.2,
+  "delta_vs_base": -13.9,
   "recommended_action": "hold",
-  "human_state": "Needs Follow-Through",
+  "human_state": "Stalling",
   "components": {
-    "validity": 97.0,
+    "validity": 84.5,
     "progress": 0.0,
-    "pace": 75.9,
+    "pace": 35.3,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.978,
+    "dist_to_stop_r": 0.883,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 22.2,
-    "p1": -0.0148,
-    "p2": -0.0074,
+    "horizon_pct_used": 37.8,
+    "p1": -0.0783,
+    "p2": -0.0391,
     "p3": null,
-    "move_r": -0.022,
+    "move_r": -0.117,
     "mfe_r": 0.015,
-    "mae_r": -0.116
+    "mae_r": -0.117
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 14.840234375000364,
-  "_mae": -118.89999999999964,
+  "_mae": -120.04990234374964,
   "_max_p1": 0.009678718812875856,
   "_first_trigger_ts": "2026-08-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 10,
-  "tau": 0.2222
+  "days_elapsed": 17,
+  "tau": 0.3778
 }

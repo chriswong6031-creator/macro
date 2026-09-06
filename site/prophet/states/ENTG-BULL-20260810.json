@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ENTG-BULL-20260810",
-  "asof": "2026-08-29",
+  "asof": "2026-09-05",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 48.0,
-  "raw_confidence": 44.6,
-  "delta_vs_base": -12.0,
+  "management_confidence": 42.8,
+  "raw_confidence": 43.2,
+  "delta_vs_base": -17.2,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 41.2,
+    "validity": 48.2,
     "progress": 0.0,
-    "pace": 41.0,
+    "pace": 10.1,
     "retention": 50.0,
-    "overlay": 55.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.519,
+    "dist_to_stop_r": 0.582,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 35.6,
-    "p1": -0.3209,
-    "p2": -0.1604,
+    "horizon_pct_used": 51.1,
+    "p1": -0.2784,
+    "p2": -0.1392,
     "p3": null,
-    "move_r": -0.481,
+    "move_r": -0.418,
     "mfe_r": 0.0,
-    "mae_r": -0.481
+    "mae_r": -0.542
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Weakening",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.009997558593738631,
-  "_mae": -28.8800018310547,
+  "_mae": -32.49000244140626,
   "_max_p1": 0.00011108398437487368,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 16,
-  "tau": 0.3556
+  "days_elapsed": 23,
+  "tau": 0.5111
 }

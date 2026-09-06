@@ -1,0 +1,25 @@
+{
+  "classification": "LOCAL_FEED_FIXTURE_NOT_PRODUCTION",
+  "cases": [
+    {
+      "scenario": "healthy",
+      "clock_visible": true,
+      "rail_height": 78.1875,
+      "overflow": false
+    },
+    {
+      "scenario": "degraded",
+      "clock_visible": true,
+      "rail_height": 78.1875,
+      "overflow": false
+    },
+    {
+      "scenario": "stale",
+      "clock_visible": true,
+      "rail_height": 78.1875,
+      "overflow": false
+    }
+  ],
+  "html_sha256": "926f49e528efa01b63c58dd1eca8cf3458a29db15a1817b1aa83ad1ff85437ae",
+  "status": "PASS"
+}

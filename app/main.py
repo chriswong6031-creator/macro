@@ -91,6 +91,11 @@ if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
 # above — `lib` lives at the repo root, not under app/. Pure stdlib, no app import cycle.
 from lib import user_prefs  # noqa: E402
 
+# The growth-event registry as collector authority (W2-1, WS:COMMERCIAL-ACTIVATION
+# CA1A). Same placement constraint as user_prefs: `lib` lives at the repo root.
+# yaml + stdlib only, no app import cycle.
+from lib import growth_registry  # noqa: E402
+
 # Error/trace reporting. MUST run before `app = FastAPI(...)` below: the SDK's
 # FastAPI/Starlette integrations instrument the framework at init time, so an
 # app object built first is never wrapped. Hard no-op when SENTRY_DSN is absent
@@ -222,16 +227,34 @@ SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 MM_COOKIE_DOMAIN = os.environ.get("MM_COOKIE_DOMAIN", ".mastermind-x.com")
 _MM_ANON_COOKIE = "mm_aid"
 _MM_MAX_BATCH = 40
-_MM_EVENT_TYPES = {
-    "pageview", "route", "ticker_view", "search", "terminal_jump",
-    "click", "scroll", "session_start", "heartbeat", "exit",
-    # Ad Central Plane O (research/AD_CENTRAL_MASTERPLAN.md §2): which split-test
-    # variant a visitor was shown. The arm rides in `meta` as {arena, creative};
-    # the unit identity is the mm_aid `visitor_id` this endpoint stamps, NOT
-    # anything the client sends — which is what keeps the denominator honest when
-    # the client is the thing choosing the arm. Read by engine/marketing/ad_ingest.py.
-    "ad_exposure",
-}
+# W2-1 (WS:COMMERCIAL-ACTIVATION CA1A): the registry IS the whitelist. Accepted wires
+# are derived from config/growth_events.yml `status: live` entries via
+# lib/growth_registry — an event can no longer ship "accepted but undeclared" or
+# "declared live but silently dropped". Per-wire documentation (ad_exposure's split-test
+# meta, flowobs's nine ev values and its ticker-in-`id` privacy note from the PR #6815
+# review) lives on the registry entries themselves. tests/test_growth_events_registry.py
+# pins the derivation: reintroducing a hardcoded set literal here turns its
+# registry-authority guard red.
+_MM_EVENT_TYPES = growth_registry.accepted_wires()
+# Envelope-v1 wires (CA1A): these additionally require a stable UUID `eid` (seated in
+# the analytics_events.eid unique column, so an exact replay is ONE row), the frozen
+# `schema` tag, and a closed, typed `meta` validated against the registry — invalid
+# events are dropped with a bounded diagnostic, never coerced. The handoff decision
+# DEC:ANALYTICS-EID-USES-EXISTING-EVENT-PRIMARY-KEY assumed a UUID id primary key; the
+# live table's id is a bigint identity, so the §16 canary moved eid to its own column.
+_MM_V1_WIRES = growth_registry.envelope_v1_wires()
+
+_MM_V1_DROP_COUNTS: dict[str, int] = {}
+
+
+def _mm_v1_drop(wire: str, reason: str) -> None:
+    """Bounded drop-diagnostic for rejected envelope-v1 events. Reasons are the closed
+    tokens from lib/growth_registry.validate_v1_event; a drop is never itself a growth
+    event (CA1A handoff §13). The dict is keyed on wire:reason over two closed
+    vocabularies, so the cap is belt-and-braces, not a real ceiling."""
+    if len(_MM_V1_DROP_COUNTS) < 256:
+        key = f"{wire}:{reason}"
+        _MM_V1_DROP_COUNTS[key] = _MM_V1_DROP_COUNTS.get(key, 0) + 1
 
 
 def _mm_is_loggable_ip(ip: str) -> bool:
@@ -408,14 +431,19 @@ def _mm_analytics_insert(rows: list, access_token: str | None = None) -> None:
                 r["user_id"] = uid
     try:
         req = urllib.request.Request(
-            f"{SUPABASE_URL}/rest/v1/analytics_events",
+            # on_conflict=eid + ignore-duplicates: an exact replay of an envelope-v1
+            # event (same eid, unique-indexed) is ONE row — the duplicate insert is
+            # ignored rather than failing the batch, and a same-eid-different-payload
+            # replay can never mutate the original row (append-only facts, CA1A
+            # handoff §11). Legacy rows carry eid NULL, which never conflicts.
+            f"{SUPABASE_URL}/rest/v1/analytics_events?on_conflict=eid",
             data=json.dumps(rows).encode(),
             method="POST",
             headers={
                 "apikey": SUPABASE_SERVICE_ROLE_KEY,
                 "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
                 "Content-Type": "application/json",
-                "Prefer": "return=minimal",
+                "Prefer": "resolution=ignore-duplicates,return=minimal",
             },
         )
         urllib.request.urlopen(req, timeout=5).read()
@@ -496,15 +524,28 @@ async def collect(request: Request, background: BackgroundTasks) -> Response:
         etype = _mm_clamp(e.get("type"), 32)
         if not etype or etype not in _MM_EVENT_TYPES:
             continue
-        meta = e.get("meta")
-        if not isinstance(meta, dict):
-            meta = None
+        row_id = None
+        if etype in _MM_V1_WIRES:
+            # Envelope v1: eid + schema + closed typed meta, validated against the
+            # registry. Rejection is a drop with a bounded diagnostic — never a
+            # coerced row, and never an error to the caller (the product act that
+            # produced the event has already succeeded client-side).
+            row_id, _v1_reason = growth_registry.validate_v1_event(
+                etype, e.get("eid"), e.get("schema"), e.get("meta"))
+            if _v1_reason:
+                _mm_v1_drop(etype, _v1_reason)
+                continue
+            meta = e.get("meta")
         else:
-            try:
-                if len(json.dumps(meta, default=str)) > 2000:
-                    meta = None
-            except Exception:
+            meta = e.get("meta")
+            if not isinstance(meta, dict):
                 meta = None
+            else:
+                try:
+                    if len(json.dumps(meta, default=str)) > 2000:
+                        meta = None
+                except Exception:
+                    meta = None
         client_ts = None
         try:
             ms = float(e.get("t") or 0)
@@ -514,6 +555,14 @@ async def collect(request: Request, background: BackgroundTasks) -> Response:
             pass
         tk = e.get("ticker")
         rows.append({
+            # Envelope-v1 identity rides its own `eid uuid UNIQUE` column — the §16
+            # canary's correction to DEC:ANALYTICS-EID-USES-EXISTING-EVENT-PRIMARY-KEY.
+            # The live analytics_events.id is a bigint identity the DB mints; seating a
+            # UUID there made PostgREST reject the WHOLE batch (22P02), which the
+            # best-effort insert swallowed — every envelope-v1 event was dropped and
+            # took its co-batched legacy rows with it. Legacy events carry eid NULL
+            # (UNIQUE ignores NULLs); the bigint id stays DB-minted for every row.
+            "eid": row_id,
             "type": etype,
             "site": _mm_clamp(e.get("site"), 16) or "macro",
             "path": _mm_clamp(e.get("path"), 512),
@@ -1116,6 +1165,7 @@ class BrainChatRequest(BaseModel):
     thread_id: str | None = Field(None, description="Optional thread id for conversation continuity")
     history: list[dict] | None = Field(None, description="Client-sent fallback history (max 12 turns; used only when thread store is absent)")
     context: dict | None = Field(None, description="Optional page/symbol context hint")
+    company_source_span: dict | None = Field(None, description="Optional closed exact-source reference; source bytes are never accepted from the client")
     mode: str = Field("chat", description="'chat' (default) or 'research' (W6b Deep Research — forces pro lane, raises tool budget, structured multi-section cited report; requires pro quota)")
     images: list[str] | None = Field(None, max_length=4, description="Optional image attachments (W6c vision) — base64 data URIs or https URLs; served by a vision model (Haiku on Fast, Opus on Pro). Invalid/oversized dropped. Max 4.")
 
@@ -1366,6 +1416,7 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
         thread_id=body.thread_id,
         history=history,
         context=body.context,
+        company_source_span=body.company_source_span,
         root=REPO,
         mode=mode,
         images=body.images,
@@ -1437,6 +1488,7 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
             thread_id=body.thread_id,
             history=history,
             context=body.context,
+            company_source_span=body.company_source_span,
             root=REPO,
             mode=mode,
             images=body.images,
@@ -2177,6 +2229,14 @@ app.include_router(company_intelligence_router)
 # report "live" when the upstream row itself proves measured current freshness.
 from app.dossier_quote import router as dossier_quote_router  # noqa: E402
 app.include_router(dossier_quote_router)
+
+# Deliberately public, bounded batch projection of regular-session quotes for
+# the exact rendered Intelligence Hub roster (R1A-M). Same owner boundary as
+# dossier_quote above (Terminal Quote Plane stays authoritative; this route
+# owns no store/socket/scheduler) — see app/intelligence_hub_market_pulse.py's
+# module docstring for the public-access decision.
+from app.intelligence_hub_market_pulse import router as intel_hub_market_pulse_router  # noqa: E402
+app.include_router(intel_hub_market_pulse_router)
 
 # Market Memory is a read-only product projection over two existing context
 # engines (Brain macro analogues + Signal Episode Atlas).  The router enforces

@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "KMT-BULL-20260721",
-  "asof": "2026-08-29",
-  "phase": "invalidated",
-  "detection_phase": "invalidated",
-  "management_confidence": 10.1,
-  "raw_confidence": 8.0,
-  "delta_vs_base": -49.9,
-  "recommended_action": "invalidated",
-  "human_state": "Invalidated",
+  "asof": "2026-09-05",
+  "phase": "overtime",
+  "detection_phase": "overtime",
+  "management_confidence": 24.1,
+  "raw_confidence": 24.5,
+  "delta_vs_base": -35.9,
+  "recommended_action": "trim",
+  "human_state": "Window Elapsed \u2014 Awaiting Close",
   "components": {
-    "validity": 0.0,
+    "validity": 0.8,
     "progress": 0.0,
-    "pace": 0.0,
+    "pace": 28.7,
     "retention": 0.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.347,
+    "dist_to_stop_r": 0.064,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 86.7,
-    "p1": -0.8981,
-    "p2": -0.4491,
+    "horizon_pct_used": 102.2,
+    "p1": -0.6241,
+    "p2": -0.312,
     "p3": null,
-    "move_r": -1.347,
+    "move_r": -0.936,
     "mfe_r": 0.339,
     "mae_r": -1.422
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 39,
-  "tau": 0.8667
+  "days_elapsed": 46,
+  "tau": 1.0222
 }

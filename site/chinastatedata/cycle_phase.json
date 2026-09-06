@@ -3,12 +3,13 @@
   "authority": {
     "tier": "context_only"
   },
-  "built": "2026-08-29T15:40:29.552640+00:00",
-  "asof": "2026-08-28",
+  "built": "2026-09-06T12:50:58.800191+00:00",
+  "asof": "2026-09-04",
   "phase": "REPAIR",
   "confidence": 0.8,
   "evidence": [
-    "turnover_z20_null"
+    "turnover_z20_null",
+    "participation_regime_nan"
   ],
   "contradictions": [],
   "falsifiers": [

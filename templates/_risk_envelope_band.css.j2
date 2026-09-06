@@ -137,9 +137,7 @@ body.page-macro .gde-receipt-live[hidden] {
   display: none !important;
 }
 body.page-macro .gde-live-time { color: var(--ink-3); font-weight: 500; }
-body.page-macro .gde-rail:has(#gde-live-chip:not([hidden])) .gde-stamp-settled {
-  display: none;
-}
+/* The live badge does not replace the settled trend or its observation date. */
 body.page-macro .gde-chevron {
   flex: none; color: var(--ink-3); margin-left: 2px;
 }

@@ -1,130 +1,148 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-08-30 05:31 UTC",
-  "asof": "2026-08-28",
+  "built": "2026-09-06 07:25 UTC",
+  "asof": "2026-09-04",
   "stale_after_min": 1440,
   "cards": [
     {
       "key": "mm_conservative",
       "name": "Mastermind \u2014 Conservative",
-      "cagr": 7.89,
+      "cagr": 7.88,
       "sharpe": 1.12,
       "maxdd": -17.3,
-      "asof": "2026-08-28",
-      "gross_now": 0.56,
+      "asof": "2026-09-04",
+      "gross_now": 0.8,
       "alloc": [
         {
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 14.4
-        },
-        {
-          "asset": "HYG",
-          "label_en": "High-yield credit",
-          "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 14.4
-        },
-        {
-          "asset": "HG=F",
-          "label_en": "Copper",
-          "label_zh": "\u94dc",
-          "weight": 14.4
+          "weight": 15.2
         },
         {
           "asset": "QQQ",
           "label_en": "Nasdaq 100",
           "label_zh": "\u7eb3\u6307100",
-          "weight": 11.6
+          "weight": 15.2
+        },
+        {
+          "asset": "IEF",
+          "label_en": "7-10y Treasuries",
+          "label_zh": "\u4e2d\u671f\u56fd\u503a",
+          "weight": 15.2
+        },
+        {
+          "asset": "HYG",
+          "label_en": "High-yield credit",
+          "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
+          "weight": 15.2
+        },
+        {
+          "asset": "HG=F",
+          "label_en": "Copper",
+          "label_zh": "\u94dc",
+          "weight": 15.2
         },
         {
           "asset": "BTC-USD",
           "label_en": "Bitcoin",
           "label_zh": "\u6bd4\u7279\u5e01",
-          "weight": 1.4
+          "weight": 4.6
         }
       ]
     },
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.41,
+      "cagr": 11.4,
       "sharpe": 1.06,
       "maxdd": -24.1,
-      "asof": "2026-08-28",
-      "gross_now": 1.04,
+      "asof": "2026-09-04",
+      "gross_now": 1.53,
       "alloc": [
         {
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 28.4
-        },
-        {
-          "asset": "HYG",
-          "label_en": "High-yield credit",
-          "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 28.4
-        },
-        {
-          "asset": "HG=F",
-          "label_en": "Copper",
-          "label_zh": "\u94dc",
-          "weight": 28.4
+          "weight": 29.8
         },
         {
           "asset": "QQQ",
           "label_en": "Nasdaq 100",
           "label_zh": "\u7eb3\u6307100",
-          "weight": 17.2
+          "weight": 29.8
+        },
+        {
+          "asset": "HYG",
+          "label_en": "High-yield credit",
+          "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
+          "weight": 29.8
+        },
+        {
+          "asset": "HG=F",
+          "label_en": "Copper",
+          "label_zh": "\u94dc",
+          "weight": 29.8
+        },
+        {
+          "asset": "IEF",
+          "label_en": "7-10y Treasuries",
+          "label_zh": "\u4e2d\u671f\u56fd\u503a",
+          "weight": 27.0
         },
         {
           "asset": "BTC-USD",
           "label_en": "Bitcoin",
           "label_zh": "\u6bd4\u7279\u5e01",
-          "weight": 2.1
+          "weight": 6.8
         }
       ]
     },
     {
       "key": "mm_aggressive",
       "name": "Mastermind \u2014 Aggressive",
-      "cagr": 17.19,
+      "cagr": 17.17,
       "sharpe": 0.99,
       "maxdd": -34.9,
-      "asof": "2026-08-28",
-      "gross_now": 2.13,
+      "asof": "2026-09-04",
+      "gross_now": 2.5,
       "alloc": [
         {
           "asset": "SPY",
           "label_en": "S&P 500",
           "label_zh": "\u6807\u666e500",
-          "weight": 65.0
-        },
-        {
-          "asset": "HYG",
-          "label_en": "High-yield credit",
-          "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
-          "weight": 65.0
-        },
-        {
-          "asset": "HG=F",
-          "label_en": "Copper",
-          "label_zh": "\u94dc",
-          "weight": 51.1
+          "weight": 53.4
         },
         {
           "asset": "QQQ",
           "label_en": "Nasdaq 100",
           "label_zh": "\u7eb3\u6307100",
-          "weight": 28.6
+          "weight": 53.4
+        },
+        {
+          "asset": "HYG",
+          "label_en": "High-yield credit",
+          "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
+          "weight": 53.4
+        },
+        {
+          "asset": "HG=F",
+          "label_en": "Copper",
+          "label_zh": "\u94dc",
+          "weight": 45.6
+        },
+        {
+          "asset": "IEF",
+          "label_en": "7-10y Treasuries",
+          "label_zh": "\u4e2d\u671f\u56fd\u503a",
+          "weight": 35.3
         },
         {
           "asset": "BTC-USD",
           "label_en": "Bitcoin",
           "label_zh": "\u6bd4\u7279\u5e01",
-          "weight": 3.5
+          "weight": 8.9
         }
       ]
     }

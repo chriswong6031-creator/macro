@@ -346,9 +346,10 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  2026-08-30: Chairman-direct compact Market Reads (GD-UX-COMPACT-L1) is
-  PARKED on draft PR #6685 (HOLD-FOR-SOL). Sol reviews product/taste/semantics
-  and either releases the hold to merge or names the change. Do not self-merge.
+  2026-09-06: Sol continues the Chairman-authorized compact risk-context repair
+  on existing draft PR #6685. Implementation and local proof are BUILT_NOT_PROVEN;
+  immutable independent review, hosted integration CI and production proof remain.
+  See GREY-DEER-RISK-INTELLIGENCE-2026-09-06-COMPACT.md. No merge before Sol release.
   GD-8A/GD-8B/GD-9A remain unstarted pending an explicit new commission;
   GD-5A/B/C stay closed; this wave does not reopen GD-3 live-window work.
 ---

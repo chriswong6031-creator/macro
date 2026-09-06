@@ -55,8 +55,18 @@
     "score": 0.68
   },
   "SMH": {
+    "streak": 2,
+    "last_date": "2026-08-31",
+    "score": 0.9943
+  },
+  "non_ai_tech": {
     "streak": 1,
-    "last_date": "2026-08-27",
-    "score": 0.9988
+    "last_date": "2026-09-03",
+    "score": 1.0
+  },
+  "XLU": {
+    "streak": 1,
+    "last_date": "2026-09-04",
+    "score": 0.9303
   }
 }

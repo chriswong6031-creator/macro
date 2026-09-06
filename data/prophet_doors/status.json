@@ -1,15 +1,15 @@
 {
   "appended": 0,
-  "asof": "2026-08-28",
+  "asof": "2026-09-04",
   "candidates": {
-    "R": 2,
-    "T": 3,
-    "W": 32
+    "R": 1,
+    "T": 4,
+    "W": 4
   },
   "deduped": {
-    "R": 2,
-    "T": 3,
-    "W": 32
+    "R": 1,
+    "T": 4,
+    "W": 4
   },
   "dry_run": false,
   "feature_source": {
@@ -86,41 +86,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-29 15:39:24",
-  "runtime_s": 115.8,
+  "run_utc": "2026-09-06 11:14:50",
+  "runtime_s": 127.5,
   "schema": "prophet_doors/v1",
   "theme_source": {
     "age_days": 0,
-    "asof": "2026-08-28",
-    "n_members": 103,
+    "asof": "2026-09-04",
+    "n_members": 166,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 2.264,
+        "emerging_score": 2.969,
         "rank": 1,
-        "theme": "Mega-Cap"
+        "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 2.173,
+        "emerging_score": 2.712,
         "rank": 2,
-        "theme": "Software"
+        "theme": "Electric Vehicles"
       },
       {
-        "emerging_score": 1.86,
+        "emerging_score": 2.458,
         "rank": 3,
-        "theme": "Big Data"
+        "theme": "Commodities Agriculture"
       },
       {
-        "emerging_score": 1.821,
+        "emerging_score": 2.183,
         "rank": 4,
-        "theme": "Cybersecurity"
+        "theme": "Crypto & Blockchain"
       },
       {
-        "emerging_score": 1.667,
+        "emerging_score": 2.101,
         "rank": 5,
-        "theme": "Biometrics"
+        "theme": "Energy Renewable"
       }
     ]
   },
@@ -129,19 +129,19 @@
       "2B",
       "3B"
     ],
-    "aligned": 32,
-    "asof_max": "2026-08-27",
-    "asof_mismatch": 32,
-    "asof_run": "2026-08-28",
-    "evaluated": 712,
-    "fresh": 34,
+    "aligned": 4,
+    "asof_max": "2026-09-04",
+    "asof_mismatch": 0,
+    "asof_run": "2026-09-04",
+    "evaluated": 713,
+    "fresh": 4,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 21.4,
-    "skipped": 5,
+    "runtime_s": 24.1,
+    "skipped": 4,
     "source": "baskets/membership.json",
-    "state_turn": 97,
+    "state_turn": 89,
     "universe_n": 717
   }
 }

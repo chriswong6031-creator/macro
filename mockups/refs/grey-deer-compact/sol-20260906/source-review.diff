@@ -1,0 +1,1543 @@
+diff --git a/.github/ci/legacy-jobs.yml b/.github/ci/legacy-jobs.yml
+index 836ef76dfcd..d184e978bb8 100644
+--- a/.github/ci/legacy-jobs.yml
++++ b/.github/ci/legacy-jobs.yml
+@@ -3235,7 +3235,7 @@ jobs:
+       - name: factor boundary selftest (guard fires on planted violations)
+         run: python3 scripts/check_factor_boundaries.py --selftest
+       - name: synapse read-gate unit tests
+-        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py tests/test_pricing_power_monitor.py tests/test_risk_envelope.py tests/test_live_risk_envelope.py -q
++        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py tests/test_delivery_waterfall.py tests/test_pricing_power_monitor.py tests/test_risk_envelope.py tests/test_live_risk_envelope.py tests/test_risk_envelope_presentation.py -q
+       - name: factor deescalation shadow + boundary guard tests
+         run: python -m pytest tests/test_factor_deescalation_shadow.py -q
+       - name: edgar 8-K item-code expansion unit tests (LHB-R7)
+diff --git a/templates/_risk_envelope_band.css.j2 b/templates/_risk_envelope_band.css.j2
+index bb02588b9ce..eb52e5d98e2 100644
+--- a/templates/_risk_envelope_band.css.j2
++++ b/templates/_risk_envelope_band.css.j2
+@@ -1,211 +1,291 @@
+ /* ═══════════════════════════════════════════════════════════════════════════════
+-   THREE SEPARATE READS — Grey Deer risk-envelope band (macro.html only)
++   GREY DEER MARKET READS — compact hero rail + Risk Detail projection
+ 
+-   Page-local scope under body.page-macro. Every value is a token derivation — no
+-   new :root family, no hex literal, no new font stack (MASTER_PRODUCT_DESIGN_SYSTEM
+-   §2). The page's own --sp-*/--r-*/--ink-*/--hair/--tile locals are already bound to
+-   theme values, so dark, light and the zh 红涨绿跌 flip all propagate at paint.
++   Page-local under body.page-macro. Tokens only. Dark and light are designed
++   as two art directions, not a token-swap of the same paint.
+ 
+-   THE SIGNATURE — the split spine
+-   ────────────────────────────────
+-   Coherence cannot be a colour: the reserved-hue law gives hue exactly five
+-   meanings (direction, health, wayfinding, epistemic tier, lock) and "agreement"
+-   is not one of them. So agreement is structural. Each read carries a 3px left
+-   rail; when the reads agree the rails butt into ONE continuous spine, and when
+-   they disagree the container opens a gap and each rail takes its own row's
+-   meaning-ink. One line = one truth. Three marks = three truths.
++   Signature: one hairline rail at the hero's lower edge. Market reads share a
++   structural spine (agreement) or a break (disagreement). Policy sits past a
++   divider and is achromatic — it is not a third vote. Motion: only the live
++   dot, reused from theme.css .dtp-dot.
++   ═══════════════════════════════════════════════════════════════════════════ */
+ 
+-   Ink assignment, and why the zh flip lands correctly on its own:
+-     · trend row  → --ink-up/--ink-down. This IS market direction, so it SHOULD flip
+-                    under 红涨绿跌, and it does, globally.
+-     · hazard row → --ink-ok/--ink-warn/--ink-act. This IS health/severity, which
+-                    never flips (theme.css:378-390 scopes the zh pole remap to the
+-                    .rrx/.igx gauges only), so red stays danger for every reader.
+-     · null       → --prov-ink, the TEXT-grade provisional rung (theme.css:367-376).
+-                    Never --prov, which is fill-grade.
+-     · posture    → achromatic. Zero policies means nothing is restricted; there is
+-                    no reserved meaning for hue to carry, so it takes none.
++/* Hero grid: pin the rail as a full-width last row so it cannot auto-place
++   into the scorecard columns. */
++body.page-macro.mx4-grid #regime-radar {
++  grid-template-rows: minmax(0, 1fr) auto;
++}
++body.page-macro.mx4-grid #risk-envelope-band {
++  grid-column: 1 / -1;
++}
+ 
+-   The SETTLED band itself does not animate. Motion law: an animated element must
+-   encode a live or ongoing fact, and this artifact is settled. The stillness is
+-   deliberate — it reads as "settled" beside the GD-3 live overlay's one earned
+-   exception: the live-provisional chip's dot, which reuses theme.css's existing
+-   `.dtp-dot` / `@keyframes dtp-pulse` (never a new animation) because it encodes
+-   the ONE ongoing fact this band ever carries — "this is ticking right now" — see
+-   the "GD-3 live-provisional overlay" block below.
+-   ═══════════════════════════════════════════════════════════════════════════ */
++/* ── L1 rail ──────────────────────────────────────────────────────────────── */
++body.page-macro button.gde-rail {
++  appearance: none; -webkit-appearance: none;
++  display: flex; align-items: center; gap: 14px 18px;
++  width: 100%; margin: 0; padding: 10px 22px;
++  min-height: 44px; box-sizing: border-box;
++  border: 0; border-top: var(--rule) solid var(--hair);
++  background: color-mix(in srgb, var(--panel2) 42%, transparent);
++  color: inherit; font: inherit; text-align: left; cursor: pointer;
++  line-height: 1.2;
++}
++body.page-macro button.gde-rail:hover {
++  background: color-mix(in srgb, var(--panel2) 70%, transparent);
++}
++body.page-macro button.gde-rail:focus-visible {
++  outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent);
++  outline-offset: -2px;
++}
+ 
+-body.page-macro .gde-band { padding: var(--sp-5) var(--pad) var(--sp-5); }
++/* Light: research-workspace material — white clarity, hairline, no smear. */
++[data-theme="light"] body.page-macro button.gde-rail {
++  background: color-mix(in srgb, var(--panel2) 55%, var(--panel));
++  border-top-color: color-mix(in srgb, var(--ink-1) 10%, var(--hair));
++  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink-1) 4%, transparent);
++}
++[data-theme="light"] body.page-macro button.gde-rail:hover {
++  background: var(--panel);
++  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink-1) 6%, transparent),
++              0 4px 14px color-mix(in srgb, var(--ink-1) 6%, transparent);
++}
+ 
+-/* ── header: eyebrow + the section's question + one session stamp ───────────── */
+-body.page-macro .gde-head {
+-  display: flex; align-items: baseline; justify-content: space-between;
+-  flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);
+-  padding: 0 0 var(--sp-3); margin: 0 0 var(--sp-4);
+-  border-bottom: var(--rule) solid var(--hair-strong);
+-}
+-body.page-macro .gde-eyebrow {
+-  display: block; font-size: var(--fs-label); font-weight: 600;
++body.page-macro .gde-rail-kicker {
++  flex: none;
++  font-size: var(--fs-label); font-weight: 700;
+   letter-spacing: var(--trk); text-transform: uppercase; color: var(--ink-3);
++  white-space: nowrap;
+ }
+-html[data-lang="zh"] body.page-macro .gde-eyebrow { letter-spacing: 0; text-transform: none; }
+-body.page-macro .gde-h2 {
+-  font-size: var(--fs-h2); font-weight: 700; letter-spacing: -.01em;
+-  color: var(--ink-1); margin: 3px 0 0; line-height: 1.3;
++html[data-lang="zh"] body.page-macro .gde-rail-kicker {
++  letter-spacing: 0; text-transform: none;
+ }
+-html[data-lang="zh"] body.page-macro .gde-h2 { letter-spacing: 0; }
+-/* the ONE as-of stamp for this panel (doctrine §9.6 — per-source clocks live on
+-   the rows themselves, and the drawer carries the full table) */
++
++/* Market-read group — structural spine, never a third hue for "agreement". */
++/* Semantic inks are class-mapped so the HTML never declares literal custom props. */
++body.page-macro .gde-ms-RISK_ON { --gde-ms: var(--ink-up); --gde-c: var(--ink-up); }
++body.page-macro .gde-ms-RISK_OFF { --gde-ms: var(--ink-down); --gde-c: var(--ink-down); }
++body.page-macro .gde-ms-MIXED { --gde-ms: var(--ink-2); --gde-c: var(--ink-2); }
++body.page-macro .gde-ms-null { --gde-ms: var(--prov-ink); --gde-c: var(--prov-ink); }
++body.page-macro .gde-hz-NONE { --gde-hz: var(--ink-ok); --gde-c: var(--ink-ok); }
++body.page-macro .gde-hz-FRAGILE { --gde-hz: var(--ink-warn); --gde-c: var(--ink-warn); }
++body.page-macro .gde-hz-TRANSMITTING,
++body.page-macro .gde-hz-BREAKDOWN { --gde-hz: var(--ink-act); --gde-c: var(--ink-act); }
++body.page-macro .gde-hz-null { --gde-hz: var(--prov-ink); --gde-c: var(--prov-ink); }
++
++body.page-macro .gde-rail-reads {
++  display: flex; align-items: center; gap: 0; flex: 1 1 auto; min-width: 0;
++  padding-left: 10px;
++  border-left: 2px solid var(--line);
++}
++body.page-macro .gde-rail-reads.is-split { gap: 14px; }
++body.page-macro .gde-rail-reads.is-split .gde-seg-trend { border-color: var(--gde-ms, var(--line)); }
++body.page-macro .gde-rail-reads.is-split .gde-seg-break { border-color: var(--gde-hz, var(--line)); }
++body.page-macro .gde-rail-reads.is-split .gde-seg {
++  padding-left: 10px; border-left: 2px solid var(--line);
++}
++body.page-macro .gde-rail-reads.is-split { border-left: 0; padding-left: 0; }
++
++body.page-macro .gde-seg {
++  display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
++  min-width: 0; padding: 2px 16px 2px 0;
++}
++body.page-macro .gde-k {
++  font-size: var(--fs-label); font-weight: 600;
++  letter-spacing: var(--trk); text-transform: uppercase; color: var(--ink-3);
++  white-space: nowrap;
++}
++html[data-lang="zh"] body.page-macro .gde-k { letter-spacing: 0; text-transform: none; }
++
++body.page-macro .gde-v {
++  font-size: var(--fs-body); font-weight: 700; color: var(--ink-1);
++  letter-spacing: -.01em; white-space: nowrap;
++  font-variant-numeric: tabular-nums;
++}
++html[data-lang="zh"] body.page-macro .gde-v { letter-spacing: 0; }
++body.page-macro .gde-v-quiet { color: var(--ink-2); font-weight: 650; }
++body.page-macro .gde-arr { font-size: .72em; margin-left: .28em; vertical-align: .12em; }
++
++body.page-macro .gde-caveat {
++  font-size: var(--fs-micro); font-weight: 650; color: var(--ink-warn);
++  white-space: nowrap;
++}
++body.page-macro .gde-pending {
++  font-size: var(--fs-micro); font-weight: 650; color: var(--ink-warn);
++  white-space: nowrap;
++}
++
++/* Policy / freshness sit past a structural divider — not a third spine vote. */
++body.page-macro .gde-rail-rule {
++  flex: none; width: 1px; align-self: stretch; min-height: 28px;
++  background: var(--hair-strong, var(--hair)); margin: 4px 2px;
++}
++body.page-macro .gde-rail-meta {
++  display: flex; align-items: center; gap: 12px 16px; flex: none;
++}
++body.page-macro .gde-seg-policy { padding-right: 0; }
+ body.page-macro .gde-stamp {
+   font-size: var(--fs-micro); font-weight: 600; color: var(--ink-3);
+-  letter-spacing: .04em; cursor: help; white-space: nowrap;
++  letter-spacing: .04em; white-space: nowrap;
++}
++body.page-macro .gde-stamp-live {
++  color: var(--ink-ok); display: inline-flex; align-items: center; gap: 5px;
++}
++/* Class-level display out-specs the UA [hidden] rule — same .pv-live trap. */
++body.page-macro .gde-stamp-live[hidden],
++body.page-macro .gde-pending[hidden],
++body.page-macro .gde-receipt-live[hidden] {
++  display: none !important;
++}
++body.page-macro .gde-live-time { color: var(--ink-3); font-weight: 500; }
++/* The live badge does not replace the settled trend or its observation date. */
++body.page-macro .gde-chevron {
++  flex: none; color: var(--ink-3); margin-left: 2px;
+ }
+ 
+-/* ── the answer: this section's primary question, answered first ────────────── */
+-body.page-macro .gde-lead {
+-  font-size: var(--fs-md); line-height: 1.55; color: var(--ink-1);
+-  margin: 0 0 var(--sp-5); max-width: 78ch;
++@media (prefers-reduced-motion: reduce) {
++  body.page-macro button.gde-rail { transition: none; }
+ }
+-body.page-macro .gde-lead b { font-weight: 800; }
+ 
+-/* ── the three reads ────────────────────────────────────────────────────────── */
+-/* default (agreeing): zero gap + one shared neutral rail = a single spine */
+-body.page-macro .gde-reads { display: grid; gap: 0; }
+-/* disagreeing: the spine breaks into three separate, differently-inked marks */
+-body.page-macro .gde-reads.is-split { gap: var(--sp-4); }
++/* Tablet: keep market reads together; meta may wrap. */
++@media (max-width: 980px) {
++  body.page-macro button.gde-rail {
++    flex-wrap: wrap; gap: 6px 14px; padding: 8px 16px;
++  }
++  body.page-macro .gde-rail-reads { flex: 1 1 100%; }
++  body.page-macro .gde-rail-rule { display: none; }
++  body.page-macro .gde-rail-meta {
++    flex: 1 1 100%; padding-left: 0;
++    border-top: var(--rule) solid var(--hair); padding-top: 4px;
++  }
++  body.page-macro .gde-caveat { white-space: normal; }
++}
+ 
+-body.page-macro .gde-read {
+-  padding: var(--sp-3) 0 var(--sp-3) var(--sp-4);
+-  border-left: 3px solid var(--line);
+-  /* grid items default to min-width:auto, so without this the evidence table's
+-     min-width pushes the whole row past the viewport instead of scrolling inside
+-     .gde-tblwrap — measured as a 516px document at a 390px viewport with the
+-     drawer open, which is exactly the overflow the 390 gate forbids */
+-  min-width: 0;
++/* Mobile: two logical rows. Warning stays with Breakage. */
++@media (max-width: 700px) {
++  body.page-macro button.gde-rail {
++    display: grid;
++    grid-template-columns: auto 1fr auto;
++    grid-template-areas:
++      "kicker reads reads"
++      "meta   meta   chev";
++    gap: 8px 10px; padding: 10px 12px; align-items: center;
++  }
++  body.page-macro .gde-rail-kicker { grid-area: kicker; }
++  body.page-macro .gde-rail-reads {
++    grid-area: reads; padding-left: 8px; gap: 10px;
++    border-left-width: 2px;
++  }
++  body.page-macro .gde-rail-reads.is-split { gap: 10px; }
++  body.page-macro .gde-seg { padding-right: 8px; gap: 5px; }
++  body.page-macro .gde-rail-rule { display: none; }
++  body.page-macro .gde-rail-meta {
++    grid-area: meta; border-top: 0; padding-top: 0;
++    justify-content: flex-start;
++  }
++  body.page-macro .gde-chevron { grid-area: chev; justify-self: end; }
++  body.page-macro .gde-v { font-size: var(--fs-sm); }
+ }
+-/* The grid is on .gde-row, NOT on .gde-read, so the evidence drawer sits OUTSIDE
+-   column sizing. When the drawer was a grid child, opening it let the wide table
+-   collapse the clause column and the row re-flowed under the reader's cursor.
+-   The clause column is capped at a readable measure rather than stretched, so the
+-   "when" column sits immediately after the "why" instead of being stranded at the
+-   far edge of a 1440 panel. Three rows, three clocks, one column — which is what
+-   makes the three clocks comparable at a glance. */
+-body.page-macro .gde-row {
+-  display: grid;
+-  grid-template-columns: minmax(0, 232px) minmax(0, 58ch) max-content;
+-  grid-template-areas:
+-    "q      clause clock"
+-    "answer clause clock";
+-  column-gap: var(--sp-6); row-gap: 2px; align-items: start;
+-}
+-body.page-macro .gde-reads.is-split .gde-read { border-left-color: var(--gde-c, var(--line)); }
+-/* (GD-2R1: the former .gde-read--quiet posture row is gone from the spine entirely —
+-   see .gde-policy below. A railed posture row implied it was a party to the
+-   agreement the rail encodes, which it is not.) */
+ 
+-body.page-macro .gde-q {
+-  grid-area: q; font-size: var(--fs-label); font-weight: 600;
+-  letter-spacing: var(--trk); text-transform: uppercase; color: var(--ink-3);
++/* ── L2 / L3 inside #dlg-risk ─────────────────────────────────────────────── */
++body.page-macro #dlg-risk .gde-detail {
++  margin: 0 0 var(--sp-5, 20px); padding: 0 0 var(--sp-4, 16px);
++  border-bottom: var(--rule) solid var(--hair);
++}
++body.page-macro #dlg-risk .gde-detail-h {
++  margin: 0 0 12px; font-size: var(--fs-h3); font-weight: 700;
++  letter-spacing: -.01em; color: var(--ink-1);
+ }
+-html[data-lang="zh"] body.page-macro .gde-q { letter-spacing: 0; text-transform: none; }
++html[data-lang="zh"] body.page-macro #dlg-risk .gde-detail-h { letter-spacing: 0; }
+ 
+-/* the answer word — 22px/800 keeps it subordinate to the regime hero above
+-   (34px score) while still reading as an answer rather than a label */
+-body.page-macro .gde-a {
+-  grid-area: answer; margin: 1px 0 0;
+-  font-size: var(--fs-num-lg); font-weight: 800; line-height: 1.15;
+-  letter-spacing: -.01em; color: var(--gde-c, var(--ink-1));
+-}
+-html[data-lang="zh"] body.page-macro .gde-a { letter-spacing: 0; }
+-/* the direction sign — smaller than the word, same ink, so "up" survives the zh
+-   hue flip that makes direction and danger share a colour */
+-body.page-macro .gde-arr { font-size: .58em; margin-left: .32em; vertical-align: .18em; }
++body.page-macro #dlg-risk .gde-detail-reads {
++  display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px;
++}
++body.page-macro #dlg-risk .gde-dblock {
++  min-width: 0; padding: 2px 0 4px 12px;
++  border-left: 3px solid var(--line);
++}
++body.page-macro #dlg-risk .gde-detail.is-split .gde-dblock {
++  border-left-color: var(--gde-c, var(--line));
++}
++body.page-macro #dlg-risk .gde-d-a {
++  margin: 4px 0 6px; font-size: var(--fs-md); font-weight: 750;
++  letter-spacing: -.01em; color: var(--gde-c, var(--ink-1)); line-height: 1.2;
++}
++html[data-lang="zh"] body.page-macro #dlg-risk .gde-d-a { letter-spacing: 0; }
++body.page-macro #dlg-risk .gde-d-c {
++  margin: 0 0 6px; font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.45;
++  max-width: 48ch;
++}
++body.page-macro #dlg-risk .gde-d-asof {
++  font-size: var(--fs-micro); color: var(--ink-3);
++}
+ 
+-body.page-macro .gde-c {
+-  grid-area: clause; margin: 0; align-self: center;
+-  font-size: var(--fs-sm); line-height: 1.55; color: var(--ink-2); max-width: 60ch;
++body.page-macro #dlg-risk .gde-detail-policy {
++  display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 14px;
++  margin: 14px 0 0; padding: 10px 12px;
++  background: var(--tile, var(--panel2));
++  border: var(--rule) solid var(--hair); border-radius: var(--r-md, 8px);
+ }
+-/* the score is a QUOTE of the hero's number, not a second headline (§9.11) */
+-body.page-macro .gde-quote {
+-  color: var(--ink-1); font-weight: 700; text-decoration: none;
+-  border-bottom: 1px dashed var(--hair-strong);
++body.page-macro #dlg-risk .gde-policy-state {
++  font-size: var(--fs-sm); font-weight: 700; color: var(--ink-2);
++}
++body.page-macro #dlg-risk .gde-policy-count {
++  margin-left: auto; font-size: var(--fs-micro); color: var(--ink-3);
+ }
+-body.page-macro .gde-quote:hover { border-bottom-color: var(--ink-link, var(--link)); }
+-body.page-macro .gde-outof { color: var(--ink-3); font-weight: 400; }
+ 
+-body.page-macro .gde-clock {
+-  grid-area: clock; justify-self: start; align-self: center;
+-  font-size: var(--fs-micro); color: var(--ink-3); white-space: nowrap;
++[data-theme="light"] body.page-macro #dlg-risk .gde-detail-policy {
++  background: var(--panel); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink-1) 5%, transparent);
+ }
+-/* shown ONLY when coverage is not clean — a caveat that changes how the row's
+-   answer should be read belongs beside it, never only behind the drawer */
+-body.page-macro .gde-flag { color: var(--ink-warn); white-space: normal; }
+ 
+-/* ── GD-3 live-provisional overlay — same idiom, no new tokens. The live dot
+-   reuses theme.css's existing .dtp-dot / @keyframes dtp-pulse (already shared by
+-   etfs.html.j2, sector_central.html.j2 and the dashboard's own #dtp-token) rather
+-   than inventing a new animation — motion here encodes the SAME "this is ticking
+-   right now" fact that idiom already carries elsewhere on the site (etfs.html.j2,
+-   sector_central.html.j2, the dashboard's own #dtp-token). Painted/hidden only by
+-   risk_envelope_live.js; every rule here is dormant until the `hidden` attribute
+-   is removed. ─────────────────────────────────────────────────────────────── */
+-body.page-macro .gde-stamp-live {
+-  color: var(--ink-ok); display: inline-flex; align-items: center; gap: 5px;
++@media (max-width: 700px) {
++  body.page-macro #dlg-risk .gde-detail-reads { grid-template-columns: 1fr; gap: 14px; }
++  body.page-macro #dlg-risk .gde-policy-count { margin-left: 0; }
+ }
+-body.page-macro .gde-live-time { color: var(--ink-3); font-weight: 500; }
+-/* pending badge — the SAME warn ink the coverage flag already uses; a candidate
+-   shift is a caveat on how to read the row, not a new health verdict */
+-body.page-macro .gde-pending { color: var(--ink-warn); }
+-body.page-macro .gde-receipt-live { border-top: none; padding-top: 0; margin-top: var(--sp-2); }
+ 
+-/* ── evidence drawer: the only home for source enums, receipts and technicals ── */
+-body.page-macro .gde-disc { margin: var(--sp-3) 0 0; min-width: 0; }
++/* ── evidence disclosure (L3) ─────────────────────────────────────────────── */
++body.page-macro .gde-disc { margin: 12px 0 0; min-width: 0; }
+ body.page-macro .gde-disc > summary {
+   cursor: pointer; display: inline-block;
+   font-size: var(--fs-sm); font-weight: 600; color: var(--ink-3);
+ }
+ body.page-macro .gde-disc > summary:hover { color: var(--ink-link, var(--link)); }
+ body.page-macro .gde-disc-body {
+-  margin: var(--sp-3) 0 0; padding: var(--sp-3) var(--sp-4);
+-  background: var(--tile); border: var(--rule) solid var(--hair); border-radius: var(--r-md);
++  margin: 10px 0 0; padding: 12px 14px;
++  background: var(--tile, var(--panel2));
++  border: var(--rule) solid var(--hair); border-radius: var(--r-md, 8px);
+   min-width: 0;
+ }
++[data-theme="light"] body.page-macro .gde-disc-body {
++  background: var(--panel);
++}
+ body.page-macro .gde-tblwrap { overflow-x: auto; max-width: 100%; }
+ body.page-macro .gde-tbl { width: 100%; min-width: 520px; border-collapse: collapse; }
+-/* dates and heads scroll rather than wrap — a broken "2026-08-\n18" is harder to
+-   read than a scroll, and the container already owns the overflow */
+ body.page-macro .gde-tbl th,
+ body.page-macro .gde-tbl td.tnum { white-space: nowrap; }
+-/* The page centres/right-aligns every non-first cell for numeric columns
+-   (dashboard.html.j2:1738). This is an evidence LIST — source names, state words
+-   and dates — so every column reads left, like the prose it is. */
+ body.page-macro .gde-tbl th,
+ body.page-macro .gde-tbl td:not(:first-child):not(.l) { text-align: left; }
+ body.page-macro .gde-tbl th {
+   font-size: var(--fs-micro); font-weight: 700; letter-spacing: .08em;
+   text-transform: uppercase; color: var(--ink-3); text-align: left;
+-  padding: 0 var(--sp-3) var(--sp-2) 0; border-bottom: var(--rule) solid var(--hair);
++  padding: 0 12px 8px 0; border-bottom: var(--rule) solid var(--hair);
+ }
+-/* tablesort.js enhances every table on the page. A 3-row evidence receipt has
+-   nothing meaningful to sort by, so drop the affordance rather than advertise one. */
+ body.page-macro .gde-tbl th .sarrow { display: none; }
+ body.page-macro .gde-tbl th.th-sort { cursor: default; }
+ html[data-lang="zh"] body.page-macro .gde-tbl th { letter-spacing: 0; text-transform: none; }
+ body.page-macro .gde-tbl td {
+-  font-size: var(--fs-sm); color: var(--ink-2); padding: var(--sp-2) var(--sp-3) var(--sp-2) 0;
++  font-size: var(--fs-sm); color: var(--ink-2); padding: 8px 12px 8px 0;
+   border-bottom: var(--rule) solid var(--hair); vertical-align: top;
+ }
+ body.page-macro .gde-tbl tr:last-child td { border-bottom: none; }
+ body.page-macro .gde-tbl td.l { color: var(--ink-1); font-weight: 600; }
+-/* health ink for a coverage problem — this IS severity, so the hue is earned */
+ body.page-macro .gde-warn { color: var(--ink-warn); }
+ body.page-macro .gde-req {
+   font-size: var(--fs-micro); color: var(--ink-3); border: var(--rule) solid var(--hair);
+-  border-radius: var(--r-sm); padding: 0 5px; margin-left: 4px; white-space: nowrap;
++  border-radius: var(--r-sm, 4px); padding: 0 5px; margin-left: 4px; white-space: nowrap;
+ }
+ body.page-macro .gde-disc-h {
+   font-size: var(--fs-label); font-weight: 700; letter-spacing: var(--trk);
+-  text-transform: uppercase; color: var(--ink-3); margin: var(--sp-4) 0 var(--sp-2);
++  text-transform: uppercase; color: var(--ink-3); margin: 14px 0 8px;
+ }
+ html[data-lang="zh"] body.page-macro .gde-disc-h { letter-spacing: 0; text-transform: none; }
+ body.page-macro .gde-conflicts { margin: 0; padding-left: 1.15em; }
+@@ -213,96 +293,13 @@ body.page-macro .gde-conflicts li {
+   font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.5; margin-bottom: 3px;
+ }
+ body.page-macro .gde-conflicts b { color: var(--ink-1); font-weight: 700; }
+-/* the machine receipt — never at rest, always here (doctrine §9.7) */
+ body.page-macro .gde-receipt {
+-  margin: var(--sp-4) 0 0; padding-top: var(--sp-2);
++  margin: 14px 0 0; padding-top: 8px;
+   border-top: var(--rule) solid var(--hair);
+   font-size: var(--fs-micro); color: var(--ink-3); line-height: 1.6; word-break: break-word;
+ }
++body.page-macro .gde-receipt-live { border-top: none; padding-top: 0; margin-top: 8px; }
+ 
+-/* ── capital policy — ORTHOGONAL to the spine (GD-2R1 §0.5) ─────────────────
+-   No rail: the rail IS the agreement encoding, and a posture built from zero
+-   policies is not a party to that agreement. An inset strip rather than a railed
+-   row, so the difference is structural and needs no caption to be understood.   */
+-body.page-macro .gde-policy {
+-  display: grid;
+-  grid-template-columns: minmax(0, 232px) minmax(0, 1fr) max-content;
+-  grid-template-areas: "lbl note count" "state note count";
+-  column-gap: var(--sp-6); row-gap: 2px; align-items: center;
+-  margin: var(--sp-5) 0 0; padding: var(--sp-3) var(--sp-4);
+-  background: var(--tile); border: var(--rule) solid var(--hair);
+-  border-radius: var(--r-md);
+-}
+-body.page-macro .gde-policy-lbl {
+-  grid-area: lbl; font-size: var(--fs-label); font-weight: 600;
+-  letter-spacing: var(--trk); text-transform: uppercase; color: var(--ink-3);
+-}
+-html[data-lang="zh"] body.page-macro .gde-policy-lbl { letter-spacing: 0; text-transform: none; }
+-/* achromatic by construction — zero policies means no reserved meaning for hue */
+-body.page-macro .gde-policy-state {
+-  grid-area: state; font-size: var(--fs-md); font-weight: 700; color: var(--ink-2);
+-}
+-body.page-macro .gde-policy-note {
+-  grid-area: note; font-size: var(--fs-sm); color: var(--ink-3); max-width: 58ch;
+-}
+-body.page-macro .gde-policy-count {
+-  grid-area: count; justify-self: start; font-size: var(--fs-micro); color: var(--ink-3);
+-  white-space: nowrap;
+-}
+-
+-/* ── footer: one descriptive sentence. No stance chip: while zero policies exist
+-   this band reports and never instructs (GD-2R1 §0.4).                          */
+-body.page-macro .gde-foot {
+-  display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);
+-  margin: var(--sp-4) 0 0; padding-top: var(--sp-3);
+-  border-top: var(--rule) solid var(--hair);
+-}
+-body.page-macro .gde-note { font-size: var(--fs-sm); color: var(--ink-3); }
+-
+-/* ── focus: visible, token-derived, both themes ─────────────────────────────── */
+-body.page-macro :where(.gde-quote, .gde-disc > summary):focus-visible {
++body.page-macro :where(.gde-disc > summary, button.gde-rail):focus-visible {
+   outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px;
+ }
+-
+-/* ── responsive ─────────────────────────────────────────────────────────────── */
+-/* ≤980w: the clock leaves its own column and rides under the answer, so the
+-   clause keeps a readable measure instead of being squeezed to three words */
+-@media (max-width: 980px) {
+-  body.page-macro .gde-row {
+-    grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+-    grid-template-areas:
+-      "q      clause"
+-      "answer clause"
+-      "clock  clause";
+-  }
+-  body.page-macro .gde-clock { justify-self: start; align-self: start; margin-top: 3px; }
+-  body.page-macro .gde-policy {
+-    grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+-    grid-template-areas: "lbl note" "state note" "count note";
+-  }
+-}
+-/* ≤720w (tablet portrait → phone): one column, deliberate stack. Reading order is
+-   question → answer → why → when, which is the order the row is meant to be read
+-   in anyway — the desktop grid is the compression, not this. */
+-@media (max-width: 720px) {
+-  body.page-macro .gde-band { padding: var(--sp-4) var(--sp-4) var(--sp-4); }
+-  body.page-macro .gde-read { padding-left: var(--sp-3); }
+-  body.page-macro .gde-row {
+-    grid-template-columns: minmax(0, 1fr);
+-    grid-template-areas: "q" "answer" "clause" "clock";
+-    row-gap: 4px;
+-  }
+-  body.page-macro .gde-c { align-self: start; max-width: none; }
+-  body.page-macro .gde-clock { justify-self: start; margin-top: 2px; }
+-  /* the answer word deliberately keeps its 22px on phones: it is the row's answer,
+-     and shrinking it below 18px would also drop it under the ink-rung threshold */
+-  body.page-macro .gde-lead { font-size: var(--fs-body); margin-bottom: var(--sp-4); }
+-  body.page-macro .gde-head { flex-wrap: wrap; }
+-  body.page-macro .gde-disc-body { padding: var(--sp-3); }
+-  body.page-macro .gde-policy {
+-    grid-template-columns: minmax(0, 1fr);
+-    grid-template-areas: "lbl" "state" "note" "count";
+-    row-gap: 4px; padding: var(--sp-3);
+-  }
+-  body.page-macro .gde-policy-note { max-width: none; }
+-}
+diff --git a/templates/_risk_envelope_band.html.j2 b/templates/_risk_envelope_band.html.j2
+index 52c45ef81e3..b88d1ddf249 100644
+--- a/templates/_risk_envelope_band.html.j2
++++ b/templates/_risk_envelope_band.html.j2
+@@ -1,321 +1,271 @@
+ {# ═══════════════════════════════════════════════════════════════════════════════
+-   THREE SEPARATE READS — the Grey Deer settled Risk Envelope band (macro.html)
++   GREY DEER MARKET READS — compact L1 rail + L2/L3 Risk Detail projection
+ 
+-   Consumes `risk_envelope` (site/riskdata/risk_envelope.json, composed by
+-   engine/risk_envelope.py). Renders NOTHING when the artifact is absent — an
+-   honest missing section beats an invented one.
++   Consumes `risk_envelope` (site/riskdata/risk_envelope.json). Renders nothing
++   when the artifact is absent.
+ 
+-   ── The design job ────────────────────────────────────────────────────────────
+-   The page above this band already answers "what regime am I in". It answers it
+-   with ONE number, and until now it narrated the disagreement away in a prose
+-   aside ("a rotation read, not a high-beta cue"). This band answers a different
+-   question — "do the market reads agree?" — and it is built so the answer cannot be
+-   averaged: co-equal rows, each carrying its own state, its own plain clause, and
+-   its OWN clock. Three answers are shown; exactly two of them are compared.
++   Presentation law (Sol 2026-08-30): the engine stays sophisticated; the front
++   page compresses it. Glance = state. Click = explanation. Expand = receipts.
+ 
+-   ── GD-2R1 (Sol post-merge review) ────────────────────────────────────────────
+-   Two corrections landed here:
+-   · The spine now spans the TWO MARKET READS only. Capital policy moved out of it
+-     into its own inset strip with no rail, because a posture derived from zero
+-     policies cannot agree or disagree with a market reading — carrying a rail would
+-     have said it does. Different structure = different kind of statement.
+-   · All behavioural copy is gone while zero policies exist. There is no stance chip
+-     and no action instruction anywhere in this band; the capital strip reports the
+-     literal state "no Grey Deer policy active" and advises nothing. Guidance returns
+-     only when a registered policy exists to carry it.
+-
+-   ── The signature: the split spine ────────────────────────────────────────────
+-   Under the reserved-hue law (MASTER_PRODUCT_DESIGN_SYSTEM_V1 §1) hue may mean
+-   exactly five things — market direction, health/severity, wayfinding, epistemic
+-   tier, or lock. "Agreement" is none of them, so coherence may NOT be a colour.
+-   It is encoded structurally instead: the two MARKET-READ rows share one continuous
+-   rail when they agree, and the rail BREAKS into separate marks when they do
+-   not. One line = one truth; separate marks = separate truths. No legend needed, and
+-   it survives both themes and the zh 红涨绿跌 flip because it derives from the
+-   same tokens that flip.
+-
+-   Each row's ink then falls straight out of the same law:
+-     · trend   → direction ink (--ink-up/--ink-down), the market's direction
+-     · hazard  → health ink (--ink-ok/--ink-warn/--ink-act), severity
+-     · policy  → achromatic AND rail-less, because zero policies means nothing is
+-                 restricted, there is no meaning for hue to carry, and it is not a
+-                 party to the agreement the rail encodes
+-   In the contradictory case the two market rows are therefore literally different
+-   hues by construction — the disagreement is visible before a word is read.
+-
+-   ── Deliberate omissions ──────────────────────────────────────────────────────
+-   · NO 01/02/03 markers. Numbering asserts a sequence; these three questions are
+-     orthogonal by design, which IS the thesis. Numbering them would be a lie.
+-   · NO motion. Motion law: an animated element must encode a live/ongoing fact,
+-     and settled data does not pulse. The stillness is the point — it is what
+-     will distinguish this from the GD-3 live lane.
+-   · NO falsifier/refutation vocabulary anywhere (operator ruling 2026-07-27).
+-     Technicals, receipts and state enums live in the drawer, never at rest.
++   Semantic freeze is UNCHANGED: separate market reads, no averaging, null !=
++   NONE, coherence compares market reads only, policy is orthogonal, live-
++   provisional overlay identity stays on these hooks:
++     #risk-envelope-band  data-bundle-id  data-settled-session
++     #gde-live-chip  #gde-pending-chip  #gde-live-receipt
+    ═══════════════════════════════════════════════════════════════════════════ #}
+ 
+-{% set _re = risk_envelope %}
+-{% if _re and _re.get('schema') == 'mastermind.risk_envelope/v1' %}
+-{% set _ms = _re.get('measured_state') or {} %}
+-{% set _hz = _re.get('hazard_summary') or {} %}
+-{% set _co = _re.get('coherence') or {} %}
+-{% set _ps = _re.get('policy_summary') or {} %}
+-{% set _prov = (_re.get('provenance') or {}).get('sources') or [] %}
+-{% set _stage = _hz.get('stage') %}
+-{% set _coh = _co.get('state') %}
+-{% set _split = _coh in ('MIXED', 'CONTRADICTORY') %}
++{# ── one derivation of glance vocabulary. Both projections call these. ── #}
++{% macro gde_hz_en(stage) -%}
++{{ {'NONE': 'No breakage', 'FRAGILE': 'Fragile', 'TRANSMITTING': 'Spreading', 'BREAKDOWN': 'Breakdown'}.get(stage, 'Unclear') }}
++{%- endmacro %}
++{% macro gde_hz_zh(stage) -%}
++{{ {'NONE': '未见断裂', 'FRAGILE': '脆弱', 'TRANSMITTING': '扩散', 'BREAKDOWN': '断裂'}.get(stage, '不明') }}
++{%- endmacro %}
++{% macro gde_trend_arr(verdict) -%}
++{{ {'RISK_ON': '▲', 'RISK_OFF': '▼'}.get(verdict, '') }}
++{%- endmacro %}
+ 
+-{# ── the leading hazard source: whose read set the stage. Used for the clause so
+-     the row names the actual organ instead of speaking in the abstract. ── #}
+-{% set _ns = namespace(lead=none, ms=none) %}
+-{% for s in _prov %}
+-  {% if s.role == 'hazard_evidence' and s.hazard_stage == _stage and _ns.lead is none %}
+-    {% set _ns.lead = s %}
+-  {% endif %}
+-  {% if s.role == 'measured_state' and _ns.ms is none %}
+-    {% set _ns.ms = s %}
+-  {% endif %}
+-{% endfor %}
+-{# The trend organ already publishes its own bilingual STATE label — reuse it verbatim
+-   so this band and the hero above never drift into two names for one state. #}
+-{% set _fresh = (_re.get('freshness') or {}).get('per_source') or {} %}
+-{# source_id → human name, so even the drawer names organs rather than slugs #}
+-{% set _names_en = {} %}
+-{% set _names_zh = {} %}
+-{% for s in _prov %}
+-  {% if _names_en.update({s.source_id: (s.label_en or s.source_id)}) %}{% endif %}
+-  {% if _names_zh.update({s.source_id: (s.label_zh or s.label_en or s.source_id)}) %}{% endif %}
+-{% endfor %}
+-{% set _ms_detail = (_ns.ms.detail if _ns.ms else {}) or {} %}
+-{% set _ms_label_en = _ms_detail.get('state_label_en') or 'Risk-on' %}
+-{% set _ms_label_zh = _ms_detail.get('state_label_zh') or '风险偏好' %}
++{# Semantic inks live as CSS classes gde-ms-* / gde-hz-* (design-system: no inline --custom literals). #}
+ 
+-{# ── direction ink for the trend row ── #}
+-{% set _ms_ink = {'RISK_ON': 'var(--ink-up)', 'RISK_OFF': 'var(--ink-down)',
+-                  'MIXED': 'var(--ink-2)'}.get(_ms.get('verdict'), 'var(--prov-ink)') %}
+-{# ── health ink for the hazard row; null takes the epistemic tone, never a health one ── #}
+-{% set _hz_ink = {'NONE': 'var(--ink-ok)', 'FRAGILE': 'var(--ink-warn)',
+-                  'TRANSMITTING': 'var(--ink-act)', 'BREAKDOWN': 'var(--ink-act)'}
+-                 .get(_stage, 'var(--prov-ink)') %}
++{# ── L1 · compact Market Reads rail, integrated into the regime hero ── #}
++{% macro gde_rail(re) %}
++{%- if re and re.get('schema') == 'mastermind.risk_envelope/v1' -%}
++{%- set _ms = re.get('measured_state') or {} -%}
++{%- set _hz = re.get('hazard_summary') or {} -%}
++{%- set _co = re.get('coherence') or {} -%}
++{%- set _ps = re.get('policy_summary') or {} -%}
++{%- set _policy_n = _ps.get('policy_count') -%}
++{%- set _policy_known = _policy_n is integer and _policy_n >= 0 -%}
++{%- set _prov = (re.get('provenance') or {}).get('sources') or [] -%}
++{%- set _stage = _hz.get('stage') -%}
++{%- set _split = _co.get('state') in ('MIXED', 'CONTRADICTORY') -%}
++{%- set ns = namespace(lead=none, ms=none) -%}
++{%- for s in _prov -%}
++  {%- if s.role == 'hazard_evidence' and s.hazard_stage == _stage and ns.lead is none -%}{% set ns.lead = s %}{%- endif -%}
++  {%- if s.role == 'measured_state' and ns.ms is none -%}{% set ns.ms = s %}{%- endif -%}
++{%- endfor -%}
++{%- set _ms_detail = (ns.ms.detail if ns.ms else {}) or {} -%}
++{%- set _ms_en = _ms_detail.get('state_label_en') or {'RISK_ON': 'Risk-on', 'RISK_OFF': 'Risk-off', 'MIXED': 'Mixed'}.get(_ms.get('verdict'), 'Unavailable') -%}
++{%- set _ms_zh = _ms_detail.get('state_label_zh') or {'RISK_ON': '风险偏好', 'RISK_OFF': '风险规避', 'MIXED': '分歧'}.get(_ms.get('verdict'), '不可用') -%}
++{%- set _unread = _hz.get('unreadable_sources') or [] -%}
++{%- set _unmapped = _hz.get('unmapped_required_sources') or [] -%}
++{%- set _caveat_n = (_unread | length) + (_unmapped | length) -%}
++{%- set _show_caveat = _stage is none and _caveat_n > 0 -%}
++<button type="button"
++        class="gde-rail{% if _split %} is-split{% endif %}"
++        id="risk-envelope-band"
++        data-bundle-id="{{ re.get('bundle_id') or '' }}"
++        data-settled-session="{{ re.get('source_session') or '' }}"
++        aria-haspopup="dialog"
++        aria-controls="dlg-risk"
++        onclick="mx5OpenDlg('dlg-risk')">
++  <span class="gde-rail-kicker">
++    <span class="l-en">Risk context</span><span class="l-zh">风险提示</span>
++  </span>
+ 
+-{# ── plain-word answers. Internal enums never reach the glance tier. ── #}
+-{% set _hz_word_en = {'NONE': 'Nothing breaking', 'FRAGILE': "Something's fragile",
+-                      'TRANSMITTING': 'Damage is spreading', 'BREAKDOWN': 'Broken'}
+-                     .get(_stage, 'Not enough to say') %}
+-{% set _hz_word_zh = {'NONE': '未见断裂', 'FRAGILE': '出现脆弱',
+-                      'TRANSMITTING': '损伤扩散', 'BREAKDOWN': '已断裂'}
+-                     .get(_stage, '证据不足') %}
++  <span class="gde-rail-reads{% if _split %} is-split{% endif %} gde-ms-{{ _ms.get('verdict') or 'null' }} gde-hz-{{ _stage or 'null' }}" id="gde-rail-reads">
++    <span class="gde-seg gde-seg-trend">
++      <span class="gde-k"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
++      <span class="gde-v" style="color: var(--gde-ms)">
++        {%- if _ms.get('usable') and _ms.get('verdict') -%}
++          <span class="l-en">{{ _ms_en }}</span><span class="l-zh">{{ _ms_zh }}</span>
++          {%- if gde_trend_arr(_ms.get('verdict')) -%}
++          <span class="gde-arr" aria-hidden="true">{{ gde_trend_arr(_ms.get('verdict')) }}</span>
++          {%- endif -%}
++        {%- else -%}
++          <span class="l-en">Unavailable</span><span class="l-zh">不可用</span>
++        {%- endif -%}
++      </span>
++    </span>
++    <span class="gde-seg gde-seg-break">
++      <span class="gde-k"><span class="l-en">Breakage</span><span class="l-zh">断裂</span></span>
++      <span class="gde-v" style="color: var(--gde-hz)">
++        <span class="l-en">{{ gde_hz_en(_stage) }}</span><span class="l-zh">{{ gde_hz_zh(_stage) }}</span>
++      </span>
++      {%- if _show_caveat -%}
++      <span class="gde-caveat">
++        <span class="l-en">{{ _caveat_n }} source{{ 's' if _caveat_n != 1 else '' }} unavailable</span>
++        <span class="l-zh">{{ _caveat_n }} 个来源不可用</span>
++      </span>
++      {%- endif -%}
++      <span class="gde-pending" id="gde-pending-chip" hidden><span class="l-en"></span><span class="l-zh"></span></span>
++    </span>
++  </span>
+ 
+-<div class="panel span12 gde-band" id="risk-envelope-band" data-bundle-id="{{ _re.get('bundle_id') or '' }}" data-settled-session="{{ _re.get('source_session') or '' }}">
++  <span class="gde-rail-rule" aria-hidden="true"></span>
+ 
+-  <div class="gde-head">
+-    <div>
+-      <span class="gde-eyebrow"><span class="l-en">Three reads, kept separate</span><span class="l-zh">三项判读，各自独立</span></span>
+-      {# "market reads", not "the reads": capital policy sits below and is deliberately
+-         NOT part of this comparison (GD-2R1 §0.5). The zh title said 三项 ("all three")
+-         and was simply wrong once policy left the spine. #}
+-      <h2 class="gde-h2"><span class="l-en">Do the market reads agree?</span><span class="l-zh">市场判读一致吗？</span></h2>
+-    </div>
+-    <span class="gde-stamp tnum"
+-          data-tip-en="Settled session — the close these reads were taken from. Each source below also keeps its own clock."
+-          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。下方每个来源另有各自的时间戳。">
+-      <span class="l-en">Settled</span><span class="l-zh">已结算</span> {{ _re.get('source_session') or '—' }}
++  <span class="gde-rail-meta">
++    {% if _policy_known and _policy_n > 0 %}
++    <span class="gde-seg gde-seg-policy">
++      <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
++      <span class="gde-v gde-v-quiet tnum">{{ _policy_n }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>
+     </span>
+-    {# ── GD-3 live-provisional overlay hooks — PRE-BAKED HIDDEN, painted only by
+-       risk_envelope_live.js when its fetched artifact passes every identity/freshness
+-       check (schema, revision, precedence, settled_bundle_id match, freshness window).
+-       No falsifier/refutation vocabulary; stage vocabulary stays in the drawer receipt
+-       (below), never front-facing. #}
++    {% endif %}
+     <span class="gde-stamp gde-stamp-live" id="gde-live-chip" hidden>
+-      {# reuse the site's existing live-dot idiom (theme.css .dtp-dot / @keyframes
+-         dtp-pulse — already shared by etfs.html.j2/sector_central.html.j2/the
+-         dashboard's own #dtp-token), not a new animation #}
+       <i class="dtp-dot" aria-hidden="true"></i>
+       <span class="l-en">Live · provisional</span><span class="l-zh">实时 · 临时</span>
+       <span class="gde-live-time"></span>
+     </span>
+-  </div>
+-
+-  {# ══ THE ANSWER — this section's primary question, answered first ══ #}
+-  {# EN and ZH each keep their bold clause INSIDE one span: separate elements would
+-     collapse to an inter-element space, which reads as a stray gap in CJK. #}
+-  <p class="gde-lead">
+-    {% if _coh == 'CONTRADICTORY' %}
+-      <span class="l-en"><b>No — they disagree.</b> The trend read and the damage read point opposite ways. Both are shown, unchanged.</span>
+-      <span class="l-zh"><b>不一致。</b>趋势判读与损伤判读方向相反。两者原样并列，未做平均。</span>
+-    {% elif _coh == 'MIXED' %}
+-      <span class="l-en"><b>Not fully.</b> One read can't be made cleanly today. What we can see is shown below, unchanged.</span>
+-      <span class="l-zh"><b>并不完全一致。</b>今日有一项无法干净判读，可见部分原样列于下方，未做平均。</span>
+-    {% else %}
+-      {# "both", not "all three": capital policy is not one of the compared reads. #}
+-      <span class="l-en"><b>Yes — both market reads point the same way.</b> Neither is contradicting the other today.</span>
+-      <span class="l-zh"><b>一致——两项市场判读方向相同。</b>今日两者之间没有矛盾。</span>
+-    {% endif %}
+-  </p>
++    <span class="gde-stamp gde-stamp-settled tnum"
++          data-tip-en="Settled session — the close these reads were taken from. Source clocks live in Risk Detail."
++          data-tip-zh="已结算交易日 — 本次判读所依据的收盘。各来源时钟见风险详情。">
++      <span class="l-en">Settled</span><span class="l-zh">已结算</span> {{ re.get('source_session') or '—' }}
++    </span>
++    <svg class="gde-chevron" width="8" height="12" viewBox="0 0 8 12" aria-hidden="true" focusable="false">
++      <path d="M1.5 1.5l5 4.5-5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
++    </svg>
++  </span>
++</button>
++{%- endif -%}
++{% endmacro %}
+ 
+-  {# ══ THE THREE READS — co-equal by construction, never ranked, never merged ══ #}
+-  <div class="gde-reads{% if _split %} is-split{% endif %}">
++{# ── L2/L3 · Market Reads inside the existing #dlg-risk ── #}
++{% macro gde_detail(re) %}
++{%- if re and re.get('schema') == 'mastermind.risk_envelope/v1' -%}
++{%- set _ms = re.get('measured_state') or {} -%}
++{%- set _hz = re.get('hazard_summary') or {} -%}
++{%- set _co = re.get('coherence') or {} -%}
++{%- set _ps = re.get('policy_summary') or {} -%}
++{%- set _policy_n = _ps.get('policy_count') -%}
++{%- set _policy_known = _policy_n is integer and _policy_n >= 0 -%}
++{%- set _prov = (re.get('provenance') or {}).get('sources') or [] -%}
++{%- set _stage = _hz.get('stage') -%}
++{%- set _split = _co.get('state') in ('MIXED', 'CONTRADICTORY') -%}
++{%- set ns = namespace(lead=none, ms=none) -%}
++{%- for s in _prov -%}
++  {%- if s.role == 'hazard_evidence' and s.hazard_stage == _stage and ns.lead is none -%}{% set ns.lead = s %}{%- endif -%}
++  {%- if s.role == 'measured_state' and ns.ms is none -%}{% set ns.ms = s %}{%- endif -%}
++{%- endfor -%}
++{%- set _ms_detail = (ns.ms.detail if ns.ms else {}) or {} -%}
++{%- set _ms_en = _ms_detail.get('state_label_en') or {'RISK_ON': 'Risk-on', 'RISK_OFF': 'Risk-off', 'MIXED': 'Mixed'}.get(_ms.get('verdict'), 'Unavailable') -%}
++{%- set _ms_zh = _ms_detail.get('state_label_zh') or {'RISK_ON': '风险偏好', 'RISK_OFF': '风险规避', 'MIXED': '分歧'}.get(_ms.get('verdict'), '不可用') -%}
++{%- set _unread = _hz.get('unreadable_sources') or [] -%}
++{%- set _unmapped = _hz.get('unmapped_required_sources') or [] -%}
++{%- set _caveat_n = (_unread | length) + (_unmapped | length) -%}
++{%- set _names_en = {} -%}
++{%- set _names_zh = {} -%}
++{%- for s in _prov -%}
++  {%- if _names_en.update({s.source_id: (s.label_en or s.source_id)}) -%}{%- endif -%}
++  {%- if _names_zh.update({s.source_id: (s.label_zh or s.label_en or s.source_id)}) -%}{%- endif -%}
++{%- endfor -%}
++<section class="gde-detail{% if _split %} is-split{% endif %}" id="gde-detail">
++  <h3 class="gde-detail-h">
++    <span class="l-en">Market reads</span><span class="l-zh">市场判读</span>
++  </h3>
+ 
+-    {# ── 1 · measured trend ─────────────────────────────────────────────────── #}
+-    <div class="gde-read" style="--gde-c: {{ _ms_ink }}">
+-     <div class="gde-row">
+-      <span class="gde-q"><span class="l-en">Is the trend still there?</span><span class="l-zh">趋势还在吗？</span></span>
+-      <p class="gde-a">
+-        {% if _ms.get('usable') and _ms.get('verdict') %}
+-          <span class="l-en">{{ _ms_label_en }}</span><span class="l-zh">{{ _ms_label_zh }}</span
+-          >{# Direction NEVER travels by hue alone. Under zh 红涨绿跌 this row's
+-             direction ink turns red — the same red the hazard row uses for danger —
+-             so without a sign a zh reader sees two identical reds and loses the
+-             disagreement. The arrow is what keeps "up" readable as up. #}<span
+-            class="gde-arr" aria-hidden="true">{{ {'RISK_ON': '▲', 'RISK_OFF': '▼'}.get(_ms.get('verdict'), '▶') }}</span>
+-        {% else %}
+-          <span class="l-en">Can't read it today</span><span class="l-zh">今日无法判读</span>
+-        {% endif %}
++  <div class="gde-detail-reads">
++    <div class="gde-dblock gde-ms-{{ _ms.get('verdict') or 'null' }}">
++      <span class="gde-k"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span>
++      <p class="gde-d-a">
++        {%- if _ms.get('usable') and _ms.get('verdict') -%}
++          <span class="l-en">{{ _ms_en }}</span><span class="l-zh">{{ _ms_zh }}</span>
++          {%- if gde_trend_arr(_ms.get('verdict')) -%}
++          <span class="gde-arr" aria-hidden="true">{{ gde_trend_arr(_ms.get('verdict')) }}</span>
++          {%- endif -%}
++        {%- else -%}
++          <span class="l-en">Unavailable</span><span class="l-zh">不可用</span>
++        {%- endif -%}
+       </p>
+-      <p class="gde-c">
+-        {% if _ms.get('usable') and _ms.get('score') is not none %}
+-          <span class="l-en">Slow trend read, carried unchanged from the score above —
+-            <a class="gde-quote tnum" href="#regime-radar">{{ _ms.get('score') }}<span class="gde-outof">/100</span></a>.</span>
+-          <span class="l-zh">慢速趋势判读，原样取自上方评分 —
+-            <a class="gde-quote tnum" href="#regime-radar">{{ _ms.get('score') }}<span class="gde-outof">/100</span></a>。</span>
+-        {% else %}
++      <p class="gde-d-c">
++        {%- if _ms.get('usable') and _ms.get('verdict') -%}
++          <span class="l-en">Slow measured trend, carried unchanged{% if _ms.get('score') is not none %} — source score {{ _ms.get('score') }}{% endif %}.</span>
++          <span class="l-zh">慢速趋势判读，原样保留{% if _ms.get('score') is not none %} — 来源评分 {{ _ms.get('score') }}{% endif %}。</span>
++        {%- else -%}
+           <span class="l-en">The trend source didn't settle for this session, so we're not quoting a stale one.</span>
+           <span class="l-zh">趋势来源本交易日未结算，因此不引用过期读数。</span>
+-        {% endif %}
++        {%- endif -%}
+       </p>
+-      {# a coverage problem is a caveat that changes how the answer reads, so it sits
+-         beside the clock rather than only in the drawer (doctrine §9.8) #}
+-      {% set _msf = _fresh.get(_ns.ms.source_id) if _ns.ms else none %}
+-      <span class="gde-clock tnum">{{ _ms.get('as_of') or '—' }}{% if _msf and _msf.state != 'FRESH' %}
+-        <span class="gde-flag">{% if _msf.state == 'STALE' %}<span class="l-en">· older than this session</span><span class="l-zh">· 早于本交易日</span>{% else %}<span class="l-en">· didn't publish</span><span class="l-zh">· 未发布</span>{% endif %}</span>{% endif %}</span>
+-     </div>
++      <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> {{ _ms.get('as_of') or '—' }}</span>
+     </div>
+ 
+-    {# ── 2 · transition hazard + the evidence drawer ─────────────────────────── #}
+-    <div class="gde-read" style="--gde-c: {{ _hz_ink }}">
+-     <div class="gde-row">
+-      <span class="gde-q"><span class="l-en">Is anything breaking?</span><span class="l-zh">有什么正在断裂？</span></span>
+-      <p class="gde-a">
+-        <span class="l-en">{{ _hz_word_en }}</span><span class="l-zh">{{ _hz_word_zh }}</span>
++    <div class="gde-dblock gde-hz-{{ _stage or 'null' }}">
++      <span class="gde-k"><span class="l-en">Breakage</span><span class="l-zh">断裂</span></span>
++      <p class="gde-d-a">
++        <span class="l-en">{{ gde_hz_en(_stage) }}</span><span class="l-zh">{{ gde_hz_zh(_stage) }}</span>
+       </p>
+-      <p class="gde-c">
+-        {% if _stage is none %}
+-          <span class="l-en">A source we need didn't settle today, so we're not calling this either way.</span>
+-          <span class="l-zh">今日缺少必需来源的结算数据，因此不作任何判定。</span>
+-        {% elif _stage == 'NONE' %}
++      <p class="gde-d-c">
++        {%- if _stage is none -%}
++          <span class="l-en">A source we need didn't settle today, so we're not calling this either way.{% if _caveat_n %} {{ _caveat_n }} source{{ 's' if _caveat_n != 1 else '' }} unavailable.{% endif %}</span>
++          <span class="l-zh">今日缺少必需来源的结算数据，因此不作任何判定。{% if _caveat_n %}{{ _caveat_n }} 个来源不可用。{% endif %}</span>
++        {%- elif _stage == 'NONE' -%}
+           <span class="l-en">We looked at every source we need and none of them shows damage.</span>
+           <span class="l-zh">已核对全部必需来源，均未见损伤。</span>
+-        {% else %}
+-          {# The onset date is the SOURCE's own retrospective reading, not this read's
+-             lifecycle clock (hazard_summary.stage_since is null in V0), so the sentence
+-             attributes it to the source rather than claiming it as ours. #}
+-          {% set _onset = (_ns.lead.detail.get('state_since') if _ns.lead and _ns.lead.detail else none) %}
+-          <span class="l-en">{{ (_ns.lead.label_en if _ns.lead else 'A tracked group') }} is damaged while the index holds{% if _onset %} — its own read has said so since {{ _onset }}{% endif %}.</span>
+-          <span class="l-zh">{{ (_ns.lead.label_zh if _ns.lead else '受追踪的一组标的') }}受损，而指数仍在支撑{% if _onset %}——该来源自 {{ _onset }} 起即如此判读{% endif %}。</span>
+-        {% endif %}
++        {%- else -%}
++          {%- set _onset = (ns.lead.detail.get('state_since') if ns.lead and ns.lead.detail else none) -%}
++          <span class="l-en">{{ (ns.lead.label_en if ns.lead else 'A tracked group') }} shows damage{% if _ms.get('usable') and _ms.get('verdict') == 'RISK_ON' %} while the broad trend remains positive{% endif %}{% if _onset %} — its own read has said so since {{ _onset }}{% endif %}.</span>
++          <span class="l-zh">{{ (ns.lead.label_zh if ns.lead else '受追踪的一组标的') }}显示损伤{% if _ms.get('usable') and _ms.get('verdict') == 'RISK_ON' %}，但整体趋势仍保持积极{% endif %}{% if _onset %}——该来源自 {{ _onset }} 起即如此判读{% endif %}。</span>
++        {%- endif -%}
+       </p>
+-      {# the clock column means "when was this read taken", not "when did the state
+-         begin" — the since-date already sits in the clause above, and conflating the
+-         two is how a months-old state starts looking like a stale source #}
+-      {% set _unread = _hz.get('unreadable_sources') or [] %}
+-      <span class="gde-clock tnum">{{ (_ns.lead.as_of if _ns.lead else none) or _re.get('source_session') or '—' }}{% if _unread %}
+-        <span class="gde-flag"><span class="l-en">· {{ _unread | length }} source{{ 's' if _unread | length != 1 else '' }} couldn't be read</span><span class="l-zh">· {{ _unread | length }} 个来源无法读取</span></span>{% endif %}</span>
+-      {# ── GD-3 live-provisional pending badge — hidden until risk_envelope_live.js
+-         finds an active overlay AND live_transition.pending is non-null. Copy is
+-         filled by the script (plain-word: "live read shifting · confirming n/m" /
+-         "实时读数变化 · 确认中 n/m") — no stage vocabulary front-facing. #}
+-      <span class="gde-flag gde-pending" id="gde-pending-chip" hidden><span class="l-en"></span><span class="l-zh"></span></span>
+-     </div>
+-
+-      {# Tier 2/3 lives here: source states, per-source clocks, contradictions,
+-         and the machine receipt. The summary says what is inside AND why to open. #}
+-      <details class="gde-disc">
+-        <summary>
+-          <span class="l-en">Evidence — {{ _prov | length }} sources{% if _co.get('contradiction_count') %}, {{ _co.get('contradiction_count') }} disagreement{{ 's' if _co.get('contradiction_count') != 1 else '' }}{% endif %}</span>
+-          <span class="l-zh">证据 — {{ _prov | length }} 个来源{% if _co.get('contradiction_count') %}，{{ _co.get('contradiction_count') }} 处分歧{% endif %}</span>
+-        </summary>
+-        <div class="gde-disc-body">
+-          <div class="gde-tblwrap">
+-            <table class="gde-tbl">
+-              <thead><tr>
+-                <th><span class="l-en">Source</span><span class="l-zh">来源</span></th>
+-                <th><span class="l-en">Its own read</span><span class="l-zh">自身读数</span></th>
+-                <th><span class="l-en">As of</span><span class="l-zh">数据日期</span></th>
+-                <th><span class="l-en">Freshness</span><span class="l-zh">新鲜度</span></th>
+-              </tr></thead>
+-              <tbody>
+-              {% for s in _prov %}
+-                <tr>
+-                  <td class="l">{% if s.label_en %}<span class="l-en">{{ s.label_en }}</span><span class="l-zh">{{ s.label_zh or s.label_en }}</span>{% else %}<span class="tnum">{{ s.source_id }}</span>{% endif %}</td>
+-                  <td class="tnum">{{ s.state if s.state is not none else '—' }}{% if s.score is not none %} · {{ s.score }}{% endif %}</td>
+-                  <td class="tnum">{{ s.as_of or '—' }}</td>
+-                  <td>
+-                    {% if s.coverage == 'FRESH' %}<span class="l-en">This session</span><span class="l-zh">本交易日</span>
+-                    {% elif s.coverage == 'STALE' %}<span class="gde-warn"><span class="l-en">Older than this session</span><span class="l-zh">早于本交易日</span></span>
+-                    {% else %}<span class="gde-warn"><span class="l-en">Did not publish</span><span class="l-zh">未发布</span></span>{% endif %}
+-                    {%- if s.required %} <span class="gde-req"><span class="l-en">required</span><span class="l-zh">必需</span></span>{% endif %}
+-                  </td>
+-                </tr>
+-              {% endfor %}
+-              </tbody>
+-            </table>
+-          </div>
+-
+-          {% if _co.get('contradictions') %}
+-          <p class="gde-disc-h"><span class="l-en">Where they disagree</span><span class="l-zh">分歧所在</span></p>
+-          <ul class="gde-conflicts">
+-            {% for c in _co.get('contradictions') %}
+-            <li>
+-              <span class="l-en">{{ _names_en.get(c.left, c.left) }} reads <b>{{ c.left_state }}</b> while {{ _names_en.get(c.right, c.right) }} reads <b>{{ c.right_state }}</b>.</span>
+-              <span class="l-zh">{{ _names_zh.get(c.left, c.left) }} 读为 <b>{{ c.left_state }}</b>，而 {{ _names_zh.get(c.right, c.right) }} 读为 <b>{{ c.right_state }}</b>。</span>
+-            </li>
+-            {% endfor %}
+-          </ul>
+-          {% endif %}
+-
+-          <p class="gde-receipt tnum">
+-            {{ _re.get('definition_id') }} · bundle {{ _re.get('bundle_id') }} ·
+-            coverage {{ _re.get('data_state') }} ·
+-            coherence {{ _coh }} (scope {{ _co.get('scope') }}) ·
+-            stage {{ _stage if _stage is not none else 'null' }} ({{ _hz.get('stage_reason') }}) ·
+-            stage_since null ({{ _hz.get('stage_since_basis') }})
+-            {%- if _hz.get('capped_sources') %} · capped at source competence: {{ _hz.get('capped_sources') | join(', ') }}{% endif %} ·
+-            engine/risk_envelope.py
+-          </p>
+-          {# ── GD-3 live-provisional machine receipt — hidden until risk_envelope_live.js
+-             finds an active overlay. Stage vocabulary lives ONLY here (drawer), never at
+-             the glance tier. Filled: "live: candidate <stage> · stable <stage> ·
+-             pending n/m · built <ts> · bundle <live bundle_id[:8]>". #}
+-          <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>
+-        </div>
+-      </details>
++      <span class="gde-d-asof tnum"><span class="l-en">As of</span><span class="l-zh">截至</span> {{ (ns.lead.as_of if ns.lead else none) or re.get('source_session') or '—' }}</span>
+     </div>
++  </div>
+ 
+-  </div>{# /.gde-reads — the spine covers the MARKET READS and stops here #}
+-
+-  {# ── Capital policy — ORTHOGONAL, deliberately outside the spine ────────────
+-     GD-2R1 §0.5: coherence describes the market reads only. A posture derived from
+-     zero policies cannot agree or disagree with a market reading, so it must not
+-     carry a rail — the rail IS the agreement encoding. It gets a different
+-     structure entirely (an inset strip, no rail, its own label) so the eye reads it
+-     as a different KIND of statement rather than a third opinion.
+-     §0.4: no behavioural instruction while zero policies exist — the state is
+-     reported, and nothing is advised. #}
+-  <div class="gde-policy">
+-    <span class="gde-policy-lbl"><span class="l-en">Capital policy</span><span class="l-zh">资金政策</span></span>
++  <div class="gde-detail-policy">
++    <span class="gde-k"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
++    {%- if not _policy_known -%}
++    <span class="gde-policy-state"><span class="l-en">Policy status unavailable</span><span class="l-zh">政策状态不可用</span></span>
++    {%- elif _policy_n == 0 -%}
+     <span class="gde-policy-state"><span class="l-en">No Grey Deer policy active</span><span class="l-zh">未启用任何 Grey Deer 政策</span></span>
+-    <span class="gde-policy-note">
+-      <span class="l-en">Nothing is restricted. This is a market read — it carries no instruction, and it is not part of the agreement above.</span>
+-      <span class="l-zh">当前没有任何限制。这是一项市场判读——不含任何操作指示，也不参与上方的一致性比较。</span>
+-    </span>
+-    <span class="gde-policy-count tnum">{{ _ps.get('policy_count', 0) }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>
++    {%- endif -%}
++    {% if _policy_known %}<span class="gde-policy-count tnum">{{ _policy_n }} <span class="l-en">active</span><span class="l-zh">项生效</span></span>{% endif %}
+   </div>
+ 
+-  <div class="gde-foot">
+-    <span class="gde-note">
+-      <span class="l-en">Each read keeps its own clock, so a source that didn't settle can't vote "calm". Agreement above compares the two market reads only.</span>
+-      <span class="l-zh">每项判读各自计时；未结算的来源不会投出「平静」票。上方的一致性仅比较两项市场判读。</span>
+-    </span>
+-  </div>
++  <details class="gde-disc">
++    <summary>
++      <span class="l-en">Evidence &amp; source health — {{ _prov | length }} sources{% if _co.get('contradiction_count') %}, {{ _co.get('contradiction_count') }} disagreement{{ 's' if _co.get('contradiction_count') != 1 else '' }}{% endif %}</span>
++      <span class="l-zh">证据与来源健康 — {{ _prov | length }} 个来源{% if _co.get('contradiction_count') %}，{{ _co.get('contradiction_count') }} 处分歧{% endif %}</span>
++    </summary>
++    <div class="gde-disc-body">
++      <div class="gde-tblwrap">
++        <table class="gde-tbl">
++          <thead><tr>
++            <th><span class="l-en">Source</span><span class="l-zh">来源</span></th>
++            <th><span class="l-en">Its own read</span><span class="l-zh">自身读数</span></th>
++            <th><span class="l-en">As of</span><span class="l-zh">数据日期</span></th>
++            <th><span class="l-en">Freshness</span><span class="l-zh">新鲜度</span></th>
++          </tr></thead>
++          <tbody>
++          {% for s in _prov %}
++            <tr>
++              <td class="l">{% if s.label_en %}<span class="l-en">{{ s.label_en }}</span><span class="l-zh">{{ s.label_zh or s.label_en }}</span>{% else %}<span class="tnum">{{ s.source_id }}</span>{% endif %}</td>
++              <td class="tnum">{{ s.state if s.state is not none else '—' }}{% if s.score is not none %} · {{ s.score }}{% endif %}</td>
++              <td class="tnum">{{ s.as_of or '—' }}</td>
++              <td>
++                {% if s.coverage == 'FRESH' %}<span class="l-en">This session</span><span class="l-zh">本交易日</span>
++                {% elif s.coverage == 'STALE' %}<span class="gde-warn"><span class="l-en">Older than this session</span><span class="l-zh">早于本交易日</span></span>
++                {% else %}<span class="gde-warn"><span class="l-en">Did not publish</span><span class="l-zh">未发布</span></span>{% endif %}
++                {%- if s.required %} <span class="gde-req"><span class="l-en">required</span><span class="l-zh">必需</span></span>{% endif %}
++              </td>
++            </tr>
++          {% endfor %}
++          </tbody>
++        </table>
++      </div>
++
++      {% if _co.get('contradictions') %}
++      <p class="gde-disc-h"><span class="l-en">Where they disagree</span><span class="l-zh">分歧所在</span></p>
++      <ul class="gde-conflicts">
++        {% for c in _co.get('contradictions') %}
++        <li>
++          <span class="l-en">{{ _names_en.get(c.left, c.left) }} reads <b>{{ c.left_state }}</b> while {{ _names_en.get(c.right, c.right) }} reads <b>{{ c.right_state }}</b>.</span>
++          <span class="l-zh">{{ _names_zh.get(c.left, c.left) }} 读为 <b>{{ c.left_state }}</b>，而 {{ _names_zh.get(c.right, c.right) }} 读为 <b>{{ c.right_state }}</b>。</span>
++        </li>
++        {% endfor %}
++      </ul>
++      {% endif %}
+ 
+-</div>
+-{% endif %}
++      <p class="gde-receipt tnum">
++        {{ re.get('definition_id') }} · bundle {{ re.get('bundle_id') }} ·
++        coverage {{ re.get('data_state') }} ·
++        coherence {{ _co.get('state') }} (scope {{ _co.get('scope') }}) ·
++        stage {{ _stage if _stage is not none else 'null' }} ({{ _hz.get('stage_reason') }}) ·
++        stage_since null ({{ _hz.get('stage_since_basis') }})
++        {%- if _hz.get('capped_sources') %} · capped at source competence: {{ _hz.get('capped_sources') | join(', ') }}{% endif %} ·
++        engine/risk_envelope.py
++      </p>
++      <div class="gde-receipt gde-receipt-live" id="gde-live-receipt" hidden></div>
++    </div>
++  </details>
++</section>
++{%- endif -%}
++{% endmacro %}
+diff --git a/templates/dashboard.html.j2 b/templates/dashboard.html.j2
+index c81909552ae..dde535dadf2 100644
+--- a/templates/dashboard.html.j2
++++ b/templates/dashboard.html.j2
+@@ -126,6 +126,7 @@
+ {{ t(b[0], b[1]) }}<br><br>{{ t(s[0], s[1]) }}
+ {%- endmacro %}
+ {% import "_risk_radar_card.html.j2" as rrc %}
++{% import "_risk_envelope_band.html.j2" as gde %}
+ {# rr_leg + risk_radar_card moved to the shared partial _risk_radar_card.html.j2
+    (used by the US Macro/Stocks pages AND the China/HK/Canada Market-State boards). #}
+ {# ignition-radar / mag7-panel / leadership-board imports removed 2026-07-23 (operator ruling; DO_NOT_REBUILD §2/§4) #}
+@@ -8464,15 +8465,11 @@ html[data-theme="light"] :is(
+   })();
+   </script>
+   {% endif %}
++  {# Compact Market Reads rail — last child of the regime hero, not a second
++     full-width panel. Live overlay hooks stay on #risk-envelope-band. #}
++  {% if mode != 'stocks' %}{{ gde.gde_rail(risk_envelope) }}{% endif %}
+   </div>{# /#regime-radar panel #}
+ 
+-  {# ── THREE SEPARATE READS — Grey Deer settled risk envelope (macro mode only).
+-       Sits immediately under the regime hero: the hero answers "what regime am I
+-       in", this band answers the different question "do the reads agree", which
+-       the page previously buried in a prose aside. Renders nothing when the
+-       artifact is absent. ── #}
+-  {% if mode != 'stocks' %}{% include "_risk_envelope_band.html.j2" %}{% endif %}
+-
+   {# ── V2 ROW-LEDGER SECTIONS (macro mode only) ── #}
+   {% if mode != 'stocks' %}
+   {% set MS2 = market_state %}
+@@ -12434,13 +12431,18 @@ html[data-theme="light"] :is(
+     <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
+     <div class="mx5-dlg-panel">
+       <div class="mx5-dlg-header">
+-        <span class="mx5-dlg-title"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
++        <span class="mx5-dlg-title"><span class="l-en">Risk Detail</span><span class="l-zh">风险详情</span>
+         {% set _rk_asof = (latest.date if (latest is defined and latest.date is defined and latest.date) else none) %}
+         {% if _rk_asof %}<span class="riskdlg-asof">{{ _rk_asof }}</span>{% endif %}</span>
+         <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
+       </div>
+       <div class="mx5-dlg-body">
+ 
++        <details class="gde-disc" id="gde-context-disclosure">
++          <summary><span class="l-en">Why trend and risk can differ</span><span class="l-zh">为什么趋势与风险可能不同</span></summary>
++          {{ gde.gde_detail(risk_envelope) }}
++        </details>
++
+         {# — Risk Brief: one hero, not two — #}
+         {% set _dlgr_rdr = market_state.radar if market_state.radar is defined else {} %}
+         {% set _dlgr_state = _dlgr_rdr.state if (_dlgr_rdr and _dlgr_rdr.state is defined and _dlgr_rdr.state) else 'unknown' %}
+@@ -17760,8 +17762,8 @@ window.__CHART_SWAP__ = {
+ {# live_config.js + live.js already load via _navlinks.html.j2 on every page;
+    live.js is __mmLiveInit-guarded so this second include was a no-op — dropped. #}
+ <script src="risk_state_live.js"></script>
+-{# GD-3: live-provisional Risk Envelope overlay — same mode gate as the band
+-   include itself (_risk_envelope_band.html.j2, mode != 'stocks' above). #}
++{# GD-3: live-provisional Risk Envelope overlay — same mode gate as the
++   compact Market Reads rail (gde.gde_rail, mode != 'stocks' above). #}
+ {% if mode != 'stocks' %}<script src="risk_envelope_live.js"></script>{% endif %}
+ <script src="release_publications_live.js"></script>
+ <script>
+diff --git a/tests/test_risk_envelope_presentation.py b/tests/test_risk_envelope_presentation.py
+new file mode 100644
+index 00000000000..d0ac6c33852
+--- /dev/null
++++ b/tests/test_risk_envelope_presentation.py
+@@ -0,0 +1,357 @@
++"""Presentation contract for the compact Grey Deer Market Reads rail (Sol 2026-08-30).
++
++Pins structure and live-overlay hooks. Does not weaken
++tests/test_risk_envelope.py or tests/test_live_risk_envelope.py.
++"""
++
++from __future__ import annotations
++
++import json
++import re
++from html.parser import HTMLParser
++from pathlib import Path
++
++import jinja2
++import pytest
++
++from scripts.build_risk_envelope import build_sources
++from engine.risk_envelope import compose_envelope
++
++ROOT = Path(__file__).resolve().parents[1]
++TEMPLATES = ROOT / "templates"
++DASHBOARD = TEMPLATES / "dashboard.html.j2"
++BAND = TEMPLATES / "_risk_envelope_band.html.j2"
++SITE_MACRO = ROOT / "site" / "macro.html"
++PROD_ENVELOPE = ROOT / "site" / "riskdata" / "risk_envelope.json"
++GD1_FIXTURE = ROOT / "tests" / "fixtures" / "risk_envelope" / "gd1_dual_read_2026-08-18.json"
++
++
++def _env() -> jinja2.Environment:
++    env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(TEMPLATES)))
++    env.filters["min"] = lambda seq: min(seq)
++    from engine import i18n  # noqa: PLC0415
++
++    env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
++    return env
++
++
++def _render_surfaces(envelope: dict) -> str:
++    tmpl = (
++        '{% import "_risk_envelope_band.html.j2" as gde %}'
++        "{{ gde.gde_rail(risk_envelope) }}"
++        "{{ gde.gde_detail(risk_envelope) }}"
++    )
++    return _env().from_string(tmpl).render(risk_envelope=envelope)
++
++
++def _prod_envelope() -> dict:
++    return json.loads(PROD_ENVELOPE.read_text(encoding="utf-8"))
++
++
++def _gd1_envelope() -> dict:
++    raw = json.loads(GD1_FIXTURE.read_text(encoding="utf-8"))
++    sources = build_sources(raw["market_state"], raw["leadership_crack"], raw["session"])
++    return compose_envelope(
++        sources=sources,
++        market="US",
++        source_session=raw["session"],
++        observed_at="2026-08-19T00:00:00Z",
++        produced_at="2026-08-19T00:00:00Z",
++        as_of=raw["session"],
++        revision="settled",
++    )
++
++
++def _count_id(html: str, elem_id: str) -> int:
++    return len(re.findall(rf'\bid="{re.escape(elem_id)}"', html))
++
++
++def _slice_id(html: str, elem_id: str) -> str:
++    start = html.find(f'id="{elem_id}"')
++    assert start != -1, f"missing #{elem_id}"
++    open_lt = html.rfind("<", 0, start)
++    tag = html[open_lt + 1 : html.find(" ", open_lt)]
++    closer = f"</{tag}>"
++    depth = 0
++    i = open_lt
++    while i < len(html):
++        if html.startswith(f"<{tag}", i) and (html[i + 1 + len(tag) : i + 2 + len(tag)] in " >\n"):
++            depth += 1
++        elif html.startswith(closer, i):
++            depth -= 1
++            if depth == 0:
++                return html[open_lt : i + len(closer)]
++        i += 1
++    raise AssertionError(f"unclosed #{elem_id}")
++
++
++class _IdCounter(HTMLParser):
++    def __init__(self) -> None:
++        super().__init__()
++        self.ids: list[str] = []
++
++    def handle_starttag(self, tag, attrs):
++        for k, v in attrs:
++            if k == "id" and v:
++                self.ids.append(v)
++
++
++@pytest.fixture(scope="module")
++def prod_html() -> str:
++    return _render_surfaces(_prod_envelope())
++
++
++@pytest.fixture(scope="module")
++def gd1_html() -> str:
++    return _render_surfaces(_gd1_envelope())
++
++
++@pytest.fixture(scope="module")
++def dash_src() -> str:
++    return DASHBOARD.read_text(encoding="utf-8")
++
++
++def test_live_hooks_are_exactly_one_each(prod_html):
++    for hook in (
++        "risk-envelope-band",
++        "gde-live-chip",
++        "gde-pending-chip",
++        "gde-live-receipt",
++    ):
++        assert _count_id(prod_html, hook) == 1, hook
++
++
++def test_rail_keeps_bundle_identity(prod_html):
++    rail = _slice_id(prod_html, "risk-envelope-band")
++    env = _prod_envelope()
++    assert f'data-bundle-id="{env["bundle_id"]}"' in rail
++    assert f'data-settled-session="{env["source_session"]}"' in rail
++
++
++def test_l1_rail_is_not_the_old_standalone_panel(prod_html):
++    rail = _slice_id(prod_html, "risk-envelope-band")
++    assert "panel span12" not in rail
++    assert "gde-band" not in rail
++    assert 'class="gde-rail"' in rail or "gde-rail " in rail
++
++
++def test_l1_has_no_lead_paragraph_or_inline_evidence(prod_html):
++    rail = _slice_id(prod_html, "risk-envelope-band")
++    assert not re.search(r"<p[\s>]", rail, flags=re.I)
++    assert not re.search(r"<details[\s>]", rail, flags=re.I)
++    assert "gde-lead" not in rail
++    assert "Evidence —" not in rail
++    assert "Each read keeps its own clock" not in rail
++
++
++def test_l1_does_not_quote_the_hero_score(prod_html):
++    rail = _slice_id(prod_html, "risk-envelope-band")
++    assert "gde-quote" not in rail
++    assert "/100" not in rail
++    env = _prod_envelope()
++    score = env.get("measured_state", {}).get("score")
++    if score is not None:
++        assert f">{score}<" not in rail
++        assert f" {score} " not in rail
++
++
++def test_policy_is_outside_the_market_read_group():
++    envelope = _gd1_envelope()
++    envelope["policy_summary"]["policy_count"] = 1
++    rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
++    reads = _slice_id(rail, "gde-rail-reads") if 'id="gde-rail-reads"' in rail else None
++    if reads is None:
++        m = re.search(r'<span class="gde-rail-reads[^"]*"[^>]*>', rail)
++        assert m, "market-read grouping missing"
++        start = m.start()
++        reads = rail[start:]
++        # cut at the structural separator / meta group
++        cut = reads.find('class="gde-rail-rule"')
++        if cut == -1:
++            cut = reads.find('class="gde-rail-meta"')
++        assert cut != -1
++        reads = reads[:cut]
++    assert "gde-seg-policy" not in reads
++    assert "gde-seg-policy" in rail
++    assert "active" in rail.lower() or "项生效" in rail
++
++
++def test_hazard_null_is_unclear_with_source_caveat():
++    env = _gd1_envelope()
++    env["hazard_summary"].update(stage=None, unreadable_sources=["leadership_crack"])
++    rail = _slice_id(_render_surfaces(env), "risk-envelope-band")
++    assert "Unclear" in rail
++    assert "No breakage" not in rail
++    assert "Nothing breaking" not in rail
++    unread = env.get("hazard_summary", {}).get("unreadable_sources") or []
++    if unread:
++        assert "source unavailable" in rail or "sources unavailable" in rail
++
++
++def test_gd1_contradiction_keeps_separate_reads(gd1_html):
++    rail = _slice_id(gd1_html, "risk-envelope-band")
++    assert "Risk-on" in rail or "Risk-On" in rail
++    assert "Fragile" in rail
++    assert "is-split" in rail
++    assert "/100" not in rail
++    detail = _slice_id(gd1_html, "gde-detail")
++    assert "Where they disagree" in detail or "分歧所在" in detail
++
++
++def test_detail_and_receipt_live_in_l2_l3(prod_html):
++    detail = _slice_id(prod_html, "gde-detail")
++    assert "Market reads" in detail or "市场判读" in detail
++    assert _count_id(detail, "gde-live-receipt") == 1
++    assert "<details" in detail.lower()
++    assert "Evidence" in detail
++    rail = _slice_id(prod_html, "risk-envelope-band")
++    assert 'id="gde-live-receipt"' not in rail
++
++
++def test_rail_opens_existing_risk_dialog(prod_html):
++    rail = _slice_id(prod_html, "risk-envelope-band")
++    assert 'aria-haspopup="dialog"' in rail
++    assert 'aria-controls="dlg-risk"' in rail
++    assert "mx5OpenDlg('dlg-risk')" in rail
++    assert "<button" in rail
++
++
++def test_dashboard_places_rail_inside_the_regime_hero(dash_src):
++    hero_close = dash_src.index("</div>{# /#regime-radar panel #}")
++    assert "gde.gde_rail(" in dash_src[:hero_close]
++    assert "gde.gde_rail(" not in dash_src[hero_close:]
++    old_include = dash_src.find('{% include "_risk_envelope_band.html.j2" %}')
++    assert old_include == -1
++
++
++def test_dashboard_hosts_grey_deer_detail_in_dlg_risk(dash_src):
++    at = dash_src.index('id="dlg-risk"')
++    window = dash_src[at : at + 8000]
++    assert "gde.gde_detail(" in window
++    assert "Risk Detail" in window
++    assert "Scare Ladder &amp; Sentiment" not in window
++
++
++def test_css_hidden_overrides_live_chip_display():
++    css = (TEMPLATES / "_risk_envelope_band.css.j2").read_text(encoding="utf-8")
++    assert ".gde-stamp-live[hidden]" in css
++    assert ".gde-pending[hidden]" in css
++    assert ".gde-receipt-live[hidden]" in css
++    assert "display: none !important" in css
++
++
++def test_band_html_declares_no_literal_custom_properties():
++    src = BAND.read_text(encoding="utf-8")
++    assert 'style="--' not in src
++    assert "gde-ms-RISK_ON" in src or "gde-ms-{{" in src
++    assert "gde-hz-{{" in src
++
++
++def test_site_macro_matches_the_compact_contract():
++    html = SITE_MACRO.read_text(encoding="utf-8")
++    assert _count_id(html, "risk-envelope-band") == 1
++    assert _count_id(html, "gde-live-chip") == 1
++    assert _count_id(html, "gde-pending-chip") == 1
++    assert _count_id(html, "gde-live-receipt") == 1
++    hero = _slice_id(html, "regime-radar")
++    assert 'id="risk-envelope-band"' in hero
++    rail = _slice_id(html, "risk-envelope-band")
++    assert "panel span12" not in rail
++    assert not re.search(r"<p[\s>]", rail, flags=re.I)
++    assert not re.search(r"<details[\s>]", rail, flags=re.I)
++    assert "gde-quote" not in rail
++    dlg = _slice_id(html, "dlg-risk")
++    assert 'id="gde-detail"' in dlg
++    assert 'id="gde-live-receipt"' in dlg
++    assert "Risk Detail" in dlg
++    assert 'aria-controls="dlg-risk"' in rail
++    assert "mx5OpenDlg('dlg-risk')" in rail
++
++
++@pytest.mark.parametrize("verdict,en,zh", [
++    ("RISK_OFF", "Risk-off", "风险规避"),
++    ("MIXED", "Mixed", "分歧"),
++    ("RISK_ON", "Risk-on", "风险偏好"),
++])
++def test_missing_optional_trend_labels_use_the_actual_verdict(verdict, en, zh):
++    envelope = _gd1_envelope()
++    envelope["measured_state"]["verdict"] = verdict
++    for source in envelope["provenance"]["sources"]:
++        if source["role"] == "measured_state":
++            source["state"] = verdict
++            source["detail"].pop("state_label_en", None)
++            source["detail"].pop("state_label_zh", None)
++    html = _render_surfaces(envelope)
++    for surface in ("risk-envelope-band", "gde-detail"):
++        fragment = _slice_id(html, surface)
++        assert f'class="l-en">{en}</span>' in fragment
++        assert f'class="l-zh">{zh}</span>' in fragment
++    if verdict == "RISK_OFF":
++        assert "while the index holds" not in html
++
++
++@pytest.mark.parametrize("count", [None, False, True, -1, "0", 1.5])
++def test_unknown_or_invalid_policy_count_is_not_zero(count):
++    envelope = _gd1_envelope()
++    envelope["policy_summary"]["policy_count"] = count
++    html = _render_surfaces(envelope)
++    detail = _slice_id(html, "gde-detail")
++    assert "No Grey Deer policy active" not in detail
++    assert "Policy status unavailable" in detail
++    assert "政策状态不可用" in detail
++    assert "gde-seg-policy" not in _slice_id(html, "risk-envelope-band")
++
++
++def test_missing_policy_count_is_explicitly_unavailable():
++    envelope = _gd1_envelope()
++    envelope["policy_summary"].pop("policy_count", None)
++    detail = _slice_id(_render_surfaces(envelope), "gde-detail")
++    assert "Policy status unavailable" in detail
++    assert "No Grey Deer policy active" not in detail
++
++
++def test_zero_active_policy_does_not_take_homepage_space():
++    envelope = _gd1_envelope()
++    envelope["policy_summary"]["policy_count"] = 0
++    html = _render_surfaces(envelope)
++    assert "gde-seg-policy" not in _slice_id(html, "risk-envelope-band")
++    assert "No Grey Deer policy active" in _slice_id(html, "gde-detail")
++
++
++@pytest.mark.parametrize("count", [1, 3])
++def test_active_policy_count_remains_visible_but_orthogonal(count):
++    envelope = _gd1_envelope()
++    envelope["policy_summary"]["policy_count"] = count
++    html = _render_surfaces(envelope)
++    rail = _slice_id(html, "risk-envelope-band")
++    assert "gde-seg-policy" in rail
++    assert "gde-seg-policy" not in _slice_id(rail, "gde-rail-reads")
++    assert f'>{count} <span class="l-en">active</span>' in rail
++
++
++def test_required_source_loss_is_unclear_without_daily_shape_skip():
++    envelope = _gd1_envelope()
++    envelope["hazard_summary"].update(
++        stage=None, unreadable_sources=["leadership_crack"],
++        unmapped_required_sources=[],
++    )
++    rail = _slice_id(_render_surfaces(envelope), "risk-envelope-band")
++    assert "Unclear" in rail
++    assert "1 source unavailable" in rail
++    assert "No breakage" not in rail
++
++
++def test_live_overlay_does_not_hide_the_settled_read_clock():
++    css = (TEMPLATES / "_risk_envelope_band.css.j2").read_text(encoding="utf-8")
++    # The live painter updates its status, not the underlying settled trend.
++    assert not re.search(
++        r"\.gde-rail:has\([^}]+\.gde-stamp-settled\s*\{\s*display:\s*none",
++        css,
++    )
++
++
++def test_homepage_names_the_customer_job_not_the_internal_composer():
++    rail = _slice_id(_render_surfaces(_gd1_envelope()), "risk-envelope-band")
++    assert "Risk context" in rail
++    assert "风险提示" in rail
++    assert "Market Reads" not in rail

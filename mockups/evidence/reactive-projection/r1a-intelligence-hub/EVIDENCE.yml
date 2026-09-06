@@ -1,0 +1,5 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/intelligence_hub.html.j2
+  - site/assets/js/intelligence-hub-market-pulse.js
+manifest: mockups/evidence/reactive-projection/r1a-intelligence-hub/manifest.json
