@@ -85,6 +85,7 @@ def optional_file(path):
 
 def lookup_guard(cache):
     owned(cache / "config", regular=True)
+    shallow_boundary = optional_file(cache / "shallow")
     for relative in ("objects/info", "info"):
         ancestor = cache / relative
         if os.path.lexists(ancestor):
@@ -105,7 +106,7 @@ def lookup_guard(cache):
                 raise UnsafeState(
                     "nonempty external alternate lookup refused: %s" % path
                 )
-    return files
+    return files, shallow_boundary
 
 
 def cache_guard(cache):
@@ -124,8 +125,8 @@ def cache_guard(cache):
     seal = absolute / ".last-update-ok"
     if os.path.lexists(seal):
         owned(seal, regular=True)
-    lookup_files = lookup_guard(absolute)
-    return absolute, cache_stat, objects_stat, lookup_files
+    lookup_files, shallow_boundary = lookup_guard(absolute)
+    return absolute, cache_stat, objects_stat, lookup_files, shallow_boundary
 
 
 def object_context(cache, objects_stat):
@@ -162,7 +163,9 @@ def expected_state(cache_arg, main_oid, lookup_digest):
         raise UnsafeState("invalid main object id")
     if not re.fullmatch(r"[0-9a-f]{64}", lookup_digest):
         raise UnsafeState("invalid lookup-context digest")
-    cache, cache_stat, objects_stat, lookup_files = cache_guard(Path(cache_arg))
+    cache, cache_stat, objects_stat, lookup_files, shallow_boundary = cache_guard(
+        Path(cache_arg)
+    )
     identity = cache / ".mastermind-cache-identity.json"
     lookup_context = json.dumps(
         {"git_context_sha256": lookup_digest, "files": lookup_files},
@@ -181,7 +184,7 @@ def expected_state(cache_arg, main_oid, lookup_digest):
         },
         "main_oid": main_oid,
         "identity_sha256": digest_file(identity),
-        "shallow_boundary": optional_file(cache / "shallow"),
+        "shallow_boundary": shallow_boundary,
         "lookup_context_sha256": hashlib.sha256(lookup_context).hexdigest(),
         "object_context_sha256": object_context(cache, objects_stat),
     }
@@ -227,7 +230,7 @@ def state_fingerprint(state):
 
 
 def invalidate(cache_arg):
-    cache, _, _, _ = cache_guard(Path(cache_arg))
+    cache, _, _, _, _ = cache_guard(Path(cache_arg))
     seal = cache / ".last-update-ok"
     if os.path.lexists(seal):
         os.unlink(seal)

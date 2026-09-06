@@ -72,13 +72,15 @@ whose entire validation key still matches:
 
 Missing, legacy, malformed, copied, or mismatched safe seals are misses and run the
 original full validation. Validator revision v2 also makes every earlier v1 seal a
-miss. Before the first Git invocation, the updater qualifies `config`, every permitted
-lookup file, and the `objects/info` / `info` ancestors Git would traverse. A symlink,
-hard link, wrong owner, group/world-writable cache/marker/config/seal/lookup path,
-symlink-traversing cache path, or inherited Git object lookup override refuses before
-Git can consume it. Empty alternates metadata is harmless and remains bound; a nonempty
-`alternates` or `http-alternates` file refuses under the sole-cache contract rather
-than silently admitting an unqualified external object estate.
+miss. Before the first Git invocation, the updater qualifies `config`, the default
+`shallow` boundary, every permitted lookup file, and the `objects/info` / `info`
+ancestors Git would traverse. A safe absent or regular `shallow` file remains accepted,
+and its pre-Git digest binds the seal. A symlink, hard link, wrong owner,
+group/world-writable cache/marker/config/seal/lookup path, symlink-traversing cache
+path, or inherited Git object lookup override refuses before Git can consume it. Empty
+alternates metadata is harmless and remains bound; a nonempty `alternates` or
+`http-alternates` file refuses under the sole-cache contract rather than silently
+admitting an unqualified external object estate.
 
 The updater removes a prior safe seal before a required full scan and publishes the
 replacement as a complete `0640` regular temporary file. It requires `write(2)` to

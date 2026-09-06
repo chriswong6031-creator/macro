@@ -1521,12 +1521,12 @@ def test_cache_update_refuses_a_symlinked_lookup_file_before_following_it(
 
 @pytest.mark.parametrize(
     "unsafe_path",
-    ["config", "objects/info", "info", "objects/info/alternates"],
+    ["config", "objects/info", "info", "objects/info/alternates", "shallow"],
 )
 def test_cache_update_qualifies_config_lookup_and_ancestors_before_git(
     tmp_path: Path, unsafe_path: str
 ) -> None:
-    _, _, cache, _ = cache_update_fixture(tmp_path)
+    _, _, cache, sha = cache_update_fixture(tmp_path)
     bin_dir = tmp_path / "bin"
     make_flock_shim(bin_dir)
     real_git = make_git_fault_shim(bin_dir)
@@ -1534,6 +1534,8 @@ def test_cache_update_qualifies_config_lookup_and_ancestors_before_git(
     target = cache / unsafe_path
     if unsafe_path.endswith("alternates"):
         target.write_text("", encoding="utf-8")
+    elif unsafe_path == "shallow":
+        target.write_text(sha + "\n", encoding="ascii")
     target.chmod(target.stat().st_mode | stat.S_IWGRP)
 
     result = run_cache_update(
