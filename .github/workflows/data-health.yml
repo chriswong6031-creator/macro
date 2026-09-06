@@ -87,6 +87,24 @@ jobs:
           ref: ${{ github.sha }}
           filter: blob:none
           fetch-depth: 1
+      # This lane intentionally audits one immutable main snapshot with a
+      # depth-1 partial checkout. Some post-merge parity guards still resolve
+      # `origin/main`; bind that LOCAL tracking ref to the already-checked-out
+      # commit instead of fetching a moving branch or restoring full history.
+      - name: bind immutable main ref for historical contract guards
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_NAME:-}" != "main" ]; then
+            echo "::error title=data-health-ref::data-health must audit main; got ${GITHUB_REF_NAME:-<unset>}" >&2
+            exit 1
+          fi
+          HEAD_SHA=$(git rev-parse HEAD)
+          if [ "$HEAD_SHA" != "$GITHUB_SHA" ]; then
+            echo "::error title=data-health-head::checkout resolved to $HEAD_SHA, expected $GITHUB_SHA" >&2
+            exit 1
+          fi
+          git update-ref refs/remotes/origin/main "$HEAD_SHA"
+          test "$(git rev-parse refs/remotes/origin/main)" = "$HEAD_SHA"
       - uses: actions/setup-python@v5
         with:
           # Pinned to the exact patch release ci.yml's pack job pins, for the
