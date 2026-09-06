@@ -21,9 +21,9 @@
     <div class="dmw{% if debt_maturity.status != 'reported' %} dmw-no-rail{% endif %}">
       <div class="dmw-rows">
         {% for b in debt_maturity.buckets %}
-        <div class="dmr{% if not b.reported %} na{% endif %}" style="--i:{{ loop.index0 }}">
+        <div class="dmr{% if not b.reported %} na{% endif %}" style="--i:{{ loop.index0 }};">
           <span class="dmr-lb">{{ t(b.label_en, b.label_zh) }}</span>
-          <span class="dmr-tr">{% if b.reported %}<i class="dmr-bar" style="--w:{{ b.share_pct }}%"></i>{% endif %}</span>
+          <span class="dmr-tr">{% if b.reported %}<i class="dmr-bar" style="--w:{{ b.share_pct }}%;"></i>{% endif %}</span>
           <span class="dmr-val">{% if b.reported %}{{ b.display }}{% else %}{{ t('not reported', '未披露') }}{% endif %}</span>
         </div>
         {% endfor %}
