@@ -72,84 +72,94 @@ danger_areas:
 
 # Meta-CEO delivery checkpoint — 6 September 2026
 
-This is a dated knowledge record, not a new execution or release authority.
-It supplements the historical September 5 integrator handoff and the other
-same-workstream records. It does not claim to be a fleet-wide current-state census.
-The actual next invocation must read the current carrier and source before acting.
+## §0 State — what is true now
 
-## Outcome and operating correction
+The gateway prerequisite has accepted local semantic closure. Root has issued the
+remaining fourteen-path local implementation grant to the existing controller and
+Terra worker; that is not yet a completed four-read profile or installed service.
+The program still owes a real Personal-account read, approved worker action, returned
+Web decision and consumed continuation without Chris forwarding messages.
 
-Chris's objective remains a useful, continuously recoverable executive layer:
-ChatGPT responsibilities coordinate native delivery without Chris locating sessions,
-forwarding results, or typing routine continuation prompts. Keep the logical
-responsibility durable and the conversation replaceable. More time spent generating
-is not the acceptance measure; a completed useful work batch and consumed result are.
+This dated record supplements the historical September 5 integrator handoff. It is
+not a fleet census, runtime observation, source release or permission to take over.
 Executive OS owns lifecycle; Agent OS owns continuity; GitHub owns implementation
-and proof; Slack transports coordination. This file starts or stops none of them.
+and proof; Slack transports coordination. Fresh primary evidence wins over this text.
 
-## Resume the existing delivery lane
+## §1 What is left — in order
 
-- Source operation: `personal-mcp-first-read-e1-source-20260906-sol-001`.
-- Exact carrier: `C0BSBM78V1N/1788719305.919709`.
-- Root: `01a06f72-aaae-77f1-a3fb-28f5d05c107a`.
-- Controller: `01a06f73-68fa-7503-be81-1a7eeaf0b855`.
-- Retained Terra: `01a07805-3d0a-73b0-94b2-e70a99f59287`.
-- Accepted local H: `8a5c43a17705c7690cf5e5d1244b70f3a9683a76`;
-  tree `a5bcf5c2b4a3c994b5194827c87633dec055906e`, parent `61e8f2760eddbc44699a6b8f7c6170b08d941df6`.
+1. The existing controller consumes [Root9644's actual grant](https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788729644149729)
+   and performs its actor/head/pending-effect checks before delivering the full
+   remaining local work batch to the retained worker. Do not re-commission Task1.
+2. Complete the specified read-root, read-only Executive app, fixed adapter, real
+   MCP authentication/limits, integrated tests and docs, returning one local K
+   with parent H. Root then owns the distinct current-base integration, publication
+   and release path. Root9644 does not permit an upfront source join.
+3. Runtime and Personal owners qualify the real installed read and one actual
+   account; then qualify the approved command/result/Web-continuation journey.
+   Installed app, exposed tools, successful read and actual execution are separate.
 
-Read [Root9644's actual grant](https://mastermindxgroup.slack.com/archives/C0BSBM78V1N/p1788729644149729),
-not an inferred permission from this handoff. It covers the frozen fourteen-path
-read-root, read-only E1, fixed adapter, real MCP/auth/limits, integrated tests and docs
-work through one local K with parent H. Root's separate integration/release remains
-owed. The [Meta-CEO workset](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5562199736)
-provides the outcome and batching rationale; Root9644 supersedes its proposed
-integration-first ordering. No routine per-test approval chain is requested.
+Source operation: `personal-mcp-first-read-e1-source-20260906-sol-001`.
+Exact carrier: `C0BSBM78V1N/1788719305.919709`.
+Root: `01a06f72-aaae-77f1-a3fb-28f5d05c107a`.
+Controller: `01a06f73-68fa-7503-be81-1a7eeaf0b855`.
+Retained Terra: `01a07805-3d0a-73b0-94b2-e70a99f59287`.
+Accepted local H: `8a5c43a17705c7690cf5e5d1244b70f3a9683a76`,
+tree `a5bcf5c2b4a3c994b5194827c87633dec055906e`,
+parent `61e8f2760eddbc44699a6b8f7c6170b08d941df6`.
+These are recovery coordinates, not proof that a process is currently running.
 
-The gateway repair is not the whole read product. First qualify the actual four
-reads with separate repository/Macro/temporary Runtime roots and unavailable-not-empty
-behavior. Then qualify an authorized installed path and one Personal account.
-Production Runtime identity, app/tool exposure, command admission, Web delivery,
-result consumption and safe conversation succession remain distinct acceptance rows.
+## §2 What will bite you
 
-## Preserve completed and held work
+The old pre-PR469 dependency waiter expired before that release; it is not the
+current source worker. A conversation's replacement must not restart native work.
+A task scheduled to an executor is not necessarily a started physical read; preserve
+Task1's entry/abandonment, per-attempt deadline and started-read permit semantics.
 
-PR469 metadata source is protected at `4fe4d6bc93d9543f77320f68342a10c5af4d4f49`.
-It is not proof of installation or a Personal-account read. Protected source later
-advanced through inactive resource-core PR510 and observation-only Web census PR502;
-neither proves active provider execution or authorizes another lifecycle plane.
+The [Meta-CEO workset](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5562199736)
+proposed integration first. Root9644 instead admits source-pinned K before integration;
+that actual action grant controls. Do not convert an advisory handoff into permission.
+Missing, foreign or unreadable Runtime data must remain unavailable, not healthy-empty.
 
-CAP350's retained evidence is published J `a285985beeae7c76b0ffe9cfc2bbe69b8f22ec8e`
-with green integrated CI, followed by [substantive independent changes requested](https://github.com/mastermindx-market-intelligence/Mastermind/pull/350#pullrequestreview-5126392390).
-Probe cleanup and contradictory Skill-schema constraints are real findings, not
-PR469's obsolete review-state hold. Follow its current original carrier
-`C0BSBM78V1N/1788511189.200899`; preserve the source worker, reviewer and no-replay rules.
+This session's read-only `codex app-server proxy` attempt failed before initialization
+because its control socket was absent. Ordinary Mac file access worked. The enabled
+Personal app also exposed no Executive actions in that message. Neither observation
+proves Root or the backend dead; do not bootstrap a competing writer or reinstall apps.
 
-Own Pro-routing source remains [PR506](https://github.com/mastermindx-market-intelligence/Mastermind/pull/506)
-at `18730195f431e9c42b46e6a832f8ef4739520eaa`: 131 recorded targeted passes,
-not a passing full hosted run or protected policy. Generated cache dirt was
-[reversibly cleared](https://github.com/mastermindx-market-intelligence/Mastermind/pull/506#issuecomment-5561911589);
-authenticated source verification remains a separate held boundary. Do not redo cleanup.
-The disjoint empty-portfolio fix `54ee19c60de526f321e21e3f637a871b4bb9fb3c` remains a
-local two-file candidate with 134 recorded portfolio-family passes; its complete
-[recoverable patch and evidence](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5560686995)
-do not establish the original native abort's cause or release either candidate.
+## §3 What was decided and found
 
-The completed SDK/auth and input/output fixture qualifications are recorded in
-[issue386/comment5561958922](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5561958922).
-They are supporting evidence, not actual Executive reads. No new generic probe is needed.
+No new DEC or DSC is minted here. The existing program direction is to preserve
+ChatGPT executive responsibilities while grouping useful local implementation into
+one bounded delivery envelope. Routine successful subtasks need no new Meta-CEO
+reasoning turn; genuine scope, security, ownership and uncertain effects still return
+to their owner. Duration is not a proxy for completed capability.
 
-## Continuity boundary
+[Task1 acceptance and evidence](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5562149841)
+remain source-scoped. The completed 11 SDK/auth, 7 response and 10 input fixture
+checks are [supporting evidence](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5561958922),
+not real Executive reads or extra release gates. Do not repeat generic protocol probes.
 
-This session's read-only attempt to contact the existing Root through the installed
-`codex app-server proxy` failed before initialization because that control socket
-was absent. It created no provider turn; ordinary Mac file/shell access still worked.
-An installed/enabled Personal app also did not expose Executive actions in this message.
-Neither observation proves the backend or Root dead. Use the current established
-controller path and qualify actual tool exposure/read behavior rather than inventing
-a successful wake, reinstalling accounts, or asking Chris to relay messages.
+PR469 metadata is protected at `4fe4d6bc93d9543f77320f68342a10c5af4d4f49`.
+Later PR510 resource-core and PR502 observation-only census releases do not establish
+active provider execution, installed read identity or unattended Web continuation.
 
-The existing Agent OS validator consumes this handoff as a schema-checked record.
-Direct repository readers can recover it without this chat; automatic inclusion by
-`compile-context` remains unverified because its attempted invocation was tool-blocked.
-This adds no generated state, scheduler, approval requirement or authority. Broader
-workstream and historical handoff records retain their scopes and are not overwritten.
+## §4 Not in scope — do not adopt
+
+CAP350's published J `a285985beeae7c76b0ffe9cfc2bbe69b8f22ec8e` has integrated CI
+and subsequent [substantive independent findings](https://github.com/mastermindx-market-intelligence/Mastermind/pull/350#pullrequestreview-5126392390).
+Probe cleanup and contradictory Skill constraints are not PR469's stale-review issue.
+Preserve its current source/reviewer on `C0BSBM78V1N/1788511189.200899` and all spent
+scanner/provider boundaries; obtain current evidence before acting.
+
+Own [PR506](https://github.com/mastermindx-market-intelligence/Mastermind/pull/506)
+retains head `18730195f431e9c42b46e6a832f8ef4739520eaa`, 131 recorded targeted passes,
+a failed full hosted run and a held authenticated checkpoint. Its generated caches
+were [reversibly cleared](https://github.com/mastermindx-market-intelligence/Mastermind/pull/506#issuecomment-5561911589).
+Do not repeat cleanup or route a blocked authentication request through another avenue.
+The disjoint local portfolio fix `54ee19c60de526f321e21e3f637a871b4bb9fb3c` has 134
+recorded portfolio-family passes and a [recoverable patch](https://github.com/mastermindx-market-intelligence/Mastermind/issues/386#issuecomment-5560686995),
+not a proved native-abort cause or release. Neither fix is a Personal-source predecessor.
+
+The existing Agent OS validator consumes this schema-checked handoff. Direct repository
+readers can recover it without this chat. Automatic `compile-context` inclusion remains
+unverified because the attempted invocation was tool-blocked. No generator, scheduler,
+approval mechanism or other workstream record is changed by this checkpoint.
