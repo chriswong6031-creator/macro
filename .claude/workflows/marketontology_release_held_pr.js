@@ -121,7 +121,7 @@ SCOPE: title/label/Ready edits, waiting, merging, live verification, the wave co
 FROZEN SPEC: n/a. OWNED FILES: none. TESTS: none.
 PROCEDURE:
 1. Fresh-read: gh pr view ${n} -R ${REPO} --json state,isDraft,title,headRefOid,labels,mergeable,mergeStateStatus,statusCheckRollup. If already MERGED, skip to step 5.
-2. Strip the hold from the title (remove the leading "HOLD-FOR-SOL" / "[HOLD]" marker, keep the rest): gh pr edit ${n} -R ${REPO} --title "<clean title>". Append to the body a section "## Released under the Chairman override (Meta-CEO ${CEO}, 2026-09-06)" naming the review verdict and the charter path; never delete prior body text. If Draft: gh pr ready ${n} -R ${REPO}. Remove merge-blocked if present; add merge-on-green: gh pr edit ${n} -R ${REPO} --add-label merge-on-green.
+2. Release the hold with the sweeper-proof helper (ONE call; it strips the title marker, rewrites every hold line in the body, posts the HOLD-RELEASED comment, marks Ready, swaps merge-blocked for merge-on-green, and re-verifies with scripts/merge_on_green.recorded_hold): H="${LOCAL}/.claude/worktrees/mo-release-${n}/.claude/workflows/release_hold_text.py"; [ -f "$H" ] || { git -C "${LOCAL}" fetch -q origin ${BASE}; git -C "${LOCAL}" show origin/${BASE}:.claude/workflows/release_hold_text.py > "$TMPDIR/release_hold_text.py" && H="$TMPDIR/release_hold_text.py"; }; MO_REPO_ROOT="${LOCAL}" python3 "$H" ${n} --repo ${REPO} --ceo ${CEO}. Exit 0 with held_after=null is the only acceptable result; exit 2 means a hold is still recorded — read its JSON and return BLOCKED quoting held_after. Never delete prior body text by hand.
 3. ${QUOTA} A Bash call is capped at 10 minutes, so a single foreground \`gh pr checks --watch\` will be killed before a 30-45 min macro ci.yml run concludes: do NOT use it. Poll in bounded rounds instead, each its own Bash call (sleep >=90s per quota law): \`for i in $(seq 1 3); do gh pr checks ${n} -R ${REPO} --json name,state,conclusion --jq '.[] | [.name,.state,.conclusion] | @tsv'; sleep 170; done\`. Repeat across multiple such calls until every check has CONCLUDED ("Workers Builds: macro" red is known-spurious and ignorable; a pending check is not a pass). If checks are still pending when this stage's budget wall is reached, return PARTIAL naming the armed merge-on-green sweeper as the eventual merge performer and live verification as still owed.
 4. Fresh-read again (state, headRefOid, mergeStateStatus). If the sweeper already merged: record the sha. Else on concluded green (spurious Workers X excluded): gh pr merge ${n} -R ${REPO} --squash --delete-branch. On a merge conflict: return BLOCKED naming the paths. Never --admin past a real red; never close/reopen; never rename the branch.
 5. Live verification (${REPO_KEY}): ${REPO_KEY === 'terminal'
@@ -135,7 +135,7 @@ const out = []
 for (const n of PRS) {
   log(`PR #${n}: takeover`)
   const t = await agent(takeoverPrompt(n), { label: `takeover:${n}`, phase: 'Takeover', schema: TAKEOVER_SCHEMA, agentType: 'builder', effort: 'medium' })
-  if (!t || t.status === 'BLOCKED' || /MERGED|CLOSED/i.test(t.evidence.pr_state)) {
+  if (!t || !t.evidence || t.status === 'BLOCKED' || /MERGED|CLOSED/i.test(String(t.evidence.pr_state))) {
     log(`PR #${n}: stop after takeover (${t ? t.evidence.pr_state + ' / ' + t.status : 'null'})`)
     out.push({ pr: n, stage: 'takeover', takeover: t && t.evidence, result: t && t.result })
     continue
@@ -156,7 +156,12 @@ for (const n of PRS) {
     continue
   }
   log(`PR #${n}: ship`)
-  const ship = await agent(shipPrompt(n, te), { label: `ship:${n}`, phase: 'Ship', schema: SHIP_SCHEMA, agentType: 'builder', effort: 'low' })
+  let ship = await agent(shipPrompt(n, te), { label: `ship:${n}`, phase: 'Ship', schema: SHIP_SCHEMA, agentType: 'builder', effort: 'low' })
+  // A ship agent that runs out of budget while checks are still pending returns PARTIAL; re-spawn (each attempt waits up to ~45 min).
+  for (let k = 2; k <= 5 && ship && ship.status === 'PARTIAL' && !(ship.evidence && ship.evidence.merged && ship.evidence.live_verified); k++) {
+    log(`PR #${n}: ship attempt ${k}`)
+    ship = await agent(`SHIP ATTEMPT ${k}: a previous ship agent already ran (result: ${String(ship.result).slice(0, 400)}; merged=${ship.evidence && ship.evidence.merged}). Do not repeat completed steps; resume from the first incomplete one.\n\n` + shipPrompt(n, te), { label: `ship${k}:${n}`, phase: 'Ship', schema: SHIP_SCHEMA, agentType: 'builder', effort: 'low' })
+  }
   out.push({ pr: n, stage: 'ship', takeover: te, review: review.evidence, fix: fix && fix.evidence, ship: ship && ship.evidence, ship_status: ship && ship.status })
 }
 const merged = out.filter(o => o.ship && o.ship.merged).map(o => o.pr)

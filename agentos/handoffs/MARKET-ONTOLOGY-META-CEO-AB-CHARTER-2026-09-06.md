@@ -172,7 +172,8 @@ next_actions:
     half B as staffed.
   - >
     [Half A] BEFORE any Ready/arm/merge on a held PR: for every held PR this
-    half owns (#6873, #6872, #6865, #6810, #6604), post a release comment
+    half owns (#6873, #6872, #6834, #6830, #6826, #6865, #6810, #6595, #6604,
+    #6809), run .claude/workflows/release_hold_text.py <pr> (it posts the release comment,
     naming DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06 as the
     releasing authority and edit the title to drop the leading
     "HOLD-FOR-SOL"/"HOLD-FOR-F13" text -- scripts/merge_on_green.py's sweeper
@@ -195,12 +196,13 @@ next_actions:
     F11 F12 F13 + platform).
   - >
     [Half B] BEFORE any Ready/arm/merge on a held PR: for every held PR this
-    half owns (#6793, #6831, #6830, #6834, #6861, #6826, #6810), post a
+    half owns (#6793, #6831, #6861, #6526; #6830/#6834/#6826/#6810 are half A per
+    charter §3/§5), run .claude/workflows/release_hold_text.py <pr> (it posts the
     release comment naming DEC:CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06
     and edit the title to drop the leading "HOLD-FOR-SOL"/"HOLD-FOR-F13" text
     -- the sweeper and Stop-adapter enforcers key on that literal title text
     (see the same note in the Half A action above). Then run Wave 0: #6793
-    (F09-1), #6831 (F06 child), then #6830/#6834/#6861/#6826/#6810 by lane,
+    (F09-1), #6831 (F06 child), then #6861 (F13) and #6526 (F08),
     then Terminal #490/#502/#507 disposition.
   - >
     [Half B] Settle the Supabase migration-namespace collision (#507 vs
@@ -305,7 +307,7 @@ Meta-CEO A (Claude8, this session) owns F00 shared shell/nav/contract
 freeze + integration, F01 (12 ledger rows), F02 (10), F03 (16), F04 (9),
 F05 (4), F10 (5), plus the cross-cutting F01F13 Market Orientation project
 (`DEC-MARKET-ONTOLOGY-MARKET-ORIENTATION-PROJECTION-2026-08-30`, currently
-unplaced) — 56 ledger rows plus the shell. Meta-CEo B (Claude3) owns F06
+unplaced) — 56 ledger rows plus the shell. Meta-CEO B (Claude3) owns F06
 (3), F07 (5), F08 (7, already resident), F09 (29), F11 (6), F12 (18), F13
 (6, already resident), plus the Supabase migration-namespace settlement and
 the Terminal identity/tenant contract freeze F11/F12 depend on — 74 ledger

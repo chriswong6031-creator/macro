@@ -177,8 +177,8 @@ captured by the census, re-read fresh before acting):
 | macro#6873 | A (F01) | Draft, `HOLD-FOR-SOL — do not merge`, head `b7d237f0`, 0 reviews; collides with #6872 on `.github/ci/legacy-jobs.yml`, `app/deploy/Caddyfile`, `config/site_access.yml`, `tests/test_site_access_boundary.py` | Merge second, right after #6890 (heals pack-5 too). Global admission (NaN/True finite-number obligation) stays open per the F00 continuity reconciliation — resolve or explicitly re-scope before Ready. |
 | macro#6872 | A (F04) | Draft, `HOLD-FOR-SOL`, head `ba62f5a5`, "PARTIAL / BUILT_NOT_PROVEN" | Rebase onto #6873 once it merges (shared-file collision above). Owes a corrected B-1 body + a RED-first nightly-hook test before Ready. |
 | macro#6865 | A | Draft, `DRAFT / HOLD-FOR-SOL / SOURCE_LAW_CANDIDATE / SPEC_ONLY`, head `9f04ee4b`; first Opus review `5120047737` still CHANGES_REQUESTED, undismissed | A closes or disposes honestly (repaired but not approved; do not self-approve a candidate law). |
-| macro#6604 | A (F03) | UNKNOWN — not resolved by the open-PR census's tight regex (branch likely named `options-intelligence-*`, excluded from the tight match); repeatedly cited elsewhere as the F03 commissioning owner for MO-PAID-070/076 and MO-DELTA-033 | A fresh-reads (`gh pr view` / `gh pr list --search`) before disposing; do not build a competing F03 workflow while its state is unread (see §10). |
-| macro#6809 | A (F04) | UNKNOWN — same regex gap as #6604; last known state REQUEST_REPAIR, head `44c27dd3`, review `5110800144` (D2C) | A fresh-reads and disposes; do not absorb into F04 without an independent review. |
+| macro#6604 | A (F03) | OPEN, Draft, head `7cc1b336`, title `records(options): Options Intelligence C0 consolidated masterplan` (re-read 2026-09-06): a records/masterplan carrier, not a build | A reviews and merges it as the F03 masterplan of record (records only); until merged, F03 Wave-1 packets stay CONTINGENT (§10). |
+| macro#6809 | A (F04) | OPEN, Draft, head `44c27dd3`, title `feat(theme-graph): materialize THS memberships from PIT history` (re-read 2026-09-06; "D2C" was Sol's carrier name, not the title); last known REQUEST_REPAIR with review `5110800144` | A runs the release workflow on it (independent opus review first); do not absorb into F04 X1 without that review. |
 | macro#6861 | B (F13) | Draft, `HOLD-FOR-F13 — do not merge`; release condition named as "independent non-author Opus review PASS + F13 principal + Sol release" | B runs the named review itself (Sol release is no longer required, §0) and takes it to merge. |
 | macro#6834 | A (F02) | Draft, `DRAFT / HOLD-FOR-SOL`, head `5d540ba`; PR's own file list hit the GraphQL 50-file cap, so its true diff may be larger than captured | A takes over per the held-PR procedure; re-pull the full file list before reviewing. |
 | macro#6831 | B (F06) | Draft, `OPEN / DRAFT / HOLD-FOR-SOL / REVIEW_APPROVED / BUILT_NOT_PROVEN / PRODUCTION_INERT`, head `fca73b7` | Already review-approved — B verifies the approval still applies to the current head, then Ready/merge/live-verify. |
@@ -187,8 +187,8 @@ captured by the census, re-read fresh before acting):
 | macro#6810 | A (adjudicate; program-wide) | Draft, `RECORDS_ONLY / DRAFT / HOLD-FOR-SOL`, head `2292068` ("checkpoint ontology continuation control state") | A disposes within Wave 0 per the unknown-lane rule (§3) — this is a continuation-control record, not a numbered lane. |
 | macro#6793 | B (F09) | Draft, `HOLD-FOR-SOL — DRAFT. Do not mark ready, do not arm merge-on-green, do not merge.`, head `29b60c1`; maps to ledger row MO-PAID-064 / MO-DELTA-023 (cash-deal premium, EDGAR tender filings) | B takes over per the held-PR procedure — this hold no longer binds (§0). |
 | macro#6595 | A (adjudicate; program-wide) | Draft, `DRAFT / HOLD-FOR-SOL / RECORDS-ONLY / NO LANE START / NO PRODUCT EFFECT` (Fable root-seat topology reconciliation) | A disposes as a records-only close; no product effect to release. |
-| macro#6892 | B (F08) | **Not** Draft, label `merge-on-green`, no HOLD text found | Already unblocked — B verifies the armed merge-on-green completes (or takes it over if stalled) and live-verifies. |
-| macro#6526 | B (F08) | **Not** Draft, no HOLD text, "refresh Portfolio badge after authoritative A1B reread" | B fresh-reads; if still open and green, take to merge. |
+| macro#6892 | B (F08) | **MERGED** (merge commit `e0d97381c40a7f148d5336cbc3c93dc07dacacfe`, f08 architecture freeze, records only) | Nothing to do; records only, no live surface. |
+| macro#6526 | B (F08) | OPEN, **Draft** (re-checked 2026-09-06 via `gh api graphql`: isDraft=true), no HOLD text, "refresh Portfolio badge after authoritative A1B reread" (2026-08-27) | B takes it through the release workflow (review -> Ready -> merge-on-green -> merge -> live proof) or closes it with a diff-against-main proof that it already landed. |
 | terminal#490 | B | Draft, "fix: host existing Brain in Analysis shell", HOLD status unchecked by the census | B census's this PR before disposing (title carries no HOLD marker, but confirm). |
 | terminal#502 | B (F11) | Draft, `[F11-1][HOLD]`, adds `supabase/migrations/0011_thesis_objects.sql` (private versioned Thesis Object) | B resolves the migration-namespace collision with #507 (see next row) before Ready. |
 | terminal#507 | B | Open, labels `merge-on-green`,`merge-blocked`, adds `supabase/migrations/0011_analytics_eid.sql` (CA1A envelope-v1 identity) | **Numbering collision with #502** — both open PRs add a file named `0011_*.sql`. B settles which merges first and renumbers the loser before either lands (see §10 Supabase namespace question). |
@@ -513,6 +513,21 @@ PR body and pass `check_design_system.py --mode enforce-added`,
 entry points wired in the existing nav family; nulls printed not hidden; no LLM-originated
 signals/scores; no trading authority; tests added/updated; GitHub annotations start the line.
 
+### 6.w Release workflow for held PRs (Wave 0)
+
+`.claude/workflows/marketontology_release_held_pr.js`, invoked by name once macro#6894 is merged:
+`Workflow({name:'marketontology-release-held-pr', args:{ceo:'B', repo:'macro', prs:[6793, 6831, 6861, 6526]}})`
+(sequential: takeover comment -> rebase onto fresh base in a GC-visible sparse worktree ->
+opus review -> fix + re-review -> ship). The ship stage runs
+`.claude/workflows/release_hold_text.py <pr>` ONCE: it strips the title marker, rewrites every
+body line the sweeper would classify as a hold, posts a `HOLD-RELEASED` comment, marks Ready,
+swaps `merge-blocked` for `merge-on-green`, and re-verifies with the sweeper's own
+`scripts/merge_on_green.recorded_hold` (exit 2 if a hold is still recorded). This exists because
+`scripts/merge_on_green.py` refuses any PR whose title, body or comments carry a hold marker at
+line start, and only a later comment starting with `HOLD-RELEASED` clears a comment-carried hold.
+Every stage prompt verifies the Chairman-override DEC on `origin/main` (fallback: the charter
+branch) with `git show` before writing.
+
 ### 6.x Worker budget law (measured 2026-09-06, binding for both halves)
 
 Workflow subagents are cut off at **exactly 30 tool calls with no return** (two Opus reviewers
@@ -563,15 +578,18 @@ drafting task actually produced):
 > PDT and placed Claude as Meta-CEO; the charter is
 > `research/MARKET_ONTOLOGY_META_CEO_CHARTER_2026_09_06.md` on origin/main (also
 > `agentos/handoffs/MARKET-ONTOLOGY-META-CEO-AB-CHARTER-2026-09-06.md` and
-> `agentos/decisions/DEC-CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06.md`; all three ship
-> in the same PR, macro#6894, together with the reusable workflows
-> `.claude/workflows/marketontology_vertical_build.js` and
-> `.claude/workflows/marketontology_release_held_pr.js`). Do: (1) `git fetch origin` && read the charter fully; (2) open a fresh sparse
+> `agentos/decisions/DEC-CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06.md`; all three shipped
+> in PR macro#6894 together with the reusable workflows
+> `.claude/workflows/marketontology_vertical_build.js`,
+> `.claude/workflows/marketontology_release_held_pr.js` and
+> `.claude/workflows/release_hold_text.py`). PRECONDITION: macro#6894 is merged (Meta-CEO A
+> confirms this in the pickup message); until then read the same paths from
+> `origin/claude/marketontology-meta-ceo-charter-20260906`. Do: (1) `git fetch origin` && read the charter fully; (2) open a fresh sparse
 > worktree on a `claude/*` branch off `origin/main`; (3) post ONE comment on macro#6819:
 > 'META-CEO B ACK — session `<your native uuid>`, account Claude3, taking half B (F06 F07 F08
 > F09 F11 F12 F13 + platform)'; (4) run Wave 0 for half B with
-> `Workflow({scriptPath:'<worktree>/.claude/workflows/marketontology_release_held_pr.js',
-> args:{ceo:'B', repo:'macro', prs:[6892, 6793, 6831, 6861, 6526]}})` (takeover -> rebase ->
+> `Workflow({name:'marketontology-release-held-pr', args:{ceo:'B', repo:'macro',
+> prs:[6793, 6831, 6861, 6526]}})` (#6892 is already merged) (takeover -> rebase ->
 > opus review -> fix -> Ready -> merge-on-green -> merge -> live proof), then the Terminal
 > PRs (#490, #502, #507 first) with `repo:'terminal'`; (5) run Wave
 > 1 with `Workflow({name:'marketontology-vertical-build', args:{ceo:'B', wave:'B1',

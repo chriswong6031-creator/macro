@@ -292,9 +292,16 @@ const results = await pipeline(
       log(`${p.id}: not shipped (verdict ${final ? final.evidence.verdict : 'n/a'})`)
       return { ...ctx, ship: null }
     }
-    const ship = await agent(shipPrompt(p, build.evidence), {
+    let ship = await agent(shipPrompt(p, build.evidence), {
       label: `ship:${p.id}`, phase: 'Ship', schema: SHIP_SCHEMA, agentType: 'builder', effort: 'low',
     })
+    // A ship agent that hits its budget while checks are pending returns PARTIAL; re-spawn (each attempt waits up to ~45 min).
+    for (let k = 2; k <= 5 && ship && ship.status === 'PARTIAL' && !(ship.evidence && ship.evidence.merged && ship.evidence.live_verified); k++) {
+      log(`${p.id}: ship attempt ${k}`)
+      ship = await agent(`SHIP ATTEMPT ${k}: a previous ship agent already ran (result: ${String(ship.result).slice(0, 400)}; merged=${ship.evidence && ship.evidence.merged}). Do not repeat completed steps; resume from the first incomplete one.\n\n` + shipPrompt(p, build.evidence), {
+        label: `ship${k}:${p.id}`, phase: 'Ship', schema: SHIP_SCHEMA, agentType: 'builder', effort: 'low',
+      })
+    }
     return { ...ctx, ship }
   },
 )
@@ -312,7 +319,7 @@ const summary = results.filter(Boolean).map(r => ({
   merge_sha: r.ship && r.ship.evidence ? r.ship.evidence.merge_sha : null,
   live_verified: r.ship && r.ship.evidence ? r.ship.evidence.live_verified : false,
   live_proof: r.ship && r.ship.evidence ? r.ship.evidence.live_proof : null,
-  gaps: [].concat(r.spec ? r.spec.gaps : [], r.build ? r.build.gaps : [], r.ship ? r.ship.gaps : []),
+  gaps: [].concat(...[r.spec, r.build, r.review, r.fix, r.rereview, r.ship].map(s => (s && s.gaps) || [])),
 }))
 
 const shipped = summary.filter(s => s.merged && s.live_verified).length
