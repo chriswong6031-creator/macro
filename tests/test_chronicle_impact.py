@@ -293,6 +293,40 @@ def test_glance_consequence_surface_null_on_empty():
     assert surface["served_as_market_feed"] is False
 
 
+def test_plain_glance_titles_strip_ledger_enums():
+    """Front-end clarity: glance titles never print T1_HIT / BULL / EXPIRED."""
+    en, zh = impact.plain_glance_titles({
+        "title": "Prophet close: FBRT BULL → T1_HIT (+10.8% in 25d)",
+        "source": "prophet_ledger",
+        "exposures": [{"ticker": "FBRT", "materiality": "direct"}],
+    })
+    assert "T1_HIT" not in en and "T1_HIT" not in zh
+    assert "BULL" not in en and "BULL" not in zh
+    assert "FBRT" in en and "FBRT" in zh
+    assert "hit first target" in en
+    assert "达到首个目标" in zh
+
+    en2, zh2 = impact.plain_glance_titles({
+        "title": "CANADA regime: Q3 Stagflation → Q2 Reflation",
+        "source": "regime_flip",
+        "exposures": [],
+    })
+    assert "Q3" not in en2 and "Q2" not in en2
+    assert "regime shifted" in en2
+    assert "体制切换" in zh2
+
+    surface = impact.glance_consequence_surface([{
+        **_ev("p-1", "2026-09-01", source="prophet_ledger", tickers=["FBRT"]),
+        "title": "Prophet close: FBRT BULL → EXPIRED (-2.1% in 45d)",
+        "kind": "signal_close",
+    }])
+    row = surface["rows"][0]
+    assert row["title_en"] and row["title_zh"]
+    assert "EXPIRED" not in row["title_en"]
+    assert "EXPIRED" not in row["title_zh"]
+    assert "到期未达标" in row["title_zh"]
+
+
 def test_no_write_family_impact_helper_on_module():
     # BLOCKER 2: nightly writer removed — projection is read-time only.
     assert not hasattr(impact, "write_family_impact")

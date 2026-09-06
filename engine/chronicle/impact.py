@@ -62,6 +62,7 @@ at render or inspect time over a bounded event window.
 """
 from __future__ import annotations
 
+import re
 from typing import Iterable
 
 # Fixed by construction: this module performs no causal identification, so it
@@ -354,6 +355,159 @@ def project_family_impact(events: list[dict]) -> dict[str, list[dict]]:
     return families
 
 
+# Glance-tier outcome labels (ledger enums never reach the News panel).
+# Shared wording with the Prophet closed-outcome map (T1_HIT / EXPIRED / …).
+_PROPHET_OUTCOME_PLAIN: dict[str, tuple[str, str]] = {
+    "T1_HIT": ("hit first target", "达到首个目标"),
+    "T2_HIT": ("hit second target", "达到第二个目标"),
+    "T3_HIT": ("hit final target", "达到最终目标"),
+    "EXPIRED": ("timed out", "到期未达标"),
+    "INVALIDATED": ("stopped out", "止损离场"),
+}
+
+_SIDE_PLAIN: dict[str, tuple[str, str]] = {
+    "BULL": ("bullish plan", "偏多计划"),
+    "BEAR": ("bearish plan", "偏空计划"),
+}
+
+# Common regime / risk-band tokens that otherwise leak English into ZH glance copy.
+_STATE_TOKEN_ZH: dict[str, str] = {
+    "stagflation": "滞胀",
+    "reflation": "再通胀",
+    "goldilocks": "金发女孩",
+    "growth-scare": "增长担忧",
+    "growth scare": "增长担忧",
+    "calm": "平静",
+    "watch": "关注",
+    "caution": "警惕",
+    "alarm": "警报",
+}
+
+_REGION_ZH: dict[str, str] = {
+    "canada": "加拿大",
+    "hk": "香港",
+    "us": "美国",
+    "china": "中国",
+}
+
+
+def _zh_state(token: str) -> str:
+    key = (token or "").strip().lower()
+    return _STATE_TOKEN_ZH.get(key, (token or "").strip())
+
+
+def _zh_region(token: str) -> str:
+    key = (token or "").strip().lower()
+    return _REGION_ZH.get(key, (token or "").strip())
+
+
+def _zh_detail(detail: str | None) -> str:
+    """Translate common '+X% in Nd' ledger detail fragments for ZH glance."""
+    if not detail:
+        return ""
+    m = re.match(r"^([+\-]?\d+(?:\.\d+)?%)\s+in\s+(\d+)d$", detail.strip(), re.IGNORECASE)
+    if m:
+        return f"（{m.group(2)}日内 {m.group(1)}）"
+    return f"（{detail}）"
+
+# Strip ledger quarter prefixes from regime state tokens for glance copy.
+_QUARTER_PREFIX_RE = re.compile(r"^Q[1-4]\s+", re.IGNORECASE)
+_ARROW = r"(?:→|->)"
+_PROPHET_CLOSE_RE = re.compile(
+    rf"^Prophet close:\s*([A-Z0-9.\-]+)\s+(BULL|BEAR)\s*{_ARROW}\s*([A-Z0-9_]+)"
+    r"(?:\s*\(([^)]+)\))?\s*$",
+    re.IGNORECASE,
+)
+_REGIME_FLIP_RE = re.compile(
+    rf"^([A-Za-z][A-Za-z /-]*)\s+regime:\s*(.+?)\s*{_ARROW}\s*(.+?)\s*$",
+    re.IGNORECASE,
+)
+_RISK_BAND_RE = re.compile(
+    rf"^Risk radar:\s*(.+?)\s*{_ARROW}\s*(.+?)\s*$",
+    re.IGNORECASE,
+)
+
+
+def _strip_quarter_prefix(token: str) -> str:
+    return _QUARTER_PREFIX_RE.sub("", (token or "").strip()) or (token or "").strip()
+
+
+def plain_glance_titles(proj: dict) -> tuple[str, str]:
+    """EN/ZH plain-word glance titles for the News consequence panel.
+
+    Spine event titles are ledger-facing (``T1_HIT``, ``Prophet close:``,
+    ``Q3 Stagflation``). Glance surfaces may not print those raw forms —
+    front-end clarity law. Falls back to a family-level plain label when the
+    title cannot be parsed; never invents a market signal.
+    """
+    raw = (proj.get("title") or "").strip()
+    source = (proj.get("source") or "").strip()
+    direct = [
+        e["ticker"] for e in (proj.get("exposures") or [])
+        if e.get("materiality") == MATERIALITY_DIRECT and e.get("ticker")
+    ]
+
+    m = _PROPHET_CLOSE_RE.match(raw)
+    if m or source == "prophet_ledger":
+        if m:
+            ticker, side, outcome, detail = m.group(1), m.group(2).upper(), m.group(3).upper(), m.group(4)
+        else:
+            ticker = direct[0] if direct else ""
+            side, outcome, detail = "", "", None
+        side_en, side_zh = _SIDE_PLAIN.get(side, ("plan", "计划"))
+        out_en, out_zh = _PROPHET_OUTCOME_PLAIN.get(
+            outcome, ("closed", "已结")
+        )
+        who = ticker or "Named name"
+        detail_en = f" ({detail})" if detail else ""
+        detail_zh = _zh_detail(detail)
+        return (
+            f"{who} {side_en} closed · {out_en}{detail_en}",
+            f"{who} {side_zh}已结 · {out_zh}{detail_zh}",
+        )
+
+    m = _REGIME_FLIP_RE.match(raw)
+    if m or source == "regime_flip":
+        if m:
+            region, frm, to = m.group(1).strip(), m.group(2), m.group(3)
+        else:
+            region, frm, to = "Market", "prior state", "new state"
+        frm_p, to_p = _strip_quarter_prefix(frm), _strip_quarter_prefix(to)
+        return (
+            f"{region} regime shifted: {frm_p} → {to_p}",
+            f"{_zh_region(region)}体制切换：{_zh_state(frm_p)} → {_zh_state(to_p)}",
+        )
+
+    m = _RISK_BAND_RE.match(raw)
+    if m or source == "risk_band":
+        if m:
+            frm, to = m.group(1).strip(), m.group(2).strip()
+        else:
+            frm, to = "prior", "new"
+        return (
+            f"Risk radar moved: {frm} → {to}",
+            f"风险雷达切换：{_zh_state(frm)} → {_zh_state(to)}",
+        )
+
+    if source == "macro_release":
+        return (
+            raw or "Macro data release",
+            (raw and f"宏观数据发布：{raw}") or "宏观数据发布",
+        )
+
+    if source == "earnings":
+        who = direct[0] if direct else "Named name"
+        return (
+            f"{who} earnings event" if not raw else raw,
+            f"{who} 业绩事件" if not raw else raw,
+        )
+
+    # Unknown family: prefer a short non-slug fallback over leaking raw ledger text.
+    if raw and not re.search(r"\b(T[123]_HIT|INVALIDATED|EXPIRED|BULL|BEAR)\b", raw):
+        return raw, raw
+    return ("Chronicle event", "大事记事件")
+
+
 def glance_consequence_surface(
     events: list[dict],
     *,
@@ -367,7 +521,9 @@ def glance_consequence_surface(
     Market-Feed-branded product surface (MO-DELTA-001).
 
     Calibrated impact stays null + reason. Empty / missing input prints an
-    honest null state rather than fabricating rows.
+    honest null state rather than fabricating rows. Row titles are dual-locale
+    plain-word (``title_en`` / ``title_zh``); the raw spine ``title`` is kept
+    for diagnostics only and must not be rendered on the glance surface.
     """
     if not events:
         return {
@@ -398,12 +554,15 @@ def glance_consequence_surface(
     for proj in project_events_impact(window):
         direct = [e["ticker"] for e in proj["exposures"] if e.get("materiality") == MATERIALITY_DIRECT]
         second = [e["ticker"] for e in proj["exposures"] if e.get("materiality") == MATERIALITY_SECOND_ORDER]
+        title_en, title_zh = plain_glance_titles(proj)
         rows.append({
             "event_id": proj["event_id"],
             "event_time": proj["event_time"],
             "known_at": proj["known_at"],
             "family": proj["source"] or "unknown",
-            "title": proj.get("title") or "",
+            "title": proj.get("title") or "",  # raw spine title — diagnostics only
+            "title_en": title_en,
+            "title_zh": title_zh,
             "direct_tickers": direct,
             "second_order_tickers": second,
             "second_order_truncated": bool(proj.get("second_order_truncated")),

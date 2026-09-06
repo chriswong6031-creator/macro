@@ -819,7 +819,10 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
       {% for row in CI.rows[:8] %}
       <div class="nx-rel">
         <div class="nx-rel-top">
-          <span class="nx-rel-name">{{ t((row.title or 'Chronicle event')|e, (row.title or '大事记事件')|e) }}</span>
+          {#- Glance titles are plain-word EN/ZH from the impact projector; raw
+              spine titles (T1_HIT / Prophet close / Q3 Stagflation) stay off
+              this surface (front-end clarity law). -#}
+          <span class="nx-rel-name">{{ t((row.title_en or 'Chronicle event')|e, (row.title_zh or '大事记事件')|e) }}</span>
         </div>
         <div class="nx-meta">
           {% if row.event_time %}<span class="num">{{ row.event_time }}</span><span class="sep">·</span>{% endif %}
