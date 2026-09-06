@@ -1,0 +1,5 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/sanctions_map.html.j2
+  - templates/_worldmap_base.html.j2
+manifest: mockups/evidence/sanctions_map/manifest.json

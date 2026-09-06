@@ -8,13 +8,20 @@ Never raises. Nulls are ``None``, never ``0``.
 from __future__ import annotations
 
 import csv
-import re
 import io
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from engine.intl_risk import _IMF_COUNTRIES
+
+# Shared ISO3 key convention with intl_risk (acceptance 3): this leaf must not
+# mint a parallel country master. Painted geometry comes from the existing
+# Natural Earth worldmap partial; attribution rows carry display names.
+SHARED_ISO3_KEYS = frozenset(_IMF_COUNTRIES)
 
 STORE_DIR = Path("data/sanctions_ofac")
 SDN_FILE = STORE_DIR / "sdn_snapshot.csv"
@@ -32,47 +39,65 @@ def _rung(n: int) -> int:
 
 
 UNKNOWN_RUNG = "x"
+NOT_NAMED_RUNG = 0
+
+
+def split_program_field(raw: str) -> list[str]:
+    """OFAC's 'program' field packs multiple codes as ``[A] [B]`` — split on
+    the ``] [`` join (any whitespace) and strip stray brackets/whitespace.
+    Shared by collectors/ofac_sdn.py so both parsers agree on whitespace
+    variants."""
+    raw = (raw or "").strip()
+    if not raw or raw == "-0-":
+        return []
+    parts = re.split(r"\]\s*\[", raw)
+    return [p.strip().strip("[]").strip() for p in parts if p.strip().strip("[]").strip()]
+
+
+# Back-compat alias used by older call sites / tests.
+_split_program_field = split_program_field
 
 
 def rungs_for(vm: dict, all_iso3=None) -> dict:
     """Per-country rung map for the world map SVG, honest about unknown
     coverage (acceptance 3: missing coverage prints as unknown, never as
-    zero). A country absent from vm['countries'] is NOT provably
-    unsanctioned -- when any OFAC programme code failed to resolve to a
-    country (vm['coverage']['unresolved'] > 0), we cannot tell which
-    countries those unmapped programmes point at, so every country we
-    know about (all_iso3) that is not positively resolved must be
-    painted unknown (hatch) rather than defaulting to a false 'not
-    named' clean read. Only when coverage is fully resolved does an
-    absent country mean an honest, uncontested 'not named'."""
+    zero).
+
+    - Positively resolved countries keep their 1/2/3 rung.
+    - When any *country-scoped* OFAC programme failed to resolve
+      (``coverage.unresolved > 0``), every other known country is painted
+      unknown (hatch) — we cannot prove they are unsanctioned.
+    - When country-scoped coverage is fully resolved, absent countries are
+      an honest ``0`` ("not named"). Thematic programmes never trigger the
+      hatch — they are not country attributions.
+    """
     rungs: dict = {}
-    coverage = vm.get("coverage")
-    if coverage and coverage.get("unresolved"):
+    coverage = vm.get("coverage") or {}
+    unresolved = int(coverage.get("unresolved") or 0)
+    if unresolved > 0:
         for iso3 in (all_iso3 or ()):
             rungs[iso3] = UNKNOWN_RUNG
+    else:
+        for iso3 in (all_iso3 or ()):
+            rungs[iso3] = NOT_NAMED_RUNG
     for c in vm.get("countries") or []:
         rungs[c["iso3"]] = c["rung"]
     return rungs
 
 
-def _load_programs_config(path: Path = PROGRAMS_CONFIG) -> list[dict]:
+def _load_programs_config(path: Path = PROGRAMS_CONFIG) -> tuple[list[dict], set[str]]:
     if not path.exists():
-        return []
+        return [], set()
     try:
         raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except Exception:
-        return []
-    return raw.get("programs") or []
-
-
-def _split_program_field(raw: str) -> list[str]:
-    """OFAC's 'program' field packs multiple codes as ``[A] [B]`` — split on
-    the ``] [`` join and strip stray brackets/whitespace from each token."""
-    raw = raw.strip()
-    if not raw or raw == "-0-":
-        return []
-    parts = re.split(r"\]\s*\[", raw)
-    return [p.strip().strip("[]").strip() for p in parts if p.strip().strip("[]").strip()]
+        return [], set()
+    thematic = {
+        row["code"]
+        for row in (raw.get("thematic") or [])
+        if isinstance(row, dict) and row.get("code")
+    }
+    return list(raw.get("programs") or []), thematic
 
 
 def _load_program_code_counts(sdn_file: Path = SDN_FILE) -> dict[str, int]:
@@ -90,7 +115,7 @@ def _load_program_code_counts(sdn_file: Path = SDN_FILE) -> dict[str, int]:
         reader = csv.reader(io.StringIO(text))
         for row in reader:
             if len(row) > 3 and row[3].strip():
-                for code in _split_program_field(row[3]):
+                for code in split_program_field(row[3]):
                     counts[code] = counts.get(code, 0) + 1
     except Exception:
         return {}
@@ -106,6 +131,18 @@ def _load_meta(meta_file: Path = META_FILE) -> dict:
         return {}
 
 
+def _as_of_from_meta(meta: dict) -> str | None:
+    """Prefer OFAC list_published_date; fall back to the fetch date so the
+    page never claims 'unknown' when we have a verified snapshot timestamp."""
+    published = meta.get("list_published_date")
+    if published:
+        return str(published)[:10]
+    fetched = meta.get("fetched_at")
+    if fetched:
+        return str(fetched)[:10]
+    return None
+
+
 def build(
     sdn_file: Path = SDN_FILE,
     meta_file: Path = META_FILE,
@@ -115,18 +152,20 @@ def build(
     try:
         code_counts = _load_program_code_counts(sdn_file)
         meta = _load_meta(meta_file)
-        config_rows = _load_programs_config(programs_config)
+        config_rows, thematic_codes = _load_programs_config(programs_config)
     except Exception:
-        code_counts, meta, config_rows = {}, {}, []
+        code_counts, meta, config_rows, thematic_codes = {}, {}, [], set()
 
     if not code_counts:
         return {
-            "as_of": None,
+            "as_of": _as_of_from_meta(meta),
             "source_url": meta.get("source_url"),
             "fetched_at": meta.get("fetched_at"),
             "n_programs_total": 0,
+            "n_countries": 0,
             "countries": [],
             "unresolved": [],
+            "thematic": [],
             "coverage": None,
         }
 
@@ -134,12 +173,18 @@ def build(
 
     by_iso3: dict[str, dict] = {}
     unresolved: list[dict] = []
+    thematic: list[dict] = []
     n_programs_total = 0
     resolved_count = 0
     unresolved_count = 0
+    thematic_count = 0
 
     for code, n_entries in code_counts.items():
         n_programs_total += 1
+        if code in thematic_codes:
+            thematic.append({"code": code, "n_entries": n_entries})
+            thematic_count += 1
+            continue
         row = by_code.get(code)
         if row is None or not row.get("iso3"):
             unresolved.append({"code": code, "n_entries": n_entries})
@@ -151,12 +196,17 @@ def build(
             iso3,
             {
                 "iso3": iso3,
-                "name_en": row.get("name_en", iso3),
-                "name_zh": row.get("name_zh", iso3),
+                "name_en": row.get("country_name_en") or row.get("name_en", iso3),
+                "name_zh": row.get("country_name_zh") or row.get("name_zh", iso3),
                 "n_programs": 0,
                 "programs": [],
             },
         )
+        # Prefer explicit country_* once set; don't overwrite with a later program title.
+        if row.get("country_name_en"):
+            entry["name_en"] = row["country_name_en"]
+        if row.get("country_name_zh"):
+            entry["name_zh"] = row["country_name_zh"]
         entry["n_programs"] += 1
         entry["programs"].append(
             {
@@ -174,13 +224,19 @@ def build(
     countries.sort(key=lambda c: c["n_programs"], reverse=True)
 
     return {
-        "as_of": meta.get("list_published_date"),
+        "as_of": _as_of_from_meta(meta),
         "source_url": meta.get("source_url"),
         "fetched_at": meta.get("fetched_at"),
         "n_programs_total": n_programs_total,
+        "n_countries": len(countries),
         "countries": countries,
         "unresolved": unresolved,
-        "coverage": {"resolved": resolved_count, "unresolved": unresolved_count},
+        "thematic": thematic,
+        "coverage": {
+            "resolved": resolved_count,
+            "unresolved": unresolved_count,
+            "thematic": thematic_count,
+        },
     }
 
 

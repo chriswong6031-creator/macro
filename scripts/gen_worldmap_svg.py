@@ -71,7 +71,7 @@ def main(geojson_path: str) -> None:
         d = geometry_to_path(feat["geometry"])
         print(
             f'<path class="wm-c" data-iso3="{iso3}"'
-            "{% if rungs.get('" + iso3 + "') %} data-rung=\"{{ rungs['"
+            "{% if rungs.get('" + iso3 + "') is not none %} data-rung=\"{{ rungs['"
             + iso3
             + "'] }}\"{% endif %} d=\"" + d + '"/>'
         )

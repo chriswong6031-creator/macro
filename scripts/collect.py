@@ -169,6 +169,7 @@ def all_adapters() -> dict:
         ("eia", "collectors.eia", "EiaAdapter"),                       # petroleum supply (Weekly Petroleum Status)
         ("jodi", "collectors.jodi", "JodiAdapter"),                    # JODI monthly closing oil stocks by country (Strategic Reserves page)
         ("worldbank", "collectors.worldbank", "WorldBankAdapter"),     # World Bank reserve assets -> gold value/share (Strategic Reserves page)
+        ("ofac_sdn", "collectors.ofac_sdn", "OfacSdnAdapter"),          # OFAC SDN public CSV -> data/sanctions_ofac/ (Sanctions Map page; keyless)
         ("ofr_fsi", "collectors.ofr_fsi", "OfrFsiAdapter"),            # OFR Financial Stress Index (functional + regional decomposition)
         ("cleveland_nowcast", "collectors.cleveland_nowcast", "ClevelandNowcastAdapter"),  # Cleveland Fed daily CPI/PCE nowcast (MRI-PR-A; fail-open, keyless)
         ("rate_futures", "collectors.rate_futures", "RateFuturesAdapter"),  # ZQ/SR3 implied Fed-policy path (display-only, research/DATA_SIGNAL_EXPANSION_2026.md #2)

@@ -681,6 +681,7 @@ pages:
     why: "single-asset (BTC) strategy sheet"
 
   # ── intelligence_desk · named research desks ──────────────────────────────────
+  # A standing desk over one domain: policy, flow, alt-data, smart money, China.
 
   macro:sanctions_map:
     priority: "P0"
@@ -688,7 +689,6 @@ pages:
     primary_user_question: "Where do US sanctions point today, and which countries is our coverage silent about?"
     evidence: [engine/sanctions_map.py, config/sanctions_ofac_programs.yml, templates/sanctions_map.html.j2]
     note: "base map + OFAC sanctions overlay, display-only leaf (packet A-F02-1)"
-  # A standing desk over one domain: policy, flow, alt-data, smart money, China.
 
   macro:advanced:
     archetype: "intelligence_desk"

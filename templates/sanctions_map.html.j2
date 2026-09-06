@@ -97,7 +97,7 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
   <p class="sm-stance">{{ t('Use this to read country risk, not to trade it.',
                             '用于判读国别风险，不用于交易。') }}</p>
   <p class="sm-meta">
-    <span class="dtp-asof">{{ t('OFAC list published','OFAC 名单发布日') }} {{ vm.as_of or t('unknown','未知') }}</span>
+    <span class="dtp-asof">{{ t('OFAC list as of','OFAC 名单截至') }} {{ vm.as_of or t('unknown','未知') }}</span>
     <span class="sm-count tnum">{{ vm.n_programs_total }}</span>
     <span>{{ t('sanctions programmes','项制裁计划') }}</span>
     {% if vm.source_url %}<a href="{{ vm.source_url }}" rel="noopener">{{ t('Source: US Treasury OFAC','来源：美国财政部 OFAC') }}</a>{% endif %}
@@ -129,7 +129,11 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
   <p class="mx-empty-why sm-null">
     {{ t('We could not verify a country for', '我们无法核实其国别的制裁计划有') }}
     <b class="tnum">{{ vm.coverage.unresolved }}</b>
-    {{ t('programmes — they are not on the map.', '项 — 未在图上显示。') }}
+    {{ t('country-scoped programmes — they are not on the map.', '项国别计划 — 未在图上显示。') }}
+    {% if vm.coverage.thematic %}
+    {{ t('Global (non-country) programmes are counted separately and do not hatch the map.',
+         '全球（非国别）计划单独计数，不会把整张地图标为未知。') }}
+    {% endif %}
   </p>
   {% endif %}
 </section>
@@ -138,10 +142,10 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
 <section class="sm-cards">
   {% for c in vm.countries[:6] %}
   <div class="sm-card">
-    <div>{{ td(c.name_en) }}</div>
+    <div>{{ t(c.name_en, c.name_zh) }}</div>
     <div class="n tnum">{{ c.n_programs }}</div>
     {% for p in c.programs[:2] %}
-    <div><a href="{{ p.url }}" rel="noopener">{{ td(p.name_en) }}</a></div>
+    <div><a href="{{ p.url }}" rel="noopener">{{ t(p.name_en, p.name_zh) }}</a></div>
     {% endfor %}
   </div>
   {% endfor %}
@@ -152,11 +156,11 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
 <thead><tr><th>{{ t('Country','国家') }}</th><th>{{ t('Programmes','计划数') }}</th></tr></thead>
 <tbody>
 {% for c in vm.countries[:8] %}
-<tr data-iso3="{{ c.iso3 }}"><td>{{ td(c.name_en) }}</td><td class="tnum">{{ c.n_programs }}</td></tr>
+<tr data-iso3="{{ c.iso3 }}"><td>{{ t(c.name_en, c.name_zh) }}</td><td class="tnum">{{ c.n_programs }}</td></tr>
 {% endfor %}
 </tbody>
 </table>
-{% if vm.coverage.resolved > 8 %}<p class="sm-null">{{ t('See all','查看全部') }} <span class="tnum">{{ vm.coverage.resolved }}</span></p>{% endif %}
+{% if (vm.n_countries or 0) > 8 %}<p class="sm-null">{{ t('See all','查看全部') }} <span class="tnum">{{ vm.n_countries }}</span> {{ t('countries','个国家') }}</p>{% endif %}
 </div>
 {% endif %}
 
@@ -166,10 +170,14 @@ html[data-theme="light"] .sm-legend [data-rung="3"] i{opacity:.48}
   <p>{{ t('Not on this map: shipping chokepoints, military sites, satellite imagery. Those need rights we do not hold.',
           '本图不包含：航运咽喉、军事设施、卫星影像。这些数据的使用权我们尚未取得。') }}</p>
   <p>{{ t('Source', '来源') }}: {{ vm.source_url or t('unknown','未知') }} ·
-     {{ t('Published', '发布日') }}: {{ vm.as_of or t('unknown','未知') }} ·
+     {{ t('As of', '截至') }}: {{ vm.as_of or t('unknown','未知') }} ·
      {{ t('Fetched', '抓取时间') }}: {{ vm.fetched_at or t('unknown','未知') }} ·
-     {{ t('Unresolved programmes', '未核实计划数') }}:
+     {{ t('Unresolved country programmes', '未核实国别计划数') }}:
      <span class="tnum">{{ vm.coverage.unresolved if vm.coverage else (vm.unresolved|length) }}</span>
+     {% if vm.coverage and vm.coverage.thematic %}
+     · {{ t('Global programmes', '全球计划数') }}:
+     <span class="tnum">{{ vm.coverage.thematic }}</span>
+     {% endif %}
   </p>
 </details>
 </main>
