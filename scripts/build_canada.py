@@ -748,16 +748,20 @@ def _canada_board_ledger(setups: dict | None, latest: dict) -> list[dict]:
     health: list[dict] = []
     try:
         from engine import board_ledger
-        n = board_ledger.append_board(calls, market="CA", asof=asof)
-        if n <= 0:
-            health.append({"en": "Board ledger (append wrote 0 rows — see build log)",
-                           "zh": "榜单账本（写入 0 行 — 查看构建日志）",
-                           "status": "ERROR", "rows": 0, "last": asof})
-            log.error("CA board ledger: append_board wrote 0 rows for %s (%d calls)",
-                      asof, len(calls))
+        if _ledger_advance_enabled():
+            n = board_ledger.append_board(calls, market="CA", asof=asof)
+            if n <= 0:
+                health.append({"en": "Board ledger (append wrote 0 rows — see build log)",
+                               "zh": "榜单账本（写入 0 行 — 查看构建日志）",
+                               "status": "ERROR", "rows": 0, "last": asof})
+                log.error("CA board ledger: append_board wrote 0 rows for %s (%d calls)",
+                          asof, len(calls))
+            else:
+                log.info("CA board ledger: logged %d ranked names for %s (ledger=%d)",
+                         len(calls), asof, n)
         else:
-            log.info("CA board ledger: logged %d ranked names for %s (ledger=%d)",
-                     len(calls), asof, n)
+            log.info("CA board ledger: off-nightly render — append skipped for %s "
+                     "(%d calls); read projections remain available", asof, len(calls))
         # nightly grade of matured calls — 'accruing' until forward returns exist. The
         # track-record PANEL (W6, §7.4) ships in 'accruing' state from day one, so ALWAYS
         # attach the scorecard (it self-reports status='accruing' with first_read_est until
