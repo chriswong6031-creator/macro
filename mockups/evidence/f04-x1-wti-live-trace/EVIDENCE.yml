@@ -1,0 +1,8 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/ontology.css
+  - templates/ontology.html.j2
+  - templates/ontology.js
+  - site/ontology.css
+  - site/ontology.js
+manifest: mockups/evidence/f04-x1-wti-live-trace/manifest.json

@@ -2244,6 +2244,14 @@ app.include_router(intel_hub_market_pulse_router)
 from app.market_memory import router as market_memory_router  # noqa: E402
 app.include_router(market_memory_router)
 
+# F04-X1 WTI Live Trace. /ontology.html is a public shell holding no current
+# value; this is the only route that serves one, behind the same
+# require_user -> enforce_site_full(always=True) authority as the desks above.
+# It composes read-only over the existing transmission artifacts and owns no
+# store, cache, scheduler or second evaluation.
+from app.ontology_explorer import router as ontology_explorer_router  # noqa: E402
+app.include_router(ontology_explorer_router)
+
 # Filing Forensics private state transport. The public page is only a shell;
 # this route enforces the same authenticated site_full entitlement as the paid
 # site before reading the private Research Vault bucket. These are paid product

@@ -1584,6 +1584,7 @@ jobs:
     # 846 tracked / 127 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      - "engine/ontology_explorer.py"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
@@ -4208,6 +4209,38 @@ jobs:
       - name: transmission proposals — W5 Loop-C (pack + ingest + gate + Article 1/2)
         run: python -m pytest tests/test_transmission_proposals.py -q
 
+  ontology-explorer:
+    if: ${{ false }}
+    gate: code
+    # F04-X1 WTI Live Trace: the request-time composer
+    # (engine/ontology_explorer.py), its authenticated router
+    # (app/ontology_explorer.py) and the public-safe shell builder. Placed
+    # beside the transmission-chains owner because the trace it composes reads
+    # that chain library; scope is INFERRED, not curated, and that is
+    # deliberate — see the note below.
+    #
+    # NOT `scope: exclusive`. app/ontology_explorer.py resolves shared auth via
+    # `from app.main import require_user` (function-scoped, but scope inference
+    # walks the AST scope-insensitively), so this job's honest import closure is
+    # most of app/, engine/ and lib/ — measured at roughly 500 files. A curated
+    # exclusive scope would therefore have to enumerate ~500 paths and would
+    # re-select the job on nearly every change in the repository, which is the
+    # opposite of what exclusive scoping is for. `gate: code` keeps these four
+    # suites ON the merge gate: they are this feature's entire proof.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 fastapi httpx
+      - name: ontology explorer — composer contract, owner episode, receipts
+        run: python -m pytest tests/test_ontology_explorer_contract.py -q
+      - name: ontology explorer — identity, private transport, public shell
+        run: python -m pytest tests/test_ontology_explorer_identity.py tests/test_ontology_explorer_transport.py tests/test_ontology_explorer_shell.py -q
+
   research-factory-authority:
     if: ${{ false }}
     gate: code
@@ -6626,6 +6659,7 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      - "engine/ontology_explorer.py"
       # F01 R1B closure widening 2026-09-04 (contract-delta): build_site.py's
       # guarded macro-suite hook imports the page builder, which carries the
       # workspace contract/registry pair. Enumerated, not globbed — the checker
@@ -7217,6 +7251,7 @@ jobs:
     # 846 tracked / 74 concrete.
     scope: exclusive
     paths:
+      - "engine/ontology_explorer.py"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
@@ -12377,6 +12412,7 @@ jobs:
     # 846 tracked / 74 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
+      - "engine/ontology_explorer.py"
       # B1A closure widening 2026-08-24 (contract-delta): build_stock_library's security_state stage extends this job's walked closure.
       - "engine/security_state.py"
       - "engine/theme_graph/__init__.py"

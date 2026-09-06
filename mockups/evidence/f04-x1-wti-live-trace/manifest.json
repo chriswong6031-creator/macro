@@ -1,0 +1,306 @@
+{
+ "axes": {
+  "access": [
+   "anonymous"
+  ],
+  "force_states": [],
+  "locales": [
+   "en",
+   "zh"
+  ],
+  "themes": [
+   "dark",
+   "light"
+  ],
+  "viewports": {
+   "desktop": [
+    1440,
+    900
+   ],
+   "mobile": [
+    390,
+    844
+   ]
+  }
+ },
+ "excluded": [],
+ "generated_at": "2026-09-06T06:53:49Z",
+ "honesty": {
+  "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
+  "authority": "this tool measures and screenshots; it scores, ranks, and judges nothing",
+  "gaps": "states that were not captured are recorded with a reason; nothing is inferred for them"
+ },
+ "outcome": "captured",
+ "pages": [
+  {
+   "console_errors": [],
+   "failed_responses": [],
+   "gaps": [
+    {
+     "captured": false,
+     "dimension": "access",
+     "reason": "requires authenticated session; not automatable without approved fixtures",
+     "value": "free"
+    },
+    {
+     "captured": false,
+     "dimension": "access",
+     "reason": "requires authenticated session; not automatable without approved fixtures",
+     "value": "essential"
+    },
+    {
+     "captured": false,
+     "dimension": "access",
+     "reason": "requires authenticated session; not automatable without approved fixtures",
+     "value": "pro"
+    },
+    {
+     "captured": false,
+     "dimension": "page_state",
+     "reason": "state not synthesizable against static output",
+     "value": "loading"
+    },
+    {
+     "captured": false,
+     "dimension": "page_state",
+     "reason": "state not synthesizable against static output",
+     "value": "empty"
+    },
+    {
+     "captured": false,
+     "dimension": "page_state",
+     "reason": "state not synthesizable against static output",
+     "value": "stale"
+    },
+    {
+     "captured": false,
+     "dimension": "page_state",
+     "reason": "state not synthesizable against static output",
+     "value": "error"
+    }
+   ],
+   "metrics": {
+    "asof_present": false,
+    "by_viewport": {
+     "desktop": {
+      "document_height_px": 1259,
+      "elements_wider_than_viewport": 0,
+      "horizontal_overflow": false
+     },
+     "mobile": {
+      "document_height_px": 1988,
+      "elements_wider_than_viewport": 0,
+      "horizontal_overflow": false
+     }
+    },
+    "console_error_count": 0,
+    "document_height_px": 1259,
+    "duplicate_heading_texts": [],
+    "elements_wider_than_viewport": 0,
+    "heading_counts": {
+     "h1": 0,
+     "h2": 5,
+     "h3": 9,
+     "h4": 0,
+     "h5": 0,
+     "h6": 0
+    },
+    "horizontal_overflow": false,
+    "long_paragraph_count": 0,
+    "measured_in": {
+     "access": "anonymous",
+     "locale": "en",
+     "theme": "dark",
+     "viewport": "desktop"
+    },
+    "panel_count": 4,
+    "payload_bytes_total": 500674,
+    "raw_slug_hit_count": 0,
+    "raw_slug_hits": [],
+    "request_count": 18,
+    "screenshot_completion": 1.0,
+    "section_count": 3,
+    "source_present": false,
+    "todo_placeholder_hit_count": 0,
+    "todo_placeholder_hits": [],
+    "visible_word_count": 295
+   },
+   "page_id": "ontology.html",
+   "registry_route": "/ontology.html",
+   "route": "/ontology.html",
+   "route_kind": "explicit_override",
+   "states": [
+    {
+     "access": "anonymous",
+     "applied_locale": "en",
+     "applied_theme": "dark",
+     "bytes": 290609,
+     "captured": true,
+     "file": "6e2684db575c5dc1.png",
+     "force_state": null,
+     "height": 1259,
+     "locale": "en",
+     "sha256": "6e2684db575c5dc1cfd770077944f6a761a1a0525d230569030fcc5e7413185f",
+     "theme": "dark",
+     "viewport": "desktop",
+     "viewport_height": 900,
+     "viewport_width": 1440,
+     "width": 1440
+    },
+    {
+     "access": "anonymous",
+     "applied_locale": "en",
+     "applied_theme": "light",
+     "bytes": 282711,
+     "captured": true,
+     "file": "999d07810945434c.png",
+     "force_state": null,
+     "height": 1259,
+     "locale": "en",
+     "sha256": "999d07810945434c3ab3b8163a934845bd61240118c1521d897560140a780d93",
+     "theme": "light",
+     "viewport": "desktop",
+     "viewport_height": 900,
+     "viewport_width": 1440,
+     "width": 1440
+    },
+    {
+     "access": "anonymous",
+     "applied_locale": "zh",
+     "applied_theme": "dark",
+     "bytes": 305616,
+     "captured": true,
+     "file": "bc3f3bdaf04e3717.png",
+     "force_state": null,
+     "height": 1218,
+     "locale": "zh",
+     "sha256": "bc3f3bdaf04e371797d358f3af75846ee44cb9a676bf5c879ef1e07d7a770c5c",
+     "theme": "dark",
+     "viewport": "desktop",
+     "viewport_height": 900,
+     "viewport_width": 1440,
+     "width": 1440
+    },
+    {
+     "access": "anonymous",
+     "applied_locale": "zh",
+     "applied_theme": "light",
+     "bytes": 296082,
+     "captured": true,
+     "file": "8b743fb8ebe16017.png",
+     "force_state": null,
+     "height": 1218,
+     "locale": "zh",
+     "sha256": "8b743fb8ebe160175ce4db3ff14d9bc5363468bbc1b5c2cd2bc388e22da093fd",
+     "theme": "light",
+     "viewport": "desktop",
+     "viewport_height": 900,
+     "viewport_width": 1440,
+     "width": 1440
+    },
+    {
+     "access": "anonymous",
+     "applied_locale": "en",
+     "applied_theme": "dark",
+     "bytes": 197529,
+     "captured": true,
+     "file": "b486e8946d698ee9.png",
+     "force_state": null,
+     "height": 1988,
+     "locale": "en",
+     "sha256": "b486e8946d698ee9f3b84c2c070e988aa3c20dedfd6c6393e973a43efe40365d",
+     "theme": "dark",
+     "viewport": "mobile",
+     "viewport_height": 844,
+     "viewport_width": 390,
+     "width": 390
+    },
+    {
+     "access": "anonymous",
+     "applied_locale": "en",
+     "applied_theme": "light",
+     "bytes": 199847,
+     "captured": true,
+     "file": "bc39e55e5f11ec5f.png",
+     "force_state": null,
+     "height": 1988,
+     "locale": "en",
+     "sha256": "bc39e55e5f11ec5ff0a1c7cfa42201e7cce46da5c57275836638164cc4c1df32",
+     "theme": "light",
+     "viewport": "mobile",
+     "viewport_height": 844,
+     "viewport_width": 390,
+     "width": 390
+    },
+    {
+     "access": "anonymous",
+     "applied_locale": "zh",
+     "applied_theme": "dark",
+     "bytes": 208711,
+     "captured": true,
+     "file": "cf5fa69066e31ab0.png",
+     "force_state": null,
+     "height": 1883,
+     "locale": "zh",
+     "sha256": "cf5fa69066e31ab055a5e1e69f6c7c1d69936589c706cf9fb5451d511dd70ef9",
+     "theme": "dark",
+     "viewport": "mobile",
+     "viewport_height": 844,
+     "viewport_width": 390,
+     "width": 390
+    },
+    {
+     "access": "anonymous",
+     "applied_locale": "zh",
+     "applied_theme": "light",
+     "bytes": 211086,
+     "captured": true,
+     "file": "3785c90e800ea588.png",
+     "force_state": null,
+     "height": 1883,
+     "locale": "zh",
+     "sha256": "3785c90e800ea588b803432980fbcf7335e1f33cecd4fb8254fdcb105dc46e2c",
+     "theme": "light",
+     "viewport": "mobile",
+     "viewport_height": 844,
+     "viewport_width": 390,
+     "width": 390
+    }
+   ]
+  }
+ ],
+ "schema": "mastermind.p0_evidence.v2",
+ "selection": {
+  "explicit_routes": [
+   "/ontology.html"
+  ],
+  "max_pages": 1,
+  "mode": "explicit_routes",
+  "note": "--routes overrode registry selection; the --priority and --repo filters were not applied",
+  "priority": null,
+  "registry": "data/product_experience/page_registry.json",
+  "registry_rows": 325,
+  "repo": null,
+  "selected": 1
+ },
+ "target": {
+  "base_url": "http://127.0.0.1:60883",
+  "kind": "base_url",
+  "resolved_gitdir_or_none": null,
+  "resolved_sha_or_none": null,
+  "resolved_sha_source": "unavailable: a live origin does not disclose the commit it is serving",
+  "site_dir": null
+ },
+ "tool": {
+  "module_ref": "scripts/capture_page_evidence.py",
+  "module_sha256": "97b4435815440fde008cd35b73c551cf704ba01ea71f18f04a2b23ebc7a0a6b7",
+  "user_agent": "mastermind-page-census/1.0 (internal product observability)",
+  "version": "1.2.0"
+ },
+ "totals": {
+  "pages": 1,
+  "states_attempted": 8,
+  "states_captured": 8
+ },
+ "note_populated_state": "Fixture-served POPULATED snapshot (compose_snapshot() fed the tests/ontology_explorer_fixtures.py synthetic chain via a local throwaway HTTP server standing in for the authenticated API) replaces the earlier API-404 unavailable-state frames captured at this same head; met/blocking/unobserved leg states and both ox-card themes are visible in these 8 frames."
+}
