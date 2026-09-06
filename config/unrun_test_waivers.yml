@@ -90,3 +90,13 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+
+tests/test_market_ontology_half_a_k_chain_docket.py: >-
+  Packet B-A-F04-K1 (records-only): pins the Half-A K-chain gate docket + its DEC
+  record against MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv. Not
+  wired into .github/ci/legacy-jobs.yml because that file is a global CI invalidator
+  (full 194-job suite, a ci-authority hit) and this suite only reads two static
+  research/agentos markdown files plus one CSV — no engine or signal-contract path.
+  Owner: Meta-CEO B, lane F04 (+F05 spillover). Delete this row and add the file to
+  a research/records-only CI step if one is ever commissioned for
+  research/market_intelligence_productization docket pins.

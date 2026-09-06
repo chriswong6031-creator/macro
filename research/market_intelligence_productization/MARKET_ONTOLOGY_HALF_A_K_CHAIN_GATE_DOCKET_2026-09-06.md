@@ -30,7 +30,7 @@ still correct — the row's own "Opener" line names the event that would open it
   theme -> cross-asset explanation, every claim carried by a K1 EvidenceBlock. Display only:
   no calibrated causal certainty, no rank, gate, size or trade semantics.
 - **Ledger evidence:** row `MO-PAID-016` of `MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`
-  — granular_disposition=NOT_BUILT, capability_state_c2=SPEC_ONLY, real_consumer=NONE
+  — granular_disposition=UPGRADE_EXISTING_OWNER, capability_state_c2=PARTIAL, real_consumer=NONE product-tier (internal: intelligence_workspace adapters)
 
 The TXI producer is `engine/transmission_chains.py:109`
 (`class ChainSchemaError(ValueError)`), which reds CI at load when a chain YAML violates the
@@ -52,7 +52,7 @@ row per edge_id (`store.py:1-8`). No product-tier consumer exists for this join 
   Any language model in that path summarizes cited records and originates no signal, score or
   escalation.
 - **Ledger evidence:** row `MO-PAID-018` of `MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`
-  — granular_disposition=NOT_BUILT, capability_state_c2=SPEC_ONLY, real_consumer=NONE
+  — granular_disposition=UPGRADE_EXISTING_OWNER, capability_state_c2=SPEC_ONLY, real_consumer=NONE
 
 capability_state_c2 = SPEC_ONLY on this row; producer NONE, consumer NONE. The gate and
 opener are identical to MO-PAID-016 because both wait on the same K3-D economic-propagation
@@ -72,7 +72,7 @@ acceptance named at WS-ALPHA-INTELLIGENCE-INTEGRATION.md:205.
   evidence scoping, with no direction, confidence, expected-impact or priced-percentage field
   and no arbitrage authority of any kind.
 - **Ledger evidence:** row `MO-PAID-024` of `MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`
-  — granular_disposition=NOT_BUILT, capability_state_c2=SPEC_ONLY, real_consumer=NONE
+  — granular_disposition=CONTEXT_ONLY, capability_state_c2=NOT_BUILT, real_consumer=NONE
 
 The ledger names `engine/dislocation.py` as adjacent. `engine/dislocation.py:143
 def evidence_scope(trigger_keys, dd_pct=None) -> dict` is a pure evidence-coverage helper
@@ -91,7 +91,7 @@ inherits no scanner authority.
   research-priority only, sequenced behind the acceptances above, with every calibrated field
   absent and its absence stated on the surface in plain words.
 - **Ledger evidence:** row `MO-PAID-033` of `MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`
-  — granular_disposition=NOT_BUILT, capability_state_c2=SPEC_ONLY, real_consumer=NONE
+  — granular_disposition=UPGRADE_EXISTING_OWNER, capability_state_c2=NOT_BUILT, real_consumer=NONE
 
 `WS-ALPHA-INTELLIGENCE-INTEGRATION.md:213` records K5 as `status: todo`, `depends_on: [k2,
 k3]`, and `:234-236` forbids starting K5 until both K2 and K3 are complete.
@@ -108,7 +108,7 @@ k3]`, and `:234-236` forbids starting K5 until both K2 and K3 are complete.
   existing frozen Radar record and render it in one reading consumer. This slice needs a
   second, independent unblock: the Radar spool has no reader today.
 - **Ledger evidence:** row `MO-PAID-042` of `MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`
-  — granular_disposition=NOT_BUILT, capability_state_c2=SPEC_ONLY, real_consumer=NONE
+  — granular_disposition=PROJECTION_ONLY, capability_state_c2=PARTIAL, real_consumer=NONE rendered (LER spool_dir=null per DSC:LER-W5-PROSPECTIVE-CONSUMER-DISCONNECTED)
 
 This row has two independent blockers, not one. The producer WS-LIVE-ENTRY-RADAR is frozen
 at #6599 (F00B crosswalk line 170), and there is no rendered consumer — `spool_dir` is null,
@@ -128,7 +128,7 @@ at #6599 (F00B crosswalk line 170), and there is no rendered consumer — `spool
   coverage against the GMI edge state at the current max-belief_time view, citing both stores
   by name. Display only: no gate or rank authority.
 - **Ledger evidence:** row `MO-PAID-043` of `MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`
-  — granular_disposition=NOT_BUILT, capability_state_c2=SPEC_ONLY, real_consumer=NONE
+  — granular_disposition=UPGRADE_EXISTING_OWNER, capability_state_c2=PARTIAL, real_consumer=NONE (gap-monitor consumer absent)
 
 The GMI edge store keeps an append-only, keep-first correction behavior on
 `(edge_id, belief_time)` — `engine/theme_graph/store.py:114-117` — with the current view
@@ -146,7 +146,7 @@ defined as the max-belief_time row per edge_id.
   theme-graph context through an accepted K3-D signal, creating no new grader, ranker or
   fourth store.
 - **Ledger evidence:** row `MO-PAID-044` of `MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`
-  — granular_disposition=NOT_BUILT, capability_state_c2=SPEC_ONLY, real_consumer=NONE
+  — granular_disposition=UPGRADE_EXISTING_OWNER, capability_state_c2=NOT_BUILT, real_consumer=NONE
 
 The TXI producer is `engine/transmission_chains.py:109`
 (`class ChainSchemaError(ValueError)`); the theme-graph side is
@@ -167,7 +167,7 @@ The TXI producer is `engine/transmission_chains.py:109`
   calibrated field absent and its absence disclosed in plain words on the surface.
 - **Split:** LAWFUL-NOW-BUT-UNCALIBRATED
 - **Ledger evidence:** row `MO-DELTA-006` of `MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv`
-  — granular_disposition=NOT_BUILT, capability_state_c2=SPEC_ONLY, real_consumer=NONE
+  — granular_disposition=PROJECTION_ONLY, capability_state_c2=NOT_BUILT, real_consumer=NONE
 
 The calibrated fields — direction, confidence, expected-impact, gate, and size — each stay
 REJECTED_BY_DESIGN behind K5 plus Eval-OS calibrated promotion. This packet records the

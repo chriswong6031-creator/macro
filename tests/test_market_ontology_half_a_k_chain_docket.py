@@ -138,6 +138,35 @@ def test_authority_ceiling_is_verbatim_from_the_ledger(row):
     )
 
 
+_LEDGER_EVIDENCE_RE = re.compile(
+    r"granular_disposition=([^,]+),\s*capability_state_c2=([^,]+),\s*real_consumer=([^\n]+)$",
+    re.MULTILINE,
+)
+
+
+@pytest.mark.parametrize("row", ROWS)
+def test_ledger_evidence_line_is_verbatim_from_the_ledger(row):
+    block = _blocks()[row]
+    m = _LEDGER_EVIDENCE_RE.search(block)
+    assert m, f"{row}: no 'Ledger evidence' granular_disposition/capability_state_c2/real_consumer line found"
+    docket_gd = _norm(m.group(1))
+    docket_cs = _norm(m.group(2))
+    docket_rc = _norm(m.group(3))
+    ledger_row = _ledger()[row]
+    ledger_gd = _norm(ledger_row["granular_disposition"])
+    ledger_cs = _norm(ledger_row["capability_state_c2"])
+    ledger_rc = _norm(ledger_row["real_consumer"])
+    assert docket_gd == ledger_gd, (
+        f"{row}: granular_disposition mismatch\n  docket: {docket_gd!r}\n  ledger: {ledger_gd!r}"
+    )
+    assert docket_cs == ledger_cs, (
+        f"{row}: capability_state_c2 mismatch\n  docket: {docket_cs!r}\n  ledger: {ledger_cs!r}"
+    )
+    assert docket_rc == ledger_rc, (
+        f"{row}: real_consumer mismatch\n  docket: {docket_rc!r}\n  ledger: {ledger_rc!r}"
+    )
+
+
 @pytest.mark.parametrize("row", ROWS)
 def test_every_row_names_one_bounded_first_slice(row):
     block = _blocks()[row]
