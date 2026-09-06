@@ -89,6 +89,7 @@ affects:
   - WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY
   - research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
   - config/mastermind_programs.yml
+  - docs/MASTERMIND_SYSTEM_MAP.md
 confidence: high
 reversibility: easy
 decided_by: ceo-sol

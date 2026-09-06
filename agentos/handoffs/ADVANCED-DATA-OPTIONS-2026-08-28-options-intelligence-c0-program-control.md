@@ -43,22 +43,39 @@ changed:
       Preserve the already-Sol-authorized additive canonical_docs pointer to
       research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md; keep
       the existing Options historical canonical docs unchanged.
+  - path: docs/MASTERMIND_SYSTEM_MAP.md
+    what: >
+      Deterministic regeneration required by the registry's additive
+      options-intelligence canonical_docs pointer. The regenerated map also
+      carries a pre-existing main drift repair unrelated to Options:
+      config/synapse.yml hash 82022e1c804177208e908429ff69301c80fa3120e003d4057f2a2344d90c73b8
+      -> 733e95496c8ef8278ed1aec94bbf365b3e09745c85c74fd35848c7a40ade6cf9.
+      That synapse.yml hash drift was already present on origin/main and is
+      disclosed here rather than silently bundled.
 verified:
   - claim: "Current main's Options Alpha owner is newer than the #6604 branch and records #6585 merged / BUILT_NOT_PROVEN / natural-RTH proof owed."
-    command: "GitHub exact-file read on current Macro main vs #6604 head"
-    result: "Confirmed; old branch says todo/PARK while main says in_progress/BUILT_NOT_PROVEN with merge dbd654ed..."
+    command: "git show origin/main:agentos/workstreams/WS-OPTIONS-ALPHA-INTELLIGENCE-RECOVERY.md | rg -n '6585|BUILT_NOT_PROVEN|OA-1T-MACRO|in_progress|todo|PARK'"
+    result: "Confirmed; origin/main records #6585 merged as dbd654ed... and OA-1T-MACRO in_progress / BUILT_NOT_PROVEN with natural-RTH proof owed; the discarded pre-reconciliation #6604 workstream copy said todo/PARK."
   - claim: "The unique C0 decision and consolidated masterplan are not already on current main."
-    command: "GitHub exact-file read on current Macro main"
-    result: "Both paths return 404 before this final carrier lands."
+    command: "git cat-file -e origin/main:agentos/decisions/DEC-OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL.md; git cat-file -e origin/main:research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md"
+    result: "Both commands fail: neither path exists on origin/main before this carrier lands."
   - claim: "The config registry has no unrelated edits after the branch's pre-C0 source baseline; the desired delta remains the authorized additive C0 canonical-doc pointer."
-    command: "GitHub path history + exact current/branch content reads"
-    result: "Last main modification predates C0; branch adds only the C0 canonical-doc entry relative to current content."
+    command: "git rev-parse origin/main:config/mastermind_programs.yml; git rev-parse dfd22b59227363198b8d63cf33d868a6040a02be:config/mastermind_programs.yml; git diff origin/main HEAD -- config/mastermind_programs.yml"
+    result: "origin/main blob == base blob == 7720ac04f931e899589e5ac802298e70b2ee0819; HEAD blob is 6e7a6ff907bb9c9c559365acee0f609604f61c3c. git diff vs main is the additive options-intelligence canonical_docs line only."
   - claim: "No replacement C0 operation or fifth Options workstream is required."
-    command: "Current owner/workstream census + existing #6604 carrier reconciliation"
-    result: "Four existing owners remain sufficient; #6604 remains the one logical C0 records carrier."
+    command: "git ls-tree -r --name-only origin/main agentos/workstreams | rg -i 'option|intraday|advanced-data'"
+    result: "Four existing owners remain on origin/main (ADVANCED-DATA-OPTIONS, INTRADAY-FLOW-P0-RECOVERY, OPTIONS-CONTEXT-AUDIT-PREREG-V2, OPTIONS-ALPHA-INTELLIGENCE-RECOVERY); #6604 remains the one logical C0 records carrier."
 unverified:
-  - claim: "Fresh exact-head hosted CI/fences on the final reconciled #6604 head are green."
-    what_would_verify: "Push the current-main-based four-artifact tree, run fresh exact-head hosted checks, then perform final Sol release review."
+  - claim: "Fresh exact-head hosted CI/fences on the post-review #6604 head are green."
+    what_would_verify: >
+      Wait for trusted-ci packs on the post-review head to conclude. Treat
+      ci-authority/codex/merge-queue-pilot FAILURE with
+      context_reason=inactive_base_context as the documented non-binding
+      inactive-base receipt (scripts/merge_on_green.py
+      CI_AUTHORITY_INACTIVE_CONTEXT); it is red by design on every main-based
+      PR. Binding ci-authority and ci-authority/main must stay green.
+      Check-run 101440938223 on head c0b0b873 was that inactive-base receipt,
+      not a duplicate-ci-authority cancelled twin.
   - claim: "AD-1T2 production entrance remains clear at the moment C0 lands."
     what_would_verify: "Fresh Runner-Fleet/M1 collision/admission census at the future AD-1T2 operation; do not infer from this records carrier."
 unresolved:
