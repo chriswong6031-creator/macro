@@ -28,24 +28,34 @@ from engine.validation import newey_west_tstat  # noqa: E402
 # the true effect there) and became meaningless by h=20 (94x). Past h=8 the
 # true effect is smaller than the estimator's own noise floor, so no numeric
 # tolerance on beta itself is honest - what MUST hold instead is that a
-# rejecting horizon never reports the wrong sign, which is exactly what let a
-# sign-wrong h=13 read as a BH-surviving discovery (beta=-0.00131 vs
-# true=+0.00024, q=0.0462, reject=True) under the old assertion.
+# rejecting horizon never reports the wrong sign. Plain BH let a sign-wrong
+# h=13 read as a discovery (beta=-0.00131 vs true=+0.00024, q=0.0462); BY
+# (the shipped correction) is what makes that assertion bind.
 _NEAR_HORIZONS = 9
 _NEAR_TOL = 0.001
 
 
 def _assert_recovers_near_horizons_and_never_rejects_with_wrong_sign(result, true_irf):
+    """Near-horizon recovery AND no wrong-sign BH/BY-surviving discovery.
+
+    Under plain BH the demo fixture (seed=11) produced a sign-wrong reject at
+    h=13 (beta=-0.00131 vs true=+0.00024). BY (dependence-robust) is what
+    makes the no-wrong-sign half of this name an honest guarantee rather than
+    a comment that deliberately skips the check.
+    """
     betas = np.array([row["beta"] for row in result["irf"]])
     near = slice(0, _NEAR_HORIZONS)
     assert np.all(np.abs(betas[near] - true_irf[near]) < _NEAR_TOL)
     assert int(np.argmax(betas)) == 0
-    # Beyond the near horizons the true effect is at or below this DGP's noise
-    # floor, so BH at alpha=0.10 across 21 tests is EXPECTED to occasionally
-    # reject a tiny/sign-wrong far coefficient - that is the FDR contract
-    # working as designed, not a bug to assert away here. What must still hold
-    # is the near-horizon numeric recovery above, which the old fixed 0.003
-    # tolerance did not actually test past h~4.
+    rejecting = set(result["null"]["rejecting_horizons"])
+    for h in rejecting:
+        beta = float(result["irf"][h]["beta"])
+        true_h = float(true_irf[h])
+        if abs(true_h) < 1e-12:
+            continue
+        assert np.sign(beta) == np.sign(true_h), (
+            f"horizon h={h} rejected with wrong sign: beta={beta}, true={true_h}"
+        )
 
 
 def test_recovers_a_known_geometric_irf():
@@ -68,14 +78,51 @@ def test_recovers_a_hump_shaped_irf():
 
 
 def test_no_shock_gives_a_null_at_every_horizon():
+    # Single-seed sanity (words + method disclosure). The calibrated rate is
+    # pinned by test_global_null_family_wise_rate_stays_at_or_below_fdr_alpha.
     rng = np.random.default_rng(0)
     n = 500
     shock = rng.standard_normal(n)
     y = rng.standard_normal(n) * 0.01  # independent of shock
     result = lp.impulse_response(y, shock)
-    assert result["null"]["any_horizon_rejects"] is False
+    assert result["multiple_testing"]["method"] == lp.FDR_METHOD
+    assert "yekutieli" in result["multiple_testing"]["note"].lower()
     words = result["null"]["plain_words"].lower()
-    assert "effect" not in words or "no time-step" in words
+    if result["null"]["any_horizon_rejects"]:
+        # A lone seed may still reject under BY (~6% rate); that is not a
+        # failure of this smoke test. The multi-seed calibration test owns
+        # the rate.
+        assert "measurable effect" in words
+    else:
+        assert "no time-step" in words
+
+
+def test_global_null_family_wise_rate_stays_at_or_below_fdr_alpha():
+    """Calibration pin for acceptance line 2 / MAJOR 1.
+
+    Under a complete null, BY's FDR equals P(any rejection). Plain BH measured
+    15.3% here (overshoot); BY must stay at or under FDR_ALPHA plus sampling
+    noise. 80 seeds keeps the suite fast while still catching a return to BH.
+    """
+    n_sims = 80
+    rejects = 0
+    for seed in range(n_sims):
+        rng = np.random.default_rng(20000 + seed)
+        n = 800
+        shock = rng.standard_normal(n)
+        y = rng.standard_normal(n) * 0.01
+        result = lp.impulse_response(y, shock)
+        if result["null"]["any_horizon_rejects"]:
+            rejects += 1
+    rate = rejects / n_sims
+    # FDR_ALPHA=0.10; allow binomial sampling slack (80 trials, mean~0.06).
+    # A return to plain BH (~0.15) fails this bound; a calibrated BY (~0.06) passes.
+    assert rate <= 0.125, (
+        f"global-null any-reject rate {rate:.3f} ({rejects}/{n_sims}) exceeds "
+        f"FDR_ALPHA={lp.FDR_ALPHA} + sampling slack; dependence-robust BY may "
+        f"have been replaced by independence-assuming BH"
+    )
+    assert result["multiple_testing"]["method"] == "benjamini_yekutieli"
 
 
 # --------------------------------------------------------------------------- #
@@ -265,14 +312,15 @@ def test_rank_deficient_design_abstains():
 def test_bh_correction_is_applied_and_reject_reads_q():
     y, shock, _ = lp.demo_series(seed=11)
     result = lp.impulse_response(y, shock)
+    assert result["multiple_testing"]["method"] == "benjamini_yekutieli"
     for h_str, row in result["fdr"].items():
         assert row["q"] >= row["p"] - 1e-9
-        if row["p"] < 0.05 and row["q"] >= 0.05:
+        # reject reads q against FDR_ALPHA (0.10), never a hard-coded 0.05.
+        if row["q"] > lp.FDR_ALPHA:
             assert row["reject"] is False
-    ps = sorted(v["p"] for v in result["fdr"].values())
-    qs = [result["fdr"][str(h)]["q"] for h in range(len(result["irf"]))
-          if str(h) in result["fdr"]]
-    # q must be monotone non-decreasing when sorted by ascending p (BH walk-up)
+        if row["reject"] is True:
+            assert row["q"] <= lp.FDR_ALPHA + 1e-12
+    # q must be monotone non-decreasing when sorted by ascending p (BY walk-up)
     sorted_by_p = sorted(result["fdr"].items(), key=lambda kv: kv[1]["p"])
     q_seq = [v["q"] for _, v in sorted_by_p]
     assert all(q_seq[i] <= q_seq[i + 1] + 1e-9 for i in range(len(q_seq) - 1))
@@ -313,6 +361,7 @@ def test_pre_registered_constants_are_frozen():
     assert lp.EMBARGO == 1
     assert lp.MIN_OBS_PER_H == 60
     assert lp.FDR_ALPHA == 0.10
+    assert lp.FDR_METHOD == "benjamini_yekutieli"
     assert lp.CI_LEVEL == 0.95
     assert lp.SCHEMA == "engine.local_projections.irf.v1"
     assert lp.ABSTENTION_SCHEMA == "engine.local_projections.abstention.v1"
@@ -361,6 +410,34 @@ def test_saturated_regression_abstains_instead_of_faking_zero_residual_dof():
     assert "se" not in row
 
 
+def test_misaligned_controls_length_abstains_instead_of_silently_shrinking_sample():
+    # controls shorter than y used to silently drop ~75% of rows (n=97 of 396)
+    # and still return a non-abstained fit above MIN_OBS_PER_H. Longer controls
+    # were accepted with no flag. Both must be typed misaligned_lengths.
+    rng = np.random.default_rng(7)
+    n = 400
+    y = rng.standard_normal(n)
+    shock = rng.standard_normal(n)
+    short_ctrl = np.arange(100.0)
+    long_ctrl = rng.standard_normal(1000)
+
+    row_short = lp.estimate_horizon(y, shock, 0, controls=short_ctrl, min_obs=60)
+    assert row_short.get("abstained") is True
+    assert row_short["reason"] == "misaligned_lengths"
+    assert row_short.get("n_controls") == 100
+
+    row_long = lp.estimate_horizon(y, shock, 0, controls=long_ctrl, min_obs=60)
+    assert row_long.get("abstained") is True
+    assert row_long["reason"] == "misaligned_lengths"
+
+    with pytest.raises(ValueError):
+        lp.design_matrix(y, shock, controls=short_ctrl)
+
+    result = lp.impulse_response(y, shock, controls=short_ctrl, horizons=3, min_obs=60)
+    assert all(row.get("abstained") and row["reason"] == "misaligned_lengths"
+               for row in result["irf"])
+
+
 def test_misaligned_shock_length_abstains_instead_of_crashing():
     # shock shorter than y used to IndexError inside design_matrix; shock
     # longer than y used to IndexError on the boolean-mask index. Both must be
@@ -405,6 +482,40 @@ def test_hac_inflation_measured_through_the_real_estimate_horizon_path():
     # than asserting a specific inflation factor the docstring no longer claims.
     assert all(0.3 < v < 5.0 for v in inflations)
 
+
+
+
+def test_targets_dropped_at_tail_is_measured_not_identity():
+    rng = np.random.default_rng(15)
+    n = 200
+    y = rng.standard_normal(n) * 0.01
+    shock = rng.standard_normal(n)
+    result = lp.impulse_response(y, shock, horizons=10)
+    dropped = result["pit"]["targets_dropped_at_tail"]
+    n_by = result["diagnostics"]["n_by_horizon"]
+    # Measured: drop[h] == base_n - n_h (not a hardcoded identity map).
+    base_n = 0
+    for h in range(11):
+        if n_by.get(str(h), 0) > 0:
+            base_n = n_by[str(h)]
+            break
+    for h in range(11):
+        assert dropped[str(h)] == max(0, base_n - n_by.get(str(h), 0))
+    # Fully-abstained path must report zeros, never the identity map {h: h}.
+    short_y = rng.standard_normal(10)
+    short_shock = rng.standard_normal(5)  # misaligned -> every horizon abstains
+    empty = lp.impulse_response(short_y, short_shock, horizons=5, min_obs=1)
+    assert empty["pit"]["targets_dropped_at_tail"] == {str(h): 0 for h in range(6)}
+
+
+def test_shock_variance_ignores_nan_and_survives_finite_input():
+    rng = np.random.default_rng(19)
+    n = 120
+    y = rng.standard_normal(n)
+    shock = rng.standard_normal(n)
+    shock[5] = np.nan
+    result = lp.impulse_response(y, shock, horizons=2, min_obs=10)
+    assert np.isfinite(result["diagnostics"]["shock_variance"])
 
 def test_module_does_no_io():
     src = inspect.getsource(lp)

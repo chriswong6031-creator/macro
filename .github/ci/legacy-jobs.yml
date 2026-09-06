@@ -944,7 +944,11 @@ jobs:
       - name: track-record company-key identity + lossless migration guard
         run: python -m pytest tests/test_ledger_identity.py -q
       - name: grading rebuild + trial ledger tests
-        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py -q
+        # MO-DELTA-015 / PR #6901: Local Projections (Jorda 2005) IRF estimator.
+        # Pure-numpy suite; registers with trial_ledger for specification-search
+        # pricing, so this job (not a free-floating pack) owns the CI proof.
+        # contract-delta requires every new tests/*.py to appear in a run: step.
+        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py tests/test_local_projections.py -q
       # Stock Identity W1 (WS:STOCK-IDENTITY): partition seal/reproducibility, metric-block
       # purity, truncation invariance, state totality, episode segmentation, G-8 import
       # firewall, banned-token/authority artifact walk. Minimal-deps safe (no matplotlib);

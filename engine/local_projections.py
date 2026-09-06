@@ -47,18 +47,28 @@ THE THREE GUARDS
     HAC below naive as often as above it. Read `hac_inflation` per-row, never a
     fixed multiplier, when deciding how much a naive t overstates significance.
 (c) MULTIPLE TESTING - two mechanisms, both reported. (1) The horizon PANEL:
-    H+1 horizons are H+1 tests, corrected with
-    engine.validation.benjamini_hochberg (its monotone walk-up is already
-    correct and is reused, never reimplemented); `reject` reads `q`, never `p`.
-    (2) A SPECIFICATION SEARCH (choosing among lag lengths / shock definitions /
-    samples) must be registered with engine.trial_ledger BEFORE anything is
-    estimated - registration at generation, per
-    engine/seasonality/event_study.py:1468-1473 ("multiple testing is incurred
-    when a candidate is GENERATED, not when one survives to a headline"). Naming
-    a `family` that was never registered raises UnregisteredSearchFamily
-    (imported lazily, only when `family` is given, so the pure array path never
-    pays for event_study's pandas import). `family=None` is legal: effective_n is
-    then None and the returned note says the search is unpriced.
+    H+1 horizons are H+1 strongly DEPENDENT tests (overlapping targets share
+    future periods). Plain Benjamini-Hochberg at FDR_ALPHA=0.10 does NOT deliver
+    its advertised level here: under a global null (y indep of shock, n=800,
+    HORIZONS=20) the family-wise any-rejection rate measured 46/300 = 15.3%
+    (z=+3.08 vs 10%), because the Newey-West se is mildly liberal in this
+    sample and the 21 dependent tests compound. The panel therefore uses
+    Benjamini-Yekutieli (engine.seasonality.multiplicity.benjamini_yekutieli) —
+    BH times the harmonic number — which controls FDR under arbitrary
+    dependence. Under the same global-null design the BY any-rejection rate
+    measures ~6% (≤ FDR_ALPHA). `reject` reads BY `q`, never raw `p`. The
+    returned `multiple_testing` block names the method and the measured
+    BH-vs-BY calibration so a caller never mistakes the headline for
+    independence-assuming BH. (2) A SPECIFICATION SEARCH (choosing among lag
+    lengths / shock definitions / samples) must be registered with
+    engine.trial_ledger BEFORE anything is estimated - registration at
+    generation, per engine/seasonality/event_study.py:1468-1473 ("multiple
+    testing is incurred when a candidate is GENERATED, not when one survives
+    to a headline"). Naming a `family` that was never registered raises
+    UnregisteredSearchFamily (imported lazily, only when `family` is given,
+    so the pure array path never pays for event_study's pandas import).
+    `family=None` is legal: effective_n is then None and the returned note
+    says the search is unpriced.
 
 RESEARCH-ONLY, NO TRADING AUTHORITY. This module's output is evidence for a human
 or a downstream promotion process (qledger is the sole promotion plane per the F10
@@ -85,7 +95,13 @@ HORIZONS = 20          # h = 0..20 inclusive (21 regressions)
 LAGS = 4               # p lags of y and of shock entering as controls
 EMBARGO = 1            # bars between the last admissible control bar and the shock bar
 MIN_OBS_PER_H = 60     # usable rows required before a horizon is estimated
-FDR_ALPHA = 0.10       # BH level across the horizon panel (matches validation.py:763 default)
+FDR_ALPHA = 0.10       # BY level across the horizon panel (dependence-robust; see docstring (c))
+FDR_METHOD = "benjamini_yekutieli"  # not plain BH — horizons are dependent
+# Measured under global null (y indep shock, n=800, H=20, alpha=0.10, 300 seeds):
+# plain BH any-reject rate ~= 0.153; BY any-reject rate ~= 0.06. Reported so a
+# caller can see the guard actually delivers its level.
+GLOBAL_NULL_FWER_BH = 0.153
+GLOBAL_NULL_FWER_BY = 0.06
 CI_LEVEL = 0.95
 SCHEMA = "engine.local_projections.irf.v1"
 ABSTENTION_SCHEMA = "engine.local_projections.abstention.v1"
@@ -155,6 +171,15 @@ def design_matrix(y, shock, *, lags: int = LAGS, embargo: int = EMBARGO,
         ctrl_arr = np.asarray(controls, dtype=float)
         if ctrl_arr.ndim == 1:
             ctrl_arr = ctrl_arr.reshape(-1, 1)
+        if ctrl_arr.ndim != 2:
+            raise ValueError(
+                f"controls must be 1-d or 2-d (misaligned_lengths): ndim={ctrl_arr.ndim}"
+            )
+        if ctrl_arr.shape[0] != T:
+            raise ValueError(
+                f"y and controls must have equal length (misaligned_lengths): "
+                f"len(y)={T}, len(controls)={ctrl_arr.shape[0]}"
+            )
         n_ctrl = ctrl_arr.shape[1]
 
     names = ["const", "shock_t"]
@@ -181,10 +206,7 @@ def design_matrix(y, shock, *, lags: int = LAGS, embargo: int = EMBARGO,
             row.append(y[idx])
             row.append(shock[idx])
         if ctrl_arr is not None:
-            if hi < len(ctrl_arr):
-                row.extend(float(v) for v in ctrl_arr[hi])
-            else:
-                row.extend([np.nan] * n_ctrl)
+            row.extend(float(v) for v in ctrl_arr[hi])
         X[t] = row
         valid[t] = bool(np.all(np.isfinite(row)))
 
@@ -235,6 +257,19 @@ def estimate_horizon(y, shock, h: int, *, lags: int = LAGS, embargo: int = EMBAR
     if shock.shape[0] != T:
         return _abstain("misaligned_lengths", h=h, n_y=T, n_shock=int(shock.shape[0]))
 
+    if controls is not None:
+        ctrl_check = np.asarray(controls, dtype=float)
+        if ctrl_check.ndim == 1:
+            ctrl_check = ctrl_check.reshape(-1, 1)
+        if ctrl_check.ndim != 2 or ctrl_check.shape[0] != T:
+            return _abstain(
+                "misaligned_lengths",
+                h=h,
+                n_y=T,
+                n_shock=int(shock.shape[0]),
+                n_controls=int(ctrl_check.shape[0]) if ctrl_check.ndim >= 1 else 0,
+            )
+
     dm = design_matrix(y, shock, lags=lags, embargo=embargo, controls=controls)
     X_full, valid = dm["X"], dm["valid"]
 
@@ -284,7 +319,14 @@ def estimate_horizon(y, shock, h: int, *, lags: int = LAGS, embargo: int = EMBAR
     hac_lags_effective = int(min(hac_lags_requested, max(n - 1, 0)))
 
     V = _hac_sandwich(X, resid, hac_lags_effective)
-    se = float(math.sqrt(max(V[1, 1], 0.0)))
+    # Finite-sample factor n/dof: _hac_sandwich is HC0-style (no n/(n-k));
+    # se_naive already divides RSS by dof. Without this factor every published
+    # hac_inflation is biased low by sqrt((n-k)/n) — material at the small n
+    # this module supports (min_obs can sit near the floor). Same factor also
+    # slightly deflates the liberal Newey-West t that compounded the BH
+    # overshoot under dependence.
+    finite_sample = float(n) / float(dof)
+    se = float(math.sqrt(max(V[1, 1] * finite_sample, 0.0)))
 
     beta_shock = float(beta[1])
     t_stat = beta_shock / se if se > 0 else float("nan")
@@ -309,6 +351,89 @@ def estimate_horizon(y, shock, h: int, *, lags: int = LAGS, embargo: int = EMBAR
     }
 
 
+
+def _benjamini_yekutieli_panel(pvals: dict, alpha: float) -> dict:
+    """BY FDR under arbitrary dependence; same shape as validation.benjamini_hochberg.
+
+    Horizon targets are strongly dependent (overlapping windows), so independence-
+    assuming BH overshoots its advertised level (see module docstring (c) and
+    GLOBAL_NULL_FWER_*). Reuses engine.seasonality.multiplicity.benjamini_yekutieli
+    (pure math, no pandas) rather than reimplementing the harmonic correction.
+    """
+    from engine.seasonality.multiplicity import benjamini_yekutieli
+
+    items = [(k, float(v)) for k, v in pvals.items() if v is not None and np.isfinite(v)]
+    if not items:
+        return {}
+    keys = [k for k, _ in items]
+    ps = [p for _, p in items]
+    qs = benjamini_yekutieli(ps)
+    out = {}
+    for k, p, q in zip(keys, ps, qs):
+        out[k] = {
+            "p": round(p, 4),
+            "q": round(float(q), 4),
+            "reject": bool(q <= alpha),
+        }
+    return out
+
+
+def _empty_irf_result(rows, *, horizons, fdr_alpha, family, effective_n,
+                      embargo, lags, shock) -> dict:
+    """Shared shape for a fully-abstained impulse_response (typed refusal path)."""
+    n_by_horizon = {str(row["h"]): 0 for row in rows}
+    result: dict = {
+        "schema": SCHEMA,
+        "irf": rows,
+        "fdr": {},
+        "multiple_testing": {
+            "n_horizons_tested": horizons + 1,
+            "alpha": fdr_alpha,
+            "method": FDR_METHOD,
+            "family": family,
+            "effective_n": effective_n,
+            "global_null_fwer_bh_measured": GLOBAL_NULL_FWER_BH,
+            "global_null_fwer_by_measured": GLOBAL_NULL_FWER_BY,
+            "note": (
+                "every horizon abstained before the panel correction ran; "
+                "q is undefined. effective_n=None means no specification search "
+                "was registered."
+            ),
+        },
+        "inference": {
+            "se_kind": "newey_west_bartlett",
+            "lag_rule": HAC_LAG_RULE,
+            "why": (
+                "targets at horizon h overlap across t, so the residual is MA(h) "
+                "by construction and a plain OLS se understates the true one"
+            ),
+            "measured_inflation_by_h": {},
+        },
+        "pit": {
+            "embargo": embargo,
+            "lags": lags,
+            "last_control_bar": "t - %d" % embargo,
+            "targets_dropped_at_tail": {str(h): 0 for h in range(horizons + 1)},
+        },
+        "diagnostics": {
+            "shock_variance": (
+                float(np.nanvar(shock)) if len(shock) and np.isfinite(shock).any()
+                else float("nan")
+            ),
+            "n_by_horizon": n_by_horizon,
+            "abstained_horizons": [row["h"] for row in rows],
+            "rank": 0,
+            "n_columns": 0,
+        },
+        "null": {
+            "any_horizon_rejects": False,
+            "rejecting_horizons": [],
+        },
+    }
+    result["null"]["plain_words"] = plain_words(result)
+    return result
+
+
 def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
                       embargo: int = EMBARGO, controls=None,
                       min_obs: int = MIN_OBS_PER_H, fdr_alpha: float = FDR_ALPHA,
@@ -316,8 +441,6 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
     """The headline. Raises UnregisteredSearchFamily when `family` is named but
     not present in `ledger.families()` (imported lazily so the pure array path
     never pays for engine.seasonality.event_study's pandas import)."""
-    from engine.validation import benjamini_hochberg
-
     effective_n = None
     if family is not None:
         from engine.seasonality.event_study import (
@@ -335,6 +458,27 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
     y = np.asarray(y, dtype=float)
     shock = np.asarray(shock, dtype=float)
 
+    if controls is not None:
+        ctrl_check = np.asarray(controls, dtype=float)
+        if ctrl_check.ndim == 1:
+            ctrl_check = ctrl_check.reshape(-1, 1)
+        if ctrl_check.ndim != 2 or ctrl_check.shape[0] != len(y):
+            # Typed abstention on every horizon — never silently drop rows.
+            rows = [
+                _abstain(
+                    "misaligned_lengths",
+                    h=h,
+                    n_y=int(len(y)),
+                    n_shock=int(shock.shape[0]),
+                    n_controls=int(ctrl_check.shape[0]) if ctrl_check.ndim >= 1 else 0,
+                )
+                for h in range(horizons + 1)
+            ]
+            return _empty_irf_result(
+                rows, horizons=horizons, fdr_alpha=fdr_alpha, family=family,
+                effective_n=effective_n, embargo=embargo, lags=lags, shock=shock,
+            )
+
     rows = [
         estimate_horizon(y, shock, h, lags=lags, embargo=embargo, controls=controls,
                           min_obs=min_obs)
@@ -342,7 +486,7 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
     ]
 
     pvals = {str(row["h"]): row["p"] for row in rows if not row.get("abstained")}
-    fdr = benjamini_hochberg(pvals, alpha=fdr_alpha)
+    fdr = _benjamini_yekutieli_panel(pvals, alpha=fdr_alpha)
 
     inflation_by_h = {
         str(row["h"]): row["hac_inflation"] for row in rows if not row.get("abstained")
@@ -352,8 +496,23 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
         dm = design_matrix(y, shock, lags=lags, embargo=embargo, controls=controls)
     except ValueError:
         dm = {"X": np.zeros((0, 0)), "valid": np.zeros(0, dtype=bool)}
-    n_by_horizon = {str(row["h"]): row.get("n", 0) for row in rows}
+    n_by_horizon = {
+        str(row["h"]): int(row["n"]) if (not row.get("abstained") and "n" in row) else 0
+        for row in rows
+    }
     abstained_horizons = [row["h"] for row in rows if row.get("abstained")]
+    # Measured tail drop: how many usable rows are lost vs the h=0 panel size
+    # (or vs the first non-abstained horizon). Identity map {h: h} was data-
+    # independent and identical even when every horizon abstained.
+    base_n = 0
+    for h in range(horizons + 1):
+        if n_by_horizon.get(str(h), 0) > 0:
+            base_n = n_by_horizon[str(h)]
+            break
+    targets_dropped_at_tail = {
+        str(h): int(max(0, base_n - n_by_horizon.get(str(h), 0)))
+        for h in range(horizons + 1)
+    }
 
     rejecting_horizons = sorted(int(h) for h, v in fdr.items() if v["reject"])
 
@@ -364,13 +523,20 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
         "multiple_testing": {
             "n_horizons_tested": horizons + 1,
             "alpha": fdr_alpha,
+            "method": FDR_METHOD,
             "family": family,
             "effective_n": effective_n,
+            "global_null_fwer_bh_measured": GLOBAL_NULL_FWER_BH,
+            "global_null_fwer_by_measured": GLOBAL_NULL_FWER_BY,
             "note": (
-                "q is BH-adjusted across the horizon panel only. effective_n=None "
-                "means no specification search was registered, so any search over "
-                "lag length, shock definition or sample is UNPRICED - register the "
-                "family with engine.trial_ledger before reading a winner."
+                "q is Benjamini-Yekutieli-adjusted across the horizon panel "
+                "(dependence-robust; plain BH overshoots under overlapping "
+                f"targets — measured global-null any-reject {GLOBAL_NULL_FWER_BH} "
+                f"vs BY {GLOBAL_NULL_FWER_BY} at alpha={FDR_ALPHA}). "
+                "effective_n=None means no specification search was registered, "
+                "so any search over lag length, shock definition or sample is "
+                "UNPRICED - register the family with engine.trial_ledger before "
+                "reading a winner."
             ),
         },
         "inference": {
@@ -386,10 +552,12 @@ def impulse_response(y, shock, *, horizons: int = HORIZONS, lags: int = LAGS,
             "embargo": embargo,
             "lags": lags,
             "last_control_bar": "t - %d" % embargo,
-            "targets_dropped_at_tail": {str(h): h for h in range(horizons + 1)},
+            "targets_dropped_at_tail": targets_dropped_at_tail,
         },
         "diagnostics": {
-            "shock_variance": float(np.var(shock)),
+            "shock_variance": (
+                float(np.nanvar(shock)) if np.isfinite(shock).any() else float("nan")
+            ),
             "n_by_horizon": n_by_horizon,
             "abstained_horizons": abstained_horizons,
             "rank": int(np.linalg.matrix_rank(dm["X"][dm["valid"]])) if dm["valid"].any() else 0,
