@@ -36,11 +36,19 @@ team: `unique (team_id, user_id)`, `role text not null check (role in ('owner','
 count, in the tenancy foundation — a case-insensitive grep of the whole terminal#514 diff for
 `seat` returns 0 hits.
 The advertised "Team workspace / up to 10 seats" capability is `NOT_BUILT` and not enforced anywhere in this codebase (ledger MO-PAID-051, F00B crosswalk row 114: evidence "No team_id/tenant_id/seat_limit/workspace_id hits in app/, engine/, or charting-app source").
-Independently re-verified in this checkout: `grep -rn "team_id|seat_limit|workspace_id" app/
-engine/ templates/` returns only macro-workspace identifiers unrelated to tenancy
-(`engine/market_os/macro_workspaces/build.py:306`, `:328`,
-`engine/market_os/macro_workspaces/trade_flows.py:57`) — zero hits in `app/` and zero in
-`templates/`. So no code enforces a seat count today.
+Independently re-verified in this checkout with extended-regex
+`grep -rnE "team_id|seat_limit|workspace_id" app/ engine/ templates/` (a literal BRE grep
+without `-E` returns 0 hits everywhere and is not usable evidence): `app/` returns 0 hits;
+`engine/` returns 23 hits, all macro-workspace routing identifiers unrelated to tenancy
+(`engine/market_os/macro_workspaces/build.py` lines 306, 328, 332, 336, 340, 344, 348, 352,
+359, 366, 371, 376, 381, 386, 391, 396; `engine/market_os/macro_workspaces/registry.py` lines
+305, 306, 309 and siblings; `engine/market_os/macro_workspaces/trade_flows.py:57`); `templates/`
+returns 14 hits, one per `macro_*.html.j2` workspace template's
+`data-mq-workspace="{{ workspace_id }}"` attribute (e.g.
+`templates/macro_business_activity.html.j2:32`, and the 13 sibling `macro_*.html.j2` files) —
+again macro's unrelated content-workspace routing, not tenancy. So no tenancy-scoped code (team
+seats, workspace-as-tenant) exists in `app/`, `engine/`, or `templates/` today; the identifier
+`workspace_id` is reused for macro's own content-workspace routing.
 
 ## 3. What happens to an existing single-user subscription when a team is created
 

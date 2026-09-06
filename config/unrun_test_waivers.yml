@@ -90,16 +90,3 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
-
-tests/test_market_ontology_f12_commercial_scope.py: >-
-  B-F12-6 (lane marketontology-b4-f12-commercial-scope, wave B4, MO-PAID-079/080):
-  a records-only doc-contract test with no owning CI job — the
-  research/market_intelligence_productization/ F-series doc family has never had a
-  dedicated pytest job (grep of .github/ci/legacy-jobs.yml for
-  market_intelligence_productization / MO-PAID / market-ontology returns zero hits),
-  and this packet's owned paths are exactly the doc and this test file, so wiring a
-  new run: step would mean editing legacy-jobs.yml outside the frozen spec's scope.
-  Hermetic and fast (`python -m pytest tests/test_market_ontology_f12_commercial_scope.py -q`);
-  run it directly until a market-ontology records job exists to adopt it. Owner:
-  wave B4 (Meta-CEO B). Delete this row and add the file to that job's run: step
-  when one is commissioned.
