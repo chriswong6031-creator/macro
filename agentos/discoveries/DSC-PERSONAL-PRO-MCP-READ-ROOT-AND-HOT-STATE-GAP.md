@@ -13,7 +13,13 @@ claim: >
   collision and security reconciliation can justify selecting the smallest
   existing-owner seam or reuse of an accepted owner-native service. Rich MCP
   orientation remains distinct from diagnostic admission hot state and cannot
-  alone replace current write preflight.
+  alone replace current write preflight. The September 6 authority reconciliation
+  returned AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS: current protected and Linear
+  records still encode S0-R1 as a B2 dependency, but the exact originating
+  Chairman carrier for the advisory nonblocking override was not recovered and
+  no later supersession was found. Select neither authority state. S0-R1 remains
+  NOT_PROVEN; B2 remains independently held and must not be attributed solely to
+  MAS-112. One explicit current Chairman ruling is the next authority edge.
 falsifier: >
   In an approved Mastermind checkout after qualifying the protected reference,
   run `git show c707b7c196b1a547cc9fc7fc43907bf2fdfb4c36:integrations/executive_mcp/adapter.py`,
@@ -28,7 +34,11 @@ falsifier: >
   R-case; actual Personal-account calls plus independent owner-native comparison
   must additionally bind source, schema, account, tunnel, Runtime generation and
   freshness before production reads are accepted. A plugin scan, generated_at,
-  fixture result, missing checkout database or empty local Runtime cannot.
+  fixture result, missing checkout database or empty local Runtime cannot. The
+  S0/B2 authority ambiguity is falsified only by an exact higher-authority current
+  Chairman ruling or a recovered authoritative carrier that is canonically
+  reconciled; advisory memory, stale source text or Linear projection alone cannot
+  select either state.
 so_what: >
   Consume the existing native census and classify R0/R1/R2/R3 before architecture
   selection. Reuse a qualified intentional mapping under R0 or accepted service
@@ -38,8 +48,10 @@ so_what: >
   read-port proposal and its DAG remain conditional, not selected or authorized.
   A qualified unchanged-manifest client test is separate from production-root
   proof and need not wait for these records to merge. Preserve CeoIngress,
-  Steward, original C1 reconciliation, current S0/B2/C2 authority and SOL_STATE
-  preflight; create no duplicate backend, copied Runtime or control plane.
+  Steward, original C1 reconciliation, the unresolved S0/B2 authority state and
+  SOL_STATE preflight; create no duplicate backend, copied Runtime or control
+  plane. Do not run another authority child. Obtain one explicit current Chairman
+  ruling, then repair protected and projected records on their existing carriers.
 kind: architecture
 verified_at: 2026-09-06
 verified_by: >
@@ -47,13 +59,18 @@ verified_by: >
   c707b7c196b1a547cc9fc7fc43907bf2fdfb4c36 remain the source-finding basis.
   Review correction verified through GitHub.fetch of Mastermind PR 489 review
   5124266019 and Macro PR 6877 review 5124266397, both CHANGES_REQUESTED on
-  their exact prior heads; complete candidate records were read. Current
-  protected Mastermind and compatible INDEX rechecked at
-  ffbb2eb138cb3c3cb0d211973e0cf30a314b7520, with same-SHA governing skills
-  already loaded. Sol accepted the finding on existing linked-review carrier
+  their exact prior heads; complete candidate records were read. Protected
+  Mastermind and compatible INDEX were rechecked at
+  467a81e84b08a7f1c3cdb9a410b2f7857816675d with same-SHA governing skills.
+  Sol accepted the original read-root finding on linked-review carrier
   C0BSBM78V1N/1788633533.339369 at 1788684974.668929 and committed the corrected
-  Mastermind amendment as 7e9066417525a3fd5f4f801185bd47ae0104fcb6.
-  These are source/review receipts, not a fresh host census or production proof.
+  Mastermind amendment as 7e9066417525a3fd5f4f801185bd47ae0104fcb6. The retained
+  reviewer then submitted exact-head Macro REQUEST_CHANGES review 5125220529
+  after clean current-base integration and Agent OS validation. Its material
+  finding consumed authority root C0BSBM78V1N/1788638548.778139 and result
+  1788694977.934769, which classified the current authority evidence as
+  AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS with effect NONE. These are source, review
+  and authority receipts, not a fresh host census or production proof.
 scope:
   - executive-os
   - personal-pro
@@ -163,31 +180,57 @@ No read or outage may silently switch to an unqualified lifecycle root. A new
 response timestamp cannot make stale data fresh. Ambiguous modifying effects
 stay on their original carrier and canonical status owner.
 
+## S0/B2 authority is unresolved, not selected
+
+The finite authority reconciliation on
+`C0BSBM78V1N/1788638548.778139` returned at `1788694977.934769` with
+`AUTHORITY_UNAVAILABLE_OR_AMBIGUOUS / effect=NONE`.
+
+Current protected and Linear records still encode S0-R1 as a B2 dependency. The
+advisory Chairman wording says S0-R1 should not block B2 and that additional
+Chairman-owned members are not rights drift, but the exact originating Chairman
+carrier and the expected reconciliation markers were not recovered. No later
+supersession was found. Therefore this record selects neither
+`OVERRIDE_CURRENT` nor `OVERRIDE_SUPERSEDED`.
+
+S0-R1 remains `NOT_PROVEN`. This result does not decide whether it is a current
+blocking gate. B2 is independently unreleased because C1 effect reconciliation,
+current-source release, write-route/security/admission/conflict proof and explicit
+Sol release remain unsatisfied; do not attribute the hold solely to MAS-112.
+Additional Chairman-owned channel membership is neither a current blocker nor
+permission for a membership mutation under this result.
+
+The smallest next authority edge is one explicit current Chairman ruling that
+either reaffirms the historical nonblocking/membership ruling or supersedes it.
+After that receipt, repair protected research and Agent OS/Linear projections on
+their existing carriers. Do not create another authority child or run S0/B2/C2
+from this record.
+
 ## Current ownership and continuation
 
 The product prerequisite is the already-existing census:
 `personal-pro-executive-read-census-20260905-sol-001` on
-`C0BSBM78V1N/1788605608.765019`. Sol's current attended-Secretary intake correction
-is `1788685004.157919`. The existing Secretary/native service owns activation
-and attention through its verified current binding; the actual reader owns its
-ACK, START and evidence. Sent messages do not prove any of those occurred.
-The W3C/Integration host owners remain responsible for native permissions and
-accepted installed-state evidence. No competing installer/admin flow is created.
+`C0BSBM78V1N/1788605608.765019`. Sol's attended-Secretary continuation is
+`1788694368.242469` on the existing W3C carrier, while the census result remains
+the accepted R2/owner-native-mapping-unknown evidence. The existing Secretary and
+native services own activation and attention through verified current bindings;
+the actual reader owns its ACK, START and evidence. Sent messages do not prove any
+of those occurred. The W3C/Integration host owners remain responsible for native
+permissions and accepted installed-state evidence. No competing installer/admin
+flow is created.
 
 Sol owns this records correction and architecture adjudication. The retained
-independent reviewer remains on `C0BSBM78V1N/1788633533.339369`; continuation
-`1788684974.668929` permits one further review per repaired head when explicitly
-bound there. This record is not a new worker assignment.
+independent reviewer remains on `C0BSBM78V1N/1788633533.339369`; exact-head
+REQUEST_CHANGES review `5125220529` requires this smallest records-only repair.
+This record is not a new worker assignment.
 
 The historical collision census named PRs #491/#492/#463/#469. Re-read their
 actual current states and native ownership before any implementation; do not
 manufacture a wait on a terminal owner or overwrite a live one.
 
 C1 Step D remains EFFECT_UNKNOWN on its original RuntimeBinding/carrier
-`C0BSBM78V1N/1787889177.672699`. The existing S0-R1 authority-reconciliation root
-`1788638548.778139` remains distinct: this record neither proves nor revokes the
-historical Chairman override. All independently applicable B2/C2 gates remain;
-no release, replay, credential, account, host or production effect follows.
+`C0BSBM78V1N/1787889177.672699`. The authority adjudication above is distinct and
+releases no S0, B2 or C2 action.
 
 The complete conditional design, failure/proof contract and source manifest are
 in Mastermind PR #489, corrected amendment commit
