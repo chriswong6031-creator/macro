@@ -14,7 +14,7 @@
   "gate_go": false,
   "plan_count": 402,
   "active_count": 380,
-  "open_count": 295,
+  "open_count": 294,
   "active_count_by_age": {
     "le_7d": 27,
     "d8_21d": 103,
@@ -25,12 +25,12 @@
     "watch": 0,
     "ready": 83,
     "entered": 200,
-    "delivering": 1,
+    "delivering": 0,
     "overtime": 0,
     "invalidated": 11,
-    "resolved": 85
+    "resolved": 86
   },
-  "lifecycle_live_total": 295,
+  "lifecycle_live_total": 294,
   "lifecycle_grand_total": 380,
   "plans_sort_key": "us_prophet_v1 priority score desc, then plan id asc; a plan with no numeric priority score sorts below every scored plan and, among those, by the legacy conviction score",
   "intake": {
@@ -46,10 +46,10 @@
       "SMPL-BULL",
       "SPNT-BULL"
     ],
-    "open_plan_keys": 286,
+    "open_plan_keys": 289,
     "admitted": 36,
-    "duplicate_id_blocked": 19,
-    "eligible_after_skips": 10,
+    "duplicate_id_blocked": 23,
+    "eligible_after_skips": 6,
     "cap": null,
     "cap_applied": false,
     "truncated": 0,
@@ -104,7 +104,7 @@
         ]
       }
     ],
-    "originated": 4,
+    "originated": 0,
     "unaccounted": 0,
     "lossless": true,
     "all_survivors_originated": false,
@@ -126,9 +126,9 @@
       "confirmation": 13
     },
     "originated_by_class": {
-      "patience": 1,
-      "confirmation": 2,
-      "early_turn_starter": 1
+      "patience": 0,
+      "confirmation": 0,
+      "early_turn_starter": 0
     },
     "unknown_status": 0,
     "unknown_status_values": [],
@@ -148,27 +148,23 @@
     "stale_basis_max": 3,
     "stale_basis_skipped": [],
     "zone_class_counts": {
-      "accumulate": 2,
-      "reset_band": 2,
+      "accumulate": 0,
+      "reset_band": 0,
       "wait_reset": 0
     },
     "zone_conversion_classes": {
-      "washout": 2,
-      "pullback": 2
+      "washout": 0,
+      "pullback": 0
     },
     "zone_extension_unavailable": 0,
     "wait_reset": [],
-    "early_turn_starters": [
-      "VST"
-    ],
-    "leader_pullback_source": [
-      "us_leader_pullback"
-    ],
+    "early_turn_starters": [],
+    "leader_pullback_source": [],
     "receipts": {
       "considered": 64,
-      "planned": 4,
-      "passed": 60,
-      "open_now": 25,
+      "planned": 0,
+      "passed": 64,
+      "open_now": 29,
       "declined": 35,
       "groups": [
         {
@@ -241,7 +237,7 @@
           "en": "Already has a plan running",
           "zh": "\u5df2\u6709\u5728\u8dd1\u7684\u8ba1\u5212",
           "near": true,
-          "n": 25,
+          "n": 29,
           "names": [
             {
               "ticker": "KMI",
@@ -308,9 +304,25 @@
               ]
             },
             {
+              "ticker": "NX",
+              "name": "Quanex Building Products Corporation",
+              "score": 55.7,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
               "ticker": "PLMR",
               "name": "Palomar Holdings, Inc.",
               "score": 55.6,
+              "why": [
+                "already_open"
+              ]
+            },
+            {
+              "ticker": "VRT",
+              "name": "Vertiv Holdings Co A",
+              "score": 55.4,
               "why": [
                 "already_open"
               ]
@@ -335,22 +347,6 @@
               "ticker": "AEO",
               "name": "American Eagle Outfitters",
               "score": 52.2,
-              "why": [
-                "already_open"
-              ]
-            },
-            {
-              "ticker": "SGI",
-              "name": "Somnigroup International",
-              "score": 52.2,
-              "why": [
-                "already_open"
-              ]
-            },
-            {
-              "ticker": "MC",
-              "name": "Moelis & Company",
-              "score": 50.0,
               "why": [
                 "already_open"
               ]
@@ -658,24 +654,22 @@
       "era_since_zh": "2026\u5e748\u67088\u65e5"
     },
     "leader_pullback_coverage": {
-      "map_tickers": 5159,
-      "plans": 4,
-      "with_organ_state": 4,
+      "map_tickers": 5301,
+      "plans": 0,
+      "with_organ_state": 0,
       "outside_organ_universe": 0,
       "no_coverage_published": 0,
       "licensed": 0
     },
     "legacy_shadow": {
       "admitted": 15,
-      "would_have_planned": 6,
+      "would_have_planned": 4,
       "cap": 12,
       "rows_in_part": 15,
       "authority": "none"
     },
     "basis": "Admission is a STATUS CLASS (ANTICIPATION A1): an entry status in admitted_statuses, a signal tone in admitted_directions, conviction band above low, and a T1-T3 signal tier. The prior act-level gate is frozen with zero authority and keeps accruing a legacy shadow ledger so the two selections can be compared on the same tape. Ranking is unchanged. Every admitted candidate that is neither a duplicate ID nor blocked by an open plan is attempted; there is no positional plan-origination cap. Any candidate that cannot produce a plan is listed under validation_failures. Every plan carries a structure-anchored entry zone; the disclosed entry price remains the point-in-time price-basis close. Featured-board, sector, alert and portfolio-risk controls are separate and unchanged.",
-    "early_turn_watch": [
-      "VST"
-    ]
+    "early_turn_watch": []
   },
   "plan_integrity": {
     "correction_count": 373,
@@ -828,14 +822,14 @@
       "closed": false,
       "pulse": "29d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 31.8,
+      "management_confidence": 31.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 47.34,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 31.8,
+        "management_confidence": 31.7,
         "recommended_action": "hold",
         "components": {
           "validity": 59.9,
@@ -2518,14 +2512,14 @@
       "closed": false,
       "pulse": "24d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "24\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 63.3,
+      "management_confidence": 62.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 150.33,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 63.3,
+        "management_confidence": 62.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -3215,14 +3209,14 @@
       "closed": false,
       "pulse": "24d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "24\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 51.2,
+      "management_confidence": 50.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 12.39,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 51.2,
+        "management_confidence": 50.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -4136,14 +4130,14 @@
       "closed": false,
       "pulse": "23d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "23\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 47.7,
+      "management_confidence": 47.6,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 322.52,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 47.7,
+        "management_confidence": 47.6,
         "recommended_action": "wait",
         "components": {
           "validity": 64.6,
@@ -4367,14 +4361,14 @@
       "closed": false,
       "pulse": "29d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 34.4,
+      "management_confidence": 34.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 203.91,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 34.4,
+        "management_confidence": 34.5,
         "recommended_action": "hold",
         "components": {
           "validity": 71.2,
@@ -4693,14 +4687,14 @@
       "closed": false,
       "pulse": "26d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "26\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 62.2,
+      "management_confidence": 61.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 28.25,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 62.2,
+        "management_confidence": 61.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -4918,14 +4912,14 @@
       "closed": false,
       "pulse": "29d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 71.8,
+      "management_confidence": 71.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 44.36,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 71.8,
+        "management_confidence": 71.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -6274,7 +6268,7 @@
           "mfe_r": 0.0,
           "mae_r": -1.057
         },
-        "change_reason": "Stop Level Breached"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Invalidation level ($321.41) has been breached. Exit the full position.",
@@ -6701,14 +6695,14 @@
       "closed": false,
       "pulse": "24d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "24\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 38.8,
+      "management_confidence": 38.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 17.61,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 38.8,
+        "management_confidence": 38.2,
         "recommended_action": "hold",
         "components": {
           "validity": 81.6,
@@ -7491,14 +7485,14 @@
       "closed": false,
       "pulse": "29d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 32.5,
+      "management_confidence": 31.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 38.34,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 32.5,
+        "management_confidence": 31.4,
         "recommended_action": "hold",
         "components": {
           "validity": 53.5,
@@ -8476,14 +8470,14 @@
       "closed": false,
       "pulse": "29d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 43.9,
+      "management_confidence": 44.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 230.36,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 43.9,
+        "management_confidence": 44.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -8870,14 +8864,14 @@
       "closed": false,
       "pulse": "29d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 49.8,
+      "management_confidence": 49.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 72.73,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 49.8,
+        "management_confidence": 49.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -9266,14 +9260,14 @@
       "closed": false,
       "pulse": "29d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 37.9,
+      "management_confidence": 37.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 368.74,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 37.9,
+        "management_confidence": 37.0,
         "recommended_action": "hold",
         "components": {
           "validity": 78.1,
@@ -10123,14 +10117,14 @@
       "closed": false,
       "pulse": "26d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "26\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 53.3,
+      "management_confidence": 52.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 9.12,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 53.3,
+        "management_confidence": 52.7,
         "recommended_action": "wait",
         "components": {
           "validity": 81.8,
@@ -10379,7 +10373,7 @@
           "mfe_r": 0.801,
           "mae_r": -0.442
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($212.43).",
@@ -10578,14 +10572,14 @@
       "closed": false,
       "pulse": "29d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "29\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 39.9,
+      "management_confidence": 39.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 6.74,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 39.9,
+        "management_confidence": 39.7,
         "recommended_action": "wait",
         "components": {
           "validity": 37.7,
@@ -10741,14 +10735,14 @@
       "closed": false,
       "pulse": "23d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "23\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 47.3,
+      "management_confidence": 46.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 49.97,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 47.3,
+        "management_confidence": 46.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -11200,14 +11194,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 86.5,
+      "management_confidence": 86.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 225.41,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 86.5,
+        "management_confidence": 86.3,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -11427,14 +11421,14 @@
       "closed": false,
       "pulse": "26d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "26\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 47.1,
+      "management_confidence": 45.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 86.74,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 47.1,
+        "management_confidence": 45.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -11885,14 +11879,14 @@
       "closed": false,
       "pulse": "26d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "26\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 25.2,
+      "management_confidence": 25.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 204.45,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 25.2,
+        "management_confidence": 25.1,
         "recommended_action": "hold",
         "components": {
           "validity": 31.1,
@@ -12110,14 +12104,14 @@
       "closed": false,
       "pulse": "26d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "26\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 29.8,
+      "management_confidence": 30.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 41.27,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 29.8,
+        "management_confidence": 30.3,
         "recommended_action": "hold",
         "components": {
           "validity": 53.9,
@@ -12335,14 +12329,14 @@
       "closed": false,
       "pulse": "12d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "12\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 46.1,
+      "management_confidence": 45.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 33.8,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 46.1,
+        "management_confidence": 45.9,
         "recommended_action": "hold",
         "components": {
           "validity": 62.4,
@@ -12799,14 +12793,14 @@
       "closed": false,
       "pulse": "29d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "29\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 42.0,
+      "management_confidence": 42.1,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 57.18,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 42.0,
+        "management_confidence": 42.1,
         "recommended_action": "wait",
         "components": {
           "validity": 46.7,
@@ -12962,14 +12956,14 @@
       "closed": false,
       "pulse": "29d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 47.2,
+      "management_confidence": 46.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 11.54,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 47.2,
+        "management_confidence": 46.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -14970,14 +14964,14 @@
       "closed": false,
       "pulse": "29d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "29\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 36.9,
+      "management_confidence": 37.0,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 13.92,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 36.9,
+        "management_confidence": 37.0,
         "recommended_action": "wait",
         "components": {
           "validity": 28.3,
@@ -15661,14 +15655,14 @@
       "closed": false,
       "pulse": "26d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "26\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 34.2,
+      "management_confidence": 34.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 1.24,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 34.2,
+        "management_confidence": 34.0,
         "recommended_action": "hold",
         "components": {
           "validity": 67.8,
@@ -15888,14 +15882,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 83.3,
+      "management_confidence": 82.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 8.59,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 83.3,
+        "management_confidence": 82.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -15916,7 +15910,7 @@
           "mfe_r": 1.657,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -16339,17 +16333,17 @@
       "phase": "between_t1_t2",
       "age_days": 11,
       "clock_age_days": 11,
-      "closed": false,
-      "pulse": "11d \u00b7 past T1 \u00b7 advancing to t2",
-      "pulse_zh": "11\u5929 \u00b7 T1 \u4e4b\u4e0a \u00b7 \u5411 T2 \u63a8\u8fdb",
-      "management_confidence": 82.5,
+      "closed": true,
+      "pulse": "closed \u00b7 hit first target",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
+      "management_confidence": 83.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 183.99,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 82.5,
+        "management_confidence": 83.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -16370,17 +16364,13 @@
           "mfe_r": 1.555,
           "mae_r": -0.45
         },
-        "change_reason": "T1 Target Hit"
+        "change_reason": ""
       },
       "what_to_do_now": [
-        "T1 ($183.77) has been reached. Scale out approximately 40% of the position here and trail stop to entry ($177.80).",
-        "Hold the remaining position for T2 ($189.74). Trail stop to breakeven to protect against a reversal.",
-        "T2 at $189.74 \u2014 let remaining position run unless price closes back below $183.77."
+        "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
       ],
       "what_to_do_now_zh": [
-        "T1\uff08$183.77\uff09\u5df2\u8fbe\u5230\u3002\u5728\u6b64\u51cf\u4ed3\u7ea6 40%\uff0c\u5c06\u6b62\u635f\u4e0a\u79fb\u81f3\u5165\u573a\u4f4d\uff08$177.80\uff09\u3002",
-        "\u5269\u4f59\u4ed3\u4f4d\u6301\u6709\u5f85 T2\uff08$189.74\uff09\u3002\u5c06\u6b62\u635f\u79fb\u81f3\u76c8\u4e8f\u5e73\u8861\u70b9\u4ee5\u9632\u53cd\u8f6c\u3002",
-        "T2 \u76ee\u6807\u4e3a $189.74\u2014\u2014\u9664\u975e\u4ef7\u683c\u6536\u76d8\u56de\u843d\u81f3 $183.77 \u4e0b\u65b9\uff0c\u5426\u5219\u8ba9\u5269\u4f59\u4ed3\u4f4d\u7ee7\u7eed\u8fd0\u884c\u3002"
+        "\u8be5\u8ba1\u5212\u5df2\u7ed3\u675f \u2014 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807\u3002\u65e0\u9700\u64cd\u4f5c\uff1b\u4fdd\u7559\u4ee5\u4f9b\u8bb0\u5f55\u3002"
       ],
       "profit_plan": [
         {
@@ -16591,7 +16581,7 @@
           }
         }
       },
-      "lifecycle_state": "delivering",
+      "lifecycle_state": "resolved",
       "board_read": {
         "schema": "prophet.board_read/v1",
         "scope": "ticker",
@@ -16599,10 +16589,10 @@
         "as_of": "2026-09-04",
         "fields": {
           "status": {
-            "value": "bounce_wait",
-            "state": "available",
-            "reason": null,
-            "source": "us_stock_library"
+            "value": null,
+            "state": "not_applicable",
+            "reason": "plan_closed",
+            "source": null
           },
           "name": {
             "value": "DaVita",
@@ -17328,7 +17318,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.533
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $16.56\u2013$16.72 zone. Do not pay above $16.78 \u2014 above that you are chasing the bar, not entering it.",
@@ -17793,7 +17783,7 @@
           "mfe_r": 0.188,
           "mae_r": -0.273
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($214.45).",
@@ -18386,14 +18376,14 @@
       "closed": false,
       "pulse": "9d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "9\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 58.3,
+      "management_confidence": 58.1,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 36.76,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 58.3,
+        "management_confidence": 58.1,
         "recommended_action": "wait",
         "components": {
           "validity": 70.1,
@@ -19023,7 +19013,7 @@
           "mfe_r": 0.392,
           "mae_r": -0.558
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($150.97).",
@@ -19774,14 +19764,14 @@
       "closed": false,
       "pulse": "23d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "23\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 38.0,
+      "management_confidence": 35.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 393.84,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 38.0,
+        "management_confidence": 35.2,
         "recommended_action": "hold",
         "components": {
           "validity": 55.4,
@@ -20005,14 +19995,14 @@
       "closed": false,
       "pulse": "29d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "29\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 41.0,
+      "management_confidence": 40.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 357.9,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 41.0,
+        "management_confidence": 40.7,
         "recommended_action": "wait",
         "components": {
           "validity": 40.7,
@@ -20168,14 +20158,14 @@
       "closed": false,
       "pulse": "24d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "24\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 51.2,
+      "management_confidence": 51.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 1.4,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 51.2,
+        "management_confidence": 51.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -20400,14 +20390,14 @@
       "closed": false,
       "pulse": "23d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "23\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 34.2,
+      "management_confidence": 33.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 24.01,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 34.2,
+        "management_confidence": 33.4,
         "recommended_action": "hold",
         "components": {
           "validity": 58.6,
@@ -20869,14 +20859,14 @@
       "closed": false,
       "pulse": "23d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "23\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 46.3,
+      "management_confidence": 46.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 11.45,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 46.3,
+        "management_confidence": 46.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -23767,14 +23757,14 @@
       "closed": false,
       "pulse": "24d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "24\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 47.4,
+      "management_confidence": 47.6,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 8.51,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 47.4,
+        "management_confidence": 47.6,
         "recommended_action": "wait",
         "components": {
           "validity": 65.9,
@@ -24219,14 +24209,14 @@
       "closed": false,
       "pulse": "8d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "8\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 65.6,
+      "management_confidence": 65.9,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 80.97,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 65.6,
+        "management_confidence": 65.9,
         "recommended_action": "wait",
         "components": {
           "validity": 99.0,
@@ -24450,14 +24440,14 @@
       "closed": false,
       "pulse": "26d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "26\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 53.9,
+      "management_confidence": 53.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 6.5,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 53.9,
+        "management_confidence": 53.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -24677,14 +24667,14 @@
       "closed": false,
       "pulse": "26d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "26\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 43.0,
+      "management_confidence": 43.5,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 44.32,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 43.0,
+        "management_confidence": 43.5,
         "recommended_action": "wait",
         "components": {
           "validity": 52.4,
@@ -25133,14 +25123,14 @@
       "closed": false,
       "pulse": "23d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "23\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 42.4,
+      "management_confidence": 42.2,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 17.72,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 42.4,
+        "management_confidence": 42.2,
         "recommended_action": "wait",
         "components": {
           "validity": 43.5,
@@ -25922,14 +25912,14 @@
       "closed": false,
       "pulse": "24d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "24\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 43.9,
+      "management_confidence": 43.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 325.48,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 43.9,
+        "management_confidence": 43.7,
         "recommended_action": "wait",
         "components": {
           "validity": 50.5,
@@ -27046,7 +27036,7 @@
           "mfe_r": 0.001,
           "mae_r": -0.223
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($121.41).",
@@ -27568,14 +27558,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 57.7,
+      "management_confidence": 57.8,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 443.51,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 57.7,
+        "management_confidence": 57.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -27800,14 +27790,14 @@
       "closed": false,
       "pulse": "23d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "23\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 48.3,
+      "management_confidence": 48.6,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 50.43,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 48.3,
+        "management_confidence": 48.6,
         "recommended_action": "wait",
         "components": {
           "validity": 68.6,
@@ -29542,7 +29532,7 @@
           "mfe_r": 0.018,
           "mae_r": -0.244
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($54.52).",
@@ -30150,14 +30140,14 @@
       "closed": false,
       "pulse": "18d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "18\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 65.8,
+      "management_confidence": 65.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 81.92,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 65.8,
+        "management_confidence": 65.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -30178,7 +30168,7 @@
           "mfe_r": 0.729,
           "mae_r": -0.474
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($85.08).",
@@ -30777,14 +30767,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 35.8,
+      "management_confidence": 35.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 419.07,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 35.8,
+        "management_confidence": 35.4,
         "recommended_action": "hold",
         "components": {
           "validity": 53.9,
@@ -31864,14 +31854,14 @@
       "closed": false,
       "pulse": "11d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "11\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 51.3,
+      "management_confidence": 50.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 22.05,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 51.3,
+        "management_confidence": 50.7,
         "recommended_action": "hold",
         "components": {
           "validity": 75.9,
@@ -32440,7 +32430,7 @@
           "mfe_r": 0.069,
           "mae_r": 0.0
         },
-        "change_reason": "Trigger Confirmed"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($50.23).",
@@ -32674,7 +32664,7 @@
           "mfe_r": 0.042,
           "mae_r": -0.243
         },
-        "change_reason": "Weakening"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($55.12).",
@@ -33353,14 +33343,14 @@
       "closed": false,
       "pulse": "12d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "12\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 51.4,
+      "management_confidence": 50.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 279.28,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 51.4,
+        "management_confidence": 50.6,
         "recommended_action": "hold",
         "components": {
           "validity": 79.5,
@@ -33816,14 +33806,14 @@
       "closed": false,
       "pulse": "9d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "9\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 59.1,
+      "management_confidence": 58.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 354.08,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 59.1,
+        "management_confidence": 58.4,
         "recommended_action": "hold",
         "components": {
           "validity": 98.5,
@@ -35854,14 +35844,14 @@
       "closed": false,
       "pulse": "12d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "12\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 55.5,
+      "management_confidence": 55.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 225.62,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 55.5,
+        "management_confidence": 55.7,
         "recommended_action": "wait",
         "components": {
           "validity": 70.7,
@@ -36546,14 +36536,14 @@
       "closed": true,
       "pulse": "closed \u00b7 stopped out",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
-      "management_confidence": 37.0,
+      "management_confidence": 37.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 1038.61,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 37.0,
+        "management_confidence": 37.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -36574,7 +36564,7 @@
           "mfe_r": 0.657,
           "mae_r": -1.069
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -37026,14 +37016,14 @@
       "closed": false,
       "pulse": "1d \u00b7 pre-trigger \u00b7 awaiting trigger",
       "pulse_zh": "1\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
-      "management_confidence": 67.5,
+      "management_confidence": 67.6,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 219.6,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.5,
+        "management_confidence": 67.6,
         "recommended_action": "wait",
         "components": {
           "validity": 98.9,
@@ -37490,14 +37480,14 @@
       "closed": false,
       "pulse": "8d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "8\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 61.6,
+      "management_confidence": 61.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 33.32,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 61.6,
+        "management_confidence": 61.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -37750,7 +37740,7 @@
           "mfe_r": 0.068,
           "mae_r": -0.238
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($45.81).",
@@ -38509,14 +38499,14 @@
       "closed": false,
       "pulse": "8d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "8\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 66.8,
+      "management_confidence": 67.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 77.04,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 66.8,
+        "management_confidence": 67.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -38771,7 +38761,7 @@
           "mfe_r": 0.123,
           "mae_r": -0.045
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($422.51).",
@@ -38974,14 +38964,14 @@
       "closed": false,
       "pulse": "9d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "9\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 64.0,
+      "management_confidence": 64.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 34.2,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.0,
+        "management_confidence": 64.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -39205,14 +39195,14 @@
       "closed": false,
       "pulse": "17d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "17\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 43.5,
+      "management_confidence": 43.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 162.7,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 43.5,
+        "management_confidence": 43.3,
         "recommended_action": "hold",
         "components": {
           "validity": 79.3,
@@ -40122,14 +40112,14 @@
       "closed": false,
       "pulse": "16d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "16\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 44.6,
+      "management_confidence": 43.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 50.87,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 44.6,
+        "management_confidence": 43.6,
         "recommended_action": "hold",
         "components": {
           "validity": 72.0,
@@ -40820,14 +40810,14 @@
       "closed": false,
       "pulse": "12d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "12\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 61.9,
+      "management_confidence": 61.7,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 93.53,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 61.9,
+        "management_confidence": 61.7,
         "recommended_action": "wait",
         "components": {
           "validity": 91.8,
@@ -41389,7 +41379,7 @@
           "mfe_r": 0.112,
           "mae_r": -0.065
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($31.32).",
@@ -41592,14 +41582,14 @@
       "closed": false,
       "pulse": "1d \u00b7 pre-trigger \u00b7 awaiting trigger",
       "pulse_zh": "1\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
-      "management_confidence": 67.5,
+      "management_confidence": 67.3,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 69.87,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.5,
+        "management_confidence": 67.3,
         "recommended_action": "wait",
         "components": {
           "validity": 94.9,
@@ -42086,7 +42076,7 @@
           "mfe_r": 4.71,
           "mae_r": 0.0
         },
-        "change_reason": "Phase: at_t2 \u2192 between_t1_t2"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -42285,14 +42275,14 @@
       "closed": false,
       "pulse": "23d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "23\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 47.0,
+      "management_confidence": 47.2,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 45.63,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 47.0,
+        "management_confidence": 47.2,
         "recommended_action": "wait",
         "components": {
           "validity": 63.7,
@@ -43214,14 +43204,14 @@
       "closed": false,
       "pulse": "5d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "5\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 63.9,
+      "management_confidence": 64.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 28.13,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 63.9,
+        "management_confidence": 64.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -43676,14 +43666,14 @@
       "closed": false,
       "pulse": "9d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "9\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 59.2,
+      "management_confidence": 59.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 22.6,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 59.2,
+        "management_confidence": 59.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -43935,7 +43925,7 @@
           "mfe_r": 0.129,
           "mae_r": -0.345
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($82.37).",
@@ -44141,14 +44131,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 31.3,
+      "management_confidence": 31.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 624.41,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 31.3,
+        "management_confidence": 31.0,
         "recommended_action": "hold",
         "components": {
           "validity": 36.1,
@@ -44606,14 +44596,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 52.1,
+      "management_confidence": 51.2,
       "recommended_action": "trim",
       "management_status": "available",
       "management_error": null,
       "last_price": 42.53,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 52.1,
+        "management_confidence": 51.2,
         "recommended_action": "trim",
         "components": {
           "validity": 100.0,
@@ -44835,14 +44825,14 @@
       "closed": false,
       "pulse": "5d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "5\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 73.7,
+      "management_confidence": 75.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 11.38,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 73.7,
+        "management_confidence": 75.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -45094,7 +45084,7 @@
           "mfe_r": 0.448,
           "mae_r": -0.132
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($24.97).",
@@ -46204,7 +46194,7 @@
           "mfe_r": 0.178,
           "mae_r": -0.609
         },
-        "change_reason": "Macro Tailwind"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($39.87).",
@@ -46640,14 +46630,14 @@
       "closed": false,
       "pulse": "19d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "19\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 39.7,
+      "management_confidence": 39.8,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 103.9,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 39.7,
+        "management_confidence": 39.8,
         "recommended_action": "wait",
         "components": {
           "validity": 29.1,
@@ -47823,7 +47813,7 @@
           "mfe_r": 0.433,
           "mae_r": -0.45
         },
-        "change_reason": "Macro Tailwind"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -48344,14 +48334,14 @@
       "closed": false,
       "pulse": "5d \u00b7 triggered \u00b7 advancing cleanly",
       "pulse_zh": "5\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
-      "management_confidence": 77.7,
+      "management_confidence": 78.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 50.06,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 77.7,
+        "management_confidence": 78.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -48575,14 +48565,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 76.8,
+      "management_confidence": 76.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 69.87,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 76.8,
+        "management_confidence": 76.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -48603,7 +48593,7 @@
           "mfe_r": 1.998,
           "mae_r": -1.662
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -49267,14 +49257,14 @@
       "closed": false,
       "pulse": "19d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "19\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 28.7,
+      "management_confidence": 30.0,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 321.0,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 28.7,
+        "management_confidence": 30.0,
         "recommended_action": "wait",
         "components": {
           "validity": 0.0,
@@ -49295,7 +49285,7 @@
           "mfe_r": 0.0,
           "mae_r": -1.011
         },
-        "change_reason": "Phase: invalidated \u2192 pre_trigger"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Wait for a pullback into the $398.10\u2013$416.00 zone before starting. No entry above $445.20; the plan waits at the band rather than paying the last print.",
@@ -49761,7 +49751,7 @@
           "mfe_r": 0.537,
           "mae_r": -0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($39.88).",
@@ -50981,14 +50971,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 79.2,
+      "management_confidence": 79.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 168.74,
       "state": {
         "phase": "at_t1",
-        "management_confidence": 79.2,
+        "management_confidence": 79.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -51009,7 +50999,7 @@
           "mfe_r": 1.52,
           "mae_r": -0.356
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -51438,14 +51428,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 49.2,
+      "management_confidence": 48.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 42.58,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 49.2,
+        "management_confidence": 48.3,
         "recommended_action": "hold",
         "components": {
           "validity": 86.5,
@@ -51903,14 +51893,14 @@
       "closed": false,
       "pulse": "1d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "1\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 68.6,
+      "management_confidence": 68.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 38.47,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 68.6,
+        "management_confidence": 68.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -52828,14 +52818,14 @@
       "closed": false,
       "pulse": "9d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "9\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 59.8,
+      "management_confidence": 59.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 30.65,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 59.8,
+        "management_confidence": 59.3,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -53524,14 +53514,14 @@
       "closed": false,
       "pulse": "12d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "12\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 75.8,
+      "management_confidence": 75.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 11.385,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 75.8,
+        "management_confidence": 75.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -53989,14 +53979,14 @@
       "closed": false,
       "pulse": "17d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "17\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 50.1,
+      "management_confidence": 49.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 32.24,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 50.1,
+        "management_confidence": 49.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -54220,14 +54210,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 30.6,
+      "management_confidence": 30.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 268.95,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 30.6,
+        "management_confidence": 30.4,
         "recommended_action": "hold",
         "components": {
           "validity": 33.6,
@@ -54403,10 +54393,10 @@
             "source": "us_stock_library"
           },
           "lane": {
-            "value": null,
-            "state": "not_applicable",
-            "reason": "not_on_board",
-            "source": null
+            "value": "watch",
+            "state": "available",
+            "reason": null,
+            "source": "us_standouts"
           },
           "spark": {
             "value": "board_read_sparks.json#MTSI",
@@ -55240,14 +55230,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 57.2,
+      "management_confidence": 56.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 28.05,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 57.2,
+        "management_confidence": 56.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -55471,14 +55461,14 @@
       "closed": false,
       "pulse": "24d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "24\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 40.6,
+      "management_confidence": 41.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 32.83,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 40.6,
+        "management_confidence": 41.3,
         "recommended_action": "hold",
         "components": {
           "validity": 99.7,
@@ -55793,14 +55783,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 54.0,
+      "management_confidence": 53.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 33.2,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 54.0,
+        "management_confidence": 53.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -56719,14 +56709,14 @@
       "closed": false,
       "pulse": "8d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "8\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 60.7,
+      "management_confidence": 60.0,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 18.61,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 60.7,
+        "management_confidence": 60.0,
         "recommended_action": "wait",
         "components": {
           "validity": 73.9,
@@ -56950,14 +56940,14 @@
       "closed": false,
       "pulse": "1d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "1\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 62.5,
+      "management_confidence": 62.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 32.76,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 62.5,
+        "management_confidence": 62.0,
         "recommended_action": "hold",
         "components": {
           "validity": 95.1,
@@ -56978,7 +56968,7 @@
           "mfe_r": 0.02,
           "mae_r": -0.037
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($36.54).",
@@ -57442,7 +57432,7 @@
           "mfe_r": 0.086,
           "mae_r": -0.071
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($165.84).",
@@ -57645,14 +57635,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 58.2,
+      "management_confidence": 57.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 59.15,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 58.2,
+        "management_confidence": 57.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -57673,7 +57663,7 @@
           "mfe_r": 0.331,
           "mae_r": -0.06
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($73.27).",
@@ -58104,14 +58094,14 @@
       "closed": false,
       "pulse": "11d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "11\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 54.0,
+      "management_confidence": 53.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 13.54,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 54.0,
+        "management_confidence": 53.9,
         "recommended_action": "hold",
         "components": {
           "validity": 91.3,
@@ -58132,7 +58122,7 @@
           "mfe_r": 0.406,
           "mae_r": -0.249
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($14.74).",
@@ -58425,14 +58415,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 64.3,
+      "management_confidence": 63.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 37.07,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.3,
+        "management_confidence": 63.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -58888,14 +58878,14 @@
       "closed": false,
       "pulse": "18d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "18\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 35.3,
+      "management_confidence": 34.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 43.64,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 35.3,
+        "management_confidence": 34.3,
         "recommended_action": "hold",
         "components": {
           "validity": 43.4,
@@ -59673,14 +59663,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 50.8,
+      "management_confidence": 50.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 234.89,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 50.8,
+        "management_confidence": 50.4,
         "recommended_action": "hold",
         "components": {
           "validity": 97.1,
@@ -59932,7 +59922,7 @@
           "mfe_r": 20.818,
           "mae_r": -1.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit second target. Nothing to do; kept here for the record."
@@ -60133,14 +60123,14 @@
       "closed": false,
       "pulse": "5d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "5\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 73.5,
+      "management_confidence": 74.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 6.77,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 73.5,
+        "management_confidence": 74.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -60626,7 +60616,7 @@
           "mfe_r": 0.0,
           "mae_r": -0.922
         },
-        "change_reason": "Ahead of Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Accumulate into the $39.87\u2013$40.84 zone. Do not pay above $41.23 \u2014 above that you are chasing the bar, not entering it.",
@@ -60859,7 +60849,7 @@
           "mfe_r": 0.064,
           "mae_r": -0.002
         },
-        "change_reason": "Trigger Confirmed"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($69.14).",
@@ -61686,7 +61676,7 @@
           "mfe_r": 0.456,
           "mae_r": 0.0
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($60.95).",
@@ -61892,14 +61882,14 @@
       "closed": false,
       "pulse": "15d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 54.0,
+      "management_confidence": 52.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 36.96,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 54.0,
+        "management_confidence": 52.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -62123,14 +62113,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 35.4,
+      "management_confidence": 35.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 105.45,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 35.4,
+        "management_confidence": 35.1,
         "recommended_action": "hold",
         "components": {
           "validity": 52.8,
@@ -62382,7 +62372,7 @@
           "mfe_r": 0.004,
           "mae_r": -0.0
         },
-        "change_reason": "Trigger Confirmed"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($50.62).",
@@ -63079,7 +63069,7 @@
           "mfe_r": 0.0,
           "mae_r": -4.263
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($65.28).",
@@ -63751,14 +63741,14 @@
       "closed": false,
       "pulse": "8d \u00b7 pre-trigger \u00b7 approaching trigger",
       "pulse_zh": "8\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
-      "management_confidence": 60.5,
+      "management_confidence": 59.8,
       "recommended_action": "wait",
       "management_status": "available",
       "management_error": null,
       "last_price": 84.68,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 60.5,
+        "management_confidence": 59.8,
         "recommended_action": "wait",
         "components": {
           "validity": 73.5,
@@ -64241,7 +64231,7 @@
           "mfe_r": 0.067,
           "mae_r": -0.095
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($201.27).",
@@ -64472,7 +64462,7 @@
           "mfe_r": 0.0,
           "mae_r": -1.302
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($15.39).",
@@ -65461,14 +65451,14 @@
       "closed": false,
       "pulse": "19d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 30.0,
+      "management_confidence": 29.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 138.73,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 30.0,
+        "management_confidence": 29.5,
         "recommended_action": "hold",
         "components": {
           "validity": 29.4,
@@ -65489,7 +65479,7 @@
           "mfe_r": 1.436,
           "mae_r": -0.854
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($147.76).",
@@ -65814,7 +65804,7 @@
           "mfe_r": 1.14,
           "mae_r": -0.269
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($47.61).",
@@ -66876,14 +66866,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 81.0,
+      "management_confidence": 80.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 12.97,
       "state": {
         "phase": "at_t1",
-        "management_confidence": 81.0,
+        "management_confidence": 80.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -66904,7 +66894,7 @@
           "mfe_r": 1.763,
           "mae_r": -0.275
         },
-        "change_reason": "Phase: between_t1_t2 \u2192 at_t1"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit first target. Nothing to do; kept here for the record."
@@ -67105,14 +67095,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 84.7,
+      "management_confidence": 85.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 16.93,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 84.7,
+        "management_confidence": 85.3,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -68812,14 +68802,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 73.7,
+      "management_confidence": 72.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 19.9,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 73.7,
+        "management_confidence": 72.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -68958,14 +68948,14 @@
       "closed": false,
       "pulse": "36d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "36\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 68.2,
+      "management_confidence": 67.1,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 214.28,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 68.2,
+        "management_confidence": 67.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -70626,7 +70616,7 @@
           "mfe_r": 1.149,
           "mae_r": -0.38
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -70890,14 +70880,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 52.6,
+      "management_confidence": 52.4,
       "recommended_action": "trim",
       "management_status": "available",
       "management_error": null,
       "last_price": 30.66,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 52.6,
+        "management_confidence": 52.4,
         "recommended_action": "trim",
         "components": {
           "validity": 100.0,
@@ -71988,7 +71978,7 @@
           "mfe_r": 0.932,
           "mae_r": -1.676
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -72553,7 +72543,7 @@
           "mfe_r": 0.0,
           "mae_r": -1.505
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -73137,7 +73127,7 @@
           "mfe_r": 1.108,
           "mae_r": -0.225
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -73283,7 +73273,7 @@
           "mfe_r": 0.307,
           "mae_r": -0.199
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -73401,14 +73391,14 @@
       "closed": false,
       "pulse": "37d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 46.6,
+      "management_confidence": 48.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 122.28,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 46.6,
+        "management_confidence": 48.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -74913,14 +74903,14 @@
       "closed": false,
       "pulse": "37d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 47.4,
+      "management_confidence": 48.0,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 12.5,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 47.4,
+        "management_confidence": 48.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -75379,14 +75369,14 @@
       "closed": false,
       "pulse": "36d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "36\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 48.9,
+      "management_confidence": 49.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 12.5,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 48.9,
+        "management_confidence": 49.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -75567,7 +75557,7 @@
           "mfe_r": 0.339,
           "mae_r": -1.422
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -75713,7 +75703,7 @@
           "mfe_r": 3.495,
           "mae_r": 0.0
         },
-        "change_reason": "Phase: at_t1 \u2192 between_t1_t2"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 hit second target. Nothing to do; kept here for the record."
@@ -75841,14 +75831,14 @@
       "closed": false,
       "pulse": "42d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "42\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 54.8,
+      "management_confidence": 54.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 140.15,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 54.8,
+        "management_confidence": 54.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -76001,14 +75991,14 @@
       "closed": false,
       "pulse": "39d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "39\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 40.9,
+      "management_confidence": 40.2,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 72.8,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 40.9,
+        "management_confidence": 40.2,
         "recommended_action": "hold",
         "components": {
           "validity": 96.6,
@@ -76467,14 +76457,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 71.7,
+      "management_confidence": 71.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 10.08,
       "state": {
         "phase": "at_t1",
-        "management_confidence": 71.7,
+        "management_confidence": 71.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -76613,14 +76603,14 @@
       "closed": false,
       "pulse": "42d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "42\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 49.9,
+      "management_confidence": 49.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 298.38,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 49.9,
+        "management_confidence": 49.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -76929,14 +76919,14 @@
       "closed": false,
       "pulse": "37d \u00b7 triggered \u00b7 needs follow-through",
       "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
-      "management_confidence": 46.7,
+      "management_confidence": 47.6,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 37.34,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 46.7,
+        "management_confidence": 47.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -76957,7 +76947,7 @@
           "mfe_r": 0.296,
           "mae_r": -0.148
         },
-        "change_reason": "Moving Away from Stop"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($43.09).",
@@ -77089,14 +77079,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 77.6,
+      "management_confidence": 77.4,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 499.7,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 77.6,
+        "management_confidence": 77.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -77235,14 +77225,14 @@
       "closed": false,
       "pulse": "39d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "39\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 34.8,
+      "management_confidence": 36.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 37.01,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 34.8,
+        "management_confidence": 36.3,
         "recommended_action": "hold",
         "components": {
           "validity": 90.8,
@@ -78203,7 +78193,7 @@
           "mfe_r": 0.456,
           "mae_r": -0.428
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -78509,7 +78499,7 @@
           "mfe_r": 0.538,
           "mae_r": -0.201
         },
-        "change_reason": "Window Elapsed \u2014 Awaiting Close"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 timed out. Nothing to do; kept here for the record."
@@ -78787,14 +78777,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 42.5,
+      "management_confidence": 41.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 82.34,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 42.5,
+        "management_confidence": 41.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -78943,14 +78933,14 @@
       "closed": false,
       "pulse": "36d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "36\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 35.2,
+      "management_confidence": 35.5,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 43.68,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 35.2,
+        "management_confidence": 35.5,
         "recommended_action": "hold",
         "components": {
           "validity": 79.5,
@@ -79103,14 +79093,14 @@
       "closed": false,
       "pulse": "40d \u00b7 triggered \u00b7 on track",
       "pulse_zh": "40\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
-      "management_confidence": 61.8,
+      "management_confidence": 61.7,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 55.17,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 61.8,
+        "management_confidence": 61.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -79423,14 +79413,14 @@
       "closed": false,
       "pulse": "39d \u00b7 triggered \u00b7 stalling",
       "pulse_zh": "39\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
-      "management_confidence": 26.3,
+      "management_confidence": 25.3,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 173.15,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 26.3,
+        "management_confidence": 25.3,
         "recommended_action": "hold",
         "components": {
           "validity": 32.8,
@@ -79583,14 +79573,14 @@
       "closed": true,
       "pulse": "closed \u00b7 stopped out",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
-      "management_confidence": 24.2,
+      "management_confidence": 25.4,
       "recommended_action": "trim",
       "management_status": "available",
       "management_error": null,
       "last_price": 217.72,
       "state": {
         "phase": "overtime",
-        "management_confidence": 24.2,
+        "management_confidence": 25.4,
         "recommended_action": "trim",
         "components": {
           "validity": 25.2,
@@ -79611,7 +79601,7 @@
           "mfe_r": 0.0,
           "mae_r": -2.773
         },
-        "change_reason": "Falling Behind Schedule"
+        "change_reason": ""
       },
       "what_to_do_now": [
         "This plan is closed \u2014 stopped out. Nothing to do; kept here for the record."
@@ -81291,14 +81281,14 @@
       "closed": true,
       "pulse": "closed \u00b7 hit first target",
       "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
-      "management_confidence": 80.1,
+      "management_confidence": 80.9,
       "recommended_action": "hold",
       "management_status": "available",
       "management_error": null,
       "last_price": 14.4,
       "state": {
         "phase": "between_t1_t2",
-        "management_confidence": 80.1,
+        "management_confidence": 80.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
@@ -81925,14 +81915,14 @@
     "read_errors": {},
     "by_field": {
       "status": {
-        "available": 295,
+        "available": 294,
         "blocked_data": 0,
-        "not_applicable": 85,
+        "not_applicable": 86,
         "reasons": {
-          "plan_closed": 85
+          "plan_closed": 86
         },
         "sources": {
-          "us_stock_library": 295
+          "us_stock_library": 294
         }
       },
       "name": {
@@ -81954,15 +81944,15 @@
         }
       },
       "lane": {
-        "available": 62,
+        "available": 63,
         "blocked_data": 0,
-        "not_applicable": 318,
+        "not_applicable": 317,
         "reasons": {
           "board_bucket_carries_no_lane": 2,
-          "not_on_board": 316
+          "not_on_board": 315
         },
         "sources": {
-          "us_standouts": 62
+          "us_standouts": 63
         }
       },
       "spark": {

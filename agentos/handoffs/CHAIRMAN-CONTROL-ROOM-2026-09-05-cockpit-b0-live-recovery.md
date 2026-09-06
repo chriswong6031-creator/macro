@@ -22,14 +22,13 @@ state_before: >
 changed:
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-09-05-cockpit-b0-live-recovery.md
     what: >
-      Updated this existing bounded recovery handoff at a later service-wave
-      boundary with the exact protected 767 source installation, two explicit
-      STARTs, finite preview, quiescent same-root fast-forward, installed HTTP
-      and browser proof, the accepted conditional B5 design, and the current
-      PR 496 carrier refusal/continuation state. The update preserves the
-      historical 08:37 and 12:31 checkpoints and changes no workstream,
-      portfolio projection, Business cockpit, Executive lifecycle, account,
-      provider, source carrier or authority.
+      Updated this existing bounded recovery handoff at the closed B5 source-wave
+      boundary with the exact carrier, final nine-path Draft candidate, owning,
+      hosted-CI and browser evidence, independent artifact review, accepted
+      source RESULT/STOP, continuation suppression and writer release. The
+      update preserves all earlier historical checkpoints and changes no
+      workstream, portfolio projection, Business cockpit, Executive lifecycle,
+      account, provider, installed service, release or production authority.
 verified:
   - claim: Initial archaeology used protected SHA 46a24a1a4083b74bbde8876100a8ca1f720589a9; current protected #481 release is squash 15d2693e5ff319f5f09e4c555fb007328237cee4 with the relevant Skillpack bytes unchanged.
     command: >
@@ -220,7 +219,7 @@ verified:
     result: >
       Historical #482 merge source was a3440f21a0d6df7666bd9ed9f3b02385dac23588.
       Its exact diff from 15d contains two production preflight records only, preserving the same
-      Skillpack bytes. Installed Control Room source remains 15d; this merge
+      Skillpack bytes. Installed Control Room source remained 15d at that observation; this merge
       is neither a Control Room installation nor runtime or Business proof.
   - claim: The direct Steward owner recovery consumed one authorized existing-carrier release without proving the auth repairs accepted.
     command: >
@@ -277,7 +276,7 @@ verified:
       5ae4e9e2168fb3e256fd8021ce98d49867783a01. The protected source was
       still 0d; local worktree was clean. This is published source/CI evidence
       only. It does not merge, install or
-      change the existing localhost service, which remains source 15d.
+      change the existing localhost service, which remained source 15d at that observation.
   - claim: The accepted #486 candidate has bounded independent source, test and synthetic-browser evidence for the client refresh residual.
     command: >
       cat /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/independent-source-review-5ae4e9e.md;
@@ -449,7 +448,7 @@ verified:
       Runtime, Business workspace, account, provider, admission or production
       graduation.
 
-  - claim: Integration accepted the owner-emitted B5 validity design and its conditional Darwin/Chrome clock profile, while B5 source START remains blocked on the existing PR 496 release.
+  - claim: At the 2026-09-05T16:31:36Z service-wave cutoff, Integration had accepted the owner-emitted B5 validity design and conditional Darwin/Chrome clock profile while B5 source START remained blocked on the then-existing PR 496 release.
     command: >
       cat and shasum -a 256
       /Users/chriswong/Documents/Cluade/exec-prestage-receipts/autonomy-integrator-20260905-01a06f72/b5-integration-design-adjudication-20260905.md
@@ -467,11 +466,13 @@ verified:
       accepts conditional profile b5.darwin-chrome-paired-v1 with D=8ms,
       U=16ms per independent stage, H=1ms and Q=4ms, fail-closed unsupported
       clocks and no unconditional stale-pixel guarantee. These are accepted
-      design contracts only. The nine-path B5 source START remains blocked until
-      actual PR 496 release plus fresh source, ownership and collision gates;
-      implementation, installed B5 behavior and operational acceptance are absent.
+      design contracts only at that service-wave cutoff. The then-nine-path B5
+      source START remained blocked until actual PR 496 release plus fresh source,
+      ownership and collision gates; implementation, installed B5 behavior and
+      operational acceptance were then absent. The closed B5 source outcome below
+      supersedes only that no-START/current-action state.
 
-  - claim: Current carrier evidence preserves Integration's PR 496-first release sequence before any resulting-current-base qualification of PR 492.
+  - claim: At the same service-wave cutoff, carrier evidence preserved Integration's PR 496-first release sequence before any resulting-current-base qualification of PR 492.
     command: >
       Read current-767-492-496-composition-proposal.md; python3 -m json.tool
       /Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/496-auth-carrier-read-1607.json;
@@ -511,7 +512,8 @@ verified:
       intact, with no Root source/index/ref/auth/adapter effect. The complete 16:07
       source-carrier read and 16:04 remote read remain dated observations: no later
       source-writer START was then present and remote PR 496 was OPEN/DRAFT at
-      450ab134.
+      450ab134. These are historical carrier observations; the later sequence and
+      B5 closure below supersede only their current-action status.
 
   - claim: Current Linear projection still has no selected Business cockpit or real registered-host/read/admission proof; the protected A1 merge is reconfirmed history rather than new source progress.
     command: >
@@ -530,6 +532,70 @@ verified:
       HC0 #247 remains projected BUILT_NOT_PROVEN / PRODUCTION_INERT /
       NOT_CONNECTED and lacks a real registered-host receipt.
 
+  - claim: B5 source operation chairman-b5-source-expiry-20260905-sol-001 completed its bounded nine-path source phase at exact head 9fdc6174, passed current hosted CI/security and independent artifact review, then received and consumed Integration's acceptance/STOP before its Secretary continuation was suppressed and its branch writer was released.
+    command: >
+      GitHub reads of Mastermind comments 5554257720, 5555021881,
+      5555036915, 5555125219 and 5555180071; python3 -m json.tool and
+      shasum -a 256 over pickup-ack-readback.json,
+      published-source-manifest-9fdc6174.json, ci-argv-diagnosis.json,
+      source-checkpoint-498-9fdc6174.json,
+      argv-probe-bytecode-cleanup.json,
+      publication-effects-settled-9fdc6174.json,
+      source-checkpoint-498-9fdc6174-clean.json,
+      source-remote-complete-498-9fdc6174.json,
+      remote-proof-concluded-498-9fdc6174.json,
+      source-result-5555125219-readback.json,
+      source-stop-consumption-9fdc6174.json and
+      source-writer-released-9fdc6174.json; parse
+      ci-transport-stdin-fixed.xml; cat and shasum -a 256
+      semantic-review-498-9fdc6174.md, source-result-498-9fdc6174.md,
+      ci-33992717130-failed.log and ci-33993910302-complete.log.
+    result: >
+      Original carrier C0BSBM78V1N/1788636741.039499 received PICKUP_ACK
+      1788637631.084719 and START 1788637771.716019 under commission body
+      SHA-256 2991e824fba0272cf2c8056345d03db4d6deb49224e49e01d9bf485ec1397883.
+      Final PR 498 source head 9fdc6174f43230878ee66323ba333a6b174ff403,
+      tree 4f5a86824bce9acafee66a2f835d75ea5766dc14, has nine paths; manifest
+      SHA-256 de621c56ff511eb3207a8a195f14663c62b4e8eef8309c0f3962e9c6aa9cf5ec.
+      The original 834e Linux E2BIG failure is preserved by log
+      c328f8e8da575602aaa58fbbe14698be21bfd20fc5780509a549aa220eef384e;
+      its 133475/133459-byte argv measurement by
+      a1fc79b090eef14f36ecf6d39940526005a240ee8fe1f277fa04a396560bf3b8.
+      The test-only stdin repair passed its two exact tests, 2/0/0/0, receipt
+      b1165c83a927ad1db03675f699eaa7490fd08330f3c29684aea0ab0d186f42fd;
+      product and assertions stayed unchanged. The first current checkpoint
+      truthfully refused OUT_OF_SCOPE_DIRT, receipt
+      b060cc10edae8207ad83ca7cfc1bd9267750d7e75bb15a6bf60c06935af8061e;
+      only 30 fingerprinted diagnosis pycs were quarantined, with cleanup
+      05638814f711a01f1e18f5aa37253e0152ce25ad7ea76d946d5223889746ca2f
+      and settled-effect receipt
+      28fcea64375ddce993cb6ae14e2471489a2ce2ea382b1bf5cb77a8e939265830.
+      Clean checkpoint 862045e4107d3f08dc04ab34d0e5cd9970bb68be2c81169ab8b6e9cf88c0156f
+      and REMOTE_COMPLETE
+      fa325c62c428b29578518ca8ea59767bb366a07c83fbcf900a3369f9f9385813
+      bind local=remote 9fdc/tree 4f5a, DISJOINT paths and all dirt/untracked/
+      unpushed counts zero. CI 33993910302 succeeded at 22:06:08Z on actual
+      checkout 44bae0f36341a861def423c38b50029de2058eee, tree
+      efd1765598d20d018e9fee239aa7698a4065efa9, parents [91273ab4,9fdc6174],
+      with discovered=496/excluded=0/running=496 and exit 0; CodeQL 33993908405
+      succeeded. Concluded proof SHA-256 is
+      f475951f3f5fafa7e0af4f67bc5c370b9bf0add92d0d41f13f07766349b0f0cd.
+      Exact-head independent artifact review
+      b83606de8bba1453d4e282f7221708e2f6fe4d749498ad6ab8548f114dc3a2a1
+      returned PASS/no findings; GitHub reviews remained empty. Source RESULT
+      5555125219 has exact body/file SHA-256
+      78c06ca6471fb575a85e687196e3d06c6d5d3279bec06c9d5ebf1360a92350ad.
+      Root issued SOURCE ACCEPTED/STOP 1788646578.374179; the source owner
+      consumed it at 1788646668.771999; Secretary returned
+      WATCH_SOURCE_SUPPRESSED 1788646789.177009; final writer release
+      1788646939.325479 is recorded by artifact
+      1a15a0bbf2cdb056a83c4dff1e441fd75ba2e5c77076310594401c9f133ce14a
+      and durable comment 5555180071. Retained branch/worktree are clean at
+      exact 9fdc, all untracked counts zero and no owned cwd/process remains;
+      permanent Secretary aggregate and sibling operations remain. The source
+      phase is accepted BUILT_NOT_PROVEN and closed. No protected release,
+      Ready, merge, installation, provider, Business/account, Runtime/admission
+      or production effect is claimed.
 unverified:
   - claim: One real Business cockpit can safely be selected for MAS-242 Stage 0 of the B2 workspace canary.
     what_would_verify: >
@@ -554,17 +620,16 @@ unresolved:
   - "Integration accepted and STOPped the finite existing-service child in comment 5553186139; cleanup return 5553203800 and receipt 4970a9a1 reverified its closed preview/browser processes and PID 49435 as the sole intended 8787 listener. The installed persistent service must remain running. This closes only the service child and grants no further service effect or portfolio graduation."
   - "The intended Business workspace/admin and selected cockpit identity have not been positively proven; account labels, chat titles, recent tabs, app connectors and catalog rows remain insufficient."
   - "The active HC0 child has a session-loss/runtime-binding reconciliation requirement. The original writer effect remains UNKNOWN; Secretary receipt 1788587467.719949 is read-only/provider=none/source=none and does not classify that effect. Do not replace or parallelize the carrier."
-  - "The accepted B5 design and conditional clock profile remain design-only. No B5 source START, implementation, installed B5 behavior or exhaustive 40-card owed-action proof exists; source admission still waits on actual PR 496 release and fresh ownership/collision/source gates."
-  - "PR 496 has a clean local unpublished ec83 current-767 composition. At 1788622814.762739 the source session actually invoked the canonical verifier and received mastermind.source_continuity_refusal/v1 AUTH_UNAVAILABLE / exit 2 because established authentication context was absent. After amendment 5552941302, it separately declined credential realization under its session restriction without a new credential command or verifier invocation. Integration comment 5553124015 then started one independent read-only canonical checkpoint; a later native update reports that reader stopped before credential or verifier invocation when preflight found 90 ignored/untracked leaves despite clean ordinary status. No durable manifest/result pointer is recorded here yet, no cleanup is authorized, and this third event is neither another canonical refusal nor an authentication failure. Keep the original writer frozen and do not rejoin, publish, transfer credentials or infer checkpoint/source success."
-  - "PR 492's approved semantic head and old-base checks remain dated evidence. Integration requires PR 496 protection/source release first; only then may the existing PR 492 carrier perform fresh qualification against the resulting current base. Its publication, source acceptance, installation and Runtime effect remain separate; do not create another worker/reviewer lane."
+  - "The B5 source child is SOURCE_ACCEPTED / BUILT_NOT_PROVEN and terminally closed at exact PR 498 head 9fdc6174/tree 4f5a868. STOP was consumed, its Secretary continuation suppressed and BRANCH_WRITER_RELEASED. The retained branch/worktree are evidence for a separate Root-owned strict-platform maintenance/release operation; no source work may resume on the closed child. Protected release, Ready, merge, installation and production remain absent."
+  - "Root sequencing amendment 1788643440.248779 remains: #492 DONE -> B5 own gates -> repaired PF -> CAP17 -> HF392. B5 source gates are now closed; strict-platform maintenance/release remains a separate Root operation. PF remains platform-blocked, and CAP follows PF after B5. Preserve the old PR 496/492 chronology below as historical evidence and do not replay those writers."
   - "The desktop header source/status cluster still overlaps and crowds Theme. Today still lacks its heading ID/aria-labelledby relationship. The nine accepted framings are representative dark-mode section proof, not light-mode, every-row, full keyboard/screen-reader or exhaustive accessibility acceptance."
   - "Steward S1, header 1bf, HC0 #247 and Executive metadata #469 remain separately held or unproven lanes at their last recorded states; this service wave did not revalidate or release them."
 next_actions:
   - "Integration task 01a06f72-aaae-77f1-a3fb-28f5d05c107a owns production/graduation reconciliation; consume this handoff as evidence only, not as a portfolio update or new topology."
   - "Preserve Integration's accepted/STOPped service operation autonomy-integrator-ccr486-existing-service-20260905-001 at comment 5553186139 and its cleanup return 5553203800. Keep the exact installed 767 service and sole intended PID 49435 running; do not replay the closed preview/browser/service child or infer broader product graduation."
   - "Treat exact 767 installation, the eight-GET natural transition, nine corrected framings and final physical cleanup as complete only for the bounded local Control Room service/source/UI plane. Preserve absent Executive DB, stale Macro inputs, B3/B5/B6, Business cockpit, account/provider, Runtime and admission gates as unproven."
-  - "Preserve PR 496's existing writer, branch, worktree and frozen local ec83 composition. Do not replay comment 5552941302 or reader START 5553124015 while the independently reported 90 ignored/untracked leaves lack a durable manifest and an authorized disposition; no cleanup is authorized. Integration must first record and adjudicate that exact preflight blocker through its existing operation. If a later canonical checkpoint passes, Secretary may deliver its credential-free receipt and Root continuation to the original writer, which must freshly re-read current source before resuming its already-authorized tests/publication/normal checks. Do not rejoin ec83, transfer credentials or give the reader source authority. Any concrete refusal, source movement or unknown effect returns specifically. B5 remains blocked until PR 496 is actually released and freshly requalified."
-  - "Preserve PR 492 on existing receiver 01a06162-9e13-7f40-81ce-57bd9e532282 and semantic head c56e8009. Wait for PR 496 protection/source release first; only then may that same PR 492 carrier perform fresh qualification against the resulting current base. Do not independently join it to 767, create a replacement worker or review lane, infer Executive RUNNING state, or treat Agent OS as capacity authority."
+  - "Do not resume the terminally closed B5 source child, rerun its generic source/CI/browser work, or issue another source START. Root alone may classify and open the distinct strict-platform maintenance/release operation against the retained clean 9fdc branch/worktree; re-read current protected source, exact carrier, ownership and collision gates first."
+  - "Follow sequencing amendment 1788643440.248779 after the separate B5 maintenance ruling: repaired PF remains platform-blocked, then CAP17 follows PF, then HF392. Integration subsequently reported delivery of the accepted B5 RESULT, closure, actual #492-integrated green CI and retained limits through existing Production task 01a06f74-0213-7613-a4cc-2134242a35c0. The native receipt observed by 22:37:45Z is integration-cutover-relay-native-receipt.json, SHA-256 704e6ec5b0fb1b9c3881b8bf8449d2fc789844531625d25f975c5bfb9ccc7d78, under the B5 evidence root below. Preserve that existing route and await its separate adjudication; owner-reported delivery is not downstream consumption, ACK, START, release or effect."
   - "Before any MAS-242 Stage 0 effect, obtain real-host account/workspace proof and run the three-cockpit continuity/effect/watcher census. If no clean cockpit exists, return NO_ELIGIBLE_CANARY_COCKPIT with effect=NONE."
   - "If and only if Stage 0 selects one clean cockpit, perform only the authorized reversible MAS-242 workspace join and Personal to Business to Personal proof; retain both controls and do not import, authenticate, install or admit anything in that stage."
   - "Keep P1 import, authenticated Steward reads, Executive admission, H1 receipt validation and rollback as separately evidenced gates after the workspace proof."
@@ -575,10 +640,11 @@ do_not_redo:
   - "Do not fail over an ambiguous cockpit, workspace, OAuth or admission action to a second cockpit; preserve the same carrier as EFFECT_UNKNOWN and reconcile it."
   - "Do not treat synthetic fixture-browser validation as operational/runtime/host proof, or mark the product, MAS-242 or U1 complete from this handoff."
 danger_areas:
+  - "B5 source closure is not protected release or installation. Q remains unproven, production browser_qualification is null, sibling-tab visibility was not observed, and inherited desktop/mobile overflow means the 15 old-head screenshots are not a visual PASS. The 598-test and browser runs occurred at 834e; reuse is narrowed to unchanged product/assertion/fixture bytes."
   - "The installed 767 Control Room qualifies missing attention inputs and passed nine representative dark-mode framings, but degraded UI remains non-operational evidence. At 1440px the source/status cluster still overlaps and crowds Theme even though document width does not overflow; Today also lacks its heading ID/aria-labelledby relationship. These remain inherited unresolved product/accessibility limits, not comprehensive visual acceptance."
   - "Actual Business account/workspace confirmation is sensitive: record opaque references and state outcomes only; never put account secrets, cookies, tokens, private account locators or browser targets in Agent OS."
   - "HC0 is a sticky existing child with a session-loss reconciliation hold. A second writer or blind transport retry would violate the one-carrier rule."
-prs: [247, 302, 310, 326, 361, 463, 469, 481, 482, 486, 492, 496]
+prs: [247, 302, 310, 326, 361, 463, 469, 481, 482, 486, 492, 496, 498]
 decisions:
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
   - DEC:CCR-SOL-IDENTITY-IS-NOT-A-CHAT
@@ -826,3 +892,119 @@ HC0 and the Business path are unchanged. The original HC0 writer effect remains
 workspace round trip, authenticated Steward read and bounded Executive admission
 remain absent. Installing the read-only local Control Room cannot satisfy those
 gates, create provider/account authority or graduate the domain.
+
+# B5 source-expiry closeout — evidence through 2026-09-05T22:25:33Z
+
+Operation `chairman-b5-source-expiry-20260905-sol-001` is terminally closed as
+a source child. It does not reopen or alter the accepted exact-767 installed
+service, Business/HC0/account carriers, historical PR 496/492 carriers, or any
+strict-platform maintenance/release operation.
+
+The [canonical commission](https://github.com/mastermindx-market-intelligence/Mastermind/pull/486#issuecomment-5554257720)
+has body SHA-256
+`2991e824fba0272cf2c8056345d03db4d6deb49224e49e01d9bf485ec1397883`.
+Original carrier `C0BSBM78V1N/1788636741.039499` received `PICKUP_ACK`
+`1788637631.084719` with effect NONE and source START `1788637771.716019`.
+The sole existing source owner created no replacement task, watcher or store.
+
+[PR 498](https://github.com/mastermindx-market-intelligence/Mastermind/pull/498)
+retains final source head `9fdc6174f43230878ee66323ba333a6b174ff403`,
+tree `4f5a86824bce9acafee66a2f835d75ea5766dc14`, with exactly nine paths.
+Manifest SHA-256
+`de621c56ff511eb3207a8a195f14663c62b4e8eef8309c0f3962e9c6aa9cf5ec`
+shows the product JavaScript and all seven other non-helper blobs unchanged from
+834e; only the admitted UI test helper changed.
+
+The original Linux failure is retained in log SHA-256
+`c328f8e8da575602aaa58fbbe14698be21bfd20fc5780509a549aa220eef384e`:
+two whole-page tests passed 133475-byte and 133459-byte scripts through
+`node -e`, and the OS returned `E2BIG` before Node executed. Measurement receipt
+SHA-256 `a1fc79b090eef14f36ecf6d39940526005a240ee8fe1f277fa04a396560bf3b8`
+binds those actual script sizes. The same source owner changed only
+`_run_transport_harness` to stream the identical script over stdin with a
+60-second timeout. Product JavaScript and assertions stayed unchanged. The two
+exact tests passed locally, 2 tests/0 failures/0 errors/0 skips in 0.644s;
+JUnit SHA-256
+`b1165c83a927ad1db03675f699eaa7490fd08330f3c29684aea0ab0d186f42fd`.
+
+The first current checkpoint truthfully refused `OUT_OF_SCOPE_DIRT`, receipt
+SHA-256 `b060cc10edae8207ad83ca7cfc1bd9267750d7e75bb15a6bf60c06935af8061e`.
+Only 30 fingerprinted Root diagnosis pycs were moved to the external evidence
+quarantine; cleanup SHA-256
+`05638814f711a01f1e18f5aa37253e0152ce25ad7ea76d946d5223889746ca2f`
+and settled-effect SHA-256
+`28fcea64375ddce993cb6ae14e2471489a2ce2ea382b1bf5cb77a8e939265830`
+record zero tracked diff and zero remaining untracked entries. Clean checkpoint
+SHA-256 `862045e4107d3f08dc04ab34d0e5cd9970bb68be2c81169ab8b6e9cf88c0156f`
+and `REMOTE_COMPLETE` SHA-256
+`fa325c62c428b29578518ca8ea59767bb366a07c83fbcf900a3369f9f9385813`
+bind local=remote 9fdc/tree 4f5a, DISJOINT paths, current base 91273, and all
+dirt, untracked and unpushed counts zero.
+
+[Normal CI 33993910302](https://github.com/mastermindx-market-intelligence/Mastermind/actions/runs/33993910302)
+concluded SUCCESS at `2026-09-05T22:06:08Z` on actual checkout
+`44bae0f36341a861def423c38b50029de2058eee`, tree
+`efd1765598d20d018e9fee239aa7698a4065efa9`, parents `[91273ab4…,9fdc6174…]`.
+The repository gate reported `discovered=496`, `excluded=0`, `running=496` and
+exit 0. Complete CI log SHA-256
+`c9ab06dacd3ddb81a936ba24bdfcb97afe2203eef8f820ba076316b64f090845`.
+[CodeQL 33993908405](https://github.com/mastermindx-market-intelligence/Mastermind/actions/runs/33993908405)
+concluded SUCCESS for Actions, JavaScript/TypeScript and Python. Concluded
+remote proof SHA-256
+`f475951f3f5fafa7e0af4f67bc5c370b9bf0add92d0d41f13f07766349b0f0cd`
+binds those runs and merge identity.
+
+The 598-test XML and actual-page result
+`60269c2abcfd39f49963dd4904befc35a7d67fa332e444c431baad92e4f52ab8`
+remain executions from old head 834e. Their narrowed behavior evidence carries
+only because product, assertion and browser-fixture bytes are unchanged; no new
+598-test or browser execution at 9fdc is claimed. Exact-head non-author artifact
+review SHA-256
+`b83606de8bba1453d4e282f7221708e2f6fe4d749498ad6ab8548f114dc3a2a1`
+returned PASS/no findings for the helper repair and reused the prior product
+semantic review only for unchanged product bytes. GitHub reviews remained `[]`;
+this is not a GitHub approval.
+
+The full immutable
+[source RESULT 5555125219](https://github.com/mastermindx-market-intelligence/Mastermind/pull/498#issuecomment-5555125219)
+has 12,658 bytes and SHA-256
+`78c06ca6471fb575a85e687196e3d06c6d5d3279bec06c9d5ebf1360a92350ad`.
+Root accepted it and issued `SOURCE ACCEPTED/STOP` at `1788646578.374179`.
+The source owner consumed STOP at `1788646668.771999`; Secretary emitted actual
+`WATCH_SOURCE_SUPPRESSED` at `1788646789.177009`; final
+`BRANCH_WRITER_RELEASED` is `1788646939.325479`. Closure receipt SHA-256
+`1a15a0bbf2cdb056a83c4dff1e441fd75ba2e5c77076310594401c9f133ce14a`
+and [durable closeout 5555180071](https://github.com/mastermindx-market-intelligence/Mastermind/pull/498#issuecomment-5555180071)
+record the retained branch/worktree clean at exact 9fdc, all untracked counts
+zero, no owned cwd/process, and only this finite continuation suppressed. The
+permanent Secretary aggregate and sibling operations remain unchanged. No B5
+source work may resume on this closed child.
+
+Source acceptance is `BUILT_NOT_PROVEN`. The PR remains Draft/HOLD. There is no
+protected release, Ready, merge, installation, service update, provider,
+Business/account, Runtime/admission or production effect. Conditional clock
+premise Q remains unproven; generic production `browser_qualification` is null;
+sibling-tab visibility was not observed; inherited desktop/mobile overflow
+means no visual PASS. The accepted exact-767 installed service remains separate.
+Business/HC0/authentication/admission and zero-Slack gates remain unproven.
+
+Root's strict-platform maintenance/release is a separate pending operation.
+Sequencing remains `#492 DONE -> B5 own gates -> repaired PF -> CAP17 -> HF392`;
+B5 source gates are closed, PF remains platform-blocked and CAP follows PF. The
+existing Cutover route is carried under its current owner, but no relay receipt
+exists at this cutoff; delivery, ACK, START and effect are not inferred.
+
+## Subsequent Integration relay — observed by 2026-09-05T22:37:45Z
+
+Integration task `01a06f72-aaae-77f1-a3fb-28f5d05c107a` reported that it had
+fully consumed the exact source closure and delivered the accepted B5 RESULT,
+closure, actual #492-integrated green CI and retained limits through existing
+Production task `01a06f74-0213-7613-a4cc-2134242a35c0`. This supersedes the
+relay-absence observation at the 22:25:33 cutoff only. The actual native
+owner-report is retained in `integration-cutover-relay-native-receipt.json`,
+SHA-256 `704e6ec5b0fb1b9c3881b8bf8449d2fc789844531625d25f975c5bfb9ccc7d78`,
+under `/Users/chriswong/.codex/visualizations/2026/09/05/01a06f73-d4cf-7933-8268-d3c9644bc63d/cockpit-refresh-validation/b5-source-20260905/`.
+Verification: read the actual native Integration message and run
+`shasum -a 256` on that receipt. This establishes Integration-reported evidence
+delivery only; downstream consumption, ACK, START, release, installation and
+production effect are not inferred.

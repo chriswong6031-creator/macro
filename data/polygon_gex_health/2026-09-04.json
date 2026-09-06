@@ -2,24 +2,22 @@
   "session": "2026-09-04",
   "attempts": [
     {
-      "capture_instant": "2026-09-05T05:44:03.707518+00:00",
+      "capture_instant": "2026-09-06T00:45:29.211605+00:00",
       "requested_underlyings": 375,
-      "attempted_underlyings": 5,
-      "successful_underlyings": 0,
-      "coverage_pct": 0.0,
-      "failure_reasons": {
-        "auth_or_entitlement_failure": 5
-      },
-      "failure_examples": {
-        "auth_or_entitlement_failure": [
-          "SPY",
-          "QQQ",
-          "IWM"
-        ]
-      },
-      "aborted_early": true,
-      "decision": "nothing_captured",
-      "health": "failed"
+      "attempted_underlyings": null,
+      "successful_underlyings": null,
+      "coverage_pct": null,
+      "failure_reasons": {},
+      "failure_examples": {},
+      "aborted_early": false,
+      "decision": "skipped_outside_lease",
+      "health": "absent",
+      "lease": {
+        "valid": false,
+        "resolved_session": "2026-09-04",
+        "lease_end_et": "2026-09-05T03:00:00-04:00",
+        "write_kind": "first_write"
+      }
     }
   ]
 }

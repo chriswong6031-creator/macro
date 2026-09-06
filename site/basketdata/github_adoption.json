@@ -1,7 +1,7 @@
 {
   "schema": "theme_adoption.v1",
   "as_of": "2026-09-05",
-  "generated_at": "2026-09-05T08:44:19.525474+00:00",
+  "generated_at": "2026-09-06T01:31:39.233785+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -15,7 +15,7 @@
     "history_note": "Momentum signals are coarse with <90d history. Do not promote to a scored factor until ~2026-09-17."
   },
   "coverage_stats": {
-    "total_rows": 1003,
+    "total_rows": 1020,
     "unique_tickers": 17,
     "date_range_min": "2026-06-20",
     "date_range_max": "2026-09-05",
@@ -27,7 +27,7 @@
   "baskets": {
     "ai_infra": {
       "basket_id": "ai_infra",
-      "star_velocity_7d_z": 0.182,
+      "star_velocity_7d_z": 0.235,
       "n_covered": 2,
       "n_basket_total": 24,
       "covered_tickers": [
@@ -48,7 +48,7 @@
     },
     "ai_semiconductors": {
       "basket_id": "ai_semiconductors",
-      "star_velocity_7d_z": 0.182,
+      "star_velocity_7d_z": 0.235,
       "n_covered": 2,
       "n_basket_total": 12,
       "covered_tickers": [
@@ -69,7 +69,7 @@
     },
     "cybersecurity": {
       "basket_id": "cybersecurity",
-      "star_velocity_7d_z": 2.123,
+      "star_velocity_7d_z": 2.443,
       "n_covered": 1,
       "n_basket_total": 10,
       "covered_tickers": [

@@ -94,9 +94,9 @@
     "label": "emerging",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 12,
+    "rank": 9,
     "reco": "enter",
-    "score": 46
+    "score": 51
   },
   "cn_food_bev": {
     "label": "deteriorating",
@@ -142,7 +142,7 @@
     "label": "deteriorating",
     "name": "Innovative Pharma & CXO",
     "name_zh": "\u521b\u65b0\u836f\u4e0eCXO",
-    "rank": 11,
+    "rank": 12,
     "reco": "avoid",
     "score": 49
   },
@@ -174,7 +174,7 @@
     "label": "neutral",
     "name": "SOE Blue Chips (\u4e2d\u7279\u4f30)",
     "name_zh": "\u4e2d\u7279\u4f30\u00b7\u592e\u4f01",
-    "rank": 9,
+    "rank": 10,
     "reco": "hold",
     "score": 50
   },
@@ -182,7 +182,7 @@
     "label": "deteriorating",
     "name": "Software & AI Apps",
     "name_zh": "\u8f6f\u4ef6\u4e0eAI\u5e94\u7528",
-    "rank": 10,
+    "rank": 11,
     "reco": "avoid",
     "score": 49
   },
