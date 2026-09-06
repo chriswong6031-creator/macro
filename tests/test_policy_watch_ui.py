@@ -115,6 +115,7 @@ LIFECYCLE_FIXTURE = {
         {"id": "L1", "title_en": "Lever One", "title_zh": "杠杆一",
          "jurisdiction": "US-FED", "jurisdiction_en": "United States — federal", "jurisdiction_zh": "美国联邦",
          "state": "in_force", "stage_rank": 2, "reached": ["proposed", "passed", "in_force"], "gaps": [],
+         "basis": "FACT", "detail_en": "Dated move.", "detail_zh": "已落地。",
          "state_asof": "2026-03-01", "known_at": "2026-03-02T00:00:00Z",
          "source": {"url": "https://www.federalregister.gov/x", "label": "Federal Register", "title": "doc", "doc_id": "1"},
          "next_step": {"stage": "enforced", "date": None},

@@ -5,11 +5,14 @@ Pure fixtures only: no network, no dependency on data/ (sparse-tree safe).
 from __future__ import annotations
 
 import inspect
+import json
 import random
+from pathlib import Path
 
 from engine.policy_intent_desk import (
     LIFECYCLE_EVENT_TYPES,
     LIFECYCLE_STAGES,
+    STALL_DAYS,
     fold_lifecycle,
     ingest_lifecycle,
     lifecycle_events,
@@ -53,7 +56,9 @@ def test_skipped_stage_reports_gap_and_never_promotes():
     row = fold_lifecycle(events, REG)[0]
     assert row["state"] == "in_force"
     assert row["gaps"] == ["passed"]
-    assert "passed" in row["reached"]  # cumulative fill per LIFECYCLE_STAGES[:r+1]
+    # MAJOR-1: meter fills only observed stages — never conflates undocumented ones.
+    assert "passed" not in row["reached"]
+    assert row["reached"] == ["proposed", "in_force"]
 
 
 def test_backward_event_sets_conflict_and_preserves_prior_state():
@@ -85,12 +90,56 @@ def test_correction_is_a_typed_state_and_appends():
     events = [
         _ev("L1", "passed", "2026-02-01", "2026-02-02T00:00:00Z"),
         {**_ev("L1", "correction", "2026-02-05", "2026-02-06T00:00:00Z"),
-         "corrects": "L1-passed-2026-02-01", "reason": "date fixed"},
+         "corrects": "L1-passed-2026-02-01", "reason": "date fixed",
+         "corrected_type": "passed", "corrected_event_date": "2026-02-03"},
     ]
     row = fold_lifecycle(events, REG)[0]
     assert row["corrected"] is True
-    ids = [e["type"] for e in events]
-    assert "correction" in ids  # corrected row never rewritten/removed
+    assert row["state"] == "passed"
+    assert row["state_asof"] == "2026-02-03"
+    assert row["conflict"] is False
+
+
+def test_correction_repairs_overstated_ladder_without_conflict():
+    events = [
+        _ev("L1", "proposed", "2026-01-01", "2026-01-02T00:00:00Z"),
+        _ev("L1", "in_force", "2026-03-01", "2026-03-02T00:00:00Z"),
+        {**_ev("L1", "correction", "2026-03-05", "2026-03-06T00:00:00Z"),
+         "corrected_type": "passed", "corrected_event_date": "2026-02-01",
+         "reason": "we recorded enforcement; it had only passed"},
+    ]
+    row = fold_lifecycle(events, REG)[0]
+    assert row["corrected"] is True
+    assert row["state"] == "passed"
+    assert row["state_asof"] == "2026-02-01"
+    assert row["conflict"] is False
+    assert "in_force" not in row["reached"]
+
+
+def test_correction_repairs_post_terminal_misrecord():
+    events = [
+        _ev("L1", "in_force", "2026-03-01", "2026-03-02T00:00:00Z"),
+        _ev("L1", "withdrawn", "2026-04-01", "2026-04-02T00:00:00Z"),
+        {**_ev("L1", "correction", "2026-04-05", "2026-04-06T00:00:00Z"),
+         "corrected_type": "enforced", "corrected_event_date": "2026-04-03",
+         "reason": "withdrawn was a mis-tag; rule was enforced"},
+    ]
+    row = fold_lifecycle(events, REG)[0]
+    assert row["corrected"] is True
+    assert row["state"] == "enforced"
+    assert row["state_asof"] == "2026-04-03"
+
+
+def test_stalled_when_no_forward_motion_past_threshold():
+    events = [
+        _ev("L1", "proposed", "2026-01-01", "2026-01-02T00:00:00Z"),
+        _ev("L1", "passed", "2026-02-01", "2026-02-02T00:00:00Z"),
+    ]
+    row = fold_lifecycle(events, REG, as_of_date="2026-04-15")[0]
+    assert STALL_DAYS == 45
+    assert row["stalled"] is True
+    row2 = fold_lifecycle(events, REG, as_of_date="2026-02-20")[0]
+    assert row2["stalled"] is False
 
 
 def test_registered_item_with_no_events_is_unknown_not_zero():
@@ -98,6 +147,13 @@ def test_registered_item_with_no_events_is_unknown_not_zero():
     assert row["state"] == "unknown"
     assert row["why"] == "no_document"
     assert row["stage_rank"] is None
+
+
+def test_absent_jurisdiction_is_not_fabricated():
+    reg = [{"id": "L1", "title_en": "Lever One", "title_zh": "杠杆一"}]
+    row = fold_lifecycle([_ev("L1", "proposed", "2026-01-01", "2026-01-02T00:00:00Z")], reg)[0]
+    assert row["jurisdiction_en"] is None
+    assert row["jurisdiction_zh"] is None
 
 
 def test_absent_store_yields_typed_no_coverage_and_still_renders_items(tmp_path):
@@ -111,6 +167,45 @@ def test_absent_store_yields_typed_no_coverage_and_still_renders_items(tmp_path)
     assert len(view["items"]) == 1
 
 
+def test_rights_suppressed_outranks_empty_store(tmp_path):
+    (tmp_path / "data" / "policy").mkdir(parents=True)
+    (tmp_path / "data" / "policy" / "intel.json").write_text(
+        '{"as_of":"2026-09-01","policy_lifecycle_suppressed":true,'
+        '"administration":{"verified_levers":'
+        '[{"id":"L1","title_en":"Lever One","title_zh":"杠杆一"}]}}'
+    )
+    view = lifecycle_view(tmp_path)
+    assert view["null_reason"] == "rights_suppressed"
+    assert view["items"] == []
+
+
+def test_seed_substrate_advances_real_shaped_levers(tmp_path):
+    """BLOCKER-1: when intel lacks policy_lifecycle, the committed seed still advances."""
+    (tmp_path / "data" / "policy").mkdir(parents=True)
+    (tmp_path / "config").mkdir(parents=True)
+    levers = [
+        {"id": "lever_issuance", "title_en": "Bill-heavy issuance", "title_zh": "偏短端发债",
+         "basis": "FACT", "detail_en": "Treasury bills.", "detail_zh": "国库券。"},
+        {"id": "lever_chips", "title_en": "Chip tariff", "title_zh": "芯片关税",
+         "basis": "FACT", "detail_en": "Tariff.", "detail_zh": "关税。"},
+    ]
+    (tmp_path / "data" / "policy" / "intel.json").write_text(json.dumps({
+        "as_of": "2026-07-13",
+        "administration": {"verified_levers": levers},
+    }))
+    seed = json.loads(Path("config/policy_lifecycle_seed.json").read_text())
+    (tmp_path / "config" / "policy_lifecycle_seed.json").write_text(json.dumps(seed))
+    view = lifecycle_view(tmp_path)
+    assert view["null_reason"] is None
+    by_id = {it["id"]: it for it in view["items"]}
+    assert by_id["lever_issuance"]["state"] == "enforced"
+    assert by_id["lever_issuance"]["state_asof"]
+    assert by_id["lever_issuance"]["source"]["url"]
+    assert by_id["lever_chips"]["state"] == "in_force"
+    # Full ladder for issuance was observed — no undocumented fill.
+    assert by_id["lever_issuance"]["reached"] == list(LIFECYCLE_STAGES)
+
+
 def test_proposal_is_never_conflated_with_enactment():
     proposed_row = fold_lifecycle([_ev("L1", "proposed", "2026-01-01", "2026-01-02T00:00:00Z")], REG)[0]
     assert proposed_row["state"] != "in_force"
@@ -118,6 +213,8 @@ def test_proposal_is_never_conflated_with_enactment():
 
     in_force_row = fold_lifecycle([_ev("L1", "in_force", "2026-03-01", "2026-03-02T00:00:00Z")], REG)[0]
     assert in_force_row["state"] == "in_force"
+    assert in_force_row["reached"] == ["in_force"]
+    assert in_force_row["gaps"] == ["proposed", "passed"]
 
 
 def test_ingest_is_idempotent(tmp_path, monkeypatch):

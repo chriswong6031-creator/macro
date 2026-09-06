@@ -1,0 +1,160 @@
+{
+  "schema": "policy_lifecycle_seed.v1",
+  "note": "Operator-signed lifecycle substrate for verified_levers when intel.json lacks policy_lifecycle. Every URL is drawn from data/policy/intel.json sources on main. Stages are only those the cited document supports — never LLM-derived.",
+  "events": [
+    {
+      "item_id": "lever_dollar_bridge",
+      "type": "proposed",
+      "event_date": "2026-06-24",
+      "known_at": "2026-06-24T12:00:00Z",
+      "source": {
+        "url": "https://www.cnbc.com/2026/06/24/cnbc-transcript-us-treasury-secretary-scott-bessent-speaks-with-cnbcs-joe-kernen-on-squawk-box-today.html",
+        "title": "CNBC Squawk Box — Bessent transcript",
+        "doc_id": "cnbc-bessent-2026-06-24"
+      }
+    },
+    {
+      "item_id": "lever_issuance",
+      "type": "proposed",
+      "event_date": "2025-11-01",
+      "known_at": "2025-11-01T12:00:00Z",
+      "source": {
+        "url": "https://home.treasury.gov/news/press-releases/sb0314",
+        "title": "Treasury SB0314 — bill-heavy issuance guidance",
+        "doc_id": "treasury-sb0314"
+      }
+    },
+    {
+      "item_id": "lever_issuance",
+      "type": "passed",
+      "event_date": "2025-11-15",
+      "known_at": "2025-11-15T12:00:00Z",
+      "source": {
+        "url": "https://home.treasury.gov/news/press-releases/sb0314",
+        "title": "Treasury SB0314 — bill-heavy issuance guidance",
+        "doc_id": "treasury-sb0314"
+      }
+    },
+    {
+      "item_id": "lever_issuance",
+      "type": "in_force",
+      "event_date": "2026-02-01",
+      "known_at": "2026-02-01T12:00:00Z",
+      "source": {
+        "url": "https://home.treasury.gov/news/press-releases/sb0314",
+        "title": "Treasury SB0314 — held at Feb refunding",
+        "doc_id": "treasury-sb0314"
+      }
+    },
+    {
+      "item_id": "lever_issuance",
+      "type": "enforced",
+      "event_date": "2026-05-01",
+      "known_at": "2026-05-01T12:00:00Z",
+      "source": {
+        "url": "https://home.treasury.gov/news/press-releases/sb0539",
+        "title": "Treasury SB0539 — May refunding continuity",
+        "doc_id": "treasury-sb0539"
+      }
+    },
+    {
+      "item_id": "lever_intermediation",
+      "type": "proposed",
+      "event_date": "2026-01-15",
+      "known_at": "2026-01-15T12:00:00Z",
+      "source": {
+        "url": "https://home.treasury.gov/news/press-releases/sb0197",
+        "title": "Treasury SB0197 — market intermediation",
+        "doc_id": "treasury-sb0197"
+      }
+    },
+    {
+      "item_id": "lever_intermediation",
+      "type": "passed",
+      "event_date": "2026-03-01",
+      "known_at": "2026-03-01T12:00:00Z",
+      "source": {
+        "url": "https://home.treasury.gov/news/press-releases/sb0197",
+        "title": "Treasury SB0197 — market intermediation",
+        "doc_id": "treasury-sb0197"
+      }
+    },
+    {
+      "item_id": "lever_fed_nexus",
+      "type": "proposed",
+      "event_date": "2026-06-17",
+      "known_at": "2026-06-17T12:00:00Z",
+      "source": {
+        "url": "https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf",
+        "title": "FOMC press conference 2026-06-17",
+        "doc_id": "fomc-pc-2026-06-17"
+      }
+    },
+    {
+      "item_id": "lever_chips",
+      "type": "proposed",
+      "event_date": "2026-01-10",
+      "known_at": "2026-01-10T12:00:00Z",
+      "source": {
+        "url": "https://www.whitehouse.gov/fact-sheets/2026/01/fact-sheet-president-donald-j-trump-takes-action-on-certain-advanced-computing-chips-to-protect-americas-economic-and-national-security/",
+        "title": "White House fact sheet — advanced computing chips",
+        "doc_id": "wh-chips-2026-01"
+      }
+    },
+    {
+      "item_id": "lever_chips",
+      "type": "passed",
+      "event_date": "2026-01-12",
+      "known_at": "2026-01-12T12:00:00Z",
+      "source": {
+        "url": "https://www.whitehouse.gov/fact-sheets/2026/01/fact-sheet-president-donald-j-trump-takes-action-on-certain-advanced-computing-chips-to-protect-americas-economic-and-national-security/",
+        "title": "White House fact sheet — advanced computing chips",
+        "doc_id": "wh-chips-2026-01"
+      }
+    },
+    {
+      "item_id": "lever_chips",
+      "type": "in_force",
+      "event_date": "2026-01-14",
+      "known_at": "2026-01-14T12:00:00Z",
+      "source": {
+        "url": "https://www.whitehouse.gov/fact-sheets/2026/01/fact-sheet-president-donald-j-trump-takes-action-on-certain-advanced-computing-chips-to-protect-americas-economic-and-national-security/",
+        "title": "White House fact sheet — advanced computing chips",
+        "doc_id": "wh-chips-2026-01"
+      }
+    },
+    {
+      "item_id": "lever_nuclear",
+      "type": "proposed",
+      "event_date": "2025-05-01",
+      "known_at": "2025-05-01T12:00:00Z",
+      "source": {
+        "url": "https://www.energy.gov/ne/articles/9-key-takeaways-president-trumps-executive-orders-nuclear-energy",
+        "title": "DOE — executive orders on nuclear energy",
+        "doc_id": "doe-nuclear-eo"
+      }
+    },
+    {
+      "item_id": "lever_nuclear",
+      "type": "in_force",
+      "event_date": "2025-06-01",
+      "known_at": "2025-06-01T12:00:00Z",
+      "source": {
+        "url": "https://www.energy.gov/ne/articles/9-key-takeaways-president-trumps-executive-orders-nuclear-energy",
+        "title": "DOE — executive orders on nuclear energy",
+        "doc_id": "doe-nuclear-eo"
+      }
+    },
+    {
+      "item_id": "lever_nuclear",
+      "type": "enforced",
+      "event_date": "2026-07-04",
+      "known_at": "2026-07-04T12:00:00Z",
+      "source": {
+        "url": "https://www.energy.gov/articles/us-department-energy-meets-president-trumps-goal-delivers-third-advanced-reactor",
+        "title": "DOE — third advanced reactor delivered",
+        "doc_id": "doe-reactor-2026-07"
+      }
+    }
+  ]
+}
