@@ -65,6 +65,10 @@ html[data-theme="light"] {
   margin: 0 auto;
   padding: 28px 32px 96px;
   align-items: start;
+  /* min-height, not just bottom padding -- a short panel otherwise
+     leaves a hard full-width ground-colour seam below the shell in
+     both themes (Meta-CEO review, PR 6930 MAJOR page-ground seam). */
+  min-height: calc(100vh - 84px);
 }
 .mc-content { max-width: var(--mc-content-max); min-width: 0; }
 .mc-skip { position: absolute; left: -9999px; }
@@ -259,7 +263,10 @@ html[data-theme="light"] {
   .mc-rail-link { white-space: nowrap; padding: 7px 12px; border-radius: 999px; }
   .mc-rail-bar { display: none; }
   .mc-rail-link.is-current { border: 1px solid var(--mq-accent); }
-  .mc-analyst { position: fixed; right: 16px; bottom: 16px; margin: 0; z-index: 6;
+  /* bottom:84px, not 16px -- clears the sitewide #mmb-boot FAB the
+     analyst control shares the corner with at <=768px (Meta-CEO
+     review, PR 6930 BLOCKER mobile analyst collision). */
+  .mc-analyst { position: fixed; right: 16px; bottom: 84px; margin: 0; z-index: 6;
     background: var(--mc-panel-bg); box-shadow: var(--mc-panel-shadow); }
 }
 @media (max-width: 480px) {

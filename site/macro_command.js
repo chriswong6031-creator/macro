@@ -47,7 +47,7 @@
   }
 
   /* ── section activation — §6.2 item 2 ──────────────────────────────────── */
-  function activateSection(id, subtabId) {
+  function activateSection(id, subtabId, focus) {
     var target = panelById(id) || panelById('overview');
     if (!target) return;
     var resolvedId = target.getAttribute('data-mc-panel');
@@ -68,7 +68,7 @@
 
     var hash = '#' + resolvedId + (subtabId ? '/' + subtabId : '');
     if (location.hash !== hash) history.replaceState(null, '', hash);
-    target.focus();
+    if (focus !== false) target.focus();
   }
 
   /* ── sub-tabs: real role="tablist", roving tabindex — §6.2 item 4 ─────── */
@@ -169,6 +169,14 @@
   });
 
   window.addEventListener('hashchange', function () {
+    /* A hash that names a real non-panel id (e.g. the skip link's
+       `#mc-content`) is a native anchor jump, not section routing --
+       let the browser's own scroll-and-focus stand instead of
+       coercing it to `overview` and stealing focus back (Meta-CEO
+       review, PR 6930 MAJOR skip-link hijack). */
+    var raw = (location.hash || '').replace(/^#/, '');
+    var sectionId = raw.split('/')[0];
+    if (raw && !panelById(sectionId) && document.getElementById(raw)) return;
     var parsed = parseHash();
     activateSection(parsed.section, parsed.subtab);
   });
@@ -199,5 +207,8 @@
 
   /* ── boot ───────────────────────────────────────────────────────────────── */
   var initial = parseHash();
-  activateSection(initial.section, initial.subtab);
+  /* focus:false -- boot must not draw a focus ring around the initial
+     panel with no user interaction (Meta-CEO review, PR 6930 BLOCKER
+     boot-focus ring). Rail clicks and hashchange still focus (default). */
+  activateSection(initial.section, initial.subtab, false);
 })();

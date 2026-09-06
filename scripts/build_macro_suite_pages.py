@@ -655,6 +655,35 @@ def _macro_command_analyst(root: Path) -> dict[str, Any]:
     return {"mountable": "mmb-boot" in theme_js}
 
 
+
+def _macro_command_read(entries: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Honest `read` context (R3: P1 computes no synthesized state/clause of
+    its own -- `clauses` stays empty). `as_of` must never be fabricated
+    absent when real dated readings exist: it is the OLDEST accepted
+    effective_date across the fourteen workspace snapshots, matching
+    `build_hub_view`'s own "dated by its oldest accepted print" convention
+    (Meta-CEO review, PR #6930 BLOCKER fabricated null)."""
+    effective_dates: list[str] = []
+    any_unavailable = False
+    for entry in entries:
+        snapshot = entry.get("snapshot")
+        if not snapshot:
+            any_unavailable = True
+            continue
+        headline = snapshot.get("headline") or {}
+        effective_date = headline.get("effective_date")
+        if isinstance(effective_date, str) and effective_date.strip():
+            effective_dates.append(effective_date.strip())
+    as_of = min(effective_dates) if effective_dates else None
+    as_of_display = {"en": as_of, "zh": as_of} if as_of else None
+    return {
+        "as_of": as_of,
+        "as_of_display": as_of_display,
+        "clauses": [],
+        "omitted": any_unavailable,
+    }
+
+
 def build_hub(entries: Sequence[Mapping[str, Any]], *, out_dir: Path,
               env: Environment, page_built_at: str, root: Path) -> Path:
     """Render the suite hub from what the fourteen pages just read.
@@ -680,7 +709,7 @@ def build_hub(entries: Sequence[Mapping[str, Any]], *, out_dir: Path,
         suite_nav=suite_nav(HUB_PAGE.output),
         sections=_macro_command_sections(entries),
         analyst=_macro_command_analyst(root),
-        read={"as_of": None, "as_of_display": None, "clauses": [], "omitted": False},
+        read=_macro_command_read(entries),
         strip=[],
     )
     html = "\n".join(line.rstrip() for line in html.splitlines()) + "\n"
