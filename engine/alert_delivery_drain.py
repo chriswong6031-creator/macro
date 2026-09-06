@@ -368,9 +368,15 @@ def _patch_outbox(row_id, body: dict) -> bool:
     Review round 3 MINOR-3: a run receipt's counters must reflect writes that
     happened, not writes attempted -- every counter increment in the loop below is
     gated on this return value so a swallowed PATCH (network blip, CHECK rejection)
-    can never inflate a receipt with a change that never landed."""
+    can never inflate a receipt with a change that never landed.
+
+    ``row_id`` is URL-quoted (review round 3 MINOR-2) for the same reason every
+    other filter value in this module and ``close_receipt`` already is -- a
+    DB-minted UUID never needs it, but an unquoted PostgREST filter value is an
+    inconsistent contract with the rest of this module, not a proven-safe one."""
     try:
-        _pg("PATCH", f"alert_outbox?id=eq.{row_id}", body=body, prefer="return=minimal")
+        _pg("PATCH", f"alert_outbox?id=eq.{urllib.parse.quote(str(row_id), safe='')}",
+            body=body, prefer="return=minimal")
         return True
     except Exception:  # noqa: BLE001
         return False

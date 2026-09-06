@@ -441,6 +441,26 @@ def test_counters_never_increment_when_the_persisting_patch_fails(monkeypatch):
     assert result.fired_n == 0
 
 
+def test_patch_outbox_url_quotes_the_row_id(monkeypatch):
+    """Review round 3 MINOR-2: ``_patch_outbox`` built its PostgREST filter as
+    ``f"alert_outbox?id=eq.{row_id}"`` with no quoting, while every sibling filter in
+    this module (``email_log``, ``email_suppression``, ``user_entitlements``) and
+    ``close_receipt``'s own ``alert_runs`` PATCH already quote their filter value.
+    A DB-minted UUID never needs it, but an unquoted id is an inconsistent contract
+    with the rest of the module -- this pins that the path is always quoted the same
+    way every other filter in this file already is."""
+    captured = {}
+
+    def capturing_pg(method, path, body=None, prefer=None, timeout=6):
+        captured["path"] = path
+        return None
+
+    monkeypatch.setattr(drain, "_pg", capturing_pg)
+    ok = drain._patch_outbox("weird id&x=y", {"status": "sent"})
+    assert ok is True
+    assert captured["path"] == "alert_outbox?id=eq.weird%20id%26x%3Dy"
+
+
 def test_selection_predicate_never_selects_a_sent_or_suppressed_row(monkeypatch):
     import uuid as _uuid
     sent_row = _row(id=str(_uuid.uuid4()), status="sent")
