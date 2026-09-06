@@ -513,6 +513,21 @@ PR body and pass `check_design_system.py --mode enforce-added`,
 entry points wired in the existing nav family; nulls printed not hidden; no LLM-originated
 signals/scores; no trading authority; tests added/updated; GitHub annotations start the line.
 
+### 6.x Worker budget law (measured 2026-09-06, binding for both halves)
+
+Workflow subagents are cut off at **exactly 30 tool calls with no return** (two Opus reviewers
+and one drafter died this way on 2026-09-06; the orchestrator sees only "completed without
+calling StructuredOutput"). Consequences: every stage prompt carries a HARD BUDGET (spec 20,
+build 26, review 22, fix 24, ship 20); packets are sized so a builder can implement, test, push
+and open the PR inside 26 calls (split bigger work into more packets); builders checkpoint WIP
+with a push and return PARTIAL + `remaining_steps`, and `marketontology_vertical_build.js`
+resumes them on the same branch up to three times; reviewers write the diff to a file once and
+read it in ranges; every worker appends progress notes to `$TMPDIR/mo-progress-*.md` so a
+cut-off still leaves evidence. A workflow that dies with "subagent completed without calling
+StructuredOutput" is a budget failure, not a refusal — read the agent transcript under the
+workflow's directory before assuming nothing happened (the 2026-09-06 #6834 takeover had
+succeeded and pushed before its reviewer was cut).
+
 ## §7 Laws retained and Sol-era rules repealed
 
 **Retained in full (pointer list; do not restate):** CLAUDE.md + AGENTS.md in full (ship loop

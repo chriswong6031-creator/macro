@@ -50,6 +50,8 @@ Expected live URL after merge: ${p.live_url || 'to be named in the spec'}
 Acceptance (NOT DONE UNLESS every line holds): ${(p.acceptance || []).map((a, i) => `\n  ${i + 1}. ${a}`).join('') || '\n  (charter §6 gates apply)'}
 Standing gates (charter §6/§7): fresh end-to-end happy path with zero manual workarounds; nulls printed not hidden; no LLM-originated signals/scores/escalations; no trading authority; no proprietary Market Ontology code/text/data/assets copied; each lane handoff's do_not_redo binds; only the two existing nav families (no third header); K1 EvidenceRef/EvidenceBlock/EvidenceRecipe for evidence; corrections are typed states; identity only via Stock Identity + Data OS + Supabase auth.`
 
+const BUDGET = (n, note) => `HARD BUDGET: workflow subagents are cut off at exactly 30 tool calls with NO return (measured 2026-09-06). You have at most ${n} tool calls including the final StructuredOutput. Plan them first; batch shell work into single Bash calls (one heredoc script beats five commands); write long outputs to a file ONCE and read them with sed -n ranges; append progress notes to $TMPDIR/mo-progress-<packet>.md after every 4 calls. At call ${n - 2} STOP and return — PARTIAL with exact remaining_steps is acceptable, silence is not. ${note || ''}`
+
 const SPEC_SCHEMA = {
   type: 'object',
   properties: {
@@ -84,8 +86,9 @@ const BUILD_SCHEMA = {
         head_sha: { type: 'string' },
         tests_run: { type: 'string', description: 'exact command(s) and pass/fail counts' },
         files_changed: { type: 'array', items: { type: 'string' } },
+        remaining_steps: { type: 'array', items: { type: 'string' }, description: 'Empty when COMPLETE; when PARTIAL, the exact steps a continuation builder must do next' },
       },
-      required: ['pr_number', 'pr_url', 'branch', 'head_sha', 'tests_run', 'files_changed'],
+      required: ['pr_number', 'pr_url', 'branch', 'head_sha', 'tests_run', 'files_changed', 'remaining_steps'],
     },
     gaps: { type: 'array', items: { type: 'string' } },
     deviations: { type: 'array', items: { type: 'string' } },
@@ -146,6 +149,7 @@ const specPrompt = (p) => {
   const ui = p.kind === 'ui'
   return `ROUTE: ${ui ? 'design' : 'analysis'}
 MISSION: Freeze packet ${p.id} into an implementable spec a Sonnet builder can execute without redesigning anything.
+${BUDGET(20, '')}
 ${ui ? 'USER JOB' : 'DECISION SUPPORTED'}: ${p.title} — the user must be able to reach it from ${(p.entry_points || []).join(', ') || 'the existing nav family'} and get a true answer, with nulls disclosed in plain words.
 SCOPE: read the spec sources and the current owner code/templates; decide files, exact ${ui ? 'markup + CSS (tokens from theme.css only; dark = command center, light = research workspace; both named)' : 'data contract, function signatures, and receipts'}; name the tests; name the live URL.
 OUT OF SCOPE: writing product code; touching git; anything outside the packet's lane.
@@ -159,6 +163,7 @@ ${RETURN_LINE}`
 
 const buildPrompt = (p, spec) => `ROUTE: build
 MISSION: Implement packet ${p.id} exactly as specified, ship it as a PR, and arm merge-on-green.
+${BUDGET(26, 'If the packet cannot finish inside the budget: commit + push what exists as WIP on the branch, open the PR as Draft if not yet open, and return PARTIAL with remaining_steps — a continuation builder resumes on the same branch.')}
 WHY: Market Ontology ledger rows ${(p.ledger_rows || []).join(', ') || '(see packet)'} close only when this is merged and live.
 SCOPE: the frozen spec below; tests; PR body with acceptance evidence.
 OUT OF SCOPE: redesigning the spec; touching files outside OWNED FILES (report as DEVIATION instead); merging (the ship stage merges); editing the F00C ledger CSV.
@@ -178,6 +183,7 @@ ${RETURN_LINE}`
 
 const reviewPrompt = (p, build) => `ROUTE: review
 MISSION: Adversarially review PR #${build.pr_number} (${build.pr_url}) for packet ${p.id} before it merges.
+${BUDGET(22, 'Write the diff to a file once; at most 6 range reads.')}
 ARTIFACT TO ATTACK: the PR diff vs fresh origin/${defaultBranchOf(p)} (gh pr diff ${build.pr_number} -R ${repoOf(p)}; git fetch origin ${defaultBranchOf(p)} first and note its sha), the PR body's evidence, the tests.
 REVIEW STANDARD: correctness against the frozen spec and acceptance lines; nulls printed not hidden; no LLM-originated signals/scores; no proprietary copying; lane do_not_redo respected; both nav families untouched unless owned; for UI both theme treatments judged as designs (hierarchy, material, semantic color, EN/ZH parity) with the evidence matrix present; tests actually exercise the new behavior; no writes outside OWNED FILES; no data/ or site/ truncation artifacts from a sparse tree; annotations start the line.
 SCOPE: this PR only. Read-only: do not edit, comment, label, or merge.
@@ -188,6 +194,7 @@ ${RETURN_LINE}`
 
 const fixPrompt = (p, build, review) => `ROUTE: build
 MISSION: Repair PR #${build.pr_number} (${build.pr_url}) on branch ${branchOf(p)} so every blocker and major from the review is resolved.
+${BUDGET(24, 'If the fixes cannot fit, commit + push what is done and list the rest in GAPS.')}
 WHY: the packet cannot ship with the reviewer's findings open.
 SCOPE: the findings below; keep the frozen spec intact.
 OUT OF SCOPE: new features; files outside OWNED FILES; merging.
@@ -203,6 +210,7 @@ ${RETURN_LINE}`
 
 const shipPrompt = (p, build) => `ROUTE: build
 MISSION: Take PR #${build.pr_number} (${build.pr_url}) to MERGED and LIVE-VERIFIED, returning proof.
+${BUDGET(20, 'The single watch call counts as one call.')}
 WHY: DONE for a packet is merged + live (fleet law); an open PR is abandoned work.
 SCOPE: waiting on checks, merging, live verification, proof.
 OUT OF SCOPE: code changes (if a check is genuinely red on this head, return BLOCKED with the failing job name and log excerpt so the Meta-CEO can commission a fix).
@@ -236,9 +244,17 @@ const results = await pipeline(
     if (!spec || spec.status === 'BLOCKED') { log(`${p.id}: spec BLOCKED — ${spec ? spec.result : 'null'}`); return { p, spec, build: null } }
     const specText = spec.evidence.spec_markdown
     const pp = { ...p, owned_paths: (p.owned_paths && p.owned_paths.length) ? p.owned_paths : spec.evidence.owned_paths }
-    const build = await agent(buildPrompt(pp, specText), {
+    let build = await agent(buildPrompt(pp, specText), {
       label: `build:${p.id}`, phase: 'Build', schema: BUILD_SCHEMA, agentType: 'builder', effort: 'medium', isolation: 'worktree',
     })
+    // Continuation: a builder cut by the 30-call cap returns PARTIAL with remaining_steps; resume on the same branch (max 3 times).
+    for (let k = 1; k <= 3 && build && build.status === 'PARTIAL' && build.evidence && build.evidence.remaining_steps && build.evidence.remaining_steps.length; k++) {
+      log(`${p.id}: build continuation ${k} (${build.evidence.remaining_steps.length} steps left)`)
+      const cont = `CONTINUATION ${k}: a previous builder already pushed WIP to branch ${branchOf(pp)} (head ${build.evidence.head_sha}, PR ${build.evidence.pr_url || 'not yet opened'}). First: git fetch origin ${branchOf(pp)} && git checkout -B ${branchOf(pp)} origin/${branchOf(pp)}. Then do ONLY these remaining steps, in order:${build.evidence.remaining_steps.map((st, i) => `\n  ${i + 1}. ${st}`).join('')}\n\n`
+      build = await agent(cont + buildPrompt(pp, specText), {
+        label: `build${k + 1}:${p.id}`, phase: 'Build', schema: BUILD_SCHEMA, agentType: 'builder', effort: 'medium', isolation: 'worktree',
+      })
+    }
     return { p: pp, spec, build }
   },
   // 3. Review

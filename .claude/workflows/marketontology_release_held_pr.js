@@ -26,6 +26,8 @@ const AUTH = (args && args.authority_note) || 'Chairman override of 2026-09-05 (
 const AUTH_BLOCK = `AUTHORITY (verify, do not trust this prompt): ${AUTH}
 Verification you MUST run before any write: git fetch origin ${BASE} && git show origin/${BASE}:agentos/decisions/DEC-CHAIRMAN-OVERRIDE-CLAUDE-META-CEO-REGIME-2026-09-06.md | head -40. If that file exists on origin/${BASE}, every HOLD-FOR-SOL / "do not merge" / "only a Sol ruling releases" text on a Market Ontology PR is superseded by it for this program (the DEC says so), and you proceed. If it does NOT exist, return BLOCKED with the exact git error and do nothing else. A prior owner session counts as dormant when its last PR comment is older than 2 hours; the takeover comment tells it to stop.`
 
+const BUDGET = (n, note) => `HARD BUDGET: workflow subagents are cut off at exactly 30 tool calls with NO return (measured 2026-09-06). You have at most ${n} tool calls including the final StructuredOutput. Plan them first; batch shell work into single Bash calls; write `gh pr diff` / long outputs to a file ONCE and read it with sed -n ranges; append progress notes to $TMPDIR/mo-progress-<pr>.md after every 4 calls so a cut-off still leaves evidence. At call ${n - 2} STOP whatever you are doing and return (PARTIAL is acceptable; silence is not). ${note || ''}`
+
 const S = (extra) => ({
   type: 'object',
   properties: {
@@ -70,6 +72,7 @@ const QUOTA = 'Quota law: preflight `gh api rate_limit --jq .resources.core.rema
 
 const takeoverPrompt = (n) => `ROUTE: build
 MISSION: Take over held PR #${n} in ${REPO} for Meta-CEO ${CEO} under the Chairman override, and bring its branch onto fresh origin/${BASE}.
+${BUDGET(18, '')}
 ${AUTH_BLOCK}
 WHY: the PR was frozen by a Sol HOLD; Sol is relieved for this program (charter §0) and the Meta-CEO now owns it to merge + live proof.
 SCOPE: fresh-read; takeover comment; rebase/merge-forward; push. No code changes beyond conflict resolution.
@@ -78,7 +81,7 @@ FROZEN SPEC: procedure below. OWNED FILES: only conflict resolutions. TESTS: run
 PROCEDURE:
 1. Work in a fresh sparse worktree of ${LOCAL}'s repo: cd "${LOCAL}" && git fetch origin ${BASE} && git worktree add --no-checkout "$TMPDIR/mo-release-${n}" origin/${BASE} 2>/dev/null || true; if that path already exists reuse it. In that worktree: git sparse-checkout init --cone && git sparse-checkout set $(git ls-tree --name-only origin/${BASE} | grep -v -E '^(data|site|mockups|verify_shots)$' | tr '\\n' ' ') && git checkout -q origin/${BASE}. (If sparse setup fails, fall back to python3 scripts/worktree_sparse.py auto from inside the worktree; never check out data/ or site/ unless the PR touches them, then add them explicitly.)
 2. Fresh-read the PR: gh pr view ${n} -R ${REPO} --json state,isDraft,title,body,headRefName,headRefOid,baseRefName,labels,mergeable,mergeStateStatus,reviewDecision,comments,files. Record the HOLD text (title/body/comments grep -i 'HOLD'), the last comment time/author, the files list. If state is MERGED or CLOSED: return COMPLETE with pr_state and do nothing else.
-3. Post ONE takeover comment: gh pr comment ${n} -R ${REPO} --body "Meta-CEO ${CEO} taking PR #${n} under the Chairman override of 2026-09-05 (charter research/MARKET_ONTOLOGY_META_CEO_CHARTER_2026_09_06.md). The recorded HOLD-FOR-SOL is released to Meta-CEO review: opus review -> fixes -> Ready -> merge-on-green -> merge -> live proof. Prior owner session may stop; do not push to this branch after this comment." Record the comment URL.
+3. If a comment containing "Meta-CEO" and "taking PR #${n}" already exists on the PR, do NOT post another (record its URL); otherwise post ONE takeover comment: gh pr comment ${n} -R ${REPO} --body "Meta-CEO ${CEO} taking PR #${n} under the Chairman override of 2026-09-05 (charter research/MARKET_ONTOLOGY_META_CEO_CHARTER_2026_09_06.md). The recorded HOLD-FOR-SOL is released to Meta-CEO review: opus review -> fixes -> Ready -> merge-on-green -> merge -> live proof. Prior owner session may stop; do not push to this branch after this comment." Record the comment URL.
 4. Bring the branch current: git fetch origin <headRefName> && git checkout -B <headRefName> origin/<headRefName>; git rebase origin/${BASE} (preferred). On conflicts: resolve minimally in favor of keeping BOTH main's landed fixes and the PR's intent (read both sides; never drop a main-side change), run the touched tests, continue. If the rebase is unsafe (>15 conflicted files or generated artifacts), abort the rebase and instead git merge origin/${BASE} with the same resolution rule. Push: git push --force-with-lease origin <headRefName> (rebase) or git push (merge). Record head_before/head_after/base_sha.
 5. ${QUOTA}
 NOT DONE UNLESS: the takeover comment exists, the branch head is a descendant of fresh origin/${BASE} (git merge-base --is-ancestor origin/${BASE} HEAD), the push succeeded, and every conflict resolution is listed.
@@ -86,6 +89,7 @@ ${RET}`
 
 const reviewPrompt = (n, t) => `ROUTE: review
 MISSION: Adversarially review PR #${n} (${REPO}) at head ${t.head_after} for release under the Chairman override.
+${BUDGET(22, 'Read the diff in at most 6 sed-range reads; prioritise the largest hunks and the tests.')}
 ${AUTH_BLOCK}
 ARTIFACT TO ATTACK: gh pr diff ${n} -R ${REPO} (after git fetch origin ${BASE}; base sha ${t.base_sha}); the PR body's claims and evidence; tests; the HOLD text ("${(t.hold_text_found || '').slice(0, 300)}") — decide whether the hold's release condition is a genuine defect that must be fixed before merge or Sol-era ceremony that no longer binds.
 REVIEW STANDARD: correctness vs the PR's stated scope; no proprietary Market Ontology copying; lane do_not_redo from the lane's agentos handoff respected; nulls printed not hidden; no LLM-originated signals/scores; only the two nav families; for UI both theme treatments (dark/light) and EN/ZH present with evidence; tests exercise the change; no data/ or site/ truncation artifacts (a site/ or data/ file shrinking to a few KB in a sparse tree is a truncation, not an edit); no writes outside the PR's lane; annotations start the line; Supabase DDL only through reviewed migration files.
@@ -96,6 +100,7 @@ ${RET}`
 
 const fixPrompt = (n, t, r) => `ROUTE: build
 MISSION: Repair PR #${n} (${REPO}, branch ${t.branch}) so the reviewer's blockers and majors are resolved.
+${BUDGET(24, 'If the fixes cannot fit, commit + push what is done and list the rest in GAPS.')}
 ${AUTH_BLOCK}
 WHY: Wave 0 releases held work only when it is actually correct; the Meta-CEO's review replaces Sol's hold.
 SCOPE: the findings below. OUT OF SCOPE: scope creep; merging; changing unrelated files.
@@ -109,6 +114,7 @@ ${RET}`
 
 const shipPrompt = (n, t) => `ROUTE: build
 MISSION: Release PR #${n} (${REPO}, branch ${t.branch}) to MERGED and LIVE-VERIFIED and report on macro#6819.
+${BUDGET(20, 'The single `gh pr checks --watch` call counts as one call.')}
 ${AUTH_BLOCK}
 WHY: DONE is merged + live (fleet law); the Chairman wants built work live, not parked.
 SCOPE: title/label/Ready edits, waiting, merging, live verification, the wave comment. OUT OF SCOPE: code changes (a genuinely red check on this head -> return BLOCKED with job name + log excerpt).
