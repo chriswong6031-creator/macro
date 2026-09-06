@@ -760,3 +760,71 @@ def test_compiler_failure_gate_renders_a_plain_bilingual_sentence() -> None:
     assert '<span class="l-en">COMPILER_FAILURE</span>' not in html
     assert '<span class="l-zh">COMPILER_FAILURE</span>' not in html
 
+
+def test_identity_refusal_renders_a_plain_bilingual_sentence_not_the_raw_code() -> None:
+    """``identity_proof.refusals`` is the M1/M2 failure-shell path
+
+    (``engine.security_state.compile_security_state_failure``) — a DIFFERENT
+    rendering path from ``legs.risk.failed_gates`` covered by
+    ``test_compiler_failure_gate_renders_a_plain_bilingual_sentence`` above.
+    Before this fix the "Held back" line rendered the raw refusal code
+    (``COMPILER_FAILURE`` / ``IDENTITY_UNRESOLVED``) as bare, language-
+    identical text inside a plain ``<div class="dfoot">`` — no ``ss-id``
+    chip, no ``data-`` attribute — byte-identical in the EN and ZH views
+    (macro#6920 round-2 MAJOR #2: the PR body's claim that the raw code
+    "only appears inside the receipt's own ss-id machine-id chip" was false
+    for this path).
+    """
+    for code in ("COMPILER_FAILURE", "IDENTITY_UNRESOLVED"):
+        contract = _contract(identity_proof={
+            "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
+            "legs": [], "equalities": [], "refusals": [code], "disclosures": [],
+        })
+        view = build_security_state({"security_state": contract})
+        assert view is not None
+
+        refusal = next(r for r in view["identity"]["refusals"] if r["code"] == code)
+        assert refusal["en"] != refusal["zh"], (
+            f"{code}: ZH slot must be real Chinese, not the English fallback duplicated: {refusal!r}"
+        )
+        assert refusal["en"] not in (code, _prettify_words(code)), (
+            f"{code}: must be a house plain sentence, not the raw code or its bare prettification"
+        )
+        assert re.search(r"[一-鿿]", refusal["zh"]), f"{code}: zh is not Chinese: {refusal['zh']!r}"
+
+        import jinja2
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(str(REPO / "templates")),
+            undefined=jinja2.ChainableUndefined,
+        )
+        html = env.get_template("ticker.html.j2").render(
+            security_state=view, ticker="MSFT", name="Microsoft Corp.",
+        )  # both languages present, un-filtered
+        # The plain sentence must appear as visible prose in BOTH languages.
+        assert refusal["en"] in html, f"{code}: EN plain sentence missing from render"
+        assert refusal["zh"] in html, f"{code}: ZH plain sentence missing from render"
+
+        # The raw machine code, wherever it appears, must be inside the
+        # receipt's own ss-id chip — never as bare, bilingual-identical text
+        # sitting directly in the "Held back" line (what the PR body's round-2
+        # claim asserted but did not test).
+        m = re.search(r'Held back</span>.*?:(.*?)</div>', html, re.S)
+        assert m is not None, f"{code}: 'Held back' line not found in render"
+        held_back_html = m.group(1)
+        assert f'<span class="c ss-id">{code}</span>' in held_back_html, (
+            f"{code}: raw code must be inside the ss-id chip: {held_back_html!r}"
+        )
+        stripped = re.sub(r'<span class="c ss-id">.*?</span>', "", held_back_html)
+        assert code not in stripped, (
+            f"{code}: raw code leaked outside the ss-id chip: {stripped!r}"
+        )
+        # And explicitly: the raw code must never sit as its own bare
+        # bilingual-label span (the exact failure the round-2 PR body missed).
+        assert f'<span class="l-en">{code}</span>' not in html
+        assert f'<span class="l-zh">{code}</span>' not in html
+
+
+def _prettify_words(code: str) -> str:
+    words = re.sub(r"[^0-9A-Za-z]+", " ", code).strip().lower()
+    return (words[:1].upper() + words[1:]) if words else ""
+

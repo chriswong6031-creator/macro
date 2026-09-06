@@ -3499,6 +3499,15 @@ _SS_GATES: dict[str, dict[str, str]] = {
         "clear_en": "This read compiles again on the next scheduled cycle.",
         "clear_zh": "该读数将在下一次计划周期重新生成。",
     },
+    # Chairman plain-language law (2026-09-06), macro#6920 round-2 MAJOR #2:
+    # the M1 failure shell (owner-identity batch never ran this cycle) sets
+    # this exact refusal code; it needs the same real ZH sentence, not the
+    # English-into-ZH `_ss_prettify` fallback.
+    "IDENTITY_UNRESOLVED": {
+        "en": "Identity could not be re-proven this cycle", "zh": "本周期未能重新确认身份",
+        "clear_en": "The owner identity batch runs again on the next scheduled cycle.",
+        "clear_zh": "来源身份批处理将在下一次计划周期重新运行。",
+    },
 }
 
 
@@ -4195,7 +4204,21 @@ def build_security_state(blob: dict | None) -> dict | None:
                 "why_en": idc["why_en"], "why_zh": idc["why_zh"],
                 "legs": id_legs,
                 "equalities": [_clean_str(e) for e in (ident_raw.get("equalities") or []) if _clean_str(e)],
-                "refusals": [_clean_str(e) for e in (ident_raw.get("refusals") or []) if _clean_str(e)],
+                # Chairman plain-language law (2026-09-06): a refusal is a
+                # machine code (`COMPILER_FAILURE`, `IDENTITY_UNRESOLVED`, …)
+                # and must never render as bare English prose duplicated into
+                # the ZH slot — house copy from `_SS_GATES` leads, the raw
+                # code stays only as the receipt (`code`), never the sentence
+                # itself (macro#6920 round-2 MAJOR #2).
+                "refusals": [
+                    {
+                        "code": code,
+                        "en": (_SS_GATES.get(code) or {}).get("en") or _ss_prettify(code),
+                        "zh": (_SS_GATES.get(code) or {}).get("zh") or _ss_prettify(code),
+                    }
+                    for code in (_clean_str(e) for e in (ident_raw.get("refusals") or []))
+                    if code
+                ],
                 "disclosures": [_clean_str(e) for e in (ident_raw.get("disclosures") or []) if _clean_str(e)],
             },
             "coverage_state": _clean_str(cov_block.get("overall_state") or ""),

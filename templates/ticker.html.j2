@@ -1925,7 +1925,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
         </div>
         {% endfor %}
         {% if ss.identity.equalities %}<ul class="dnotes">{% for e in ss.identity.equalities %}<li class="ss-id">{{ e }}</li>{% endfor %}</ul>{% endif %}
-        {% if ss.identity.refusals %}<div class="dfoot">{{ t('Held back', '暂不呈现') }}: {% for r in ss.identity.refusals %}{{ r }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+        {% if ss.identity.refusals %}<div class="dfoot">{{ t('Held back', '暂不呈现') }}: {% for r in ss.identity.refusals %}{{ t(r.en, r.zh) }}<span class="c ss-id">{{ r.code }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
         {% if ss.identity.disclosures %}<div class="dfoot">{% for d in ss.identity.disclosures %}{{ d }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
       </section>
       {% endif %}
