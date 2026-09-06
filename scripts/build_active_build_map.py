@@ -364,11 +364,13 @@ def _collect_pr_files(pr_number: int) -> tuple[list[str], bool, bool, str | None
     data = _run_gh(["pr", "view", str(pr_number), "--json", "files,mergeStateStatus"])
     if data is None:
         return [], False, True, None
-    raw_files = data.get("files", [])
+    resolved_merge_state = data.get("mergeStateStatus") or None
+    raw_files = data.get("files")
+    if not isinstance(raw_files, list):
+        return [], False, True, resolved_merge_state
     # gh caps the file list at 100; if exactly 100 assume truncation
     files = [f.get("path", "") for f in raw_files if isinstance(f, dict)]
     truncated = len(files) >= 100
-    resolved_merge_state = data.get("mergeStateStatus") or None
     return files, truncated, False, resolved_merge_state
 
 
