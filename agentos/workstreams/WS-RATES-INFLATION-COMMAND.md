@@ -7,7 +7,7 @@ objective: >
   Forward Path synthesis and learning. Done means real current inputs traverse production into the
   actual user/machine consumers with all authority ceilings, nulls, evidence clocks and failure states
   intact; CI or merged infrastructure alone is not completion.
-status: awaiting_ci
+status: active
 program: rates-inflation-command
 repos: [macro]
 owner: ceo-sol
@@ -32,23 +32,38 @@ depends_on: []
 waves:
   - id: F0
     title: Recovery, capability ledger and architecture freeze
-    status: awaiting_ci
+    status: done
     pr: 6543
     next_action: >
-      Independently review and accept PR #6543 only after exact-head semantic/fence CI completes
-      green; no product/runtime behavior is changed by F0.
+      Accepted by Sol on exact head 27ae976bd388ca55f3ceee68e58c310cbab1effa and merged as
+      a6921aa3d1d49b88d36f2be07cd7bd297d0f00b8 on 2026-08-27. This records-only
+      wave changed no product/runtime behavior and is not production proof for later waves.
   - id: F1
     title: Release and event truth/intelligence closure
     status: todo
     depends_on: [F0]
+    next_action: >
+      Preserve existing operation ric-f1-release-event-20260828-sol-001 on Slack carrier
+      C0BSBM78V1N/1787975946.019219. It remains PRE-START with effect=NONE: exact native task
+      01a04bde-8ce8-7903-ae91-6c38c63ac4cf received a Sol CONTINUE, but no START or source
+      effect followed. Do not mint another F1. The exact task must fresh-read current procedure,
+      worktree, main and path collisions, then emit a separate truthful START or a typed blocker.
   - id: F2
     title: Dealer/OPEX state and HS3/HS4 historical priors
     status: todo
     depends_on: [F0]
+    next_action: >
+      HELD on canonical Options Intelligence C0 carrier #6604 / MAS-195. Do not commission broad
+      Dealer/OPEX work until that owner is terminally released and merged, then run a fresh RIC
+      path and authority census before assigning any F2 receiver.
   - id: F3
     title: Yield momentum and canonical Transmission extension
     status: todo
     depends_on: [F0]
+    next_action: >
+      READY but WAITING_CAPACITY / needs_placement under MAS-245. No concrete receiver or START
+      exists. The accepted placement owner must supply one lawful receiver before a worker-facing
+      commission; routine account or session selection is not Chairman work.
   - id: F4
     title: Forward Path canonical composition
     status: todo
@@ -85,9 +100,12 @@ artifacts:
   - research/MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md
   - research/TRANSMISSION_INTELLIGENCE_MASTERPLAN_BY_FABLE.md
 next_action: >
-  Complete PR #6543 F0 independent review/merge, then submit the frozen RIC-F1, RIC-F2 and RIC-F3
-  packets through canonical Executive admission/routing as three disjoint operations and call a lane
-  active only after its concrete Fable/worker carrier/session ACK is proven.
+  Continue only the already-existing F1 operation on its original carrier: the exact native task
+  must satisfy its fresh pre-START gates and then return a separate START or typed blocker; never
+  submit a duplicate F1. Keep F2 held behind terminal release and merge of Options C0 #6604 /
+  MAS-195 plus a fresh RIC path/authority census. Keep F3 READY but WAITING_CAPACITY /
+  needs_placement under MAS-245 until the accepted placement owner supplies a concrete receiver.
+  F4-F7 remain dependency-gated. Every later commission requires pickup ACK and separate START.
 ---
 
 ## Why this workstream exists
@@ -99,9 +117,11 @@ release/transmission/options systems and disconnected implementation seams.
 
 ## Current frontier
 
-F0 is records-only and has no product/runtime effect. F1/F2/F3 are the first independently useful
-capability lanes, but as of the recovery they are not runtime-claimed. F4-F7 remain CEO-owned
-integration waves and may not be treated as commissioned merely because this record names them.
+F0 is records-only and accepted/merged; it created no product or runtime capability. F1 already has
+one canonical operation and exact pre-START receiver task, but no START or source effect; continue only
+that carrier after fresh gates. F2 is held behind the canonical Options C0 release/merge and a fresh
+RIC collision census. F3 is ready but waiting for lawful capacity placement. F4-F7 remain
+dependency-gated and are not commissioned merely because this record names them.
 
 The complete capability ledger, exact first commission packets and production acceptance contract are
 in `research/RATES_INFLATION_COMMAND_RECOVERY_AND_COMPLETION_FREEZE_2026-08-27.md`.
