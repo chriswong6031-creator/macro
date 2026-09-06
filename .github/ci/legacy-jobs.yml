@@ -3758,7 +3758,7 @@ jobs:
       - name: ci-plan/ci-pack/ci-gate workflow structure contract
         run: python -m pytest tests/test_ci_plan_workflow.py tests/test_ci_semantic_proof.py tests/test_ci_pack_semantic.py -q
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_merge_on_green_semantic.py tests/test_check_conflict_markers.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_merge_on_green_semantic.py tests/test_check_conflict_markers.py tests/test_release_hold_text.py -q
       # The merge-gate reliability report is the progress metric for
       # research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md, so a silent
       # regression in it would make that program's acceptance gate meaningless.
