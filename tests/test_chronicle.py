@@ -2781,14 +2781,89 @@ def test_market_feed_alias_served_requires_supported_direction(tmp_path):
         },
     }
     receipt = resolve_market_feed_alias(root=root, projection=projection)
-    # impact_direction is granted by the STORE's own direction-field census
-    # (one synthetic direction-bearing row above), never by the caller's
-    # sample_n claim. impact_magnitude still missing until the store census
-    # measures a magnitude-bearing key.
+    # A direction-bearing row with no magnitude on the SAME event is not
+    # enough: impact_direction/impact_magnitude are granted together only
+    # when the store census measures a single event carrying both (co-
+    # occurrence), never by the caller's sample_n claim and never by two
+    # disjoint per-field counts. Neither field is granted here.
     assert receipt["state"] == "PARTIALLY_SERVED"
-    assert receipt["missing_fields"] == ["impact_magnitude"]
-    assert "impact_direction" in receipt["served_fields"]
+    assert receipt["missing_fields"] == ["impact_direction", "impact_magnitude"]
+    assert "impact_direction" not in receipt["served_fields"]
     assert receipt["projection"]["support"]["impact_magnitude"]["sample_n"] == 3
+
+
+def test_market_feed_alias_census_counts_value_not_key_presence(tmp_path):
+    """MAJOR-1 regression: a null/empty/zero-valued direction or magnitude
+    field must not count as store support -- mirrors the tickers truthiness
+    check, never bare key presence."""
+    from engine.chronicle.market_feed_alias import market_feed_field_coverage
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({
+            "id": "empty-fields", "date": "2026-08-03", "tickers": ["X"],
+            "impact_direction": None, "impact_magnitude": None,
+        }) + "\n")
+        fh.write(json.dumps({
+            "id": "empty-string-field", "date": "2026-08-04", "tickers": ["X"],
+            "impact": "",
+        }) + "\n")
+
+    coverage = market_feed_field_coverage(root=root)
+    assert coverage["events_with_direction_field"] == 0
+    assert coverage["events_with_magnitude_field"] == 0
+
+
+def test_market_feed_alias_requires_direction_and_magnitude_on_same_event(tmp_path):
+    """MAJOR-2 regression: SERVED must never be reachable when direction and
+    magnitude live on two disjoint events -- no single event carries both."""
+    from engine.chronicle.market_feed_alias import (
+        resolve_market_feed_alias, MARKET_FEED_REQUIRED_FIELDS,
+    )
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write(root=root, rebuild=True)
+
+    with open(root / "data" / "chronicle" / "events.jsonl", "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({
+            "id": "direction-only", "date": "2026-08-05", "tickers": ["A"],
+            "direction": "up",
+        }) + "\n")
+        fh.write(json.dumps({
+            "id": "magnitude-only", "date": "2026-08-06", "tickers": ["B"],
+            "impact_magnitude": 0.3,
+        }) + "\n")
+
+    projection = {
+        "name": "x", "route": "/x", "fields": list(MARKET_FEED_REQUIRED_FIELDS),
+    }
+    receipt = resolve_market_feed_alias(root=root, projection=projection)
+    assert receipt["state"] != "SERVED"
+    assert "impact_direction" not in receipt["served_fields"]
+    assert "impact_magnitude" not in receipt["served_fields"]
+
+
+def test_market_feed_alias_empty_projection_never_upgrades_from_not_served(tmp_path):
+    """MAJOR-3 regression: an empty/field-less projection ({}) must be
+    treated exactly like no declared projection at all, never upgraded to
+    PARTIALLY_SERVED on the strength of an undeclared surface."""
+    from engine.chronicle.market_feed_alias import resolve_market_feed_alias
+
+    root = _make_fixture_root(tmp_path)
+    build_and_write_fn = None
+    from engine.chronicle.governor import build_and_write
+    build_and_write(root=root, rebuild=True)
+
+    none_receipt = resolve_market_feed_alias(root=root, projection=None)
+    empty_receipt = resolve_market_feed_alias(root=root, projection={})
+
+    assert empty_receipt["state"] == none_receipt["state"]
+    assert empty_receipt["state"] in ("NOT_SERVED", "PARTIALLY_SERVED")
+    assert empty_receipt["missing_fields"] == none_receipt["missing_fields"]
 
 
 def test_market_feed_alias_served_when_store_has_direction_and_magnitude(tmp_path):

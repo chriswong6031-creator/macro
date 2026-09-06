@@ -204,6 +204,7 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
         "events_with_tickers": None,
         "events_with_direction_field": None,
         "events_with_magnitude_field": None,
+        "events_with_direction_and_magnitude": None,
         "coverage_start": None,
         "coverage_end": None,
         "store_receipt": None,
@@ -227,11 +228,23 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
                 continue
         total = len(events)
         with_tickers = sum(1 for e in events if e.get("tickers"))
+
+        def _has_nonempty(event: dict, candidates: tuple[str, ...]) -> bool:
+            return any(
+                event.get(k) not in (None, "", [], {}) for k in candidates
+            )
+
         with_direction = sum(
-            1 for e in events if any(k in e for k in DIRECTION_FIELD_CANDIDATES)
+            1 for e in events if _has_nonempty(e, DIRECTION_FIELD_CANDIDATES)
         )
         with_magnitude = sum(
-            1 for e in events if any(k in e for k in MAGNITUDE_FIELD_CANDIDATES)
+            1 for e in events if _has_nonempty(e, MAGNITUDE_FIELD_CANDIDATES)
+        )
+        with_direction_and_magnitude = sum(
+            1
+            for e in events
+            if _has_nonempty(e, DIRECTION_FIELD_CANDIDATES)
+            and _has_nonempty(e, MAGNITUDE_FIELD_CANDIDATES)
         )
         dates = sorted(
             d for e in events if (d := e.get("date"))
@@ -244,6 +257,7 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
                 "events_with_tickers": with_tickers,
                 "events_with_direction_field": with_direction,
                 "events_with_magnitude_field": with_magnitude,
+                "events_with_direction_and_magnitude": with_direction_and_magnitude,
                 "coverage_start": dates[0] if dates else None,
                 "coverage_end": dates[-1] if dates else None,
             }
@@ -255,6 +269,7 @@ def market_feed_field_coverage(root: Path | str | None = None) -> dict:
         for k in (
             "events_total", "events_with_tickers",
             "events_with_direction_field", "events_with_magnitude_field",
+            "events_with_direction_and_magnitude",
             "coverage_start", "coverage_end", "store_receipt",
         ):
             out[k] = None
@@ -329,8 +344,11 @@ def resolve_market_feed_alias(
             store_has_magnitude = _positive_count(
                 coverage.get("events_with_magnitude_field")
             )
+            store_has_direction_and_magnitude = _positive_count(
+                coverage.get("events_with_direction_and_magnitude")
+            )
 
-            if projection is None:
+            if projection is None or not declared_fields:
                 served_fields = schema_backed
                 missing_fields = sorted(set(required) - set(schema_backed))
                 if store_has_direction or store_has_magnitude:
@@ -369,9 +387,9 @@ def resolve_market_feed_alias(
                     if MARKET_FEED_FIELD_SOURCES.get(f) is not None:
                         served_fields_set.add(f)
                         continue
-                    if f == "impact_direction" and store_has_direction:
+                    if f == "impact_direction" and store_has_direction_and_magnitude:
                         served_fields_set.add(f)
-                    elif f == "impact_magnitude" and store_has_magnitude:
+                    elif f == "impact_magnitude" and store_has_direction_and_magnitude:
                         served_fields_set.add(f)
                     else:
                         unsupported_claims.append(f)
