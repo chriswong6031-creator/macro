@@ -6,9 +6,13 @@ objective: >
   chain. M0A is complete. M0B classified v1 as A — SOURCE_CLOCK_IMPOSSIBLE.
   M0C froze v2 on single-ticker REST daily plus a hybrid RTH-price/full-day-
   activity technical contract. M0D-0 PASS / Sol GO_M0D froze readiness on the
-  D+1 04:00–04:05Z source seal, not first REST availability. v1 stays an
-  immutable evidence/control arm. First v2 admit now waits on the bounded M0D
-  runtime vertical slice.
+  D+1 04:00–04:05Z source seal, not first REST availability. The 2026-08-25
+  natural M0D gate then ran, and Sol accepted its terminal disposition as
+  ABSTAINED from authentic journal plus immutable-store receipts. M0D remains
+  BUILT_NOT_PROVEN: no v2 admission has been accepted as production proof, and
+  the cause beneath an abstention is unauditable until D1 persists the seal
+  transcript. v1 stays an
+  immutable evidence/control arm.
 status: active
 program: market-memory
 p0: US_PROPHET_ENTRY_TIMING
@@ -50,11 +54,16 @@ waves:
     status: in_progress
     depends_on: [M0C]
     next_action: >
-      Namespace repair for experience-v2 is in this change. Do not start
-      experience-v2 by hand. Tuesday 2026-08-25 04:00–04:32Z is the first
-      natural PROVEN_LIVE gate. M0D remains BUILT_NOT_PROVEN until that
-      natural admit authenticates. Do not mix D-class R2 coherence into this
-      wave.
+      The natural 2026-08-25 chain ran, and Sol accepted its terminal
+      disposition as ABSTAINED from authentic journal plus immutable-store
+      receipts in #6589 / 07e63c5877c1638ee533843d4f2b477c9a148176. This
+      settles the gate classification without proving M0D live. M0D remains
+      BUILT_NOT_PROVEN: at the accepted MM-G0 evidence cut, the retained v2
+      chain admitted 0 of 3 real sessions; D1 discards the causal transcript,
+      D2 reports a lawful no-admit as a hard
+      unit failure, and D3 cannot be honestly diagnosed until D1 lands. Do not
+      start writers by hand, backfill, or infer a vendor/no-bar cause from the
+      abstention.
   - id: V1-CONTEXT-AUDIT-DECOUPLE
     title: Restore v1 owner replay by decoupling trusted context from Options audit
     status: done
@@ -65,12 +74,12 @@ waves:
       audit. v1 experience.timer still waits on technicals freshness, which
       waits on massive_stock_day.
 next_action: >
-  Do not start experience-v2 or v1 writers by hand. Tuesday 2026-08-25
-  04:00–04:32Z is the first natural M0D PROVEN_LIVE gate after the
-  experience-v2 tmpfs/InaccessiblePaths namespace repair. M0D remains
-  BUILT_NOT_PROVEN. If v1 is unrestored by then, grade v2 as
-  v1_control_unavailable. Do not implement Options Audit preregistration v2
-  here. Do not open R2.
+  The terminal MM-G0 release STOP authorized no implementation successor.
+  Preserve v1 immutability and the accepted ABSTAINED classification.
+  Any D1 repair requires a fresh Sol operation and carrier; only after D1 and a
+  later natural receipt may D3 be diagnosed. D2 remains a separate bounded
+  defect. Do not reopen #6589 or its terminal release child, start any writer,
+  backfill, open R2, or label M0D PROVEN_LIVE.
 decisions:
   - "DEC:W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE"
   - "DEC:W2C-M0C-V2-REST-SINGLE-TICKER-DAILY"
@@ -89,6 +98,7 @@ discoveries:
   - "DSC:OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL"
   - "DSC:MASSIVE-STOCK-DAY-UNPUBLISHED-TODAY-RETURNS-403"
   - "DSC:W2C-M0D-EXPERIENCE-V2-TMPFS-OPTIONAL-V1-INACCESSIBLE"
+  - "DSC:SEAL-ABSTENTION-DISCARDS-ITS-OWN-TRANSCRIPT"
 do_not_redo:
   - Do not treat a lawful in-window abstained row as missed, absent, or an M0A failure.
   - Do not reopen #5805 or the nested __case_v1 filename admit without a live journal reproducing the noncanonical-filename exception.
@@ -116,6 +126,8 @@ do_not_redo:
   - Do not treat stock-day unpublished-today 403 as a Massive stock entitlement regression or flatten it to no_entitled_date.
   - Do not restore mandatory InaccessiblePaths for tmpfs-hidden unbound v1 siblings on experience-v2; that combination is 226/NAMESPACE (DSC:W2C-M0D-EXPERIENCE-V2-TMPFS-OPTIONAL-V1-INACCESSIBLE).
   - Do not start experience-v2 by hand to manufacture the Tuesday natural admit.
+  - Do not reclassify the accepted ABSTAINED terminal result as PASS, FAIL, or NEVER_RAN without a named falsifier from the MM-G0 evidence bundle.
+  - Do not reopen the terminal MM-G0 release child or reuse its operation/carrier for a D1, D2, or D3 repair.
 landmines:
   - Nested-path admission must round-trip artifact_relative_path. Any slash, mixed-case nested name, or hex that decodes to an uppercase ticker reopens traversal and identity-fold bugs.
   - Experience timer enabled-but-inactive is not armed. Armed means enabled plus active/waiting with a future NextElapse.
@@ -146,6 +158,7 @@ artifacts:
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-22-v1-context-decouple.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-23-source-liveness.md
   - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-24-experience-v2-namespace.md
+  - agentos/handoffs/MARKET-MEMORY-W2C-2026-08-27-mm-g0-gate-receipts.md
   - agentos/decisions/DEC-W2C-M0B-V1-SOURCE-WINDOW-UNACHIEVABLE.md
   - agentos/decisions/DEC-W2C-M0C-V2-REST-SINGLE-TICKER-DAILY.md
   - agentos/decisions/DEC-W2C-M0C-V2-HYBRID-PRICE-ACTIVITY-SCOPE.md
@@ -159,7 +172,9 @@ artifacts:
   - agentos/discoveries/DSC-W2C-V1-TRUSTED-CAPTURES-THREE-PER-WINDOW.md
   - agentos/discoveries/DSC-W2C-M0D0-SPY-REST-FORMING-BAR-SEAL-STABLE.md
   - agentos/discoveries/DSC-OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL.md
+  - agentos/discoveries/DSC-SEAL-ABSTENTION-DISCARDS-ITS-OWN-TRANSCRIPT.md
   - research/market_memory/W2C_M0D0_SPY_REST_REVISION_TRAJECTORY_2026-08-20.tsv
+  - research/MARKET_MEMORY_MM_G0_AUG25_GATE_RECEIPTS_2026-08-27.md
 ---
 
 M0A first-cause repair: PR #5805, merged as `e1ec8865ac92`.
@@ -168,3 +183,4 @@ M0B clock forensics: `agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-m0b.md`.
 M0C source freeze: `agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-m0c.md` plus hybrid-scope addendum #6083.
 Sol M0C ratification: `agentos/handoffs/MARKET-MEMORY-W2C-2026-08-20-m0c-sol-ratification.md`.
 M0D-0 PASS / Sol GO_M0D: `agentos/handoffs/MARKET-MEMORY-W2C-2026-08-21-m0d0.md`.
+MM-G0 terminal gate acceptance: `ABSTAINED`, recorded by #6589 / `07e63c5877c1638ee533843d4f2b477c9a148176` from `agentos/handoffs/MARKET-MEMORY-W2C-2026-08-27-mm-g0-gate-receipts.md` and its immutable production evidence bundle.
