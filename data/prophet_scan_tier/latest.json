@@ -21,9 +21,9 @@
    "thin_history": 1585
   },
   "price_through": "2026-09-04",
-  "curated_n": 3146,
-  "curated_overlap_n": 2391,
-  "scan_n": 1504,
+  "curated_n": 3142,
+  "curated_overlap_n": 2389,
+  "scan_n": 1506,
   "store_manifest": {
    "n_tickers": 21495,
    "latest_date": "2026-09-04",
@@ -37,16 +37,16 @@
  "summary": {
   "store_n": 20966,
   "floored_n": 3895,
-  "curated_overlap_n": 2391,
-  "scan_n": 1504,
-  "panel_n": 1504,
+  "curated_overlap_n": 2389,
+  "scan_n": 1506,
+  "panel_n": 1506,
   "runners_n": 150,
-  "runners_eligible_today_n": 5,
+  "runners_eligible_today_n": 4,
   "runners_never_eligible_n": 21,
   "runners_never_eligible_pct": 0.14,
   "runners_eligible_days": {
    "n": 150,
-   "mean": 6.4,
+   "mean": 6.38,
    "p25": 3.0,
    "median": 6.0,
    "p75": 9.0,
@@ -55,20 +55,20 @@
   }
  },
  "excluder_hist": {
-  "not_topped_veto(stoch_ob+stoch_bear)": 63,
+  "not_topped_veto(stoch_ob+stoch_bear)": 64,
   "not_topped_veto(stoch_bear+macd_bear)": 24,
   "not_topped_veto(stoch_bear)": 22,
   "not_topped_veto(stoch_ob)": 22,
   "freshness_expired": 6,
-  "ELIGIBLE": 5,
+  "ELIGIBLE": 4,
   "not_topped_veto(macd_bear)": 4,
   "rsi_cap_on_fresh_cross": 3,
   "not_topped_veto(stoch_ob+stoch_bear+macd_bear)": 1
  },
  "excluder_family_hist": {
-  "not_topped_veto": 136,
+  "not_topped_veto": 137,
   "freshness_expired": 6,
-  "ELIGIBLE": 5,
+  "ELIGIBLE": 4,
   "rsi_cap_on_fresh_cross": 3
  },
  "sector_hist": {
@@ -3075,6 +3075,38 @@
    "excluder_family": "not_topped_veto"
   },
   {
+   "ticker": "IBIT",
+   "r63_pct": 32.5,
+   "sector": "?",
+   "off_index": true,
+   "coverage_reason": "not_in_curated_universe",
+   "eligible_today": false,
+   "tier_today": NaN,
+   "days_eligible": 9,
+   "first_eligible": "2026-07-17",
+   "fwd_ret_from_first_pct": 24.43,
+   "tiers_seen": [
+    "T1"
+   ],
+   "stoch_ob": true,
+   "stoch_bear": true,
+   "macd_bear": false,
+   "rsi_block": true,
+   "k3": 92.2,
+   "d3": 93.7,
+   "rsi3d": 65.4,
+   "t1_ticks": 12,
+   "t2_ticks": 21,
+   "t2raw_ticks": 21,
+   "recent3": true,
+   "veto_legs": [
+    "stoch_ob",
+    "stoch_bear"
+   ],
+   "excluder": "not_topped_veto(stoch_ob+stoch_bear)",
+   "excluder_family": "not_topped_veto"
+  },
+  {
    "ticker": "KSPI",
    "r63_pct": 32.5,
    "sector": "?",
@@ -4440,6 +4472,38 @@
    "excluder_family": "ELIGIBLE"
   },
   {
+   "ticker": "SIL",
+   "r63_pct": 25.2,
+   "sector": "?",
+   "off_index": true,
+   "coverage_reason": "not_in_curated_universe",
+   "eligible_today": false,
+   "tier_today": NaN,
+   "days_eligible": 9,
+   "first_eligible": "2026-07-27",
+   "fwd_ret_from_first_pct": 31.02,
+   "tiers_seen": [
+    "T1"
+   ],
+   "stoch_ob": true,
+   "stoch_bear": true,
+   "macd_bear": false,
+   "rsi_block": false,
+   "k3": 84.0,
+   "d3": 89.4,
+   "rsi3d": 60.7,
+   "t1_ticks": 10,
+   "t2_ticks": 16,
+   "t2raw_ticks": 16,
+   "recent3": false,
+   "veto_legs": [
+    "stoch_ob",
+    "stoch_bear"
+   ],
+   "excluder": "not_topped_veto(stoch_ob+stoch_bear)",
+   "excluder_family": "not_topped_veto"
+  },
+  {
    "ticker": "VEON",
    "r63_pct": 24.9,
    "sector": "?",
@@ -4693,70 +4757,6 @@
    ],
    "excluder": "not_topped_veto(stoch_ob)",
    "excluder_family": "not_topped_veto"
-  },
-  {
-   "ticker": "LB",
-   "r63_pct": 23.1,
-   "sector": "?",
-   "off_index": true,
-   "coverage_reason": "not_in_curated_universe",
-   "eligible_today": false,
-   "tier_today": NaN,
-   "days_eligible": 8,
-   "first_eligible": "2026-07-06",
-   "fwd_ret_from_first_pct": 15.53,
-   "tiers_seen": [
-    "T1"
-   ],
-   "stoch_ob": true,
-   "stoch_bear": true,
-   "macd_bear": false,
-   "rsi_block": false,
-   "k3": 84.8,
-   "d3": 88.2,
-   "rsi3d": 63.6,
-   "t1_ticks": 5,
-   "t2_ticks": 6,
-   "t2raw_ticks": 6,
-   "recent3": true,
-   "veto_legs": [
-    "stoch_ob",
-    "stoch_bear"
-   ],
-   "excluder": "not_topped_veto(stoch_ob+stoch_bear)",
-   "excluder_family": "not_topped_veto"
-  },
-  {
-   "ticker": "SAN",
-   "r63_pct": 22.9,
-   "sector": "?",
-   "off_index": true,
-   "coverage_reason": "not_in_curated_universe",
-   "eligible_today": true,
-   "tier_today": "T1",
-   "days_eligible": 13,
-   "first_eligible": "2026-07-28",
-   "fwd_ret_from_first_pct": 6.8,
-   "tiers_seen": [
-    "T1",
-    "T2",
-    "T3",
-    "T4"
-   ],
-   "stoch_ob": false,
-   "stoch_bear": false,
-   "macd_bear": false,
-   "rsi_block": true,
-   "k3": 56.2,
-   "d3": 44.7,
-   "rsi3d": 66.5,
-   "t1_ticks": 1,
-   "t2_ticks": 12,
-   "t2raw_ticks": 0,
-   "recent3": true,
-   "veto_legs": [],
-   "excluder": "ELIGIBLE",
-   "excluder_family": "ELIGIBLE"
   }
  ],
  "degraded": []
