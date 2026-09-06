@@ -5158,3 +5158,5 @@
 {"id":"ob-2026-09-04-2d23bb2ed3","from":"approved","to":"posting","at":"2026-09-05T23:12:43Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-09-04-2d23bb2ed3","from":"posting","to":"posted","at":"2026-09-05T23:12:44Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a9ca1ece6524401a65f30d4","external_url":null,"at":"2026-09-05T23:12:42Z","booked_at":"2026-09-05T23:13:42Z"}}
 {"id":"ob-2026-09-04-ac4bdc171b","from":"queued","to":"quarantined","at":"2026-09-05T23:19:02Z","actor":"press_wire_reap","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-09-06-57c3571f95","from":"queued","to":"approved","at":"2026-09-06T01:06:28Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-09-06-57c3571f95","from":"approved","to":"quarantined","at":"2026-09-06T01:06:29Z","actor":"publisher","note":"clock: stale_session_claim:2026-09-01!=2026-09-04 (copy names Tuesday's tape)","receipt":null}
