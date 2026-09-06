@@ -468,11 +468,12 @@
         <span class="uk-stance uk-stance-{{ sc[2] }}">{{ bl(sc[0], sc[1]) }}</span>
       </div>
       {% if uk_desk.summary_en %}<p class="uk-summary">{{ bl(uk_desk.summary_en, uk_desk.summary_zh) }}</p>{% endif %}
-      <p class="uk-watch"><span class="pw-card-label">{{ t('What to do','该怎么做') }}</span>{% if uk_desk.watch_en %}{{ bl(uk_desk.watch_en, uk_desk.watch_zh) }}{% else %}{{ t("Watch \u2014 don't chase. This is context, not a trade.",'观察，不追涨。这是背景信息，不是交易建议。') }}{% endif %}</p>
+      <p class="uk-watch"><span class="pw-card-label">{{ t('Context','背景说明') }}</span>{% if uk_desk.watch_en and not uk_desk.model_unavailable %}{{ bl(uk_desk.watch_en, uk_desk.watch_zh) }}{% else %}{{ t("Watch \u2014 don't chase. This is context, not a trade.",'观察，不追涨。这是背景信息，不是交易建议。') }}{% endif %}</p>
       <details class="pw-details">
         <summary class="gbtn gbtn-sm gbtn-quiet">{{ t('Source and wording','来源与原文') }}</summary>
         <div class="pw-detail-body">
           {% if uk_desk.doc_type_en %}<p><strong>{{ t('Type','类型') }}:</strong> {{ bl(uk_desk.doc_type_en, uk_desk.doc_type_zh) }}</p>{% endif %}
+          {% if uk_desk.doc_version %}<p><strong>{{ t('Version','版本') }}:</strong> {{ uk_desk.doc_version }}</p>{% endif %}
           {% if uk_desk.excerpt %}<p>{{ uk_desk.excerpt }}</p>{% endif %}
           <p><a href="{{ uk_desk.source_url }}" rel="nofollow noopener" target="_blank">{{ uk_desk.source_url }}</a></p>
           {% if uk_desk.provider_label %}<p><strong>{{ t('Read by','解读来源') }}:</strong> {{ uk_desk.provider_label }}</p>{% endif %}

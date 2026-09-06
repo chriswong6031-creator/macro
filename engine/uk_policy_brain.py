@@ -51,7 +51,35 @@ FALLBACK_ATOM_URL = (
 GATE_ENV = "UK_POLICY_DESK_ENABLED"
 
 _STANCES = frozenset({"supportive", "restrictive", "mixed", "routine"})
-_STATES = frozenset({"ok", "no_new", "source_outage", "stale", "gate_off"})
+
+# GOV.UK content_store_document_type -> (EN label, ZH label). Explicit map — never a
+# single hardcoded ZH constant across differing document types.
+_DOC_TYPE_ZH = {
+    "News Story": "新闻稿",
+    "Press Release": "新闻发布",
+    "Speech": "演讲",
+    "Consultation Outcome": "咨询结果",
+    "Policy Paper": "政策文件",
+    "Guidance": "指导文件",
+    "Statutory Guidance": "法定指导",
+    "Independent Report": "独立报告",
+    "Corporate Report": "机构报告",
+    "Decision": "决定",
+    "Notice": "通告",
+    "Transparency Data": "透明度数据",
+    "Impact Assessment": "影响评估",
+    "Statistics": "统计数据",
+    "National Statistics": "国家统计数据",
+}
+
+
+def _doc_type_zh(doc_type_en: str | None) -> str:
+    """Explicit lookup, never inferred — unmapped types get a labelled fallback
+    rather than a wrong translation."""
+    if not doc_type_en:
+        return "新闻稿"
+    return _DOC_TYPE_ZH.get(doc_type_en, f"{doc_type_en}（原文）")
+_STATES = frozenset({"ok", "no_new", "source_outage", "stale", "gate_off", "model_unavailable"})
 
 _BANNED_TERMS = (
     "sanction", "sanctions", "score", "rank", "buy", "sell", "overweight",
@@ -260,6 +288,25 @@ def fetch_body(url: str) -> str:
         return ""
 
 
+def fetch_version(url: str) -> str | None:
+    """Document version marker via the GOV.UK Content API: content_id@public_updated_at.
+    Degrades to None on any failure — never fabricated."""
+    try:
+        path = urlparse(url).path
+        raw = _fetch(f"{CONTENT_URL_BASE}{path}", timeout=_cfg().get("timeout", 15))
+        if not raw:
+            return None
+        data = json.loads(raw)
+        content_id = data.get("content_id")
+        updated_at = data.get("public_updated_at") or data.get("updated_at")
+        if not content_id and not updated_at:
+            return None
+        return f"{content_id or 'unknown'}@{updated_at or 'unknown'}"
+    except Exception as e:  # noqa: BLE001
+        log.debug("uk_policy fetch_version failed (%s)", e)
+        return None
+
+
 # --------------------------------------------------------------------------- #
 # dedupe state
 # --------------------------------------------------------------------------- #
@@ -418,7 +465,7 @@ def evaluate(item: dict, cfg: dict | None = None, root=None, call=None) -> dict:
     cfg = cfg or _cfg()
     excerpt = _clean(item.get("body_text") or item.get("title") or "", limit=cfg.get("excerpt_max", 400))
     raw = _call_model(item, excerpt, cfg, call=call)
-    stance = _norm_stance(raw.get("stance"))
+    stance = _norm_stance(raw.get("stance")) if raw else None
     summary_en = _sanitize_field(raw.get("summary_en"), excerpt)
     summary_zh = _sanitize_field(raw.get("summary_zh"), excerpt)
     watch_en = _sanitize_field(raw.get("watch_en"), excerpt)
@@ -429,18 +476,21 @@ def evaluate(item: dict, cfg: dict | None = None, root=None, call=None) -> dict:
     except Exception:  # noqa: BLE001
         pub_dt = now
     age_days = max(0.0, (now - pub_dt).total_seconds() / 86400.0)
+    doc_type_en = item.get("doc_type") or "News story"
     return {
         "schema": "uk_policy/1",
         "jurisdiction_en": "United Kingdom", "jurisdiction_zh": "英国",
         "body_en": "HM Treasury", "body_zh": "英国财政部",
         "source_label": "GOV.UK",
         "headline": item.get("title"),
-        "doc_type_en": item.get("doc_type") or "News story", "doc_type_zh": "新闻稿",
+        "doc_type_en": doc_type_en, "doc_type_zh": _doc_type_zh(doc_type_en),
         "source_url": item.get("url"),
+        "doc_version": item.get("doc_version"),
         "published_iso": item.get("published"),
         "known_at_iso": now.isoformat(),
         "age_days": round(age_days, 2),
         "stance": stance,
+        "model_unavailable": not bool(raw),
         "summary_en": summary_en, "summary_zh": summary_zh,
         "watch_en": watch_en, "watch_zh": watch_zh,
         "excerpt": excerpt,
@@ -502,12 +552,17 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
                 _persist(record, root)
             return record
         item = fresh[0]
+        item = dict(item)
         if not item.get("body_text"):
-            item = dict(item)
             item["body_text"] = fetch_body(item["url"]) or item.get("title", "")
+        if not item.get("doc_version"):
+            item["doc_version"] = fetch_version(item["url"])
         record = evaluate(item, cfg, root, call=call)
         stale_after = cfg.get("stale_after_days", 3.0)
-        record["state"] = "stale" if record.get("age_days", 0.0) > stale_after else "ok"
+        if record.get("stance") is None:
+            record["state"] = "model_unavailable"
+        else:
+            record["state"] = "stale" if record.get("age_days", 0.0) > stale_after else "ok"
         mark_seen(state, item)
         if persist:
             save_processed(root, state)
