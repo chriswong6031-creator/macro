@@ -2261,8 +2261,13 @@ html[data-theme="light"] .ric-path{background:var(--panel)}
             </svg>
             <div class="ric-path-callout">
               <code>{{ card.ordered_effect_path.evidence_status }}</code>
+              {% if headline_point %}
               <span class="l-en">Curve at selected +{{ selected_point.horizon }}-day horizon: {{ '%.2f'|format(selected_point.value * 100) }}% · n={{ selected_point.n }} events. This is not the {{ '%.3f'|format(headline_point.value * 100) }}% episode-clustered headline.</span>
               <span class="l-zh">曲线在所选 +{{ selected_point.horizon }} 日期限：{{ '%.2f'|format(selected_point.value * 100) }}% · n={{ selected_point.n }} 个事件；该数值并非按事件期聚类的 {{ '%.3f'|format(headline_point.value * 100) }}% 标题数值。</span>
+              {% else %}
+              <span class="l-en">Curve at selected +{{ selected_point.horizon }}-day horizon: {{ '%.2f'|format(selected_point.value * 100) }}% · n={{ selected_point.n }} events. No episode-clustered headline is available for this card.</span>
+              <span class="l-zh">曲线在所选 +{{ selected_point.horizon }} 日期限：{{ '%.2f'|format(selected_point.value * 100) }}% · n={{ selected_point.n }} 个事件；该卡片无按事件期聚类的标题数值。</span>
+              {% endif %}
             </div>
           </div>
           {% endif %}
