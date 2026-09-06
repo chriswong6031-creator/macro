@@ -1,0 +1,80 @@
+{
+  "purpose": "Synthetic R0 acceptance examples; not a runtime schema, source data or production result",
+  "policy_id": "biocatalyst.research_triage.v1",
+  "evaluation_cutoff": "2026-09-06T12:00:00Z",
+  "anchor_date": "2026-09-06",
+  "base": {
+    "event_fact_ref": "fixture:event:a", "exposure_ref": "fixture:exposure:a",
+    "revision_is_current": true, "occurrence": "uncorroborated",
+    "source_health": "current", "identity_state": "resolved", "timing_state": "consistent",
+    "lower_date": "2026-09-07", "upper_date": "2026-09-07", "last_material_revision_known_at": null
+  },
+  "lane_cases": [
+    {"id":"today", "set":{"lower_date":"2026-09-06","upper_date":"2026-09-06"}, "expected":"ACT_NOW"},
+    {"id":"last_of_seven_days", "set":{"lower_date":"2026-09-12","upper_date":"2026-09-12"}, "expected":"ACT_NOW"},
+    {"id":"eighth_day", "set":{"lower_date":"2026-09-13","upper_date":"2026-09-13"}, "expected":"RESEARCH_NEXT"},
+    {"id":"last_of_ninety_days", "set":{"lower_date":"2026-12-04","upper_date":"2026-12-04"}, "expected":"RESEARCH_NEXT"},
+    {"id":"ninety_first_day", "set":{"lower_date":"2026-12-05","upper_date":"2026-12-05"}, "expected":"MONITOR"},
+    {"id":"wide_guidance_window", "set":{"lower_date":"2026-09-01","upper_date":"2026-12-31"}, "expected":"RESEARCH_NEXT"},
+    {"id":"straddles_anchor", "set":{"lower_date":"2026-09-01","upper_date":"2026-09-10"}, "expected":"RESEARCH_NEXT"},
+    {"id":"undated", "set":{"lower_date":null,"upper_date":null}, "expected":"RECONCILE"},
+    {"id":"past_not_corroborated", "set":{"lower_date":"2026-09-05","upper_date":"2026-09-05"}, "expected":"RECONCILE"},
+    {"id":"stale_source", "set":{"source_health":"stale"}, "expected":"RECONCILE"},
+    {"id":"partial_source", "set":{"source_health":"partial"}, "expected":"RECONCILE"},
+    {"id":"unavailable_source", "set":{"source_health":"unavailable"}, "expected":"RECONCILE"},
+    {"id":"unresolved_identity", "set":{"identity_state":"unresolved"}, "expected":"RECONCILE"},
+    {"id":"conflicting_timing", "set":{"timing_state":"conflicted"}, "expected":"RECONCILE"},
+    {"id":"corroborated_history", "set":{"occurrence":"corroborated"}, "expected":"MONITOR"},
+    {"id":"cancelled_schedule", "set":{"occurrence":"cancelled"}, "expected":"MONITOR"},
+    {"id":"withdrawn_schedule", "set":{"occurrence":"withdrawn"}, "expected":"MONITOR"},
+    {"id":"superseded_revision", "set":{"revision_is_current":false}, "expected":"EXCLUDE_SUPERSEDED"},
+    {"id":"missing_estimates_do_not_penalize", "set":{"auxiliary_metadata":{"probability":null,"materiality":null}}, "expected":"ACT_NOW"},
+    {"id":"optimistic_estimate_does_not_promote", "set":{"lower_date":"2026-12-05","upper_date":"2026-12-05","auxiliary_metadata":{"probability":0.99,"materiality":"high"}}, "expected":"MONITOR"},
+    {"id":"future_knowledge_clock", "set":{"last_material_revision_known_at":"2026-09-06T12:00:01Z"}, "expected":"REJECT"},
+    {"id":"cutoff_equal_is_valid", "set":{"last_material_revision_known_at":"2026-09-06T12:00:00Z"}, "expected":"ACT_NOW"},
+    {"id":"reversed_window", "set":{"lower_date":"2026-09-10","upper_date":"2026-09-07"}, "expected":"REJECT"},
+    {"id":"one_missing_bound", "set":{"lower_date":null}, "expected":"RECONCILE"},
+    {"id":"invalid_calendar_date", "set":{"lower_date":"2026-02-30"}, "expected":"REJECT"},
+    {"id":"unknown_health_enum", "set":{"source_health":"perfect"}, "expected":"REJECT"},
+    {"id":"string_boolean_rejected", "set":{"revision_is_current":"false"}, "expected":"REJECT"}
+  ],
+  "horizon_cases": [
+    {"days":7,"lower":"2026-09-12","upper":"2026-09-12","expected":true},
+    {"days":7,"lower":"2026-09-13","upper":"2026-09-13","expected":false},
+    {"days":30,"lower":"2026-10-05","upper":"2026-10-05","expected":true},
+    {"days":30,"lower":"2026-10-06","upper":"2026-10-06","expected":false},
+    {"days":90,"lower":"2026-12-04","upper":"2026-12-04","expected":true},
+    {"days":90,"lower":"2026-12-05","upper":"2026-12-05","expected":false},
+    {"days":180,"lower":"2027-03-04","upper":"2027-03-04","expected":true},
+    {"days":180,"lower":"2027-03-05","upper":"2027-03-05","expected":false},
+    {"days":365,"lower":"2027-09-05","upper":"2027-09-05","expected":true},
+    {"days":365,"lower":"2027-09-06","upper":"2027-09-06","expected":false},
+    {"days":7,"lower":"2026-09-01","upper":"2026-12-31","expected":true},
+    {"days":365,"lower":"2026-09-01","upper":"2026-09-05","expected":false},
+    {"days":30,"lower":null,"upper":null,"expected":false}
+  ],
+  "ordering_cases": [
+    {"input":["ninety_first_day","eighth_day","undated","last_of_seven_days","today"],"expected":["today","last_of_seven_days","undated","eighth_day","ninety_first_day"]}
+  ],
+  "cursor_cases": [
+    {"changed":"generation","expected":"RELOAD_REQUIRED"},
+    {"changed":"normalized_query","expected":"RELOAD_REQUIRED"},
+    {"changed":"policy_id","expected":"RELOAD_REQUIRED"},
+    {"changed":"anchor_date","expected":"RELOAD_REQUIRED"},
+    {"changed":"evaluation_cutoff","expected":"RELOAD_REQUIRED"},
+    {"changed":null,"expected":"CONTINUE_SAME_SNAPSHOT"}
+  ],
+  "tie_cases": {
+    "revision_rows":[{"id":"older","last_material_revision_known_at":null},{"id":"newer","last_material_revision_known_at":"2026-09-05T12:00:00Z"}],
+    "revision_expected":["newer","older"],
+    "exposure_rows":[{"id":"b","exposure_ref":"fixture:exposure:b"},{"id":"missing","exposure_ref":null},{"id":"a","exposure_ref":"fixture:exposure:a"}],
+    "exposure_expected":["a","b","missing"]
+  },
+  "correction_case": {
+    "old":{"event_fact_ref":"fixture:event:a","upper_date":"2026-09-07","generation":"fixture:g1","expected":"ACT_NOW"},
+    "new":{"event_fact_ref":"fixture:event:a","upper_date":"2026-12-05","lower_date":"2026-12-05","generation":"fixture:g2","expected":"MONITOR"},
+    "event_identity_unchanged":true,"old_cursor_expected":"RELOAD_REQUIRED"
+  },
+  "authority":{"purpose":"research_priority_only","trade_origination":false,"availability_change":false,"position_sizing":false},
+  "evidence_boundary":"Expected synthetic outcomes, not production observations; the real R1B consumer must pass these and additional integration/browser tests."
+}

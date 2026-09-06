@@ -508,3 +508,82 @@ EXACT NEXT ACTION
 ```
 
 No independent next wave begins until explicit delegated-COO or Sol continuation and a fresh operation/carrier/receiver assignment under current law. The existing parent delegation removes repetitive CEO approval; it does not turn an old child assignment or a leftover watcher into a new commission.
+
+---
+
+## 16. Selected Research Priority V1 policy — September 6 R0 candidate
+
+**Method ID:** `biocatalyst.research_triage.v1`. **Status:** fully specified R0 policy candidate for independent acceptance; not a running classifier, an accepted whole R0 or permission to start R1. This section resolves the unmade rule-table choice in section 6.1.1. It does not modify a source fact, historical policy, identity owner, trade authority or the separately withheld authority-amendment batch.
+
+### 16.1 Job, alternatives and authority ceiling
+
+The user job is to decide what evidence to examine soon and which records require reconciliation, not which stock to buy. Select transparent time-and-evidence triage. Reject a weighted composite because available components and missingness are unequal; reject model-derived ordering because no calibrated prospective ranking evidence has been admitted. In V1, event-family prestige, expected return, outcome probability, materiality score, sentiment, popularity, market price and private portfolio/watchlist membership do not affect lane or order. Their separately admitted context may be displayed without becoming ranking inputs.
+
+The only lane authority is `research_priority_only`; trade origination, deterministic Availability changes, position sizing and Prophet admission remain false. The method is a product triage decision, not a statistical accuracy claim. R6 may assess research utility and propose a separately reviewed successor; it may not silently retune this version against observed market outcomes.
+
+### 16.2 Normalized inputs and clock binding
+
+The existing Bio read-model owner must supply the fields below from admitted canonical objects. These names define the policy adapter's required inputs, not a new published source schema or identity store. Owner/interface finding 2 remains a separate R0 gate.
+
+| Field | Required meaning |
+|---|---|
+| `event_fact_ref`, `exposure_ref` | Existing source event identity and optional existing economic-exposure identity; never ticker spelling or a new policy-generated canonical identity. |
+| `revision_is_current` | A real boolean from correction lineage; superseded revisions remain inspectable but do not enter the current queue. |
+| `occurrence` | `uncorroborated`, `corroborated`, `cancelled` or `withdrawn`, from evidence of the relevant event family. Calendar aging cannot set it. |
+| `source_health` | `current`, `stale`, `partial` or `unavailable`, from the existing source/coverage owner. The policy does not create its own freshness thresholds. |
+| `identity_state` | `resolved` or `unresolved` for the required join under the accepted identity interface; the policy cannot admit a sponsor alias or decide that an unjoined asset is resolved. |
+| `timing_state` | `consistent` or `conflicted`; conflict evidence stays visible. |
+| `lower_date`, `upper_date` | Calendar dates in exact `YYYY-MM-DD` syntax, or explicit nulls, preserving the accepted native-precision window. No midpoint, made-up time, or timezone conversion is introduced. |
+| `last_material_revision_known_at` | Optional UTC knowledge timestamp of a material date/status/evidence revision, not a transport poll time; null stays null. |
+
+The existing server request clock supplies one immutable `evaluation_cutoff` at first-page evaluation. `anchor_date` is that cutoff's UTC calendar date, not an arbitrary client parameter and not a fabricated source-event instant. All pages use that anchor and the same admitted generation. A knowledge timestamp after the cutoff is invalid; a future scheduled date is valid. Date comparison is explicitly calendar-date display semantics, not a claim of an exact regulatory action time. Source timezone/precision remain separately displayed, including unknown timezone. Language and display-theme changes do not alter classification.
+
+An H-day horizon includes exactly H calendar dates: `[anchor_date, anchor_date + (H-1) days]`, for H in 7, 30, 90, 180, 365. A dated upcoming interval belongs when it overlaps that range: `upper_date >= anchor_date` and `lower_date <= horizon_end`. Wide windows retain their full displayed precision; overlap is not a probability of occurrence inside the horizon.
+
+Before ranking, reject malformed dates, reversed nonnull bounds, unknown enum values, stringified booleans, malformed knowledge timestamps and knowledge after the cutoff. Use the existing quarantine/error projection; a rejected object receives no lane and remains counted as rejected, not silently dropped from coverage. One or both missing bounds are typed missingness, not malformed dates. Superseded revisions are excluded from current ranking and remain in evidence history, with a separate count.
+
+### 16.3 Exclusive lane assignment, in this exact order
+
+After input validation, apply the first matching row. Assignment precedence and display order are intentionally separate.
+
+| Precedence | Predicate | Lane / primary reason |
+|---|---|---|
+| 0 | `revision_is_current` is false | Exclude from the current queue; preserve superseded history. This is not a fifth lane. |
+| 1 | Relevant occurrence is corroborated, cancelled or withdrawn | `MONITOR` / `RESOLVED_HISTORY`; never count it as an upcoming scheduled outcome merely because an old date remains. |
+| 2 | Source health is not current | `RECONCILE` / `SOURCE_NOT_CURRENT`; show the specific health state and last-known-good boundary. |
+| 3 | Required identity is unresolved | `RECONCILE` / `IDENTITY_UNRESOLVED`; keep the row/evidence visible without a falsely confident security link. |
+| 4 | Timing is conflicted, either bound is missing, or `upper_date < anchor_date` with uncorroborated occurrence | `RECONCILE` / the corresponding `TIMING_CONFLICT`, `TIMING_INCOMPLETE` or `PAST_UNCORROBORATED` reason. |
+| 5 | The entire interval is inside `[anchor_date, anchor_date + 6 days]` | `ACT_NOW` / `WINDOW_WITHIN_SEVEN_DAYS`; this means research soon, not execute a trade. |
+| 6 | The interval overlaps `[anchor_date, anchor_date + 89 days]` | `RESEARCH_NEXT` / `WINDOW_OVERLAPS_NINETY_DAYS`. A broad quarter/year window or one straddling the anchor cannot become ACT_NOW just by touching the next week. |
+| 7 | Any other valid future interval | `MONITOR` / `LATER_WINDOW`. |
+
+Emit the selected reason and all independent identity/timing/health gaps, even when a prior rule determines the lane. Missing probability, materiality, historical response or incorporation estimates are **not** identity/evidence conflicts and do not penalize the lane; they retain their own `NOT_ESTIMABLE` slots. This is essential to ship useful R1B before R3 exists.
+
+### 16.4 Ordering, views, corrections and cursor
+
+Display lane order is `ACT_NOW`, `RECONCILE`, `RESEARCH_NEXT`, `MONITOR`. Within each lane use: upper calendar date ascending (missing last), lower date ascending (missing last), last material revision knowledge timestamp descending (missing last), then existing `event_fact_ref` and `exposure_ref` in deterministic case-preserving UTF-8 order (null exposure after known exposures). No locale-dependent ticker sort or hidden numeric score is used. A missing sorting key remains missing in the output; an internal missing-last comparator is not a fact value of zero.
+
+Classify the complete admitted current set, retain lane/rejection/superseded counts, apply the selected view/filter, sort its complete result and only then paginate. The default dated-horizon view uses the overlap rule and excludes corroborated/cancelled/withdrawn history. An explicit reconciliation view includes undated, conflicted, unresolved and past-uncorroborated records regardless of their inability to satisfy a dated horizon. Its count and entry point remain visible beside the dated view; the filter must not turn those records into an apparently complete universe. Resolved history is an explicit separate view. Counts distinguish source events from issuer exposures and never infer companies from row count.
+
+Extend the **existing** cursor binding, not a cursor store: immutable generation, normalized semantic query (including view/horizon/page size), method ID, evaluation cutoff and anchor date, plus the last stable ordering key. The server supplies/validates the clock fields. Any changed generation, semantic query, method or anchor means `RELOAD_REQUIRED`; a changed/tampered cutoff is likewise refused. At a UTC-day rollover do not silently continue yesterday's relative-horizon queue. A correction publishes through the existing generation owner; retain source event identity, select only the current revision for the new queue and invalidate the old cursor. Pin inspector reads to the same selected generation.
+
+### 16.5 Exact user-facing meaning
+
+The frontend never presents the internal name ACT_NOW as a buy/sell instruction. Selected labels and baseline explanations:
+
+| Lane | EN label / explanation | ZH label / explanation |
+|---|---|---|
+| ACT_NOW | Review soon — The scheduled window is entirely within the next 7 calendar days. Check its evidence. | 近期核查 — 计划窗口完全位于未来7个自然日内，请核查相关证据。 |
+| RECONCILE | Needs review — Resolve the highlighted source, timing or identity gap before relying on this record. | 需要核实 — 请先核实标出的来源、时间或身份信息缺口。 |
+| RESEARCH_NEXT | Research next — This window overlaps the next 90 calendar days; its full timing precision remains shown. | 后续研究 — 该窗口与未来90个自然日重叠，页面保留其原始时间精度。 |
+| MONITOR | Monitor — A later schedule or resolved event history; this is not a return forecast. | 持续关注 — 这是较远期计划或已核实的事件历史，并非收益预测。 |
+
+Show the comparison date, original timing source class/precision, chosen rule reason and any independent gaps. Registry completion remains a registry milestone, never relabelled a readout. A corroborated event means corroboration of its actual family only. These copy and interaction obligations do not replace the still-required whole-page dual-theme/EN-ZH/responsive experience compositions.
+
+### 16.6 Normative synthetic acceptance cases
+
+`BIOCATALYST_RP_V1_ACCEPTANCE_CASES_2026-09-06.json` is a research fixture, not clinical data, a runtime contract or a production result. It pins lane boundaries, 7/30/90/180/365-day overlap edges, missingness, quarantine, supersession, estimate independence, ordering, correction and cursor invalidation. On anchor September 6, the seven-day window ends September 12 and the ninety-day window ends December 4; both include the anchor day. A September 13 event is RESEARCH_NEXT; a broad quarter window is not ACT_NOW merely because it overlaps the next week.
+
+The later real R1B producer/handler must pass these examples through its actual owner-composed path, plus integration/entitlement/browser tests. Independent review of this selected policy is still owed; a local reference check is not that review or a running feature. No event store, identity map, model, private user-state store, publication pointer, lifecycle or scheduler is added by this policy.
+
+Deterministic details: within precedence 4 choose primary reason in the order TIMING_CONFLICT, TIMING_INCOMPLETE, PAST_UNCORROBORATED, while retaining every applicable reason. Order the complete gap list as SOURCE_NOT_CURRENT, IDENTITY_UNRESOLVED, TIMING_CONFLICT, TIMING_INCOMPLETE, PAST_UNCORROBORATED. UTC knowledge timestamps use `YYYY-MM-DDTHH:MM:SS[.fraction]Z` after the existing owner's normalization; absent timezone is not normalized by guessing. The policy fixture's optional `auxiliary_metadata` is deliberately outside the ranking inputs and tests that unavailable or optimistic estimate context cannot change the selected lane.
