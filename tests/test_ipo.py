@@ -828,3 +828,81 @@ def test_cw_change_lexicon_covers_every_pair_next_threshold_can_emit():
     # a passing "missing == set()" alone wouldn't catch a lexicon that never
     # grew (both sides could be trivially empty in some future refactor).
     assert {("spread_range", "open"), ("spread_drift", "open"), ("rates_vol", "open")} <= set(bi.CW_CHANGE.keys())
+
+
+# --------------------------------------------------------------------------- #
+# MAJOR-1 (review repair round 4) — ("rates_vol", "neutral") is reachable from
+# BOTH directions (an "open" rates_vol input crossing UP into the middle band,
+# or a "shut" rates_vol input crossing DOWN into it), but CW_CHANGE is keyed on
+# (input, to_state) only — no direction — so the one sentence stored there
+# must be true regardless of which direction produced the candidate. The
+# pre-fix sentence ("Rates volatility easing would flip this to half open.")
+# was only true for the down-direction case; rendered against the exact live
+# up-direction shape the round-4 review measured (HY today: spread_range=open,
+# spread_drift=neutral, rates_vol=open(20.0) -> nearest crossing is rates_vol
+# RISING to 40, direction "up") it told users volatility easing would flip the
+# read — backwards. This test pins the render for that up-direction candidate.
+# --------------------------------------------------------------------------- #
+def test_credit_window_vm_rates_vol_up_direction_change_is_not_worded_as_easing():
+    change = {"input": "rates_vol", "to_state": "neutral", "threshold": 40.0,
+              "current": 20.0, "direction": "up", "segment_to": "neutral"}
+    raw = {"segments": [_seg("open", change=change)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE[("rates_vol", "neutral")]
+    assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_NONE
+    # the pre-fix sentence claimed "easing" — factually inverted for the
+    # up-direction (rising-volatility) crossing this render actually names.
+    assert "easing" not in seg["change_en"].lower()
+    assert "回落" not in seg["change_zh"]
+
+
+def test_credit_window_vm_rates_vol_neutral_entry_is_direction_agnostic():
+    # The lexicon has no direction axis, so the SAME entry renders for both
+    # the up-direction (open -> neutral) and down-direction (shut -> neutral)
+    # candidates. Pin that both actually resolve to one shared, non-empty,
+    # bilingual sentence rather than silently falling back to CW_CHANGE_NONE.
+    up = {"input": "rates_vol", "to_state": "neutral", "threshold": 40.0,
+          "current": 20.0, "direction": "up", "segment_to": "neutral"}
+    down = {"input": "rates_vol", "to_state": "neutral", "threshold": 75.0,
+            "current": 78.0, "direction": "down", "segment_to": "neutral"}
+    vm_up = bi._credit_window_vm(
+        {"segments": [_seg("open", change=up)], "as_of": "2026-09-01",
+         "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}})
+    vm_down = bi._credit_window_vm(
+        {"segments": [_seg("shut", change=down)], "as_of": "2026-09-01",
+         "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}})
+    seg_up = vm_up["segments"][0]
+    seg_down = vm_down["segments"][0]
+    assert (seg_up["change_en"], seg_up["change_zh"]) == (seg_down["change_en"], seg_down["change_zh"])
+    assert (seg_up["change_en"], seg_up["change_zh"]) == bi.CW_CHANGE[("rates_vol", "neutral")]
+    assert seg_up["change_en"] and seg_up["change_zh"]
+
+
+# --------------------------------------------------------------------------- #
+# MINOR-2 (review repair round 4) — `.cw-band` marks a FIXED zone of the rail
+# (0 to seg.rail.easy_pct, the tight/easy end of the 1y range) — the same
+# zone regardless of which state (open/neutral/shut) the card is currently
+# in — but it was painted from `--tcc` (the card's own state colour), so a
+# shut (red) lane rendered its easy zone red and an open (green) lane
+# rendered it green: a state-invariant region carrying state colour. Pinned
+# to a fixed `--green` token in both the dark (default) and light-theme
+# `.cw-band` rules; `.cw-mark` (today's actual position — legitimately
+# state-coloured) and `.cw-change` (the state-scoped copy strip) are
+# unaffected and keep using `--tcc`.
+# --------------------------------------------------------------------------- #
+def test_cw_band_uses_fixed_green_token_not_the_state_colour():
+    tpl_path = pathlib.Path(bi.__file__).resolve().parents[1] / "templates" / "ipo.html.j2"
+    src = tpl_path.read_text()
+    dark_rule = re.search(r"\.cw-band\{[^}]*\}", src)
+    light_rule = re.search(r'html\[data-theme="light"\]\s*\.cw-band\{[^}]*\}', src)
+    assert dark_rule and light_rule
+    assert "var(--tcc)" not in dark_rule.group(0)
+    assert "var(--tcc)" not in light_rule.group(0)
+    assert "var(--green)" in dark_rule.group(0)
+    assert "var(--green)" in light_rule.group(0)
+    # .cw-mark (today's actual reading) legitimately still tracks the card's
+    # current stance colour — this fix must not have swept that one too.
+    mark_rule = re.search(r"\.cw-mark\{[^}]*\}", src)
+    assert mark_rule and "var(--tcc)" in mark_rule.group(0)

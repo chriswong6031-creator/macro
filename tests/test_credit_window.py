@@ -226,6 +226,44 @@ def test_band_width_reads_state_not_just_key():
     assert cw._band_width("rates_vol", "shut") == cw._band_width("rates_vol", "open")
 
 
+def test_choose_change_prefers_bounded_neutral_candidate_over_sentinel_open_shut_candidate(monkeypatch):
+    # MINOR-1 (review repair round 4): `_band_width`'s docstring says a value
+    # deep in an open/shut band "is never chosen as the input closest to
+    # flipping", but the pre-fix `_choose_change` computed
+    # `dist = raw_diff / width` — dividing by the 1.0e6 sentinel makes an
+    # open/shut-origin candidate's distance TINY, the exact opposite of
+    # "never chosen". Verified by exhaustive enumeration that today's 64
+    # reachable (key, state) combinations never actually produce a candidate
+    # SET that mixes a bounded (genuine neutral-band) candidate with a
+    # sentinel (open/shut-origin) one, so the inversion is currently inert —
+    # this test stubs `_next_threshold` / `segment_state` to construct that
+    # mixed set directly, so the ranking contract is pinned even though no
+    # real input shape exercises it today.
+    inputs = [
+        {"key": "spread_range", "value": 50.0, "state": "neutral"},  # bounded: raw 16, width 33 -> dist ~0.48
+        {"key": "rates_vol", "value": 20.0, "state": "open"},        # sentinel: raw 1 (tiny!)
+    ]
+
+    def fake_next_threshold(key, state):
+        if key == "spread_range":
+            return [(66.0, "shut", "up")]
+        if key == "rates_vol":
+            return [(21.0, "neutral", "up")]
+        return []
+
+    def fake_segment_state(states):
+        return ("changed", 2, False)  # always "different from original" -> both candidates valid
+
+    monkeypatch.setattr(cw, "_next_threshold", fake_next_threshold)
+    monkeypatch.setattr(cw, "segment_state", fake_segment_state)
+    change = cw._choose_change(inputs, "orig")
+    assert change is not None
+    # the bounded candidate (spread_range) must win despite its larger RAW
+    # distance (16 vs 1) — the sentinel candidate's tiny raw gap must never
+    # let it jump the queue ahead of a genuine bounded-band candidate.
+    assert change["input"] == "spread_range"
+
+
 def test_next_threshold_open_and_shut_directions():
     # open/shut states have exactly ONE adjacent boundary (back into neutral) —
     # there is nothing beyond the extreme, so these are unchanged by the
@@ -322,6 +360,34 @@ def test_choose_change_finds_open_side_candidate_for_live_hy_shape():
     assert change["to_state"] == "open"
     assert change["segment_to"] == "open"
     assert change["input"] == "spread_drift"  # nearer of the two valid open-side candidates
+
+
+# --------------------------------------------------------------------------- #
+# MAJOR-1 (review repair round 4) — the exact live counterexample measured by
+# the round-4 review: HY = [spread_range=open(10.0), spread_drift=neutral(5.0),
+# rates_vol=open(20.0)]. segment_state(['open','neutral','open']) is 'open'
+# (n_open=2 > n_shut=0). Flipping rates_vol from 'open' to 'neutral' gives
+# ['open','neutral','neutral'] -> n_open=1 -> segment 'neutral', which differs
+# from 'open', so rates_vol is a valid candidate — and it is the nearest one
+# (20 units from the 40 threshold vs. spread_range's 23 units from its 33
+# threshold). The crossing direction is "up" (rates_vol RISING to 40), not
+# "down" — this pins the engine side of the MAJOR-1 fix so the render-side
+# tests in tests/test_ipo.py have a correctly-signed `direction` to render.
+# --------------------------------------------------------------------------- #
+def test_choose_change_rates_vol_up_direction_candidate_for_live_hy_open_shape():
+    inputs = [
+        {"key": "spread_range", "value": 10.0, "state": "open"},
+        {"key": "spread_drift", "value": 5.0, "state": "neutral"},
+        {"key": "rates_vol", "value": 20.0, "state": "open"},
+    ]
+    change = cw._choose_change(inputs, "open")
+    assert change is not None
+    assert change["input"] == "rates_vol"
+    assert change["to_state"] == "neutral"
+    assert change["direction"] == "up"
+    assert change["threshold"] == pytest.approx(40.0)
+    assert change["current"] == pytest.approx(20.0)
+    assert change["segment_to"] == "neutral"
 
 
 # --------------------------------------------------------------------------- #

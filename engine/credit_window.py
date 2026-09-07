@@ -183,10 +183,21 @@ def segment_state(states: list[str]) -> tuple[str, int, bool]:
 def _band_width(key: str, state: str) -> float:
     """Width of the current band, in the input's own units, for change-line
     normalisation. Only the neutral band has a genuine, bounded width; the
-    open/shut bands are unbounded on their outward side, so a value deep
-    inside either is given a sentinel-wide width and is never chosen as the
-    input "closest to flipping" (MAJOR 4 — this must read `state`, and the
-    rates_vol band must use its own MOVE_* constants, not spread_range's)."""
+    open/shut bands are unbounded on their outward side, so a value in either
+    is given the sentinel `_BAND_WIDTH_UNBOUNDED` marker (MAJOR 4 — this must
+    read `state`, and the rates_vol band must use its own MOVE_* constants,
+    not spread_range's).
+
+    MINOR-1 (review repair round 4): this function only reports the marker —
+    `_choose_change` is what turns it into a distance, and it must convert
+    the marker into a LARGE distance (so a sentinel-marked candidate ranks
+    behind any genuine bounded-band candidate — "never chosen as closest to
+    flipping" is a ranking outcome, not a width value), never use it as a
+    divisor. Dividing by 1.0e6 (the pre-fix behaviour) makes the distance
+    TINY instead of large — the exact inversion of the documented intent,
+    even though today's 64 reachable (key, state) combinations never mix a
+    sentinel candidate with a bounded one in the same `_choose_change` call,
+    so the inversion has never yet picked a wrong winner."""
     if state != "neutral":
         return _BAND_WIDTH_UNBOUNDED
     if key == "spread_range":
@@ -262,8 +273,21 @@ def _choose_change(inputs: list[dict], segment: str) -> dict | None:
             trial_segment, _, _ = segment_state(trial_states)
             if trial_segment == segment:
                 continue  # flipping this input alone would not flip the segment
-            width = _band_width(inp["key"], inp["state"]) or 1.0
-            dist = abs(float(inp["value"]) - threshold) / width
+            width = _band_width(inp["key"], inp["state"])
+            raw = abs(float(inp["value"]) - threshold)
+            if width == _BAND_WIDTH_UNBOUNDED:
+                # MINOR-1: an additive penalty, not a divisor — this pushes a
+                # sentinel (open/shut-origin) candidate's distance far above
+                # any genuine bounded-neutral-band candidate's (which is at
+                # most ~1.0 after normalisation below), matching the
+                # docstring's "never chosen as closest to flipping" whenever
+                # a bounded candidate is also on offer. Dividing by the
+                # sentinel (the pre-fix behaviour) did the opposite — it made
+                # the distance tiny, so a sentinel candidate would win a
+                # mixed comparison instead of always losing it.
+                dist = _BAND_WIDTH_UNBOUNDED + raw
+            else:
+                dist = raw / (width or 1.0)
             candidates.append({
                 "dist": dist,
                 "input": inp["key"], "to_state": to_state,

@@ -118,8 +118,22 @@ CW_CHANGE = {
                                "未来一个月利差进一步收窄，读数会翻为开着。"),
     ("rates_vol", "shut"): ("Rates volatility rising further would flip this to shut.",
                             "利率波动进一步上升，读数会翻为关着。"),
-    ("rates_vol", "neutral"): ("Rates volatility easing would flip this to half open.",
-                               "利率波动回落，读数会翻为半开。"),
+    # MAJOR-1 (review repair round 4): ("rates_vol", "neutral") is reachable from
+    # BOTH directions — engine.credit_window._next_threshold emits it from an
+    # "open" input crossing UP (rates_vol rising into the middle band) and from
+    # a "shut" input crossing DOWN (rates_vol falling into the middle band) —
+    # but this dict is keyed on (input, to_state) only, with no direction, so one
+    # sentence has to cover both. The pre-fix text ("easing would flip this to
+    # half open") is only true for the down-direction case; rendered against the
+    # up-direction case (measured live: HY = [spread_range=open, spread_drift=
+    # neutral, rates_vol=open(20.0)], segment "open", nearest crossing is
+    # rates_vol rising to 40 — direction "up") it told users volatility EASING
+    # would flip the read, when the actual crossing is volatility RISING. Fixed
+    # by wording this entry direction-agnostically, the same way the
+    # ("spread_range", "neutral") entry above already is ("moving back toward
+    # the middle" reads true whichever side you approach the band from).
+    ("rates_vol", "neutral"): ("Rates volatility moving back toward the middle of the past year's range would flip this to half open.",
+                               "利率波动回到近一年区间的中段，读数会翻为半开。"),
     ("rates_vol", "open"): ("Rates volatility easing further would flip this to open.",
                             "利率波动进一步回落，读数会翻为开着。"),
 }

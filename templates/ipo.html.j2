@@ -164,8 +164,19 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* DARK — an inset trough milled into the card; the marker carries a restrained bloom */
 .cw-rail{position:relative;height:10px;margin:14px 0 5px;background:var(--bg);
   box-shadow:inset 0 1px 2px color-mix(in srgb,var(--ink) 26%,transparent)}
+/* MINOR-2 (review repair round 4): the band marks a FIXED zone of the rail —
+   0 to seg.rail.easy_pct (the tight/easy end of the 1y range) — the same
+   zone regardless of which state (open/neutral/shut) the card itself is
+   currently in. Painting it from --tcc (the card's own state colour) made a
+   state-invariant region carry state colour: on a "shut" (red) lane the
+   easy zone rendered red — reading as danger — and on an "open" (green)
+   lane it happened to render green. Fixed to a fixed semantic token
+   (--green, "the easy end of the range") so the band's colour never swings
+   with the card's current stance. --tcc stays correct on .cw-mark (today's
+   ACTUAL position, which should track the current stance colour) and
+   .cw-change (the state-scoped change-copy strip). */
 .cw-band{position:absolute;left:0;top:0;bottom:0;
-  background:color-mix(in srgb,var(--tcc) 22%,transparent)}
+  background:color-mix(in srgb,var(--green) 22%,transparent)}
 .cw-mark{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink);
   box-shadow:0 0 7px color-mix(in srgb,var(--tcc) 60%,transparent)}
 .cw-rail.is-null{background:var(--card);box-shadow:inset 0 0 0 1px var(--grid);opacity:.55}
@@ -192,8 +203,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* LIGHT — research workspace: the trough becomes a ruled measure, the bloom becomes structure */
 html[data-theme="light"] .cw-rail{background:var(--card);box-shadow:none;
   border:1px solid color-mix(in srgb,var(--ink) 16%,transparent)}
-html[data-theme="light"] .cw-band{background:color-mix(in srgb,var(--tcc) 8%,transparent);
-  border-right:1px solid color-mix(in srgb,var(--tcc) 45%,transparent)}
+html[data-theme="light"] .cw-band{background:color-mix(in srgb,var(--green) 8%,transparent);
+  border-right:1px solid color-mix(in srgb,var(--green) 45%,transparent)}
 html[data-theme="light"] .cw-mark{box-shadow:0 1px 2px color-mix(in srgb,var(--ink) 30%,transparent)}
 html[data-theme="light"] .cw-mark::after{content:'';position:absolute;left:-3px;top:-6px;
   width:8px;height:5px;background:var(--ink);clip-path:polygon(50% 100%,0 0,100% 0)}
