@@ -22,8 +22,8 @@
   },
   "price_through": "2026-09-04",
   "curated_n": 3142,
-  "curated_overlap_n": 2389,
-  "scan_n": 1506,
+  "curated_overlap_n": 2388,
+  "scan_n": 1507,
   "store_manifest": {
    "n_tickers": 21495,
    "latest_date": "2026-09-04",
@@ -37,9 +37,9 @@
  "summary": {
   "store_n": 20966,
   "floored_n": 3895,
-  "curated_overlap_n": 2389,
-  "scan_n": 1506,
-  "panel_n": 1506,
+  "curated_overlap_n": 2388,
+  "scan_n": 1507,
+  "panel_n": 1507,
   "runners_n": 150,
   "runners_eligible_today_n": 4,
   "runners_never_eligible_n": 21,
