@@ -3489,6 +3489,123 @@ _SS_GATES: dict[str, dict[str, str]] = {
         "clear_en": "Publication rights cover this surface, or an open source replaces it.",
         "clear_zh": "取得该页面的发布授权，或改用可公开的来源。",
     },
+    # Chairman plain-language law (2026-09-06): this code has no owning
+    # "source" to answer, so it needs its own copy rather than the generic
+    # fallback clear_en/clear_zh above — and it needs a ZH entry at all,
+    # because the un-mapped path (`_ss_prettify`) puts the SAME English words
+    # in both slots, which is not a translation.
+    "COMPILER_FAILURE": {
+        "en": "Read could not be built", "zh": "读数无法生成",
+        "clear_en": "This read compiles again on the next scheduled cycle.",
+        "clear_zh": "该读数将在下一次计划周期重新生成。",
+    },
+    # Chairman plain-language law (2026-09-06), macro#6920 round-2 MAJOR #2:
+    # the M1 failure shell (owner-identity batch never ran this cycle) sets
+    # this exact refusal code; it needs the same real ZH sentence, not the
+    # English-into-ZH `_ss_prettify` fallback.
+    "IDENTITY_UNRESOLVED": {
+        "en": "Identity could not be re-proven this cycle", "zh": "本周期未能重新确认身份",
+        "clear_en": "The owner identity batch runs again on the next scheduled cycle.",
+        "clear_zh": "来源身份批处理将在下一次计划周期重新运行。",
+    },
+    # Chairman plain-language law (2026-09-06), macro#6920 round-3 review
+    # MAJOR-1: `engine/security_state.py` emits eight distinct refusal codes
+    # on its compile path (`identity_proof.refusals`); the two above were the
+    # only ones with house copy, so the other six fell through to
+    # `_ss_prettify(code)` — English words in the ZH slot, the exact
+    # violation this table exists to prevent. These six close that set (the
+    # code-coverage test below asserts nothing is left to prettify).
+    "SECURITY_SUPERSEDED": {
+        "en": "This security's reference record has been superseded",
+        "zh": "该证券的参考记录已被替代",
+        "clear_en": "The reference record for this security is active again, with no successor on file.",
+        "clear_zh": "该证券的参考记录已恢复为有效状态，且无替代记录。",
+    },
+    "ISSUER_GROUP_AMBIGUOUS": {
+        "en": "The issuer's security group did not resolve to one exact match",
+        "zh": "发行人的证券分组未能解析为唯一匹配",
+        "clear_en": "The issuer's reference record narrows to exactly one active match.",
+        "clear_zh": "发行人的参考记录收敛为唯一有效匹配。",
+    },
+    "LISTING_KEY_INCOHERENT": {
+        "en": "The listing key does not resolve back to this exact security",
+        "zh": "上市代码无法解析回该证券本身",
+        "clear_en": "The listing key round-trips back to this exact security again.",
+        "clear_zh": "上市代码可再次完整解析回该证券本身。",
+    },
+    "IDENTITY_CORRECTED": {
+        "en": "This identity was corrected after an earlier read",
+        "zh": "该身份信息在此前的读数之后被更正过",
+        "clear_en": "No pending correction record remains open for this identity.",
+        "clear_zh": "该身份已无待处理的更正记录。",
+    },
+    "SUBJECT_NATIVE_PARITY_FAILED": {
+        "en": "The source's own identity fields do not match this security",
+        "zh": "来源自身的身份字段与该证券不一致",
+        "clear_en": "The source's own identity fields agree with this security again.",
+        "clear_zh": "来源自身的身份字段与该证券重新一致。",
+    },
+    "IDENTITY_BRIDGE_DISAGREEMENT": {
+        "en": "Sources disagree on this security's identity",
+        "zh": "各来源对该证券的身份存在分歧",
+        "clear_en": "Every source agrees on this identity again.",
+        "clear_zh": "各来源对该身份重新达成一致。",
+    },
+}
+
+# Chairman plain-language law (2026-09-06), macro#6920 round-3 MAJOR #2:
+# `identity_proof.disclosures` is stored engine-side as "CODE: technical
+# description" — a machine-code prefix on free text, not a code alone. House
+# copy leads in both languages; an unmapped code (defensive — every code the
+# engine emits today is listed here) falls back through `_ss_prettify`, same
+# convention as `_SS_GATES` above, rather than dropping the disclosure.
+_SS_DISCLOSURES: dict[str, dict[str, str]] = {
+    "CIK_LEG_OWNER_BACKED_CURRENT_ONLY": {
+        "en": "The issuer's registration number reflects only its current owner of record, not its full history.",
+        "zh": "发行人的注册编号仅反映当前登记的所有者，不含完整历史沿革。",
+    },
+    "OWNER_COMPOSED_SUBJECT_CURRENT_ONLY": {
+        "en": "This security's identity was built from the current reference data, read at one point in time.",
+        "zh": "该证券的身份信息基于某一时点读取的当前参考数据构建。",
+    },
+    "ISSUERMASTER_CURRENT_IDENTITY_ONLY": {
+        "en": "No dated ownership history was checked; this proof covers current identity only.",
+        "zh": "未核对带日期的历史所有权记录；本证明仅覆盖当前身份。",
+    },
+    "ALIAS_EPOCH_VALID_FROM": {
+        "en": "The starting date used to cross-check this identity is a placeholder floor, not confirmed evidence.",
+        "zh": "用于交叉核对该身份的起始日期为占位下限，并非已确认的证据。",
+    },
+    "PINNED_IDENTITY_NOT_OWNER_READ_THIS_CYCLE": {
+        "en": "This cycle used a frozen reference mapping for this ticker; the identity sources were not re-read.",
+        "zh": "本周期使用该证券的冻结参考映射；未重新读取身份来源。",
+    },
+    "IDENTITY_BRIDGE_UNRESOLVED_THIS_CYCLE": {
+        "en": "This identity could not be re-confirmed this cycle; treat it as unresolved, not confirmed.",
+        "zh": "本周期未能重新确认该身份；请视为未解析，而非已确认。",
+    },
+}
+
+# Chairman plain-language law (2026-09-06), macro#6920 round-4 review MAJOR-2:
+# `identity_proof.legs[].description` is the one-line gate sentence printed
+# under each identity-check header (`.ss-chk-d`) — it was passed straight
+# through from the engine (`lg.desc`) with no `t()` call, so a NEW string
+# added to `engine/security_state.py`'s M1 failure shell (owner-identity
+# batch never ran this cycle) rendered in English even on the ZH page, and
+# was the LARGEST text in that block. Keyed on (check, code) rather than the
+# literal sentence, because the same `check` id ("R8") carries several
+# different descriptions depending on `code` (round-2's `_leg_receipt` calls
+# in `engine/security_state.py`) — a code-only key would collide. Only the
+# M1-shell entry is listed: every other leg description in this file predates
+# this PR and is the pre-existing, separately-tracked MINOR-2 systemic issue,
+# not something this PR's own new text may hide behind.
+_SS_LEG_DESC: dict[tuple[str, str], dict[str, str]] = {
+    ("R8", "IDENTITY_UNRESOLVED"): {
+        "en": "This cycle's owner-identity batch was unavailable; this subject is the frozen "
+        "pinned-allowlist mapping for this ticker, not a live owner read.",
+        "zh": "本周期所有者身份批处理不可用；本证券主体为该股票代码的冻结准入映射，"
+        "并非实时读取的所有者身份数据。",
+    },
 }
 
 
@@ -3635,6 +3752,49 @@ def _ss_prettify(code: str) -> str:
     """`EVENT_FRESHNESS_WINDOW` -> `Event freshness window`. Never blank."""
     words = re.sub(r"[^0-9A-Za-z]+", " ", str(code or "")).strip().lower()
     return (words[:1].upper() + words[1:]) if words else "Check not cleared"
+
+
+def _ss_split_disclosure(raw: str) -> tuple[str, str]:
+    """Split an engine disclosure string "CODE: description" into (code, description).
+
+    A disclosure with no machine-code prefix (defensive — every disclosure the
+    engine emits today carries one) returns `("", raw)` so the raw text still
+    renders as the sentence rather than being silently dropped.
+    """
+    m = re.match(r"^([A-Z][A-Z0-9_]*):\s*(.*)$", raw, re.DOTALL)
+    return (m.group(1), m.group(2)) if m else ("", raw)
+
+
+def _ss_disclosure_rows(raw_list: Any) -> list[dict[str, str]]:
+    """Normalise `identity_proof.disclosures` into printable `{code, en, zh}` rows.
+
+    See `_ss_split_disclosure` and `_SS_DISCLOSURES` (macro#6920 round-3
+    MAJOR #2) — never returns the raw "CODE: description" string as-is.
+
+    macro#6920 round-4 review MAJOR-1 (ruling text: "the `_ss_prettify`
+    fallback stays only as a last resort that ALSO keeps the engine's
+    description text"): for a code with NO `_SS_DISCLOSURES` house-copy
+    entry, the engine's own description text is the fallback — never a
+    slug-derived pseudo-word that throws the description away. `_ss_prettify`
+    is reached only when there is no description text at all (defensive —
+    every disclosure the engine emits today carries one). Both slots get the
+    same text in this last-resort case (there is no house translation to
+    reach for), which is the pre-existing, separately-tracked MINOR-2
+    EN-into-ZH duplication — not new here, and not what this fix closes.
+    """
+    rows: list[dict[str, str]] = []
+    for raw_d in (_clean_str(e) for e in (raw_list or [])):
+        if not raw_d:
+            continue
+        d_code, d_text = _ss_split_disclosure(raw_d)
+        house = _SS_DISCLOSURES.get(d_code) if d_code else None
+        if house:
+            d_en, d_zh = house["en"], house["zh"]
+        else:
+            fallback = d_text.strip() if d_text and d_text.strip() else _ss_prettify(d_code or d_text)
+            d_en, d_zh = fallback, fallback
+        rows.append({"code": d_code, "en": d_en, "zh": d_zh})
+    return rows
 
 
 def _ss_value(v: Any) -> str:
@@ -4102,9 +4262,19 @@ def build_security_state(blob: dict | None) -> dict | None:
             res = _SS_RESULT.get(res_code, {"tone": "off",
                                             "en": _ss_prettify(res_code) or "not stated",
                                             "zh": _ss_prettify(res_code) or "未说明"})
+            leg_check = _clean_str(lg.get("check") or lg.get("leg") or lg.get("name") or "")
+            leg_code = _clean_str(lg.get("code") or "")
+            desc_raw = _clean_str(lg.get("description") or "")
+            # macro#6920 round-4 review MAJOR-2: house-copy this leg's gate
+            # sentence when a mapping exists (see `_SS_LEG_DESC`); otherwise
+            # the raw engine description passes through unchanged (same
+            # pre-existing behaviour as every other leg, MINOR-2).
+            desc_house = _SS_LEG_DESC.get((leg_check, leg_code)) if leg_code else None
+            desc_en, desc_zh = (desc_house["en"], desc_house["zh"]) if desc_house else (desc_raw, desc_raw)
             id_legs.append({
-                "check": _clean_str(lg.get("check") or lg.get("leg") or lg.get("name") or ""),
-                "desc": _clean_str(lg.get("description") or ""),
+                "check": leg_check,
+                "desc_en": desc_en,
+                "desc_zh": desc_zh,
                 "artifact": _clean_str(lg.get("artifact") or ""),
                 "reader": _clean_str(lg.get("reader") or ""),
                 "reads": _ss_field_rows(lg.get("values_read")),
@@ -4112,7 +4282,7 @@ def build_security_state(blob: dict | None) -> dict | None:
                 "result_en": res["en"], "result_zh": res["zh"],
                 "tone": res["tone"],
                 "ok": res_code == "PASS",
-                "code": _clean_str(lg.get("code") or ""),
+                "code": leg_code,
             })
 
         # The tally under the grid is the grid's own legend: same rail shapes,
@@ -4185,8 +4355,29 @@ def build_security_state(blob: dict | None) -> dict | None:
                 "why_en": idc["why_en"], "why_zh": idc["why_zh"],
                 "legs": id_legs,
                 "equalities": [_clean_str(e) for e in (ident_raw.get("equalities") or []) if _clean_str(e)],
-                "refusals": [_clean_str(e) for e in (ident_raw.get("refusals") or []) if _clean_str(e)],
-                "disclosures": [_clean_str(e) for e in (ident_raw.get("disclosures") or []) if _clean_str(e)],
+                # Chairman plain-language law (2026-09-06): a refusal is a
+                # machine code (`COMPILER_FAILURE`, `IDENTITY_UNRESOLVED`, …)
+                # and must never render as bare English prose duplicated into
+                # the ZH slot — house copy from `_SS_GATES` leads, the raw
+                # code stays only as the receipt (`code`), never the sentence
+                # itself (macro#6920 round-2 MAJOR #2).
+                "refusals": [
+                    {
+                        "code": code,
+                        "en": (_SS_GATES.get(code) or {}).get("en") or _ss_prettify(code),
+                        "zh": (_SS_GATES.get(code) or {}).get("zh") or _ss_prettify(code),
+                    }
+                    for code in (_clean_str(e) for e in (ident_raw.get("refusals") or []))
+                    if code
+                ],
+                # Chairman plain-language law (2026-09-06), macro#6920
+                # round-3 MAJOR #2: a disclosure is stored engine-side as
+                # "CODE: technical description" — the code must never render
+                # as bare prose, and the raw English description must never
+                # render into the ZH slot untranslated. House copy
+                # (`_SS_DISCLOSURES`) leads in both languages; the raw code
+                # stays only in the receipt chip (`code`), never the sentence.
+                "disclosures": _ss_disclosure_rows(ident_raw.get("disclosures")),
             },
             "coverage_state": _clean_str(cov_block.get("overall_state") or ""),
             # Availability and non-blocking are two different questions and the

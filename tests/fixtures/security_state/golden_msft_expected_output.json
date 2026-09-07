@@ -1,16 +1,16 @@
 {
   "schema": "security_state.v1",
   "version": "1.0.0",
-  "security_id": "SEC:US-XNAS-AAPL",
-  "issuer_id": "ISS:US-XNAS-AAPL",
-  "listing_key": "US-XNAS-AAPL",
-  "ticker_display": "AAPL",
-  "generated_at": "2026-08-23T12:00:00Z",
-  "content_sha256": "f859d495012f3768372797ccb9bad8d6893bdb16adf2cff774ca6ec648ba527e",
+  "security_id": "SEC:US-XNAS-MSFT",
+  "issuer_id": "ISS:US-XNAS-MSFT",
+  "listing_key": "US-XNAS-MSFT",
+  "ticker_display": "MSFT",
+  "generated_at": "2026-09-04T12:00:00Z",
+  "content_sha256": "3679ddce4849af535f6431fa88e741c7a34b85e8aadb8d89fbb2655f7c5f5e66",
   "as_of": {
-    "market_at": "2026-08-23",
+    "market_at": "2026-09-04",
     "source_frontier_at": "2026-07-30T20:30:28Z",
-    "state_compiled_at": "2026-08-23T12:00:00Z"
+    "state_compiled_at": "2026-09-04T12:00:00Z"
   },
   "authority": {
     "class": "context_only",
@@ -71,7 +71,7 @@
         "values_read": [
           {
             "field": "issuer_id",
-            "value": "ISS:US-XNAS-AAPL"
+            "value": "ISS:US-XNAS-MSFT"
           },
           {
             "field": "issuer_state",
@@ -89,7 +89,7 @@
         "values_read": [
           {
             "field": "cik",
-            "value": "0000320193"
+            "value": "0000789019"
           },
           {
             "field": "matching_row_count",
@@ -97,7 +97,7 @@
           },
           {
             "field": "issuer_id",
-            "value": "ISS:US-XNAS-AAPL"
+            "value": "ISS:US-XNAS-MSFT"
           },
           {
             "field": "status",
@@ -109,13 +109,13 @@
       },
       {
         "check": "R4",
-        "description": "the owner-composed issuer's CURRENT security set is exactly {SEC:US-XNAS-AAPL}",
+        "description": "the owner-composed issuer's CURRENT security set is exactly {SEC:US-XNAS-MSFT}",
         "artifact": "data/reference/security_master.parquet",
         "reader": "scripts/build_stock_library.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "security_set",
-            "value": "SEC:US-XNAS-AAPL"
+            "value": "SEC:US-XNAS-MSFT"
           },
           {
             "field": "count",
@@ -133,11 +133,11 @@
         "values_read": [
           {
             "field": "listing_key",
-            "value": "US-XNAS-AAPL"
+            "value": "US-XNAS-MSFT"
           },
           {
             "field": "derived_security_id",
-            "value": "SEC:US-XNAS-AAPL"
+            "value": "SEC:US-XNAS-MSFT"
           }
         ],
         "result": "pass",
@@ -173,15 +173,15 @@
           },
           {
             "field": "event_id",
-            "value": "evt_cik0000320193_2026q3_results"
+            "value": "evt_cik0000789019_2026q4_results"
           },
           {
             "field": "company_id",
-            "value": "cik:0000320193"
+            "value": "cik:0000789019"
           },
           {
             "field": "filing_cik",
-            "value": "0000320193"
+            "value": "0000789019"
           }
         ],
         "result": "pass",
@@ -199,15 +199,15 @@
           },
           {
             "field": "master_issuer_cik",
-            "value": "0000320193"
+            "value": "0000789019"
           },
           {
             "field": "subject_issuer_cik",
-            "value": "0000320193"
+            "value": "0000789019"
           },
           {
             "field": "workspace_native_cik",
-            "value": "0000320193"
+            "value": "0000789019"
           }
         ],
         "result": "pass",
@@ -232,9 +232,9 @@
       {
         "check": "R2",
         "left": "row.issuer_id",
-        "left_value": "ISS:US-XNAS-AAPL",
+        "left_value": "ISS:US-XNAS-MSFT",
         "right": "expected_issuer_id",
-        "right_value": "ISS:US-XNAS-AAPL",
+        "right_value": "ISS:US-XNAS-MSFT",
         "equal": true
       },
       {
@@ -248,17 +248,17 @@
       {
         "check": "R4",
         "left": "issuer.security_set",
-        "left_value": "SEC:US-XNAS-AAPL",
+        "left_value": "SEC:US-XNAS-MSFT",
         "right": "expected_security_set",
-        "right_value": "SEC:US-XNAS-AAPL",
+        "right_value": "SEC:US-XNAS-MSFT",
         "equal": true
       },
       {
         "check": "R5",
         "left": "parse_listing_key(row.listing_key)->security_id",
-        "left_value": "SEC:US-XNAS-AAPL",
+        "left_value": "SEC:US-XNAS-MSFT",
         "right": "row.security_id",
-        "right_value": "SEC:US-XNAS-AAPL",
+        "right_value": "SEC:US-XNAS-MSFT",
         "equal": true
       },
       {
@@ -272,33 +272,33 @@
       {
         "check": "R7b",
         "left": "workspace.issuer.company_id",
-        "left_value": "cik:0000320193",
+        "left_value": "cik:0000789019",
         "right": "expected_company_id",
-        "right_value": "cik:0000320193",
+        "right_value": "cik:0000789019",
         "equal": true
       },
       {
         "check": "R7c",
         "left": "workspace.completeness.filing.filing_key.cik",
-        "left_value": "0000320193",
+        "left_value": "0000789019",
         "right": "expected_cik",
-        "right_value": "0000320193",
+        "right_value": "0000789019",
         "equal": true
       },
       {
         "check": "R8",
         "left": "master.issuer_cik",
-        "left_value": "0000320193",
+        "left_value": "0000789019",
         "right": "owner_subject.issuer_cik",
-        "right_value": "0000320193",
+        "right_value": "0000789019",
         "equal": true
       },
       {
         "check": "R9",
         "left": "workspace primary alias (mic,ticker)",
-        "left_value": "XNAS:AAPL",
+        "left_value": "XNAS:MSFT",
         "right": "owner subject current alias (listing mic,ticker_display)",
-        "right_value": "XNAS:AAPL",
+        "right_value": "XNAS:MSFT",
         "equal": true
       }
     ],
@@ -336,7 +336,7 @@
       "values_read": [
         {
           "field": "tech.chg_1d",
-          "value": 0.5
+          "value": -0.25
         }
       ],
       "summary": {
@@ -346,16 +346,16 @@
       "coverage_state": "AVAILABLE"
     },
     "change": {
-      "economic_episode_ref": "evt_cik0000320193_2026q3_results",
+      "economic_episode_ref": "evt_cik0000789019_2026q4_results",
       "event_refs": [
-        "evt_cik0000320193_2026q3_results"
+        "evt_cik0000789019_2026q4_results"
       ],
-      "generation_id": "6d56c84a3ac23b8954e59ee7",
+      "generation_id": "789019789019789019789019",
       "source_available_at": "2026-07-30T20:30:28Z",
       "observed_at": "2026-07-30T20:30:28Z",
       "summary": {
-        "en": "Q3 2026 results workspace is complete: 3 fact(s), 1 delta(s), 2 guidance item(s).",
-        "zh": "Q3 2026 财报工作区状态为 complete：3 项事实、1 项变动、2 项指引。"
+        "en": "Q4 2026 results workspace is complete: 2 fact(s), 1 delta(s), 1 guidance item(s).",
+        "zh": "Q4 2026 财报工作区状态为 complete：2 项事实、1 项变动、1 项指引。"
       },
       "correction_state": "none",
       "coverage_state": "AVAILABLE",
@@ -391,9 +391,9 @@
     },
     "risk": {
       "risk_refs": [
-        "Valuation is rich relative to trailing five-year multiples.",
-        "alerts_n_recent:2",
-        "alerts_n_total:10"
+        "Cloud growth remains the key operating sensitivity.",
+        "alerts_n_recent:1",
+        "alerts_n_total:4"
       ],
       "failed_gates": [],
       "strongest_unresolved_fact": {
@@ -409,8 +409,8 @@
       "next_observables": [
         {
           "kind": "ESTIMATED_WINDOW",
-          "window_start": "2026-09-12",
-          "window_end": "2026-10-10",
+          "window_start": "2026-09-15",
+          "window_end": "2026-10-13",
           "authoritative": false,
           "basis": "deterministic Mastermind estimate: fiscal_period.calendar_end + ~1 fiscal quarter; no canonical earnings-calendar owner exists"
         }
@@ -425,22 +425,22 @@
     },
     "evidence": {
       "evidence_block_refs": [
-        "ebl_5b86ed829a65b95f6f82bc5a856f8f74b6af2825013681b8fe2ed21b72924c97"
+        "ebl_f4b78c17b433660bb5d2d37d2b05775a134d4b9ea4a306ad91a51b934b64610b"
       ],
-      "recipe_id": "erp_5687f42d2acac8826110a5952a4d0ba0d662453577258fe8145214ab98b90d19",
+      "recipe_id": "erp_0ffb30689d2f33c7b3da192d86c0700c76ee0269c38fb6454138d0316bb5803c",
       "compilation": {
         "schema": "evidence_foundation.recipe_compilation_receipt.v1",
         "version": "1.0.0",
-        "recipe_id": "erp_5687f42d2acac8826110a5952a4d0ba0d662453577258fe8145214ab98b90d19",
+        "recipe_id": "erp_0ffb30689d2f33c7b3da192d86c0700c76ee0269c38fb6454138d0316bb5803c",
         "consumer": {
           "workstream": "WS:MARKET-OS",
-          "job": "build security_state.v1 for AAPL",
+          "job": "build security_state.v1 for MSFT",
           "output_contract": "security_state.v1"
         },
         "state": "partial",
         "dominant_degradation": "unknown",
         "block_ids": [
-          "ebl_5b86ed829a65b95f6f82bc5a856f8f74b6af2825013681b8fe2ed21b72924c97"
+          "ebl_f4b78c17b433660bb5d2d37d2b05775a134d4b9ea4a306ad91a51b934b64610b"
         ],
         "missing_required_blocks": [],
         "missing_optional_blocks": [],

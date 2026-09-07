@@ -1,0 +1,252 @@
+{
+  "schema": "mastermind.p0_evidence.v2",
+  "axes": {
+    "access": [
+      "anonymous"
+    ],
+    "force_states": [],
+    "locales": [
+      "en",
+      "zh"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "viewports": {
+      "desktop": [
+        1440,
+        900
+      ],
+      "mobile": [
+        390,
+        844
+      ]
+    }
+  },
+  "excluded": [],
+  "generated_at": "2026-09-07T01:21:51Z",
+  "honesty": {
+    "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
+    "authority": "this harness measures and screenshots; it scores, ranks, and judges nothing",
+    "capture_method": "NOT a live `/stocks/MSFT.html` site route capture (this PR is stacked on unmerged #6831 and has never been rendered by the real build pipeline into `site/`). Instead: the real `engine.security_state.compile_security_state_failure` (owner_read_completed=False, the M1 shell) and the real committed golden MSFT fixture (`tests/fixtures/security_state/golden_msft_expected_output.json`) were each passed through the real `scripts.build_ticker_pages.build_security_state()` projection and rendered through the real `templates/ticker.html.j2` (Jinja, `ChainableUndefined` for the page vars this isolated capture does not supply). The rendered page's \"Identity checks\" `.dpanel` — verified by walking the parsed tree's ancestor chain to actually live inside the `#security-state` panel's own evidence dialog (`#dlg-ss-evidence` -> `.dsr-dlg-body`), not directly inside the `#security-state` `<section>` itself — was extracted with BeautifulSoup, together with the template's own inline `<style>` block and `templates/theme.css`, into a standalone harness page with no other page chrome (nav, other panels, the dialog's own open/close JS). Both the golden-MSFT panel (disclosures line only, identity PROVEN, no refusals) and the M1-shell panel (both the refusals AND disclosures lines) are stacked on one harness page, so a single capture proves every changed line at once: the round-4-review MAJOR-2 leg-description house copy, the round-4-review MAJOR-3 `.dfoot .c` chip redesign, and the round-3 MAJOR-1 chip scoping.",
+    "gaps": "states that were not captured are recorded with a reason; nothing is inferred for them",
+    "light_theme_judgment": "Judged as a design, not a token swap: light renders a white/near-white cool canvas (`--bg`/`--card` light tokens already defined in `templates/theme.css` for this page's other components), hairline `1px` dividers between R1..R9 receipts, and dark ink text — a materially different surface from dark's luminance-depth panel, per `research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md`'s dark=command-center / light=research-workspace split. This round's diff replaces the round-3 `.dfoot .c` no-op (`color:var(--muted)`, identical to its own parent's color) with a real bordered pill (`border:1px solid var(--hair)`, `background:color-mix(in srgb,var(--muted) 12%,transparent)`) — the same token family and `border-radius:999px` convention as the estate's other chips (`.ci-tag`, `.ss-chip`, `.schip`), never a new palette — and gives each refusal/disclosure its own line instead of one run-on paragraph. These 8 captures are the evidence that both changes read correctly as a chip in BOTH themes, not an assertion that they do.",
+    "source_hashes": "sha256(templates/ticker.html.j2)=7533efc24e0a205d..6a64159e (changed this round: .dfoot .c chip CSS + lg.desc_en/desc_zh template wiring), sha256(templates/theme.css)=f41f9a211e2a7404..5a1a21d6 (unchanged by this PR — matches the round-3/round-4 manifest's own recorded hash). `scripts/build_ticker_pages.py`'s `_SS_LEG_DESC` (new this round) supplies the M1-shell leg's house-copy description; `_SS_GATES`/`_SS_DISCLOSURES` for the codes rendered here (`IDENTITY_UNRESOLVED` and the four M1 disclosure codes) are unchanged by this round."
+  },
+  "outcome": "captured",
+  "pages": [
+    {
+      "console_errors": [
+        {
+          "source_url": "file harness (relative @import)",
+          "text": "Failed to load resource: net::ERR_FILE_NOT_FOUND — theme.css's `@import url(\"product-nav-icons.css?v=...\")` 404s under the standalone file:// harness (no other page chrome was included by design); it supplies an unrelated icon font used nowhere in the Identity checks panel and does not affect this evidence"
+        }
+      ],
+      "failed_responses": [],
+      "gaps": [
+        {
+          "captured": false,
+          "dimension": "access",
+          "value": "free",
+          "reason": "this panel carries no premium gate; access axis is not applicable to an isolated component harness"
+        },
+        {
+          "captured": false,
+          "dimension": "route",
+          "value": "live /stocks/MSFT.html",
+          "reason": "PR is stacked on unmerged #6831; MSFT has never been rendered by the real pipeline into site/ — see honesty.capture_method"
+        },
+        {
+          "captured": false,
+          "dimension": "layout",
+          "value": "page chrome (nav, container gutter)",
+          "reason": "round-4 review MINOR-3: the harness strips all page chrome by design (see honesty.capture_method), so the 390px mobile captures show the panel's internal wrapping only, flush to the viewport edge with no page-container gutter — they do not prove composition on the real `/stocks/MSFT.html` mobile layout, only on this isolated panel"
+        }
+      ],
+      "metrics": {
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "dark",
+          "viewport": "desktop"
+        },
+        "panel_count": 2,
+        "note": "panel_count=2: the golden-MSFT (disclosures-only) and M1-shell (refusals+disclosures) Identity checks panels stacked on one harness page"
+      },
+      "page_id": "macro:security_state_identity_checks_panel",
+      "registry_route": null,
+      "route": "isolated component harness (not a live site route — see honesty.capture_method)",
+      "route_kind": "component_harness",
+      "states": [
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 638191,
+          "captured": true,
+          "file": "363508ec535c6a6b.png",
+          "force_state": null,
+          "height": 2826,
+          "locale": "en",
+          "sha256": "363508ec535c6a6bfbfd3f7a58543fe86f084af31329ee04441641d5c908e996",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440,
+          "console_error_count": 1
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 510197,
+          "captured": true,
+          "file": "06579f341d9126dc.png",
+          "force_state": null,
+          "height": 3634,
+          "locale": "en",
+          "sha256": "06579f341d9126dcf8cd29d02966c7a53c4db3de762cfc825b92f58b978cc29a",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390,
+          "console_error_count": 1
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 652672,
+          "captured": true,
+          "file": "03129e3d298068df.png",
+          "force_state": null,
+          "height": 2661,
+          "locale": "zh",
+          "sha256": "03129e3d298068df860c5b109cd2135d44ea971dd8f0e63e13a1e10d3df97516",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440,
+          "console_error_count": 1
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 526526,
+          "captured": true,
+          "file": "24d45d8150d6e238.png",
+          "force_state": null,
+          "height": 3608,
+          "locale": "zh",
+          "sha256": "24d45d8150d6e238c1e45313a9a48daf364139e573654b1d51d053ede19158da",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390,
+          "console_error_count": 1
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 616428,
+          "captured": true,
+          "file": "55f1c89d66b21d55.png",
+          "force_state": null,
+          "height": 2826,
+          "locale": "en",
+          "sha256": "55f1c89d66b21d55a567bde27b49b2a5278353414969db90536523fb2084a6a6",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440,
+          "console_error_count": 1
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 500011,
+          "captured": true,
+          "file": "c1465f81b5d78bbb.png",
+          "force_state": null,
+          "height": 3634,
+          "locale": "en",
+          "sha256": "c1465f81b5d78bbb0fcfe29648b76ae81167acc22f79af26cf09b770767b3430",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390,
+          "console_error_count": 1
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 629976,
+          "captured": true,
+          "file": "88ebc1f7bd8c8652.png",
+          "force_state": null,
+          "height": 2661,
+          "locale": "zh",
+          "sha256": "88ebc1f7bd8c86524cf5e9649604f7ae41ad06b6fe23f3607141885f5119f3ce",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440,
+          "console_error_count": 1
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 516211,
+          "captured": true,
+          "file": "f49fc7c0cf50989f.png",
+          "force_state": null,
+          "height": 3608,
+          "locale": "zh",
+          "sha256": "f49fc7c0cf50989f0d3a8532e34dc3fe88961ae66390253b6e009330cdc40da1",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390,
+          "console_error_count": 1
+        }
+      ]
+    }
+  ],
+  "selection": {
+    "explicit_routes": [],
+    "mode": "isolated_component_harness",
+    "note": "capture targets the Identity checks .dpanel section extracted from templates/ticker.html.j2, not a page registry route",
+    "registry": null,
+    "selected": 1
+  },
+  "target": {
+    "kind": "standalone_harness_html",
+    "resolved_gitdir_or_none": null,
+    "resolved_sha_or_none": null,
+    "site_dir": null
+  },
+  "tool": {
+    "module_ref": "ad hoc capture for macro#6920 round-4 review MAJOR-2/MAJOR-3 (not scripts/capture_page_evidence.py — that tool serves live registry routes from a built site/ directory; this PR has no rendered site/stocks/MSFT.html to serve)",
+    "driver": "playwright.sync_api (chromium), same engine scripts/capture_page_evidence.py uses",
+    "user_agent": "chromium (playwright default)"
+  },
+  "totals": {
+    "pages": 1,
+    "states_attempted": 8,
+    "states_captured": 8
+  }
+}
