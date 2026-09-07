@@ -1203,6 +1203,10 @@ jobs:
           R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
         run: python -m scripts.compile_capital_structure_document_terms
       - name: compile capital-structure covenant terms (B-F09-5, source-first slice)
+        # main() never propagates an exception: on ANY producer error it writes a
+        # typed covenant_extraction:{state:failed, reason} marker (read by the
+        # health gate immediately below) and exits 0 -- a producer bug may never
+        # fail the fail-closed health gate itself (F13 alarm-bus law).
         env:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           R2_CAPITAL_STRUCTURE_ENDPOINT: ${{ secrets.R2_CAPITAL_STRUCTURE_ENDPOINT }}

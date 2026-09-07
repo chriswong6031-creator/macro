@@ -286,8 +286,13 @@
           "type": "string",
           "enum": [
             "covered",
-            "uncovered"
+            "uncovered",
+            "failed"
           ]
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 500
         }
       }
     }

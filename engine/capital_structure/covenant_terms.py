@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from datetime import date, datetime
 from typing import Any, Mapping, MutableMapping, Sequence
 
 COVENANT_TERM_SCHEMA = "capital_structure.covenant_term_observation.v1"
@@ -82,15 +83,42 @@ _TERM_PATTERNS: dict[str, re.Pattern] = {
 }
 
 # Header phrase used to detect a STEPPED SCHEDULE (multiple grid rows) for the
-# same term name. A schedule has no single "the" value — the filing states a
-# measurement-period grid, not one ratio — so it is never picked (Blocker 3):
-# it is refused as "ambiguous" (an absent value, never an inferred/expired one).
+# same term name. Stepped schedules are what real credit agreements actually
+# state (Section 7.11-style "Measurement Period Ending" grids) -- refusing
+# them made the producer useless on real filings. A schedule is therefore
+# extracted as a "direct" observation whose value carries the FULL grid plus
+# the CURRENT step (the row whose start date is on/most-recently-before the
+# filing's own as-of date) as the headline ratio. Only a grid this code finds
+# no dates in at all falls back to "ambiguous" / stepped_schedule_no_measurement_period
+# (an absent value, never an inferred/expired one) -- see _parse_schedule_rows.
 _TERM_HEADERS: dict[str, str] = {
     "maximum_total_net_leverage_ratio": "Maximum Consolidated Total Net Leverage Ratio",
     "minimum_interest_coverage_ratio": "Minimum Consolidated Interest Coverage Ratio",
 }
-_SCHEDULE_WINDOW = 900
+_SCHEDULE_WINDOW = 1200
 _GRID_VALUE_RE = re.compile(r"\d\.\d{2} to 1\.00")
+
+_DATE_TEXT = r"[A-Z][a-z]+ \d{1,2}, \d{4}"
+_SCHEDULE_ROW_RE = re.compile(
+    rf"({_DATE_TEXT}(?:\s+through and including\s+{_DATE_TEXT}"
+    rf"|\s+and\s+{_DATE_TEXT}"
+    rf"|\s+and each fiscal quarter thereafter)?)\s+(\d\.\d{{2}} to 1\.00)"
+)
+
+
+def _schedule_window_end(text: str, idx: int, own_header: str) -> int:
+    """Bound a term's schedule window at whichever comes first: the flat
+    _SCHEDULE_WINDOW cap, or the start of a DIFFERENT covenant term's header
+    -- otherwise a large window pulls a neighboring term's grid rows into
+    this term's schedule (two closed-enum terms sharing one clause block)."""
+    limit = idx + _SCHEDULE_WINDOW
+    for other_name, other_header in _TERM_HEADERS.items():
+        if other_header == own_header:
+            continue
+        other_idx = text.find(other_header, idx + len(own_header))
+        if other_idx != -1:
+            limit = min(limit, other_idx)
+    return limit
 
 
 def _is_stepped_schedule(text: str, name: str) -> bool:
@@ -100,8 +128,69 @@ def _is_stepped_schedule(text: str, name: str) -> bool:
     idx = text.find(header)
     if idx == -1:
         return False
-    window = text[idx: idx + _SCHEDULE_WINDOW]
+    window = text[idx: _schedule_window_end(text, idx, header)]
     return len(_GRID_VALUE_RE.findall(window)) > 1
+
+
+def _parse_schedule_rows(text: str, header: str) -> list[dict[str, Any]]:
+    """Parse a "Measurement Period Ending" grid into rows carrying an exact
+    ratio-text char span (into `text`), a start date (for selecting the
+    current step), and a period_end (ISO date, or None for an open-ended
+    "and each fiscal quarter thereafter" row). Returns [] when the grid near
+    `header` states no calendar dates at all (never picked as direct)."""
+    idx = text.find(header)
+    if idx == -1:
+        return []
+    window_start = idx
+    window = text[window_start: _schedule_window_end(text, idx, header)]
+    rows: list[dict[str, Any]] = []
+    for match in _SCHEDULE_ROW_RE.finditer(window):
+        phrase = match.group(1)
+        ratio_text = match.group(2)
+        date_texts = re.findall(_DATE_TEXT, phrase)
+        if not date_texts:
+            continue
+        try:
+            parsed_dates = [datetime.strptime(d, "%B %d, %Y").date() for d in date_texts]
+        except ValueError:
+            continue
+        is_open_ended = "thereafter" in phrase
+        ratio_start = window_start + match.start(2)
+        ratio_end = window_start + match.end(2)
+        rows.append({
+            "start_date": min(parsed_dates),
+            "period_end": None if is_open_ended else max(parsed_dates).isoformat(),
+            "ratio": ratio_text,
+            "ratio_span": (ratio_start, ratio_end),
+        })
+    return rows
+
+
+def _as_of_date(manifest: Mapping[str, Any]) -> date | None:
+    """The filing's own as-of date -- what the agreement states as current at
+    the moment it was filed. Used to pick the CURRENT step out of a stepped
+    measurement-period schedule (never today's date, never a market date)."""
+    filing = manifest.get("filing") or {}
+    raw = filing.get("filing_date") or filing.get("accepted_at")
+    if not raw:
+        return None
+    try:
+        return datetime.strptime(str(raw)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _select_current_step(rows: Sequence[Mapping[str, Any]], as_of: date | None) -> Mapping[str, Any]:
+    """The row governing at `as_of`: the row with the latest start_date that
+    is still on or before `as_of` (a step function of effective dates, not a
+    range-containment search -- the grid's rows are non-contiguous "Measurement
+    Period Ending" quarter markers, not continuous date ranges). Falls back to
+    the earliest row when `as_of` is unknown or precedes every row's start."""
+    if as_of is not None:
+        eligible = [row for row in rows if row["start_date"] <= as_of]
+        if eligible:
+            return max(eligible, key=lambda row: row["start_date"])
+    return min(rows, key=lambda row: row["start_date"])
 
 
 class CovenantSpanUnbound(ValueError):
@@ -252,6 +341,16 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
             "term_type": covenant_term_type(name),
             "scope": "credit_agreement_financial_covenant_clause",
         }
+        # Computed unconditionally (not only inside one branch) so it is never
+        # unbound regardless of which branch below runs -- the prior code
+        # referenced `_seq` after the if/elif/else even though it was assigned
+        # only in the final `else`, raising UnboundLocalError the moment a
+        # stepped schedule (the `elif`) matched on a real filing.
+        _seq_raw = document.get("sequence")
+        try:
+            _seq = int(_seq_raw) if _seq_raw is not None else 1
+        except (TypeError, ValueError):
+            _seq = 1
         if match is None:
             state = {"disposition": "unavailable", "reason": "clause_absent_in_source"}
             reported = _empty_value()
@@ -260,24 +359,41 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
             extraction_method = "deferred"
             review_status = "unavailable"
         elif _is_stepped_schedule(text, name):
-            # A measurement-period grid, not a single stated value: the
-            # filing states a schedule, so no one ratio is "the" value.
-            state = {"disposition": "ambiguous", "reason": "stepped_schedule_no_measurement_period"}
-            reported = _empty_value()
-            normalized = _empty_value()
-            spans = []
-            extraction_method = "deferred"
-            review_status = "unavailable"
+            header = _TERM_HEADERS[name]
+            schedule_rows = _parse_schedule_rows(text, header)
+            if not schedule_rows:
+                # The grid states no calendar date at all -- no step can be
+                # identified as "current". This is the only remaining refusal
+                # case; a dated grid is always resolved to a direct schedule.
+                state = {"disposition": "ambiguous", "reason": "stepped_schedule_no_measurement_period"}
+                reported = _empty_value()
+                normalized = _empty_value()
+                spans = []
+                extraction_method = "deferred"
+                review_status = "unavailable"
+            else:
+                current = _select_current_step(schedule_rows, _as_of_date(manifest))
+                value_text = current["ratio"]
+                char_start, char_end = current["ratio_span"]
+                byte_start = len(text[:char_start].encode("utf-8"))
+                byte_end = byte_start + len(value_text.encode("utf-8"))
+                locator = build_locator(document.get("document_type"), _seq,
+                                         section_label_normalized, name, byte_start, byte_end)
+                validate_locator(locator, len(encoded))
+                schedule_payload = [
+                    {"period_end": row["period_end"], "ratio": row["ratio"]} for row in schedule_rows
+                ]
+                state = {"disposition": "direct", "reason": None}
+                reported = {"raw": value_text, "unit": "ratio", "value": None, "schedule": schedule_payload}
+                normalized = dict(reported)
+                spans = [{"locator": locator, "locator_type": "text_range"}]
+                extraction_method = "deterministic"
+                review_status = "final"
         else:
             value_text = match.group(1)
             char_start, char_end = match.start(1), match.end(1)
             byte_start = len(text[:char_start].encode("utf-8"))
             byte_end = byte_start + len(value_text.encode("utf-8"))
-            _seq_raw = document.get("sequence")
-            try:
-                _seq = int(_seq_raw) if _seq_raw is not None else 1
-            except (TypeError, ValueError):
-                _seq = 1
             locator = build_locator(document.get("document_type"), _seq,
                                      section_label_normalized, name, byte_start, byte_end)
             validate_locator(locator, len(encoded))
@@ -299,7 +415,7 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
                 "canonical_url": document.get("canonical_url"),
                 "content_sha256": document.get("content_sha256"),
                 "child_document_type": document.get("document_type"),
-                "child_sequence": _seq if match is not None else (int(document["sequence"]) if str(document.get("sequence") or "").isdigit() else 1),
+                "child_sequence": _seq,
                 "child_filename": document.get("document_name"),
                 "child_text_start": None,
                 "child_text_end": None,

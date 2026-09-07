@@ -896,7 +896,10 @@ def evaluate_health(root: Path, *, generated_at: str | None = None) -> dict[str,
     if compiled_events is not None:
         compiled_events = int(compiled_events)
     covenant_path = root / COVENANT_OBSERVATION_FILENAME
-    covenant_coverage = covenant_extraction_coverage(rows(covenant_path), manifests)
+    covenant_failure = _load_json(root / COVENANT_EXTRACTION_FAILURE_FILENAME)
+    covenant_coverage = covenant_extraction_coverage(
+        rows(covenant_path), manifests, failure=covenant_failure,
+    )
     record = build_health_record(
         generated_at=now,
         ingestion_run=ingestion_run,
@@ -957,23 +960,48 @@ def health_exit_code(record: Mapping[str, Any]) -> int:
 
 COVENANT_OBSERVATION_FILENAME = "covenant_term_observations.parquet"
 
+# Written by scripts/compile_capital_structure_covenant_terms.py's main() ONLY
+# when the producer raised (any exception, source_ledger read errors included)
+# -- so a producer bug is a typed, visible "covenant_extraction: failed" block
+# in the health artifact instead of crashing the daily.yml job before the
+# fail-closed health-gate step even runs (F13 alarm-bus law: a producer bug
+# may never fail the OTHER gate; covenant_extraction itself stays non-gating
+# either way -- see health_exit_code(), which never reads this block).
+COVENANT_EXTRACTION_FAILURE_FILENAME = "covenant_extraction_failure.json"
+
 _COVENANT_EXHIBIT_TYPES = frozenset({"EX-10.1", "EX-10.2", "EX-10.3", "EX-10.4", "EX-10.5"})
 
 
 def covenant_extraction_coverage(
     observations,
     manifests,
+    *,
+    failure: Mapping[str, Any] | None = None,
 ):
     """Covered/eligible census for the covenant producer. Context only —
     never a gate. Wired into evaluate_health()'s emitted health record as
     the top-level "covenant_extraction" block (see note above). `state` is
     "uncovered" when there are zero observations: a printed null, never a
-    hidden zero."""
+    hidden zero. `state` is "failed" (with a `reason`) instead, taking
+    priority over any stale/partial observations on disk, when the producer
+    itself raised on its last run (see COVENANT_EXTRACTION_FAILURE_FILENAME)
+    -- "uncovered" means "nothing to extract yet", never "the producer
+    crashed"; conflating the two shapes would hide a real bug."""
     eligible = [
         m for m in manifests
         if (m.get("document") or {}).get("document_role") == "exhibit"
         and (m.get("document") or {}).get("document_type") in _COVENANT_EXHIBIT_TYPES
     ]
+    if failure is not None:
+        return {
+            "eligible_exhibits": len(eligible),
+            "covered_manifests": 0,
+            "observations": 0,
+            "issuers_covered": 0,
+            "unavailable_terms": 0,
+            "state": "failed",
+            "reason": str(failure.get("reason") or "unknown_producer_error")[:500],
+        }
     # Observations arrive here as FLAT parquet rows (see
     # scripts/compile_capital_structure_covenant_terms.py's
     # COVENANT_OBSERVATION_COLUMNS): "source_manifest_id" and "issuer_id" are

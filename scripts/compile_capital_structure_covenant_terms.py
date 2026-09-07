@@ -308,10 +308,51 @@ def compile_from_disk(
     }
 
 
+def _write_failure_marker(root: Path, reason: str) -> Path:
+    from engine.capital_structure.ingestion_health import COVENANT_EXTRACTION_FAILURE_FILENAME
+
+    path = root / COVENANT_EXTRACTION_FAILURE_FILENAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {"state": "failed", "reason": reason[:500], "failed_at": _now_iso()}
+    tmp = path.with_suffix(".tmp.json")
+    tmp.write_text(json.dumps(record, sort_keys=True), encoding="utf-8")
+    os.replace(tmp, path)
+    return path
+
+
+def _clear_failure_marker(root: Path) -> None:
+    from engine.capital_structure.ingestion_health import COVENANT_EXTRACTION_FAILURE_FILENAME
+
+    path = root / COVENANT_EXTRACTION_FAILURE_FILENAME
+    if path.exists():
+        path.unlink()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
+    """Never propagates an exception with a non-zero exit. This step runs
+    immediately before daily.yml's fail-closed health gate (`check
+    capital-structure ingestion health`); the gate itself must independently
+    decide pass/fail from the health artifact, not from this step's exit code
+    (F13 alarm-bus law: a producer bug may never fail that OTHER gate). Any
+    exception here is recorded as a typed `covenant_extraction: {state:
+    failed, reason}` marker that evaluate_health() reads on the very next
+    step, and this process still exits 0."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args(argv)
-    result = compile_from_disk()
+    root = _data_root()
+    try:
+        result = compile_from_disk(root)
+    except Exception as exc:  # noqa: BLE001 -- deliberate catch-all, see docstring
+        reason = f"{type(exc).__name__}: {exc}"
+        marker_path = _write_failure_marker(root, reason)
+        print(json.dumps({
+            "status": "failed",
+            "schema": COVENANT_TERM_SCHEMA,
+            "reason": reason[:500],
+            "marker": str(marker_path),
+        }, sort_keys=True))
+        return 0
+    _clear_failure_marker(root)
     print(json.dumps(result, sort_keys=True))
     return 0
 

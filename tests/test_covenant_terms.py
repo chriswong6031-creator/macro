@@ -241,3 +241,97 @@ def test_ingestion_health_reports_covenant_coverage_state_including_uncovered():
     # coverage census reads the FLAT keys, not the nested library shape
     # (Blocker 1: the nested-shape read crashed on a real parquet row).
     assert covered["covered_manifests"] == 1
+
+
+def test_stepped_schedule_does_not_raise_unboundlocalerror_on_the_real_fixture():
+    """RED-first for BLOCKER-1 (review round 2): the unpatched code raised
+    UnboundLocalError: cannot access local variable '_seq' at
+    covenant_terms.py:302, because `_seq` was assigned only inside the final
+    (single-value direct) branch but read unconditionally afterward -- so the
+    very first stepped-schedule candidate (the elif branch) crashed before
+    compile_observations() could return anything at all. Both real terms in
+    this fixture ARE stepped schedules, so this exercises the crash directly."""
+    manifest = _manifest()
+    text = _text()
+    observations = ct.compile_observations(manifest, text, generated_at="2026-09-06T00:00:00Z")
+    assert len(observations) == len(ct.COVENANT_TERM_NAMES)
+
+
+def test_stepped_schedule_is_a_direct_observation_with_the_current_step_and_full_grid():
+    """BLOCKER-2 (DECIDED): stepped covenant schedules ARE what credit
+    agreements state, so refusing them made the producer useless on real
+    filings. Both terms in the committed Corsair fixture are stepped, closed-
+    enum, real-filing evidence: assert each is 'direct' (never 'ambiguous'),
+    carries the CURRENT step (selected against the filing's own as-of date,
+    2022-12-02, per manifest.filing.filing_date) as the headline raw ratio,
+    and retains the full measurement-period grid."""
+    manifest = _manifest()
+    text = _text()
+    observations = ct.compile_observations(manifest, text, generated_at="2026-09-06T00:00:00Z")
+    by_name = {o["term"]["name"]: o for o in observations}
+
+    leverage = by_name["maximum_total_net_leverage_ratio"]
+    assert leverage["state"]["disposition"] == "direct"
+    assert leverage["state"]["reason"] is None
+    # as of 2022-12-02 the most recently effective step is the row that starts
+    # 2022-09-30 ("September 30, 2022  3.50 to 1.00"), not the very first row.
+    assert leverage["reported"]["raw"] == "3.50 to 1.00"
+    schedule = leverage["reported"]["schedule"]
+    assert [row["ratio"] for row in schedule] == [
+        "3.00 to 1.00", "3.50 to 1.00", "3.75 to 1.00",
+        "3.50 to 1.00", "3.25 to 1.00", "3.00 to 1.00",
+    ]
+    assert schedule[-1]["period_end"] is None  # open-ended "and each fiscal quarter thereafter"
+    assert schedule[0]["period_end"] == "2022-06-30"
+
+    coverage = by_name["minimum_interest_coverage_ratio"]
+    assert coverage["state"]["disposition"] == "direct"
+    assert coverage["reported"]["raw"] == "3.00 to 1.00"
+    assert len(coverage["reported"]["schedule"]) == 3
+
+    # both stay a byte-exact transcription of their own locator span, and
+    # reported == normalized still holds with the schedule field present.
+    encoded = text.encode("utf-8")
+    for obs in (leverage, coverage):
+        locator = obs["evidence"]["spans"][0]["locator"]
+        start, end = ct._locator_bounds(locator)
+        assert encoded[start:end].decode("utf-8") == obs["reported"]["raw"]
+        assert obs["reported"] == obs["normalized"]
+
+
+def test_stepped_schedule_with_no_dates_at_all_is_still_ambiguous():
+    """The ONLY remaining refusal case per the ruling: a grid whose header is
+    found and which states more than one ratio value nearby, but no calendar
+    date at all -- there is then no way to identify a "current" step, so it
+    stays 'ambiguous' / stepped_schedule_no_measurement_period rather than
+    guessing. A grid that DOES carry dates (real filings) is always resolved
+    to a direct schedule -- this must never regress to blanket-refusing every
+    stepped schedule again."""
+    manifest = _manifest()
+    text = (
+        "7.11 Financial Covenants . (a) Consolidated Interest Coverage Ratio . "
+        "Minimum Consolidated Interest Coverage Ratio shall not be less than "
+        "3.00 to 1.00 or, if elected by the Borrower, 2.50 to 1.00."
+    )
+    observations = ct.compile_observations(manifest, text, generated_at="2026-09-06T00:00:00Z")
+    coverage = next(o for o in observations if o["term"]["name"] == "minimum_interest_coverage_ratio")
+    assert coverage["state"] == {"disposition": "ambiguous", "reason": "stepped_schedule_no_measurement_period"}
+    assert coverage["reported"] == {"raw": None, "unit": None, "value": None}
+
+
+def test_current_step_selection_is_a_step_function_of_the_row_start_dates():
+    """Unit-level check of _select_current_step/_parse_schedule_rows against
+    the exact Corsair leverage grid text, independent of the extraction-
+    method plumbing above."""
+    text = _text()
+    rows = ct._parse_schedule_rows(text, ct._TERM_HEADERS["maximum_total_net_leverage_ratio"])
+    assert len(rows) == 6
+    import datetime as _dt
+    current = ct._select_current_step(rows, _dt.date(2022, 12, 2))
+    assert current["ratio"] == "3.50 to 1.00"
+    # before the schedule starts: falls back to the earliest row, never crashes
+    earliest = ct._select_current_step(rows, _dt.date(2000, 1, 1))
+    assert earliest["ratio"] == "3.00 to 1.00"
+    # unknown as-of date: same safe fallback
+    unknown = ct._select_current_step(rows, None)
+    assert unknown["ratio"] == "3.00 to 1.00"

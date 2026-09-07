@@ -249,7 +249,8 @@
           "enum": [
             null,
             "clause_absent_in_source",
-            "ambiguous_extraction"
+            "ambiguous_extraction",
+            "stepped_schedule_no_measurement_period"
           ]
         }
       }
@@ -483,6 +484,24 @@
               "type": "null"
             }
           ]
+        },
+        "schedule": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["period_end", "ratio"],
+            "properties": {
+              "period_end": {
+                "type": ["string", "null"],
+                "format": "date"
+              },
+              "ratio": {
+                "type": "string",
+                "maxLength": 500
+              }
+            }
+          }
         }
       }
     },
