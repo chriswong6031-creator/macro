@@ -166,6 +166,54 @@ def test_golden_fixture_self_validates_against_the_committed_schema() -> None:
     assert state == expected
 
 
+def test_identity_leg_reader_provenance_names_a_module_that_still_defines_it() -> None:
+    """MAJOR-1 (round-4 review, 2026-09-06): a producer-isolation refactor
+    (commit 6f5a1746, "isolate security-state producer closure") moved
+    ``_read_security_state_identity_rows`` out of
+    ``scripts/build_stock_library.py`` into
+    ``scripts/security_state_producer.py``, but six ``reader`` receipt
+    strings across the R1/R2/R3/R4/R6/R8 legs (and the failure shell's
+    genuine-owner-subject R8 leg) kept naming the OLD module -- a public
+    identity receipt asserting a provenance that no longer holds. This test
+    is RED against the pre-fix strings (module path in the reader string did
+    not contain the function's actual definition) and is generic: it does
+    not hardcode a module name, so a future move that forgets to update
+    every call site trips it again."""
+    root = Path(__file__).resolve().parents[1]
+    state = ss.compile_security_state(**_golden_input())
+    legs = state["identity_proof"]["legs"]
+    assert legs, "golden fixture must exercise at least one identity leg"
+    checked = 0
+    for leg in legs:
+        reader = leg["reader"]
+        if "::" not in reader or not reader.split("::", 1)[0].endswith(".py"):
+            continue  # dotted python import path (e.g. lib.dataos.identity.*), not a file::func receipt
+        path_part, func_name = reader.split("::", 1)
+        path_part = path_part.split(" ", 1)[0]  # strip trailing "(declared master artifact)" etc.
+        func_name = func_name.split(" ", 1)[0]
+        src = (root / path_part).read_text(encoding="utf-8")
+        assert f"def {func_name}(" in src, (
+            f"leg {leg['check']!r} claims reader {reader!r} but {path_part} "
+            f"defines no {func_name}()"
+        )
+        checked += 1
+    assert checked >= 6, f"expected at least 6 file::func receipts in the golden legs, saw {checked}"
+
+    # same check for the failure shell's genuine-owner-subject R8 leg (the
+    # `else` branch at security_state.py, NOT the UNREAD fallback branch).
+    failure_state = ss.compile_security_state_failure(
+        subject=_subject(), now="2026-09-06T12:00:00Z", validator=_validator(),
+    )
+    [r8_leg] = [leg for leg in failure_state["identity_proof"]["legs"] if leg["check"] == "R8"]
+    assert r8_leg["result"] == "pass"
+    path_part, func_name = r8_leg["reader"].split("::", 1)
+    src = (root / path_part).read_text(encoding="utf-8")
+    assert f"def {func_name}(" in src, (
+        f"failure-shell R8 leg claims reader {r8_leg['reader']!r} but "
+        f"{path_part} defines no {func_name}()"
+    )
+
+
 # ---------------------------------------------------------------------------
 # 1. golden current event (happy path)
 # ---------------------------------------------------------------------------

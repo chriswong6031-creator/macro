@@ -499,7 +499,7 @@ def _run_identity_chain(
     legs.append(_leg_receipt(
         "R1", "security_master row exists, security_state/superseded_by both null",
         "data/reference/security_master.parquet",
-        "scripts/build_stock_library.py::_read_security_state_identity_rows (declared master artifact)",
+        "scripts/security_state_producer.py::_read_security_state_identity_rows (declared master artifact)",
         [
             ("row_present", security_master_row is not None),
             ("security_state", sec_state), ("superseded_by", superseded_by),
@@ -518,7 +518,7 @@ def _run_identity_chain(
     legs.append(_leg_receipt(
         "R2", "security_master.issuer_id names the owner-composed issuer, issuer_state RESOLVED",
         "data/reference/security_master.parquet",
-        "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "scripts/security_state_producer.py::_read_security_state_identity_rows",
         [("issuer_id", row_issuer_id), ("issuer_state", row_issuer_state)],
         "pass" if r2_pass else "fail", None if r2_pass else "IDENTITY_UNRESOLVED",
     ))
@@ -537,7 +537,7 @@ def _run_identity_chain(
     legs.append(_leg_receipt(
         "R3", "issuer_master carries exactly one active row binding the owner-composed issuer and CIK",
         "data/reference/issuer_master.parquet",
-        "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "scripts/security_state_producer.py::_read_security_state_identity_rows",
         [
             ("cik", subject.issuer_cik),
             ("matching_row_count", len(matching)),
@@ -558,7 +558,7 @@ def _run_identity_chain(
     legs.append(_leg_receipt(
         "R4", f"the owner-composed issuer's CURRENT security set is exactly {{{subject.security_id}}}",
         "data/reference/security_master.parquet",
-        "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "scripts/security_state_producer.py::_read_security_state_identity_rows",
         [("security_set", security_set), ("count", len(security_set))],
         "pass" if r4_pass else "fail", None if r4_pass else "ISSUER_GROUP_AMBIGUOUS",
     ))
@@ -599,7 +599,7 @@ def _run_identity_chain(
     legs.append(_leg_receipt(
         "R6", "zero matching rows in issuer_migrations.parquet/security_migrations.parquet",
         "data/reference/issuer_migrations.parquet, data/reference/security_migrations.parquet",
-        "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "scripts/security_state_producer.py::_read_security_state_identity_rows",
         [
             ("issuer_migration_matches", len(issuer_migration_matches)),
             ("security_migration_matches", len(security_migration_matches)),
@@ -665,7 +665,7 @@ def _run_identity_chain(
         "R8", "master issuer_cik agrees with the owner-composed current CIK; "
         "a present workspace also agrees",
         "data/reference/security_master.parquet + event_workspace.v1",
-        "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "scripts/security_state_producer.py::_read_security_state_identity_rows",
         [("workspace_available", workspace_available), ("master_issuer_cik", master_cik),
          ("subject_issuer_cik", subject.issuer_cik), ("workspace_native_cik", filing_cik)],
         "pass" if r8_pass else "fail", None if r8_pass else "IDENTITY_BRIDGE_DISAGREEMENT",
@@ -1790,7 +1790,7 @@ def compile_security_state_failure(
         r8_leg = _leg_receipt(
             "R8", "failure shell retains the owner-composed current CIK without claiming a full identity-chain pass",
             "SecurityStateSubject (producer-composed owner receipt)",
-            "scripts/build_stock_library.py::_read_security_state_identity_rows",
+            "scripts/security_state_producer.py::_read_security_state_identity_rows",
             [
                 ("subject_issuer_cik", subject.issuer_cik),
                 *[(f"owner_{key}", value) for key, value in sorted(subject.owner_evidence)],

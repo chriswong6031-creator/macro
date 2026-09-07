@@ -6,7 +6,7 @@
   "listing_key": "US-XNAS-AAPL",
   "ticker_display": "AAPL",
   "generated_at": "2026-08-23T12:00:00Z",
-  "content_sha256": "f859d495012f3768372797ccb9bad8d6893bdb16adf2cff774ca6ec648ba527e",
+  "content_sha256": "0a5f9710a8339caada4e3172546c4721b525163a8768644f2d1b2316a563253f",
   "as_of": {
     "market_at": "2026-08-23",
     "source_frontier_at": "2026-07-30T20:30:28Z",
@@ -29,7 +29,7 @@
         "check": "R1",
         "description": "security_master row exists, security_state/superseded_by both null",
         "artifact": "data/reference/security_master.parquet",
-        "reader": "scripts/build_stock_library.py::_read_security_state_identity_rows (declared master artifact)",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows (declared master artifact)",
         "values_read": [
           {
             "field": "row_present",
@@ -67,7 +67,7 @@
         "check": "R2",
         "description": "security_master.issuer_id names the owner-composed issuer, issuer_state RESOLVED",
         "artifact": "data/reference/security_master.parquet",
-        "reader": "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "issuer_id",
@@ -85,7 +85,7 @@
         "check": "R3",
         "description": "issuer_master carries exactly one active row binding the owner-composed issuer and CIK",
         "artifact": "data/reference/issuer_master.parquet",
-        "reader": "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "cik",
@@ -111,7 +111,7 @@
         "check": "R4",
         "description": "the owner-composed issuer's CURRENT security set is exactly {SEC:US-XNAS-AAPL}",
         "artifact": "data/reference/security_master.parquet",
-        "reader": "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "security_set",
@@ -147,7 +147,7 @@
         "check": "R6",
         "description": "zero matching rows in issuer_migrations.parquet/security_migrations.parquet",
         "artifact": "data/reference/issuer_migrations.parquet, data/reference/security_migrations.parquet",
-        "reader": "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "issuer_migration_matches",
@@ -191,7 +191,7 @@
         "check": "R8",
         "description": "master issuer_cik agrees with the owner-composed current CIK; a present workspace also agrees",
         "artifact": "data/reference/security_master.parquet + event_workspace.v1",
-        "reader": "scripts/build_stock_library.py::_read_security_state_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "workspace_available",
