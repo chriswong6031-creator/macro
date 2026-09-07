@@ -128,7 +128,7 @@ def test_same_fire_event_id_drained_twice_sends_once_and_reports_duplicate(monke
     # real world by recording the email_log row the first send would have written
     # (review round 2 blocker, acceptance 1(d)): 'duplicate' is never assumed to mean
     # 'fired'; the email_log row is READ to find out what actually happened.
-    fake.email_log["alert_fire:fe1"] = {"status": "sent", "created_at": "2026-09-05T15:00:01+00:00"}
+    fake.email_log["alert_fire:fe1"] = {"status": "sent", "created_at": "2026-09-05T14:59:00+00:00"}
     fake.outbox[0]["status"] = "pending"  # simulate a replay before terminal write races in
     # The replay is of the SAME original attempt (the send that already landed in
     # email_log under attempt=0) -- reset attempts too, or the drain would compute a
@@ -138,7 +138,15 @@ def test_same_fire_event_id_drained_twice_sends_once_and_reports_duplicate(monke
     assert r2.fired_n == 0
     assert r2.duplicate_n == 1
     assert fake.outbox[0]["status"] == "sent"
-    assert fake.outbox[0]["delivered_at"] == "2026-09-05T15:00:01+00:00"
+    # Review round 6 MINOR-1: email_log has no sent/updated timestamp column --
+    # `created_at` (asserted here as the row's claim time, 14:59:00, well BEFORE the
+    # drain resolves the duplicate at 15:00:00) must never be read back as
+    # delivered_at. The drain uses its own resolution time instead, which is always
+    # >= the claim time and is never fabricated from a timestamp that means
+    # something else.
+    delivered_at = fake.outbox[0]["delivered_at"]
+    assert delivered_at != "2026-09-05T14:59:00+00:00"
+    assert datetime.fromisoformat(delivered_at) >= datetime.fromisoformat("2026-09-05T14:59:00+00:00")
 
 
 def test_duplicate_whose_email_log_row_is_failed_mirrors_status_never_counted_sent(monkeypatch):
@@ -174,7 +182,11 @@ def test_duplicate_whose_email_log_row_is_queued_stays_pending_never_mirrors_a_n
     """Review round 3 MAJOR-2: 'queued' is a mailer/email_log-only status, never a
     legal alert_outbox one -- mirroring it verbatim either violates alert_outbox's own
     CHECK constraint (silently swallowed) or, if ever accepted, orphans the row
-    outside the drain's selection predicate forever. The row must stay 'pending'."""
+    outside the drain's selection predicate forever. The row must stay 'pending'.
+
+    Review round 6 MAJOR (amended ruling): `attempts` must still increment on this
+    pending-stays-pending path -- leaving it unchanged is the exact livelock the
+    round-6 review found (same idem_key claimed forever)."""
     row = _row()
     fake = FakeTables(outbox=[row])
     fake.email_log["alert_fire:fe1"] = {"status": "queued", "created_at": "2026-09-05T14:59:00+00:00"}
@@ -184,7 +196,7 @@ def test_duplicate_whose_email_log_row_is_queued_stays_pending_never_mirrors_a_n
     assert result.duplicate_n == 1
     assert fake.outbox[0]["status"] == "pending"
     assert fake.outbox[0]["last_error"] == "prior send queued"
-    assert fake.outbox[0]["attempts"] == 0
+    assert fake.outbox[0]["attempts"] == 1
 
 
 def test_duplicate_whose_email_log_row_is_unreadable_leaves_outbox_row_pending(monkeypatch, capsys):
@@ -313,7 +325,12 @@ def test_smtp_failure_records_failed_with_last_error_and_attempts_plus_one(monke
 
 def test_skipped_no_smtp_leaves_outbox_row_pending_not_failed(monkeypatch):
     """Review round 3 MINOR-2: 'skipped_no_smtp' is a config gap (mail-off), not a
-    send failure -- it must not burn a retry attempt or land the row on 'failed'."""
+    send failure -- it must not land the row on 'failed' on a single tick.
+
+    Review round 6 MAJOR (amended ruling): `attempts` DOES increment on this tick
+    (that is the fix for the livelock the round-6 review found) -- what must NOT
+    happen is a same-tick jump straight to 'failed'; that only happens once
+    `attempts` reaches the cap (covered by the two tests below)."""
     row = _row()
     fake = FakeTables(outbox=[row])
     _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
@@ -321,8 +338,66 @@ def test_skipped_no_smtp_leaves_outbox_row_pending_not_failed(monkeypatch):
     assert result.fired_n == 0
     assert result.failed_n == 0
     assert fake.outbox[0]["status"] == "pending"
-    assert fake.outbox[0]["attempts"] == 0
+    assert fake.outbox[0]["attempts"] == 1
     assert fake.outbox[0]["last_error"] == "skipped_no_smtp"
+
+
+def test_smtp_unavailable_increments_attempts_each_tick_minting_a_fresh_idem_key(monkeypatch):
+    """Review round 6 MAJOR RED-first test (a) (binding ruling, 2026-09-07): a
+    queued/skipped_no_smtp row must not be retried under the SAME idem_key forever.
+    The old code PATCHed the row back to 'pending' with `attempts` unchanged, so
+    `attempt_n` (read from `attempts` at the top of the send branch) was
+    byte-identical on the next tick, `_alert_idem_key` minted the SAME key, and the
+    real mailer's unique idem_key constraint would claim it as 'duplicate' forever
+    (app/mailer.py:31-33's own contract). `attempts` must increment on every tick
+    that touches the row so the next tick mints `alert_fire:<id>:<n+1>`."""
+    row = _row(attempts=1)
+    fake = FakeTables(outbox=[row])
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    calls: list[int] = []
+
+    def send_fn(*, fire_event_id, to_email, payload, lang, user_id, attempt=0):
+        calls.append(attempt)
+        return "skipped_no_smtp"
+
+    r1 = drain.drain(send_fn=send_fn, now_utc=_now(), limit=10)
+    assert r1.evaluated_n == 1
+    assert fake.outbox[0]["attempts"] == 2
+    assert fake.outbox[0]["status"] == "pending"
+
+    drain.drain(send_fn=send_fn, now_utc=_now(), limit=10)
+    assert calls == [1, 2]
+    keys = [drain._alert_idem_key("fe1", attempt=a) for a in calls]
+    assert keys == ["alert_fire:fe1:1", "alert_fire:fe1:2"]
+    assert len(set(keys)) == 2, "the two ticks must mint two DISTINCT idem_keys"
+    # attempts climbs 1 -> 2 -> 3, hitting ALERT_RETRY_ATTEMPTS_CAP on the second
+    # tick -- the row is retired to 'failed' rather than looping a third time.
+    assert drain.ALERT_RETRY_ATTEMPTS_CAP == 3
+    assert fake.outbox[0]["attempts"] == 3
+    assert fake.outbox[0]["status"] == "failed"
+    assert fake.outbox[0]["last_error"] == "smtp_unavailable"
+
+
+def test_smtp_unavailable_row_at_cap_minus_one_is_retired_and_not_reselected(monkeypatch):
+    """Review round 6 MAJOR RED-first test (b) (binding ruling, 2026-09-07): a row
+    one tick away from the retry cap under continued SMTP unavailability becomes
+    'failed'/'smtp_unavailable' -- visible and retired -- instead of livelocking at
+    'pending' forever, and then drops out of the drain's own selection predicate on
+    the next tick (mirrors the terminal-'failed' retry cap mechanism already proven
+    by test_retry_livelock_row_retired_after_the_attempts_cap_never_loops_forever)."""
+    row = _row(attempts=drain.ALERT_RETRY_ATTEMPTS_CAP - 1)
+    fake = FakeTables(outbox=[row])
+    _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
+    result = drain.drain(send_fn=lambda **kw: "skipped_no_smtp", now_utc=_now(), limit=10)
+    assert result.evaluated_n == 1
+    assert fake.outbox[0]["status"] == "failed"
+    assert fake.outbox[0]["attempts"] == drain.ALERT_RETRY_ATTEMPTS_CAP
+    assert fake.outbox[0]["last_error"] == "smtp_unavailable"
+
+    # Next tick: the row is now at the cap and must NOT be selected/retried again.
+    result2 = drain.drain(send_fn=lambda **kw: "skipped_no_smtp", now_utc=_now(), limit=10)
+    assert result2.evaluated_n == 0
+    assert fake.outbox[0]["attempts"] == drain.ALERT_RETRY_ATTEMPTS_CAP
 
 
 def test_failed_row_is_retried_by_a_later_drain_and_never_reads_as_sent(monkeypatch):

@@ -382,7 +382,7 @@ def _patch_outbox(row_id, body: dict) -> bool:
         return False
 
 
-def derive_outcome(*, read_state: str, evaluated_n: int, unevaluable_n: int,
+def derive_outcome(*, read_state: str, unevaluable_n: int,
                    failed_n: int, degraded_n: int) -> str:
     if read_state == READ_UNAVAILABLE:
         return "failure"
@@ -528,24 +528,33 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
             # key read back is the SAME one just attempted (same fire_event_id+attempt)
             # -- never the bare attempt=0 key -- so a retry's own claim is what gets
             # resolved, not the original attempt's.
-            # select= is limited to columns this branch actually reads (`status`,
-            # `created_at` for `delivered_at`) -- review round 5 MINOR-1: `detail`
-            # was carried in the select with no read of it anywhere below, needless
-            # exposure to a PostgREST 400 if that column shape ever changes. Both
-            # `created_at` and `detail` are evidenced in
-            # research/SUPPORT_EMAIL_ESTATE_MASTERPLAN_BY_FABLE.md's `email_log` DDL
-            # (`created_at timestamptz not null default now()`), so this is a
-            # narrowing for exposure, not a schema-risk fix.
+            # select= is limited to `status` -- review round 5 MINOR-1: `detail` was
+            # carried with no read of it anywhere below, needless exposure to a
+            # PostgREST 400 if that column shape ever changes. Review round 6
+            # MINOR-1: `created_at` was read as `delivered_at` below, but
+            # `research/SUPPORT_EMAIL_ESTATE_MASTERPLAN_BY_FABLE.md`'s `email_log`
+            # DDL stamps `created_at` at INSERT time -- `_ledger_insert`
+            # (`app/mailer.py`) writes the row at `status='queued'` BEFORE SMTP is
+            # touched, so `created_at` is the claim time, not the delivery time, and
+            # was systematically early on every duplicate-resolved row. `email_log`
+            # has no separate sent/updated timestamp column (no `updated_at`, no
+            # `sent_at` -- confirmed against the DDL above and every migration under
+            # `scripts/deploy/`), so there is nothing truthful to read back for "when
+            # the prior attempt sent"; the drain's OWN resolution time is used
+            # instead, which is never earlier than the real send and is honest about
+            # what is actually known.
             idem_key = _alert_idem_key(str(fire_event_id), attempt=attempt_n)
             log_read = typed_get(
                 f"email_log?idem_key=eq.{urllib.parse.quote(idem_key, safe='')}"
-                "&select=status,created_at")
+                "&select=status")
             log_row = (log_read.rows or [None])[0] if log_read.state == READ_OK else None
             log_status = log_row.get("status") if log_row else None
             if log_status == "sent":
                 # The earlier attempt genuinely sent -- mirror THAT fact, counted as a
-                # duplicate resolution, never as a fresh fire.
-                delivered_at = log_row.get("created_at") or datetime.now(timezone.utc).isoformat()
+                # duplicate resolution, never as a fresh fire. delivered_at is the
+                # drain's own resolution time (see MINOR-1 note above), never
+                # email_log's created_at.
+                delivered_at = datetime.now(timezone.utc).isoformat()
                 ok = _patch_outbox(row["id"], {"status": "sent", "delivered_at": delivered_at,
                                                 "last_error": None})
                 if ok:
@@ -584,15 +593,38 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                 # MAJOR-2; the old code wrote it verbatim, which either violated the
                 # CHECK constraint -- silently swallowed -- or, had it been accepted,
                 # permanently orphaned the row outside this drain's own selection
-                # predicate). The row stays 'pending' so the next tick re-selects it;
-                # attempts is left unchanged since no send failure occurred.
-                ok = _patch_outbox(row["id"], {"status": "pending",
-                                                "last_error": f"prior send {log_status}"})
-                if ok:
-                    duplicate_n += 1
-                    degraded_n += 1
+                # predicate). The row stays 'pending' so the next tick re-selects it.
+                #
+                # Review round 6 MAJOR (amended ruling): `attempts` MUST still
+                # increment on every tick that touches this row, even though
+                # `status` stays 'pending' -- this is the exact bug the review
+                # found: leaving `attempts` unchanged means `attempt_n` (read from
+                # `attempts` at the top of the `action == send` branch) is
+                # byte-identical next tick, so `_alert_idem_key` mints the SAME key,
+                # the real mailer's unique constraint claims it as 'duplicate' again
+                # forever, and this branch re-fires every 5 minutes with no way out.
+                # Bumping `attempts` here mints a fresh `alert_fire:<id>:<n+1>` key
+                # next tick (same mechanism as the terminal-'failed' branch above),
+                # and once `attempts` reaches the cap the row is retired to
+                # 'failed'/'smtp_unavailable' instead of looping forever -- visible
+                # and out of the selection predicate, never a silent livelock.
+                new_attempts = int(row.get("attempts") or 0) + 1
+                if new_attempts >= ALERT_RETRY_ATTEMPTS_CAP:
+                    ok = _patch_outbox(row["id"], {"status": "failed", "attempts": new_attempts,
+                                                    "last_error": "smtp_unavailable"})
+                    if ok:
+                        duplicate_n += 1
+                        failed_n += 1
+                    else:
+                        degraded_n += 1
                 else:
-                    degraded_n += 1
+                    ok = _patch_outbox(row["id"], {"status": "pending", "attempts": new_attempts,
+                                                    "last_error": f"prior send {log_status}"})
+                    if ok:
+                        duplicate_n += 1
+                        degraded_n += 1
+                    else:
+                        degraded_n += 1
             else:
                 # Unreadable (READ_UNAVAILABLE) or a zero-row read that contradicts the
                 # 'duplicate' claim -- either way we do not know what the prior send did,
@@ -626,13 +658,33 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
             # Not a failure -- a config/transient gap (mail-off, or a marketing-only
             # ledger race that should never reach this transactional class in
             # practice). Leave the row 'pending' so the next tick tries again, rather
-            # than burning a retry attempt or mirroring a non-alert_outbox status
-            # (review round 3 MINOR-2; mirrors the duplicate-branch treatment above).
-            _patch_outbox(row["id"], {"status": "pending", "last_error": status})
-            # Persisted or not, this decision is not-a-failure/not-a-success either
-            # way -- degraded_n counts it unconditionally (no false-clean risk here,
-            # unlike the ok-gated branches above/below).
-            degraded_n += 1
+            # than mirroring a non-alert_outbox status (review round 3 MINOR-2;
+            # mirrors the duplicate-branch treatment above).
+            #
+            # Review round 6 MAJOR (amended ruling): `attempts` MUST still
+            # increment on every tick, even while `status` stays 'pending' --
+            # otherwise `attempt_n` is byte-identical next tick, `_alert_idem_key`
+            # mints the SAME key, the real mailer's unique constraint claims it as
+            # 'duplicate' forever, and the row loops every 5 minutes with no way
+            # out (this is the exact livelock the review found at this line). Once
+            # `attempts` reaches the cap the row is retired to
+            # 'failed'/'smtp_unavailable' -- visible and out of the selection
+            # predicate -- instead of looping forever.
+            new_attempts = int(row.get("attempts") or 0) + 1
+            if new_attempts >= ALERT_RETRY_ATTEMPTS_CAP:
+                ok = _patch_outbox(row["id"], {"status": "failed", "attempts": new_attempts,
+                                                "last_error": "smtp_unavailable"})
+                if ok:
+                    failed_n += 1
+                else:
+                    degraded_n += 1
+            else:
+                ok = _patch_outbox(row["id"], {"status": "pending", "attempts": new_attempts,
+                                                "last_error": status})
+                # Persisted or not, this decision is not-a-failure/not-a-success
+                # either way -- degraded_n counts it unconditionally (no
+                # false-clean risk here, unlike the ok-gated branches above/below).
+                degraded_n += 1
         elif status == "suppressed":
             ok = _patch_outbox(row["id"], {"status": "suppressed", "last_error": status})
             if ok:
@@ -650,7 +702,7 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
             else:
                 degraded_n += 1
 
-    outcome = derive_outcome(read_state=outbox_read.state, evaluated_n=evaluated_n,
+    outcome = derive_outcome(read_state=outbox_read.state,
                              unevaluable_n=unevaluable_n, failed_n=failed_n, degraded_n=degraded_n)
 
     receipt_written = False
