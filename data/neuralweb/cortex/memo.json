@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-09-07T00:32:04+00:00",
+  "as_of": "2026-09-07T00:33:43+00:00",
   "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
   "what_fired": [],
   "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
@@ -39,7 +39,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "auth",
-        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011Ceo8vRDQH1dYr4qtJgVQy'}"
+        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011Ceo93cqazXA2zkQgujh1c'}"
       },
       {
         "provider": "oauth",
@@ -47,7 +47,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "auth",
-        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011Ceo8vTChztcm3hDFf3kkK'}"
+        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011Ceo93ebFqY92bTPGLs1gA'}"
       },
       {
         "provider": "oauth",
@@ -55,7 +55,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "auth",
-        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011Ceo8vUPQ1MziiEpJHgmP5'}"
+        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011Ceo93fdWyt8DG2kXNsi2x'}"
       }
     ],
     "tool_call_batches": 0,
