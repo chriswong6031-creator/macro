@@ -1584,16 +1584,6 @@ jobs:
     # 846 tracked / 127 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
-      # B-F13-3 contract-delta widening: this job's curated closure did
-      # not include the six public-page templates a help/support packet
-      # touches. Added deliberately as a reviewed CI-authority edit, not
-      # a blind mechanical append.
-      - "templates/_navlinks.html.j2"
-      - "templates/_public_footer.html.j2"
-      - "templates/_public_nav.html.j2"
-      - "templates/measurement.html.j2"
-      - "templates/methodology.html.j2"
-      - "templates/support.html.j2"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
@@ -7227,16 +7217,6 @@ jobs:
     # 846 tracked / 74 concrete.
     scope: exclusive
     paths:
-      # B-F13-3 contract-delta widening: this job's curated closure did
-      # not include the six public-page templates a help/support packet
-      # touches. Added deliberately as a reviewed CI-authority edit, not
-      # a blind mechanical append.
-      - "templates/_navlinks.html.j2"
-      - "templates/_public_footer.html.j2"
-      - "templates/_public_nav.html.j2"
-      - "templates/measurement.html.j2"
-      - "templates/methodology.html.j2"
-      - "templates/support.html.j2"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
@@ -9249,16 +9229,6 @@ jobs:
     # the five scripts are closure imports, not tree scans.
     scope: exclusive
     paths:
-      # B-F13-3 contract-delta widening: this job's curated closure did
-      # not include the six public-page templates a help/support packet
-      # touches. Added deliberately as a reviewed CI-authority edit, not
-      # a blind mechanical append.
-      - "templates/_navlinks.html.j2"
-      - "templates/_public_footer.html.j2"
-      - "templates/_public_nav.html.j2"
-      - "templates/measurement.html.j2"
-      - "templates/methodology.html.j2"
-      - "templates/support.html.j2"
       - "tests/test_dod_budget_live.py"
       - "tests/test_fms_notifications.py"
       - "tests/test_fms_ui.py"
@@ -12407,16 +12377,6 @@ jobs:
     # 846 tracked / 74 concrete. Subject packages stay globbed.
     scope: exclusive
     paths:
-      # B-F13-3 contract-delta widening: this job's curated closure did
-      # not include the six public-page templates a help/support packet
-      # touches. Added deliberately as a reviewed CI-authority edit, not
-      # a blind mechanical append.
-      - "templates/_navlinks.html.j2"
-      - "templates/_public_footer.html.j2"
-      - "templates/_public_nav.html.j2"
-      - "templates/measurement.html.j2"
-      - "templates/methodology.html.j2"
-      - "templates/support.html.j2"
       # B1A closure widening 2026-08-24 (contract-delta): build_stock_library's security_state stage extends this job's walked closure.
       - "engine/security_state.py"
       - "engine/theme_graph/__init__.py"

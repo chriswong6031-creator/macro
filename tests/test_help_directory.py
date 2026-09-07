@@ -45,6 +45,39 @@ def test_public_builder_renders_help_directory(tmp_path: Path) -> None:
     assert "docs/site_semantics" not in html
 
 
+def test_build_site_renders_help_page_with_the_full_view_model(tmp_path: Path) -> None:
+    """The nightly full-site render must render help.html too, not just the
+    fast-path public builder (review finding B-F13-3 BLOCKER-1).
+
+    scripts.build_site.build_help_page used to call only
+    ``help_directory_view_model`` and splat entries/categories/directory_state
+    at the template — but templates/help.html.j2 also dereferences
+    ``answers``, ``answers_state``, ``changelog.state`` and iterates
+    ``support_plans``, so this exact call shape raised
+    ``UndefinedError: 'changelog' is undefined``, silently swallowed by
+    build_site's own except-and-log wrapper (no site/help.html written, no
+    test failure — ``git diff --stat origin/main -- scripts/build_site.py``
+    was empty because nothing there had ever been touched or exercised).
+    This test drives scripts.build_site.build_help_page directly — the real
+    nightly call shape, not build_public_pages' fast path — and would have
+    failed red before lib.help_directory.help_page_view_model became the one
+    builder both call sites share.
+    """
+    import scripts.build_site as bs
+    from datetime import datetime, timezone
+    from lib import config
+
+    env = Environment(loader=FileSystemLoader(config.ROOT / "templates"), autoescape=True)
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+
+    bs.build_help_page(env, tmp_path, generated)
+
+    html = (tmp_path / "help.html").read_text(encoding="utf-8")
+    assert 'data-directory-state="complete"' in html
+    assert 'data-changelog-state="published"' in html
+    assert HELP_ANSWERS[0].question_en in html
+
+
 def test_help_directory_renders_only_the_frozen_owner_targets(tmp_path: Path) -> None:
     build_public_pages.build(tmp_path)
     html = (tmp_path / "help.html").read_text(encoding="utf-8")
@@ -135,7 +168,7 @@ def test_public_builder_defers_help_failure_until_other_public_pages_land(
     def _broken_help(_root: Path) -> dict:
         raise ValueError("help source drift")
 
-    monkeypatch.setattr(build_public_pages, "help_directory_view_model", _broken_help)
+    monkeypatch.setattr(build_public_pages, "help_page_view_model", _broken_help)
 
     with pytest.raises(ValueError, match="help source drift"):
         build_public_pages.build(tmp_path)

@@ -566,3 +566,25 @@ def support_routing_view_model() -> dict[str, Any]:
          "promise_en": p.promise_en, "promise_zh": p.promise_zh}
         for p in SUPPORT_PLANS
     ]}
+
+
+def help_page_view_model(root: Path) -> dict[str, Any]:
+    """The ONE view-model builder templates/help.html.j2 requires.
+
+    Review finding (B-F13-3 BLOCKER-1): scripts.build_site.build_help_page used
+    to call only ``help_directory_view_model`` and hand the template just
+    ``entries``/``categories``/``directory_state`` — but the template also
+    dereferences ``answers``, ``answers_state``, ``changelog.state`` and
+    iterates ``support_plans``, so build_site's render path raised
+    ``UndefinedError: 'changelog' is undefined`` while build_public_pages'
+    hand-assembled dict (which happened to include all four) rendered fine.
+    Two call sites hand-listing the same four keys is exactly how one of them
+    drifts — so both scripts.build_site.build_help_page and
+    scripts.build_public_pages.build call THIS function instead of
+    re-composing the dict themselves.
+    """
+    vm = help_directory_view_model(root)
+    vm.update(help_answers_view_model(root))
+    vm["changelog"] = product_changelog(root)
+    vm.update(support_routing_view_model())
+    return vm

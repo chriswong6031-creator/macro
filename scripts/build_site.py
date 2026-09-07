@@ -42,7 +42,7 @@ from engine.us_board_rank import (  # noqa: E402
 )
 from lib import config, site_assets, store  # noqa: E402
 from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
-from lib.help_directory import help_directory_view_model  # noqa: E402
+from lib.help_directory import help_page_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -3737,8 +3737,15 @@ def build_help_page(env: Environment, site: Path, generated: str) -> None:
 
     This is deliberately fail-closed. A missing source label or invalid target
     aborts the render instead of leaving a stale or inferred help destination.
+
+    Uses lib.help_directory.help_page_view_model — the SAME builder
+    scripts.build_public_pages.build calls — so this render path can never
+    drift from that one and hand the template a partial context again
+    (review finding B-F13-3 BLOCKER-1: this call site used to splat only
+    entries/categories/directory_state and raise UndefinedError on
+    ``changelog``, which this function's except-and-log swallowed silently).
     """
-    vm = help_directory_view_model(config.ROOT)
+    vm = help_page_view_model(config.ROOT)
     html = env.get_template("help.html.j2").render(generated_utc=generated, **vm)
     write_page(site / "help.html", html)
     log.info("wrote help.html (%d source-validated links)", len(vm["entries"]))
