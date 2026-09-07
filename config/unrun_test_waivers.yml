@@ -90,3 +90,16 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+
+tests/test_market_ontology_f12_commercial_scope.py: >-
+  Packet B-F12-6 (records-only): pins the F12 post-tenancy commercial/account scope
+  doc's ledger-row answers (MO-PAID-079 commercial_only, MO-PAID-080 account_only),
+  the Chairman pricing-defer blockquote, the sibling-boundary bullets, and the
+  typed-null / no-fabrication / no-"validated" invariants. Not wired into
+  .github/ci/legacy-jobs.yml because that file is a global CI invalidator (full
+  194-job suite, a ci-authority hit) and this suite only reads one static research/
+  markdown doc plus the repo's own file tree — no engine or signal-contract path.
+  Run directly via `python3 -m pytest tests/test_market_ontology_f12_commercial_scope.py -q`
+  in CI triage / local verification. Owner: Meta-CEO B, lane F12. Adopted by the
+  market-ontology-records CI job when it is commissioned (Meta-CEO B, B-PLAT-5);
+  delete this row then.
