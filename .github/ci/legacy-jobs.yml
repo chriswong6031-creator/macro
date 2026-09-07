@@ -13100,16 +13100,19 @@ jobs:
       - engine/alerts.py
       - engine/falsifier_tripwires.py
       - engine/i18n.py
+      - engine/thesis_condition_monitor.py
       - engine/top_maturation.py
       - scripts/build_top_maturation.py
       - scripts/build_vector.py
       - scripts/build_winner_health_page.py
       - scripts/export_top_anatomy_library.py
+      - scripts/run_thesis_condition_monitor.py
       - tests/test_alert_zh_completeness.py
       - tests/test_falsifier_tripwires.py
       - tests/test_json_strict.py
       - tests/test_massive_local_staleness.py
       - tests/test_price_pressure.py
+      - tests/test_thesis_condition_monitor.py
       - tests/test_top_anatomy.py
       - tests/test_top_anatomy_oot_receipt.py
       - tests/test_top_maturation.py
@@ -13127,6 +13130,15 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: falsifier tripwire state and v2 gate contracts
         run: python -m pytest tests/test_falsifier_tripwires.py -q
+      # F11 packet B-F11-1: a pure projection over this owner's own
+      # falsifier_tripwires latch + data/cycle_ontology corpus, joined to
+      # Supabase Thesis Objects by subject. Named by no run: step at merge
+      # (contract-delta round-2/3 blocker) — wired here rather than left in
+      # config/unrun_test_waivers.yml because this owner already installs
+      # every dependency the suite needs and already gates on the same
+      # data/cycle_ontology paths.
+      - name: thesis condition monitor — plain-language projection over the tripwire latch (F11 B-F11-1)
+        run: python -m pytest tests/test_thesis_condition_monitor.py -q
       # The zh half of every macro alert body must be fully Chinese. Six rules
       # interpolated an English-valued token straight into message_zh (#4700), and
       # the cycle-falsifier body quoted a curator-written English thesis (#4712).

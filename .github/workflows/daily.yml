@@ -4023,6 +4023,19 @@ jobs:
           DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.run_watchlist_sentinel || echo "::warning::watchlist sentinel failed (non-fatal)"
+      - name: thesis condition monitor (F11 — enqueues plain-language alerts; never sends)
+        # Reads the committed data/cycle_ontology/falsifiers.json (AUTHORED input, not
+        # render-produced) and data/cycle_ontology/tripwire_state.json (the latch state
+        # that IS produced on the render lane, .github/workflows/render.yml:946 ->
+        # scripts/build_cycle.py:311-321) and enqueues public.alert_outbox rows for
+        # windows that newly latched.
+        # Fail-soft: absent creds/tables -> typed READ_UNAVAILABLE, 0 rows, exit 0.
+        # Dormant unless THESIS_MONITOR_ENABLE=1. Delivery is F08's drain, never this step.
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          THESIS_MONITOR_ENABLE: ${{ secrets.THESIS_MONITOR_ENABLE }}
+        run: python -m scripts.run_thesis_condition_monitor || echo "::warning::thesis condition monitor failed (non-fatal)"
       - name: notify (telegram/discord; skips when secrets absent)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
