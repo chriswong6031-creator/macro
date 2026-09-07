@@ -159,7 +159,12 @@ def test_team_rollup_is_deferred_not_killed():
     assert "DEFERRED, NOT KILLED" in TEXT
     assert "team-accuracy rollup" in TEXT
     assert (
-        "permanently kills the cross-user ranking/leaderboard capability"
+        "permanently forbids ranking/leaderboard use of *this ledger's data* "
+        "within its own contract"
+        in TEXT
+    )
+    assert (
+        "not a codebase-wide `DNR:KILL-*` registry kill"
         in TEXT
     )
     assert (
@@ -167,6 +172,60 @@ def test_team_rollup_is_deferred_not_killed():
         "not killed here"
         in TEXT
     )
+
+
+def test_ranking_kill_is_scoped_to_this_spec_not_a_registry_row():
+    assert "a prohibition scoped to this spec's own forbidden-uses list, not" in TEXT
+    for phrase in ("kills the ranking/leaderboard half permanently",
+                   "permanently kills the cross-user ranking/leaderboard"):
+        assert phrase not in TEXT
+
+
+def test_episode_key_includes_threshold():
+    assert (
+        "`condition.metric` + `condition.comparator` + `condition.threshold`"
+        in TEXT
+    )
+    assert "SPX >= 6000" in TEXT and "SPX >= 7000" in TEXT
+
+
+def test_episode_partition_is_transitive_closure():
+    assert "**transitive closure**" in TEXT
+    assert "pairwise-only clustering that would split such a chain" in TEXT
+
+
+def test_still_live_is_defined():
+    assert (
+        "still-live means `status` in `{open, matured, resolved}`" in TEXT
+    )
+    assert (
+        "if every member of an episode is `withdrawn` or `void_unscorable`, "
+        "the episode carries no outcome or probability" in TEXT
+    )
+
+
+def test_null_ladder_has_a_band_for_high_resolved_low_probability_pairs():
+    assert "independently-keyed" in TEXT
+    assert "Hit-rate axis (keyed on resolved episodes):" in TEXT
+    assert (
+        "Calibration axis (keyed on probability-carrying episode pairs, "
+        "independent of the resolved-episode count above"
+        in TEXT
+    )
+    assert "0–29 probability pairs" in TEXT
+
+
+def test_glance_copy_includes_the_two_null_disclosures_bilingually():
+    en = _extract_block("EN")
+    zh = _extract_block("ZH")
+    assert (
+        "Not enough settled calls yet to check how well your odds match "
+        "reality."
+        in en
+    )
+    assert "calls could not be checked" in en and "{n}" in en
+    assert "还没有足够的已结算判断来核对你的把握是否准确。" in zh
+    assert "有 {n} 条判断无法核对" in zh
 
 
 def test_dnr_key_cited_in_colon_form():

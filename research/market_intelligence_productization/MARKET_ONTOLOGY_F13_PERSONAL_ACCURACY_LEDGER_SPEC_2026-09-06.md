@@ -43,7 +43,7 @@ do_not_redo (MO-DELTA-007): no universal analyst score conflating quality, reten
 
 HONEST-N: episode-level count, printed on every surface, never hidden and never rounded away.
 
-Episode rule (frozen): claims sharing the same `user_id` + `subject.id` + `condition.metric` + `condition.comparator` whose `[stated_at, resolves_at]` windows overlap collapse to **one** episode; the episode's outcome AND the episode's `stated_probability` (for the Brier pair, §2) are both taken from its earliest still-live member — the outcome and the probability always come from the same member, never from different claims in the collapsed set. Re-stating the same call ten times buys one episode for both hit-rate and Brier. Denominators printed with the score are always **episodes**, and the raw claim count is printed beside them so the two can never be confused.
+Episode rule (frozen): claims sharing the same `user_id` + `subject.id` + `condition.metric` + `condition.comparator` + `condition.threshold` whose `[stated_at, resolves_at]` windows overlap collapse into episodes by **transitive closure**: within one key group, two claims join the same episode if their windows overlap directly, or if a chain of pairwise-overlapping claims connects them (A overlaps B, B overlaps C ⇒ A, B, C are one episode even though A and C need not themselves overlap) — this is the only partition the frozen rule admits; pairwise-only clustering that would split such a chain into two episodes is not conformant. The episode's outcome AND the episode's `stated_probability` (for the Brier pair, §2) are both taken from its earliest **still-live** member — still-live means `status` in `{open, matured, resolved}` (i.e. not `withdrawn` and not `void_unscorable`); if every member of an episode is `withdrawn` or `void_unscorable`, the episode carries no outcome or probability and is counted only in the unscorable tally (§5) — the outcome and the probability always come from the same member, never from different claims in the collapsed set. Re-stating the same call ten times at the same threshold buys one episode for both hit-rate and Brier; re-stating it at a materially different `threshold` mints a distinct episode key, so two falsifiably different calls (e.g. `SPX >= 6000` vs `SPX >= 7000`) are never collapsed. Denominators printed with the score are always **episodes**, and the raw claim count is printed beside them so the two can never be confused.
 
 ## §4 The ceiling — what this number may never be used for
 
@@ -51,7 +51,7 @@ CEILING (learning_only): this score never feeds a signal, a rank, a size, or a g
 
 NO LEADERBOARD: no cross-user ranking, no percentile against other users, no team or company scoreboard, ever.
 
-DEFERRED, NOT KILLED: MO-DELTA-007's own row (`…F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv:126`) names a second, non-ranking capability — a team-accuracy rollup — distinct from cross-user ranking. This spec kills the ranking/leaderboard half permanently (forbidden use 6, above); it does NOT adjudicate the non-ranking rollup, which stays deferred pending a separate adjudication (a future `DEC-*` or an explicit `DNR:KILL-*` row) rather than being foreclosed by this frozen spec.
+DEFERRED, NOT KILLED: MO-DELTA-007's own row (`…F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv:126`) names a second, non-ranking capability — a team-accuracy rollup — distinct from cross-user ranking. This spec permanently forbids ranking/leaderboard use of *this ledger's data* within its own contract (forbidden use 6, above) — a prohibition scoped to this spec's own forbidden-uses list, not a codebase-wide `DNR:KILL-*` registry kill (no such row is minted by this packet, and none is owed for a prohibition that binds only this spec's own contract); it does NOT adjudicate the non-ranking rollup, which stays deferred pending a separate adjudication (a future `DEC-*` or an explicit `DNR:KILL-*` row) rather than being foreclosed by this frozen spec.
 
 DNR:KILL-LLM-CONFIDENCE — no LLM-originated number anywhere in this ledger: the model never states a probability, never grades an outcome, never adjusts a score.
 
@@ -66,12 +66,18 @@ Forbidden uses — the score is:
 
 ## §5 Nulls, in plain words
 
-The null ladder (frozen, plain-word, no statistics):
+The null ladder (frozen, plain-word, no statistics). Two **independently-keyed** axes — hit-rate is keyed on **resolved episodes**, calibration is keyed on **probability-carrying episode pairs** (§2) — so a user can sit in different bands on each axis at once (e.g. 40 resolved episodes but only 4 stated probabilities: full hit-rate detail, calibration still withheld):
+
+Hit-rate axis (keyed on resolved episodes):
 - 0 resolved episodes → *"Nothing has settled yet. Your first call gets checked on the day you set."*
 - 1–9 resolved episodes → *"Too early to say — checked 3 of your calls so far."* (integer count only)
-- 10–29 resolved episodes with probabilities → hit-rate stance shown; the calibration reading withheld with *"Not enough settled calls yet to check how well your odds match reality."*
-- ≥30 → full detail tier available.
-- Unscorable/undetermined claims are printed as their own line (*"2 calls could not be checked — the data they named wasn't there."*), never deleted and never folded into the miss count.
+- ≥10 resolved episodes → hit-rate stance shown (§6 stance mapping).
+
+Calibration axis (keyed on probability-carrying episode pairs, independent of the resolved-episode count above — this is the axis `engine.validation.brier_reliability` (§2) is actually keyed on):
+- 0–29 probability pairs → the calibration reading withheld with *"Not enough settled calls yet to check how well your odds match reality."*
+- ≥30 probability pairs → full detail tier available (Brier + calibration reading shown, per §2's floor).
+
+Unscorable/undetermined claims are printed as their own line (*"{n} calls could not be checked — the data they named wasn't there."*), never deleted and never folded into the miss count.
 
 ## §6 Copy block — what the later UI packet pastes VERBATIM
 
@@ -84,6 +90,8 @@ Mixed so far
 Not landing yet
 Nothing has settled yet. Your first call gets checked on the day you set.
 Checked so far: {n} of your calls.
+Not enough settled calls yet to check how well your odds match reality.
+{n} calls could not be checked — the data they named wasn't there.
 This is a learning record. It never changes what we show you, what we rank, or what you can do here.
 <!-- GLANCE-COPY-EN:END -->
 <!-- GLANCE-COPY-ZH:START -->
@@ -95,6 +103,8 @@ This is a learning record. It never changes what we show you, what we rank, or w
 目前还没落在正确一边
 还没有到期的判断。第一条会在你设定的那天核对。
 已核对：你的 {n} 条判断。
+还没有足够的已结算判断来核对你的把握是否准确。
+有 {n} 条判断无法核对——所引用的数据不存在。
 这只是学习记录。它不会改变我们展示什么、如何排序，也不会改变你能做什么。
 <!-- GLANCE-COPY-ZH:END -->
 
@@ -117,4 +127,4 @@ Banned in the glance tier: `Brier`, `hit-rate`, any `%`, any p-value, any study 
 
 - Blocking dependency — row key `MO-DELTA-007` (`…F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv:126`), `next_bounded_child` field, quoted verbatim: "DEFER — dependency the Thesis-object vertical (user claim authoring surface) before Eval OS can score it". Until it exists there is no producer, no store, and no number.
 - Explicitly out of scope here: any engine module, any template, any Supabase table, any nav row, any `site/` artifact.
-- Row state after this packet: MO-DELTA-007 stays `PROJECTION_ONLY` / `learning_only`; the packet closes the **contract** question for the personal ledger and permanently kills the cross-user ranking/leaderboard capability (§4). The non-ranking team-accuracy rollup capability is explicitly DEFERRED, not killed here (§4) — a separate adjudication owns that question.
+- Row state after this packet: MO-DELTA-007 stays `PROJECTION_ONLY` / `learning_only`; the packet closes the **contract** question for the personal ledger: within this spec's own contract, cross-user ranking/leaderboard use of this ledger's score is permanently forbidden (§4) — a prohibition scoped to this spec's own forbidden-uses list, not a `DNR:KILL-*` registry kill of the capability elsewhere in the codebase. The non-ranking team-accuracy rollup capability is explicitly DEFERRED, not killed here (§4) — a separate adjudication owns that question.
