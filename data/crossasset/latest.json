@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-05",
+  "date": "2026-09-06",
   "regime": "mixed / no clear trend",
   "breadth": 0.31,
   "favored": [
@@ -10,21 +10,21 @@
     "equity_intl"
   ],
   "correlation": "converging",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
     "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
-      "absorption_pctile": 0.74,
+      "absorption_pctile": 0.73,
       "n_markets": 6,
-      "absorption_ratio": 0.392,
-      "mean_abs_corr": 0.257,
+      "absorption_ratio": 0.389,
+      "mean_abs_corr": 0.255,
       "dominant_cluster": [
         "US",
-        "Commodities",
         "Crypto",
+        "Commodities",
         "Dollar"
       ],
       "spark_w": [
@@ -131,7 +131,7 @@
         0.396,
         0.369,
         0.37,
-        0.392
+        0.389
       ],
       "spark_asof": "2026-09-04"
     },
@@ -178,25 +178,25 @@
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 58.0
+        "pctile": 59.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 67.07,
+        "ratio": 67.067,
         "trend": "mid",
         "pctile": 28.0
       },
       {
         "pair": "oil_gold",
-        "ratio": 0.021,
+        "ratio": 0.02,
         "trend": "mid",
-        "pctile": 62.0
+        "pctile": 60.0
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.174,
+        "ratio": 0.172,
         "trend": "mid",
-        "pctile": 43.0
+        "pctile": 41.0
       }
     ],
     "carry": {
@@ -318,7 +318,7 @@
       }
     },
     "shadow": {
-      "pressure_pctile": 0.74,
+      "pressure_pctile": 0.73,
       "incumbent_state": "watch",
       "shadow_state": "watch",
       "escalated": false

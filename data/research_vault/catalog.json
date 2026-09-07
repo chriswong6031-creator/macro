@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-09-06T22:32:05.663600+00:00",
-  "count": 1885,
+  "generated_at": "2026-09-07T00:28:26.954482+00:00",
+  "count": 1890,
   "institutions": [
     "13F Summary",
     "ABN Amro",
@@ -91,6 +91,47 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hsmko3cwxk7-f10f65",
+      "title": "GS Novak US Industrials Materials Weekend Edition 08.31.26 09.04.26 6 Sep 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-06T22:35:41Z",
+      "summary_points": [
+        "**US Equity Flow Rotation**: Single stocks net bought for first time in 3 weeks; Info Tech/Comm Svcs/Financials/Utilities net bought vs.",
+        "Real Estate/Energy/Industrials/Staples net sold (hedge funds sold Real Estate for 4th week at 7-month fastest pace) - **Extreme Net Long Positioning**: US Fundamental L/S Net Leverage at 48.4% (27th percentile 1-yr vs.",
+        "79th percentile 5-yr), indicating historically low net long exposure and potential upside catalyst - **AVAV Technical Valuation Crisis**: Price at 52-week low (down 50% from $400), below 50/200-day SMAs, 40x PE vs.",
+        "consensus low double-digit growth; volatility expected - **Extreme Short Interest Risks**: CNH (79.2%), AGCO (77.6%), TITN (74.5%) short interest at unsustainable levels, signaling high squeeze vulnerability ahead of earnings/events"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ut4efqp4zzb-da26d2",
+      "title": "GS Biswas Credit now surrounded by many faces of rates 6 Sep 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-06T22:35:34Z",
+      "summary_points": [
+        "**Rate Hike Expectations & Spread Correlation**: Market pricing 2.5 FED/3.5 ECB rate hikes over 12 months; positive rates/spread correlation for EUR IG/USD credit amplifies risk as fund flows dislocate from total returns (especially EUR HY), with all-in yields near 10y highs.",
+        "**EUR HY Flow-Return Disconnect**: Positive flows for EUR HY (2024-2025) coexist with negative yield-driven returns, signaling spread widening or rate sensitivity risk despite inflows.",
+        "**Inverted EUR IG Flow-Rate Dynamic**: 2025–2026 shows positive flows during rate hikes, indicating behavioral shift in demand and potential mispricing risk for EUR IG credit.",
+        "**Implied vs Realized Correlation Mispricing**: LQD options imply higher correlation than realized (1m/2m/3m), signaling market overestimation of credit spread-rate linkage—key for hedging (cheap 3m puts).",
+        "**Refinancing Cost Spike**: Yield (refinancing cost) surged in 2025–2026 (e.g., Feb-25, Feb-26), widening gap vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-flowmvfdj5y-dc93ef",
       "title": "GS Coppersmith US Equities AI back in focus Astra Communacopia 6 Sep 2026",
@@ -443,6 +484,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-zgbpmxdn36g-8261ad",
+      "title": "MRB Asset Allocation Bond Warnings Signs September 4 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-09-05T01:18:29Z",
+      "summary_points": [
+        "Bond Yield Trajectory**: U.S.",
+        "10-year yield expected to breach 5% (last seen Oct 2023), 30-year above 2023 peak; weak fundamentals (high deficits, debt) drive upward pressure, signaling market stress.",
+        "Tech Earnings Peak Risk**: Global forward earnings growth unsustainable (40% above year-ago), driven by tech (30% of global earnings); tech slowdown likely to trigger broad earnings decline.",
+        "Fed Policy & Geopolitical Pressures**: Fed Chair Warsh’s Jackson Hole speech signals higher rates; U.S.-Iran tensions and rising CDS spreads amplify bond yield risks and liquidity stress.",
+        "Global S/B Ratio Overbought**: MRB Cyclical Momentum Indicator shows global stock/bond ratio nearing overbought territory (bond oversold unwinding could benefit stocks if economy holds)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vp6npbd61l8-75d3a1",
       "title": "TDAGeneric NAM",
       "institution": "Other",
@@ -521,6 +583,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-apcqrmujhpf-4fd2e3",
+      "title": "WA36",
+      "institution": "SEB",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T01:10:13Z",
+      "summary_points": [
+        "**ECB Rate Hike & US CPI**: 25 bp ECB hike expected Sept 10, core US CPI at 2.4% y/y; US Federal budget deficit at -344.8bn delays Fed rate cuts, heightening market risk sentiment.",
+        "**German Election Risk**: Sept 6 election introduces acute geopolitical risk, potentially disrupting Eurozone fiscal policy and market stability.",
+        "**Eurozone Industrial Production**: Germany’s manufacturing PMI near 50 (expansion) amid Middle East conflict resilience, but structural risks from China competition and fiscal reforms remain critical.",
+        "**US Fiscal Strain**: Federal budget balance deficit (-344.8bn) signals persistent fiscal pressure, directly challenging Fed’s rate-cut timeline and global risk asset flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7vsnnama9s5-3a8aed",
+      "title": "Cheap or Expensive by Design Quantifying the Deep Misalignment of Asian Currencies",
+      "institution": "Natixis",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-09-05T01:02:58Z",
+      "summary_points": [
+        "**JPY Undervaluation & Policy Driver**: JPY 26% undervalued per PPP, driven by BOJ low rates; BEER model confirms undervaluation alongside KRW/IDR/INR, signaling mean reversion risk.",
+        "**Policy-Driven FX Correction**: BOJ/BOK/US Treasury interventions and KRW’s 14.5% USD appreciation since July indicate active macroeconomic imbalance correction, with rapid adjustment potential.",
+        "**Current Account Misalignment Risk**: Asian current account surpluses (e.g., China CAS 20.1% GDP) contradict weak REERs, invalidating MB approach; critical for EM portfolio positioning due to capital flow volatility.",
+        "**REER-CAS Gap in East Asia**: South Korea, Japan, Taiwan show weak REER vs.",
+        "CAS/IIP, signaling undervalued FX and mispriced trade dynamics—key for EM portfolio rebalancing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },

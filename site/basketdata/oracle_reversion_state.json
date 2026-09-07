@@ -314,7 +314,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/oracle_reversion_state.py",
-  "produced_at": "2026-09-06T07:58:47Z",
+  "produced_at": "2026-09-07T00:09:49Z",
   "inputs_hash": "sha256:f54c99f6e4516fba37a1211a7a5b1dd9f1a0dfcbcf8a0c596bfe682a67bfacc5",
   "tier": "display"
 }

@@ -2,14 +2,14 @@
   "schema": "marketing.cashtag_tiers/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-09-06T08:41:38Z",
+  "produced_at": "2026-09-07T00:51:03Z",
   "tier": "display",
   "as_of": "2026-09-04",
-  "universe_n": 2613,
+  "universe_n": 2612,
   "universe_sources": {
     "index_n": 518,
-    "hot_tape_pack_n": 2613,
-    "hot_tape_pack_added_n": 2095,
+    "hot_tape_pack_n": 2612,
+    "hot_tape_pack_added_n": 2094,
     "hot_tape_pack_trade_date": "2026-09-04"
   },
   "tiers": {
@@ -222,7 +222,6 @@
       "GWRE",
       "HASI",
       "HONA",
-      "HOS",
       "HPE",
       "HPQ",
       "HRB",
@@ -13222,11 +13221,11 @@
       "reasons": [],
       "proxies": {
         "mcap_weight": null,
-        "pct_1d": null,
+        "pct_1d": 0.16583747927030323,
         "pct_1w": null,
         "earnings_in_days": 29,
         "dollar_vol_musd": 28.55303885,
-        "pct_1d_source": null,
+        "pct_1d_source": "hot_tape_pack",
         "dollar_vol_source": "hot_tape_adv20",
         "adv20_musd": 28.55303885,
         "in_index_universe": false
@@ -19232,23 +19231,6 @@
         "dollar_vol_source": "stocks_last_bar",
         "adv20_musd": 2203.7355909899998,
         "in_index_universe": true
-      }
-    },
-    "HOS": {
-      "tier": "T2",
-      "reasons": [
-        "move_1d"
-      ],
-      "proxies": {
-        "mcap_weight": null,
-        "pct_1d": -10.939012584704756,
-        "pct_1w": null,
-        "earnings_in_days": 54,
-        "dollar_vol_musd": 33.82671712,
-        "pct_1d_source": "hot_tape_pack",
-        "dollar_vol_source": "hot_tape_adv20",
-        "adv20_musd": 33.82671712,
-        "in_index_universe": false
       }
     },
     "HP": {

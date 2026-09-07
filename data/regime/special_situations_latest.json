@@ -1,23 +1,23 @@
 {
-  "total": 1370,
+  "total": 1386,
   "n_categories": 17,
-  "cross_border": 547,
+  "cross_border": 551,
   "top_categories": [
     {
       "category": "Capital Returns",
-      "n": 332
+      "n": 334
     },
     {
       "category": "Acquisitions",
-      "n": 240
+      "n": 248
     },
     {
       "category": "Delistings",
-      "n": 141
+      "n": 142
     }
   ],
   "floor_musd": 100.0,
-  "built": "2026-09-06 06:20 UTC",
+  "built": "2026-09-06 23:06 UTC",
   "grade_a": 0,
-  "new_today": 30
+  "new_today": 60
 }

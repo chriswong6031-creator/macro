@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-06T07:45:13.132080+00:00",
+  "generated_utc": "2026-09-06T23:53:55.728660+00:00",
   "as_of": "2026-09-06",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -20,7 +20,7 @@
           "Filed": "2026-08-22",
           "Traded": "2026-06-03 00:00:00",
           "ExcessReturn": "17.31499672514515",
-          "_first_seen": "2026-09-05T23:46:34.437044+00:00"
+          "_first_seen": "2026-09-06T15:22:17.551819+00:00"
         },
         {
           "Ticker": "HUBS",
@@ -3459,182 +3459,182 @@
       "label_en": "WallStreetBets",
       "label_zh": "WSB\u70ed\u5ea6",
       "rows": 19341,
-      "last_seen": "2026-09-05",
+      "last_seen": "2026-09-06",
       "recent": [
         {
           "Ticker": "VC",
           "Count": "1",
           "Sentiment": "0.1093",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "LIVE",
           "Count": "1",
           "Sentiment": "0.7359",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "ANET",
           "Count": "15",
           "Sentiment": "0.14191333333333336",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "OKLO",
           "Count": "21",
           "Sentiment": "-0.04873333333333334",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "EU",
           "Count": "9",
           "Sentiment": "0.06314444444444448",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "SE",
           "Count": "4",
           "Sentiment": "0.2897",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "EPS",
           "Count": "5",
           "Sentiment": "0.6384799999999999",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "SEDG",
           "Count": "6",
           "Sentiment": "-0.04284999999999999",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "GO",
           "Count": "6",
           "Sentiment": "-0.06998333333333333",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "FSLR",
           "Count": "2",
           "Sentiment": "0.2673",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "PR",
           "Count": "1",
           "Sentiment": "-0.34",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "BOIL",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "HR",
           "Count": "4",
           "Sentiment": "-0.030925000000000008",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "XLV",
           "Count": "1",
           "Sentiment": "-0.8074",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "TDOC",
           "Count": "2",
           "Sentiment": "0.0",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "HOOD",
           "Count": "19",
           "Sentiment": "-0.039557894736842104",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "DIS",
           "Count": "3",
           "Sentiment": "-0.11896666666666667",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "NKLA",
           "Count": "11",
           "Sentiment": "-0.02502727272727273",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "ETSY",
           "Count": "5",
           "Sentiment": "0.3463",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "BKSY",
           "Count": "6",
           "Sentiment": "0.16961666666666667",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "PPT",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "DJT",
           "Count": "6",
           "Sentiment": "-0.013500000000000007",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "AB",
           "Count": "1",
           "Sentiment": "-0.3182",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "WELL",
           "Count": "3",
           "Sentiment": "0.6257333333333333",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Ticker": "DATS",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-09-05T23:46:23.395145+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:07.412190+00:00",
+          "_collected": "2026-09-06"
         }
       ]
     },
@@ -3665,258 +3665,258 @@
       "emoji": "\ud83d\udd2c",
       "label_en": "US patents",
       "label_zh": "\u7f8e\u56fd\u4e13\u5229",
-      "rows": 11030,
-      "last_seen": "2026-08-25",
+      "rows": 11816,
+      "last_seen": "2026-09-01",
       "recent": [
         {
-          "Date": "2026-08-25",
-          "IPC": "f16d001/112",
-          "Title": "shaft coupling",
-          "Claims": "19.0",
-          "Abstract": "a shaft coupling system may include a first shaft including a disc that is engageable by a second shaft to retain the second shaft with the first shaft when the second shaft is rotated in a first direction, and releas\u2026",
+          "Date": "2026-09-01",
+          "IPC": "g01j003/02",
+          "Title": "variable transmission aperture",
+          "Claims": "10.0",
+          "Abstract": "a spectrometry system for spectroscopically analyzing a sample is provided. the system includes an excitation source for interacting with the sample; a detector for detecting at least a portion of light absorbed or em\u2026",
           "Ticker": "A",
-          "PatentNumber": "12716456",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "PatentNumber": "12723914",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04b007/06",
-          "Title": "channel state information triggering and reporting",
-          "Claims": "34.0",
-          "Abstract": "methods related to wireless communication systems and scheduling channel state information operations and transmissions. a user equipment (ue) receives, from a base station (bs), a channel state information (csi) comp\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719539",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Date": "2026-09-01",
+          "IPC": "g06n003/045",
+          "Title": "techniques for input classification and response using generative neural networks",
+          "Claims": "22.0",
+          "Abstract": "disclosed herein are techniques for detecting invalid web traffic. a method described herein involves obtaining an input sequence. the method further includes inputting the input sequence to an encoder model configure\u2026",
+          "Ticker": "ORCL",
+          "PatentNumber": "12725008",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "b60w050/08",
-          "Title": "advanced driver assistance system sensitivity adjustments",
-          "Claims": "27.0",
-          "Abstract": "a user equipment (ue) may obtain an indication of a first gaze pattern of a driver of a vehicle from at least one memory. the ue may obtain a second gaze pattern of the driver of the vehicle based on a first set of se\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12715461",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "b60w060/00",
-          "Title": "backup trajectory converter for controlling a vehicle",
-          "Claims": "27.0",
-          "Abstract": "systems and techniques control one or more operations of a vehicle. for example, according to some aspects, a process may include determining a path associated with the vehicle and determining at least two points on t\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12715466",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "h04l001/18",
-          "Title": "machine learning assisted predictive retransmission feedback",
-          "Claims": "29.0",
-          "Abstract": "methods, systems, and devices for wireless communications are described. the method includes transmitting, to a base station, a capability parameter indicating one or more predictive retransmission feedback capabiliti\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719612",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "h04l001/00",
-          "Title": "parallel qdm encoding",
-          "Claims": "30.0",
-          "Abstract": "certain aspects of the present disclosure provide a technique for parallel distribution matching (dm) encoding. a user equipment (ue) implements the technique to perform a first round of parallel dm encoding using k i\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719608",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "h04b017/336",
-          "Title": "cross link interference resource reporting",
-          "Claims": "23.0",
-          "Abstract": "certain aspects of the present disclosure provide techniques for cross link interference (cli) resource reporting. an example method, performed at a first network entity, includes receiving a report, from a first user\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719594",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "h04b017/309",
-          "Title": "factors affecting measurement period formulation for positioning",
-          "Claims": "23.0",
-          "Abstract": "disclosed are techniques for wireless positioning. in an aspect, a user equipment (ue) receives a request location information message from the network entity, the request location information message including one or\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719593",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "h04b007/06",
-          "Title": "waveform specific closed-loop antenna selection",
+          "Date": "2026-09-01",
+          "IPC": "g06f016/00",
+          "Title": "generating cohesive explanations that communicate insights and patterns on multi-dimensional financial planning data",
           "Claims": "20.0",
-          "Abstract": "methods, systems, and devices for wireless communication are described. various aspects relate to waveform specific closed-loop antenna selection. some aspects more specifically relate to mechanisms according to which\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719537",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Abstract": "systems, articles, and computer-implemented methods are disclosed for generating natural language summaries of a multi-dimensional analysis of a detected anomaly within a member of multi-dimensional data by prompting \u2026",
+          "Ticker": "ORCL",
+          "PatentNumber": "12724848",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04w072/02",
-          "Title": "sidelink resource selection based on an exclusion of sidelink feedback channel slots",
-          "Claims": "30.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a first user equipment (ue) may receive, by a first radio access technology (rat) sidelink module from a second ra\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12720501",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Date": "2026-09-01",
+          "IPC": "g06f016/901",
+          "Title": "fast and memory efficient in-memory columnar graph updates while preserving analytical performance",
+          "Claims": "18.0",
+          "Abstract": "techniques are provided for updating in-memory property graphs in a fast manner, while minimizing memory consumption. a graph is represented as delta compressed sparse rows (csr), in which its data structure stores fo\u2026",
+          "Ticker": "ORCL",
+          "PatentNumber": "12724823",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04b001/04",
-          "Title": "adaptive pa order modeling based on instantaneous snr and rx diversity order",
-          "Claims": "30.0",
-          "Abstract": "methods, systems, and devices for wireless communications are described. a component of a user equipment (ue) may experience non-linearity behavior. using a digital post distortion (dpod) process, the ue may estimate \u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719515",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Date": "2026-09-01",
+          "IPC": "h04l029/06",
+          "Title": "validating certificate bundles with asymmetric keys",
+          "Claims": "31.0",
+          "Abstract": "operations of a certificate bundle validation service may include receiving a first certificate bundle that includes a first set of one or more digital certificates, and a digital signature, associated with the first \u2026",
+          "Ticker": "ORCL",
+          "PatentNumber": "12726368",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04b001/04",
-          "Title": "robust low complexity digital post distortion technique",
-          "Claims": "29.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive a configuration for receiving or calculating an interference parameter based, at\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719514",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Date": "2026-09-01",
+          "IPC": "h02j007/00",
+          "Title": "bi-directional charging system for a lift",
+          "Claims": "11.0",
+          "Abstract": "systems and apparatuses include a platform charger for use with a lift, such as an aerial work platform (awp) or mobile elevating work platform (mewp). the platform charger includes an elevated platform, a ramp extend\u2026",
+          "Ticker": "OSK",
+          "PatentNumber": "12722955",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "g05f001/575",
-          "Title": "voltage regulator with skewed current mirror",
+          "Date": "2026-09-01",
+          "IPC": "g06t011/10",
+          "Title": "simplified alignment indicator",
+          "Claims": "17.0",
+          "Abstract": "a refuse vehicle can include a camera and one or more processing circuits. the one or more processing circuits can detect a movement of the refuse vehicle, receive image data that includes a waste receptacle, determin\u2026",
+          "Ticker": "OSK",
+          "PatentNumber": "12725323",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "b66f013/00",
+          "Title": "leveling system for lift device",
           "Claims": "16.0",
-          "Abstract": "techniques and apparatus for supplying power with offset voltage generation are provided. one example power supply circuit generally includes a first transistor including a source coupled to an input voltage (vin) nod\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719432",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Abstract": "a chassis for a lift device includes a base, an arm, and a first actuator. the base has a first end and an opposing second end. the first end defines an arm interface and a pivot actuator interface. the arm includes a\u2026",
+          "Ticker": "OSK",
+          "PatentNumber": "12722959",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "g09g003/20",
-          "Title": "hardware efficient interpolation",
+          "Date": "2026-09-01",
+          "IPC": "b66f011/04",
+          "Title": "aerial work platform system",
+          "Claims": "15.0",
+          "Abstract": "a lift device includes a chassis, a primary platform defining a first support surface configured to support an operator, a lift assembly coupling the primary platform to the chassis and configured to raise the primary\u2026",
+          "Ticker": "OSK",
+          "PatentNumber": "12722958",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "g06n020/10",
+          "Title": "systems and methods for updating predictive coding for document category review",
           "Claims": "20.0",
-          "Abstract": "this disclosure provides systems, devices, apparatus, and methods, including computer programs encoded on storage media, for interpolating a color for an interpolation point. a graphics processor may select a set of k\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12718728",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Abstract": "systems and methods for analyzing documents are provided herein. a plurality of documents and user input are received via a computing device. the user input includes hard coding of a subset of the plurality of documen\u2026",
+          "Ticker": "OTEX",
+          "PatentNumber": "12725091",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "g06v040/13",
-          "Title": "acoustic sensor systems with different heights",
-          "Claims": "18.0",
-          "Abstract": "acoustic sensor systems with different heights, as well as methods for configuring and operating such sensor systems are disclosed. in some embodiments, a sensor system described herein may include an acoustic receive\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12718614",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "g06v020/58",
-          "Title": "depth image data structure for storing image depth information",
+          "Date": "2026-09-01",
+          "IPC": "g06f011/10",
+          "Title": "storage system accommodating differing types of storage",
           "Claims": "20.0",
-          "Abstract": "the present disclosure provide techniques for processing image depth information. a method may include obtaining a depth image data structure representative of depth information for pixels in an image corresponding to\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12718587",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Abstract": "a plurality of storage nodes in a single chassis is provided. the plurality of storage nodes in the single chassis is configured to communicate together as a storage cluster. each of the plurality of storage nodes inc\u2026",
+          "Ticker": "P",
+          "PatentNumber": "12724670",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04l001/1829",
-          "Title": "strategies for deferring semi-persistent scheduling uplink control channel transmissions",
-          "Claims": "30.0",
-          "Abstract": "methods, systems, and devices for wireless communications are described. a user equipment (ue) may generate first and second sets of feedback bits associated with first and second downlink transmissions, respectively,\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719617",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Date": "2026-09-01",
+          "IPC": "g06f012/00",
+          "Title": "storage of data and metadata in a storage network",
+          "Claims": "20.0",
+          "Abstract": "methods and apparatus for storing data and metadata in a storage network. in a method, one or more processing modules of a storage network establishes a vault as a virtual memory block that maps to memory of the stora\u2026",
+          "Ticker": "P",
+          "PatentNumber": "12726367",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04l001/1829",
-          "Title": "performing uplink transmissions according to codebook timespans",
-          "Claims": "26.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive, from a network entity, a physical downlink shared channel (pdsch) transmission \u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12719618",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Date": "2026-09-01",
+          "IPC": "h04l009/40",
+          "Title": "flow metadata exchanges between network and security functions for a security service",
+          "Claims": "20.0",
+          "Abstract": "in some embodiments, a system/process/computer program product for flow metadata exchanges between network and security functions for a security service includes receiving a flow at a software-defined wide area networ\u2026",
+          "Ticker": "PANW",
+          "PatentNumber": "12726523",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04w052/02",
-          "Title": "network power saving and rf sensing",
-          "Claims": "28.0",
-          "Abstract": "a method of wireless communication at a network entity is disclosed herein. the network entity obtains an indication of an nes mode, where the nes mode is supported by at least one of a set of network nodes or a ue. t\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12720431",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Date": "2026-09-01",
+          "IPC": "h04l061/00",
+          "Title": "managing access to cloud-hosted applications using domain name resolution",
+          "Claims": "20.0",
+          "Abstract": "edge clusters execute in a plurality of regional clouds of a cloud computing platforms, which may include cloud pops. edge clusters may be programmed to control access to applications executing in the cloud computing \u2026",
+          "Ticker": "PANW",
+          "PatentNumber": "12726455",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04n021/262",
-          "Title": "deadline signaling for streaming of media data",
+          "Date": "2026-09-01",
+          "IPC": "g06f007/00",
+          "Title": "automated generation of pairs of natural language questions and database queries",
+          "Claims": "20.0",
+          "Abstract": "a pipeline performs automated generation of database queries for a database and corresponding questions comprising natural language text. the pipeline generates database query templates based at least partly on a sche\u2026",
+          "Ticker": "PANW",
+          "PatentNumber": "12724767",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "h04l043/0829",
+          "Title": "capacity agnostic scoring of network path health based on packet loss",
+          "Claims": "23.0",
+          "Abstract": "a network path scoring system is disclosed herein that scores quality of network paths to facilitate identification of poorly performing circuits for investigation. the scoring system builds a profile with packet loss\u2026",
+          "Ticker": "PANW",
+          "PatentNumber": "12726425",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "g06f021/55",
+          "Title": "adaptive incident prioritization based on user feedback",
+          "Claims": "15.0",
+          "Abstract": "a computer-implemented method for prioritizing security incidents includes maintaining one or more pre-trained artificial intelligence (ai) models that, when applied to features extracted from computer-system security\u2026",
+          "Ticker": "PANW",
+          "PatentNumber": "12724884",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "g06f001/26",
+          "Title": "profiling of devices powered through power over ethernet for device security",
+          "Claims": "20.0",
+          "Abstract": "profiles of powered devices (pds) are created based on monitoring device attributes and power consumption trends for connected pds. an agent executing on power sourcing equipment (pse) determines device attributes of \u2026",
+          "Ticker": "PANW",
+          "PatentNumber": "12724470",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "b60l015/20",
+          "Title": "dynamic motor control for optimizing powertrain efficiency",
+          "Claims": "12.0",
+          "Abstract": "the present disclosure relates to systems and methods of dynamically modulating use of various motor control strategies (mcss) to optimize powertrain efficiency. one or a combination of mcss are strategically and dyna\u2026",
+          "Ticker": "PCAR",
+          "PatentNumber": "12722503",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "g06f016/2457",
+          "Title": "artificial intelligence architecture for identifying relationships between data objects of different types within a construction management software application",
+          "Claims": "20.0",
+          "Abstract": "an example computing platform is configured to: (i) receive an incoming request to identify relationships between data objects within a construction management software application; (ii) identify an ai agent to handle\u2026",
+          "Ticker": "PCOR",
+          "PatentNumber": "12724783",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "a61f013/505",
+          "Title": "diaper article with multiple absorbent bodies",
+          "Claims": "14.0",
+          "Abstract": "disclosed is an article having an absorbent assembly and an application structure, the absorbent assembly containing: 1) a first absorbent body having a first water permeable topsheet; a first water impermeable backsh\u2026",
+          "Ticker": "PG",
+          "PatentNumber": "12721762",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "a61f013/15",
+          "Title": "elastomeric laminate(s) for absorbent article donning",
+          "Claims": "8.0",
+          "Abstract": "the present disclosure relates to absorbent articles comprising belts comprising one or more pluralities of tightly spaced (less than 4 mm, less than 3 mm, less than 2 mm, and less than 1 mm) and/or low decitex (less \u2026",
+          "Ticker": "PG",
+          "PatentNumber": "12721760",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
+        },
+        {
+          "Date": "2026-09-01",
+          "IPC": "c08g063/672",
+          "Title": "polyesters",
           "Claims": "19.0",
-          "Abstract": "a client device includes a memory comprising a buffer for buffering data having real-time constraints and a hardware-based processor comprising digital logic circuitry. the processor is configured to execute a real-ti\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12720137",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Abstract": "the present invention relates to specific polyesters which are particularly suitable for use in fabric treatment applications, such as in fabric care and laundry detergent products. in such applications, the polyester\u2026",
+          "Ticker": "PG",
+          "PatentNumber": "12723131",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04w028/18",
-          "Title": "selection of open radio unit capabilities based on configured features",
-          "Claims": "30.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a network entity may transmit, to an open distributed unit (o-du), a first set of capabilities of the network enti\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12720368",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "h04w028/02",
-          "Title": "communicating protocol data unit set traffic information",
-          "Claims": "30.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may generate a signaling message that includes information associated with protocol data uni\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12720359",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "h04w028/02",
-          "Title": "delay budgets associated with delay status reporting",
-          "Claims": "30.0",
-          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may transmit a delay status report indicating a remaining time, the remaining time comprisin\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12720358",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
-        },
-        {
-          "Date": "2026-08-25",
-          "IPC": "h04w024/10",
-          "Title": "signal measurement difference reporting",
+          "Date": "2026-09-01",
+          "IPC": "g06f040/284",
+          "Title": "multi-task learning for natural language processing tasks using a shared pre-trained language model",
           "Claims": "20.0",
-          "Abstract": "this disclosure provides methods, components, devices and systems for signal measurement difference reporting. a user equipment (ue) may report, to a network entity, a measurement difference, or a difference between m\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12720356",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Abstract": "disclosed are machine learning techniques directed to training a machine learning model for the combined learning of multiple natural language processing (nlp) tasks. the nlp tasks may be named entity recognition (ner\u2026",
+          "Ticker": "ORCL",
+          "PatentNumber": "12724967",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         },
         {
-          "Date": "2026-08-25",
-          "IPC": "h04n023/85",
-          "Title": "regions of interest in autofocus processing",
+          "Date": "2026-09-01",
+          "IPC": "g06n003/08",
+          "Title": "system and method for implementing federated learning engine for integration of vertical and horizontal ai",
           "Claims": "18.0",
-          "Abstract": "one or more processors of a computing device may receive image data obtained via an image sensor of a camera. the one or more processors may apply one or more horizontal filters to the image data to generate horizonta\u2026",
-          "Ticker": "QCOM",
-          "PatentNumber": "12720213",
-          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+          "Abstract": "systems and methods for implementing federated learning engine for integration of vertical and horizontal ai are disclosed herein. a method can include receiving a global model from a central aggregator communicatingl\u2026",
+          "Ticker": "ORCL",
+          "PatentNumber": "12725031",
+          "_first_seen": "2026-09-06T15:22:06.633054+00:00"
         }
       ]
     },
@@ -4467,9 +4467,72 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 2287,
-      "last_seen": "2026-09-05",
+      "rows": 2289,
+      "last_seen": "2026-09-06",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Keel+Infra+Stock+%28KEEL%29+Opinions+on+AI+Pivot+and+Insider+Buying",
+          "time": "2026-09-06 14:04:12",
+          "headline": "Keel Infra Stock (KEEL) Opinions on AI Pivot and Insider Buying",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Insider Accumulation Builds Momentum:</strong> Social media chatter around Keel Infra has highlighted recent purchases by the CEO and COO alongside growing institutional stake\u2026",
+          "image": "https://www.quiverquant.com/images/keel_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Boeing+Stock+%28BA%29+Opinions+on+Financial+Performance",
+          "time": "2026-09-06 14:04:12",
+          "headline": "Boeing Stock (BA) Opinions on Financial Performance",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Financial performance scrutiny:</strong> Social media chatter has centered on Boeing's recent earnings trajectory, with participants noting cumulative losses from prior years \u2026",
+          "image": "https://www.quiverquant.com/images/ba_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Adobe+Stock+%28ADBE%29+Opinions+on+Upcoming+Earnings+and+Analyst+Ratings",
+          "time": "2026-09-06 14:04:12",
+          "headline": "Adobe Stock (ADBE) Opinions on Upcoming Earnings and Analyst Ratings",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Analyst upgrades lift sentiment:</strong> Recent social media chatter highlights RBC Capital's decision to raise its price target on Adobe to $315 while maintaining an Outperf\u2026",
+          "image": "https://www.quiverquant.com/images/adbe_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Exxon+Mobil+Stock+%28XOM%29+Opinions+on+Stock+Momentum+and+Trading+Activity",
+          "time": "2026-09-06 14:04:12",
+          "headline": "Exxon Mobil Stock (XOM) Opinions on Stock Momentum and Trading Activity",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Technical Momentum:</strong> Social media chatter highlights Exxon Mobil shares climbing toward the $161 level with buyers entering on intraday strength. Observers note buildi\u2026",
+          "image": "https://www.quiverquant.com/images/xom_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Raymond+James+Financial+Stock+%28RJF%29+Opinions+on+Recent+Dividend+and+Board+Appointments",
+          "time": "2026-09-06 14:04:12",
+          "headline": "Raymond James Financial Stock (RJF) Opinions on Recent Dividend and Board Appointments",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Corporate Developments:</strong> Social media buzz centered on Raymond James Financial's recent quarterly dividend declaration of $0.54 per share. Observers also highlighted t\u2026",
+          "image": "https://www.quiverquant.com/images/rjf_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Zhihu+Inc.+Announces+Proposed+RMB1.5+Billion+Subscription+in+AI-Focused+Investment+Fund+Subject+to+Shareholder+Approval",
+          "time": "2026-09-06 11:40:17",
+          "headline": "Zhihu Inc. Announces Proposed RMB1.5 Billion Subscription in AI-Focused Investment Fund Subject to Shareholder Approval",
+          "category": "press_release_summary",
+          "summary": "<p>Zhihu Inc. announced a RMB1.5 billion investment in an AI-focused partnership, pending shareholder approval at an EGM.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Zhihu Inc. announced its entry into a s\u2026",
+          "image": "https://www.quiverquant.com/images/zh_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Roivant+and+Pulmovant+to+Present+Phase+2+PHocus+Study+Results+of+Mosliciguat+in+PH-ILD+at+ERS+2026",
+          "time": "2026-09-06 05:10:17",
+          "headline": "Roivant and Pulmovant to Present Phase 2 PHocus Study Results of Mosliciguat in PH-ILD at ERS 2026",
+          "category": "press_release_summary",
+          "summary": "<p>Roivant and Pulmovant will present Phase 2 study results of mosliciguat for pulmonary hypertension at ERS Congress 2026.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Roivant and Pulmovant have announced \u2026",
+          "image": "https://www.quiverquant.com/images/roiv_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+Highlights+Government+Funding+Vote+and+Freedom+Haulers+Act",
           "time": "2026-09-05 22:21:24",
@@ -4477,7 +4540,7 @@
           "category": "legislation_automated",
           "summary": "<p>Congressman Mast summarizes House votes to prevent a shutdown and promotes a bill supporting veterans as commercial drivers.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165\u2026",
           "image": "https://www.quiverquant.com/images/M001199_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Put+Quiver%27s+data+inside+your+AI+Model+at+50%25+off",
@@ -4486,7 +4549,7 @@
           "category": "summary",
           "summary": "<div class=\"rendered-post\"><div class=\"bg-wt-background text-wt-text-on-background\"><div><div id=\"content-blocks\"><div><div><a href=\"https://api.quiverquant.com/pricing/?utm_source=quiver_newsletter&amp;utm_medium=ema\u2026",
           "image": null,
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Insider+Stock+Purchases%3A+September+05%2C+2026",
@@ -4495,7 +4558,7 @@
           "category": "insiders_automated",
           "summary": "<p>We have seen 37 open market insider transactions reported today, September 05, 2026. You can track them all on the <a href=\"https://www.quiverquant.com/insiders/\">Quiver Quantitative Insider Trading dashboard</a>. \u2026",
           "image": "https://www.quiverquant.com/images/lila_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Representative+Carol+D.+Miller+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
@@ -4504,7 +4567,7 @@
           "category": "congress_trades_automated",
           "summary": "<p>Representative Carol D. Miller has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p\u2026",
           "image": "https://www.quiverquant.com/images/M001205_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Representative+Tim+Burchett+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
@@ -4513,43 +4576,7 @@
           "category": "congress_trades_automated",
           "summary": "<p>Representative Tim Burchett has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><u\u2026",
           "image": "https://www.quiverquant.com/images/B001309_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Lisa+C.+McClain+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-09-05 18:10:26",
-          "headline": "Representative Lisa C. McClain has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Lisa C. McClain has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p\u2026",
-          "image": "https://www.quiverquant.com/images/M001136_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Cory+Mills+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-09-05 18:10:26",
-          "headline": "Representative Cory Mills has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Cory Mills has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><ul>\u2026",
-          "image": "https://www.quiverquant.com/images/M001216_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Daniel+Meuser+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-09-05 18:10:26",
-          "headline": "Representative Daniel Meuser has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Daniel Meuser has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><\u2026",
-          "image": "https://www.quiverquant.com/images/M001204_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Jennifer+L.+McClellan+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-09-05 18:10:26",
-          "headline": "Representative Jennifer L. McClellan has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Jennifer L. McClellan has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed inclu\u2026",
-          "image": "https://www.quiverquant.com/images/M001227_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Representative+Ryan+Mackenzie+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
@@ -4558,16 +4585,7 @@
           "category": "congress_trades_automated",
           "summary": "<p>Representative Ryan Mackenzie has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p>\u2026",
           "image": "https://www.quiverquant.com/images/M001230_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Rosa+L.+DeLauro+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-09-05 18:10:26",
-          "headline": "Representative Rosa L. DeLauro has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Rosa L. DeLauro has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p\u2026",
-          "image": "https://www.quiverquant.com/images/D000216_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Representative+Mary+E.+Miller+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
@@ -4576,7 +4594,16 @@
           "category": "congress_trades_automated",
           "summary": "<p>Representative Mary E. Miller has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p>\u2026",
           "image": "https://www.quiverquant.com/images/M001211_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Representative+Lisa+C.+McClain+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-09-05 18:10:26",
+          "headline": "Representative Lisa C. McClain has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Lisa C. McClain has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p\u2026",
+          "image": "https://www.quiverquant.com/images/M001136_congress.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Representative+Brian+J.+Mast+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
@@ -4585,16 +4612,43 @@
           "category": "congress_trades_automated",
           "summary": "<p>Representative Brian J. Mast has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><\u2026",
           "image": "https://www.quiverquant.com/images/M001199_congress.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/McKesson+Stock+%28MCK%29+Opinions+on+Recent+Data+Leak+and+Market+Dynamics",
-          "time": "2026-09-05 17:34:38",
-          "headline": "McKesson Stock (MCK) Opinions on Recent Data Leak and Market Dynamics",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Data Leak Alert:</strong> Social media users have been actively discussing a reported data breach involving McKesson Corporation, highlighting potential risks to sensitive inf\u2026",
-          "image": "https://www.quiverquant.com/images/mck_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "url": "https://www.quiverquant.com/news/Representative+Daniel+Meuser+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-09-05 18:10:26",
+          "headline": "Representative Daniel Meuser has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Daniel Meuser has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><\u2026",
+          "image": "https://www.quiverquant.com/images/M001204_congress.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Representative+Rosa+L.+DeLauro+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-09-05 18:10:26",
+          "headline": "Representative Rosa L. DeLauro has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Rosa L. DeLauro has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p\u2026",
+          "image": "https://www.quiverquant.com/images/D000216_congress.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Representative+Cory+Mills+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-09-05 18:10:26",
+          "headline": "Representative Cory Mills has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Cory Mills has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p><ul>\u2026",
+          "image": "https://www.quiverquant.com/images/M001216_congress.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Representative+Jennifer+L.+McClellan+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-09-05 18:10:26",
+          "headline": "Representative Jennifer L. McClellan has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Jennifer L. McClellan has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed inclu\u2026",
+          "image": "https://www.quiverquant.com/images/M001227_congress.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Liberty+Latin+America+Stock+%28LILA%29+Opinions+on+Recent+Insider+Purchases",
@@ -4603,16 +4657,7 @@
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">Insider Buys Emerge:</strong> Social media chatter highlights multiple director purchases of Liberty Latin America shares, with one recent acquisition exceeding $9 million acr\u2026",
           "image": "https://www.quiverquant.com/images/lila_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Shopify+Stock+%28SHOP%29+Opinions+on+Strong+Q2+Earnings",
-          "time": "2026-09-05 17:34:38",
-          "headline": "Shopify Stock (SHOP) Opinions on Strong Q2 Earnings",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Surge:</strong> Social media conversations focused on Shopify's strong second-quarter results that exceeded analyst expectations on both earnings and revenue. The pos\u2026",
-          "image": "https://www.quiverquant.com/images/shop_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Paychex+Stock+%28PAYX%29+Opinions+on+Political+Investment+Disclosures",
@@ -4621,7 +4666,25 @@
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">Political investment disclosures:</strong> Social media chatter has intensified around recent filings showing notable purchases of Paychex shares by prominent political figure\u2026",
           "image": "https://www.quiverquant.com/images/payx_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/McKesson+Stock+%28MCK%29+Opinions+on+Recent+Data+Leak+and+Market+Dynamics",
+          "time": "2026-09-05 17:34:38",
+          "headline": "McKesson Stock (MCK) Opinions on Recent Data Leak and Market Dynamics",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Data Leak Alert:</strong> Social media users have been actively discussing a reported data breach involving McKesson Corporation, highlighting potential risks to sensitive inf\u2026",
+          "image": "https://www.quiverquant.com/images/mck_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Shopify+Stock+%28SHOP%29+Opinions+on+Strong+Q2+Earnings",
+          "time": "2026-09-05 17:34:38",
+          "headline": "Shopify Stock (SHOP) Opinions on Strong Q2 Earnings",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Surge:</strong> Social media conversations focused on Shopify's strong second-quarter results that exceeded analyst expectations on both earnings and revenue. The pos\u2026",
+          "image": "https://www.quiverquant.com/images/shop_rect_new.png",
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Entravision+Communications+Stock+%28EVC%29+Opinions+on+Smadex+CTV+Performance",
@@ -4630,70 +4693,7 @@
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">Smadex Partnership:</strong> Social media observers note the expanding collaboration between Smadex and major ad platforms, with reports of substantial growth in connected tel\u2026",
           "image": "https://www.quiverquant.com/images/evc_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Iris+Energy+Stock+%28IREN%29+Opinions+on+Berkshire+Hathaway+AI+Data+Center+Comments",
-          "time": "2026-09-05 17:34:38",
-          "headline": "Iris Energy Stock (IREN) Opinions on Berkshire Hathaway AI Data Center Comments",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Berkshire AI pivot sparks talk:</strong> Social media chatter has intensified around Iris Energy following Berkshire Hathaway's stated interest in capitalizing on AI-driven da\u2026",
-          "image": "https://www.quiverquant.com/images/iren_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24CRDO+stock+fell+27%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-09-05 16:39:25",
-          "headline": "$CRDO stock fell 27% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$CRDO stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 27%</strong> this week, according to our price data from Polygon.<p>It has \u2026",
-          "image": "https://www.quiverquant.com/images/crdo_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24PLTR+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-09-05 16:39:25",
-          "headline": "$PLTR stock fell 7% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$PLTR stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/pltr_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24NOW+stock+fell+3%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-09-05 16:39:25",
-          "headline": "$NOW stock fell 3% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$NOW stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 3%</strong> this week, according to our price data from Polygon.<p>It has be\u2026",
-          "image": "https://www.quiverquant.com/images/now_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24RGTI+stock+fell+3%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-09-05 16:39:25",
-          "headline": "$RGTI stock fell 3% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$RGTI stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 3%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/rgti_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24OPEN+stock+fell+5%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-09-05 16:39:25",
-          "headline": "$OPEN stock fell 5% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$OPEN stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 5%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/open_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24GOOGL+stock+fell+3%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-09-05 16:39:25",
-          "headline": "$GOOGL stock fell 3% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$GOOGL stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 3%</strong> this week, according to our price data from Polygon.<p>It has \u2026",
-          "image": "https://www.quiverquant.com/images/googl_rect_new.png",
-          "_first_seen": "2026-09-05T23:46:36.617072+00:00"
+          "_first_seen": "2026-09-06T15:22:19.820022+00:00"
         }
       ]
     },
@@ -4702,182 +4702,182 @@
       "label_en": "Congress holdings",
       "label_zh": "\u56fd\u4f1a\u6301\u4ed3",
       "rows": 13041,
-      "last_seen": "2026-09-05",
+      "last_seen": "2026-09-06",
       "recent": [
         {
           "Politician": "Zoe Lofgren",
           "Holdings": "{\"MMM\": -8000, \"BABA\": 0, \"CB\": 0, \"CMA\": 0, \"ECL\": -8000, \"TXN\": -8000, \"ACN\": 16000, \"ADBE\": 0, \"ALLY\": 16000, \"AMZN\": 0, \"AEP\": 0, \"AWK\": 0, \"AON\": 32000, \"AMAT\": 8000, \"ARCC\": 0, \"ASML\": 8000, \"T\": 0, \"AGR\": 0, \"B\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Kathy Manning",
           "Holdings": "{\"APD\": 40500, \"GOOGL\": -16000, \"GOOG\": -8000, \"AMGN\": -16000, \"AAPL\": -16000, \"CAT\": 8000, \"CNC\": 16000, \"CB\": 16000, \"CFG\": -8000, \"CME\": 8000, \"EL\": 8000, \"EXPD\": 8000, \"GIS\": 8000, \"HD\": 8000, \"INTC\": -40500, \"INT\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Greg Steube",
           "Holdings": "{\"SNV\": 56500}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Greg Murphy",
           "Holdings": "{\"NYMX\": -75000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Greg Gianforte",
           "Holdings": "{\"ATLKY\": 92000, \"FMX\": 292500, \"OSW\": 553000, \"PEGA\": 742000, \"TSM\": -422500, \"YNDX\": -67500, \"CSGP\": -408000, \"GDDY\": 250000, \"NSRGY\": -315000, \"PRLB\": 0, \"RBA\": -183000, \"FIVE\": -75000, \"IAC\": 175000, \"IFF\": -10000\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Grace Meng",
           "Holdings": "{\"LHX\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Gilbert Cisneros",
           "Holdings": "{\"ADBE\": 40500, \"LNT\": 40000, \"AMZN\": 49000, \"AAPL\": 232000, \"CRNC\": 8000, \"CNS\": 0, \"CYRX\": 8000, \"EBS\": 32000, \"DAVA\": 32000, \"ERIC\": 65000, \"FIVE\": -24000, \"GDDY\": 122500, \"HELE\": -8000, \"INTU\": 0, \"IQV\": -64500, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Gerald E. Connolly",
           "Holdings": "{\"PG\": -8000, \"DIS\": -8000, \"D\": -49000, \"LDOS\": -64500, \"SAIC\": -24000, \"CI\": -16000, \"ERH\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Gary Palmer",
           "Holdings": "{\"ABBV\": 16000, \"AMZN\": 0, \"CTL\": 0, \"EL\": -8000, \"IDTI\": -16000, \"NTRS\": 0, \"REGN\": -8000, \"TJX\": 48000, \"GOOGL\": -8000, \"UHAL\": 16000, \"AMP\": 8000, \"AMGN\": 0, \"AAPL\": -8000, \"APTV\": 8000, \"ASND\": 8000, \"ASML\": 8000,\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Garret Graves",
           "Holdings": "{\"CRNC\": -8000, \"NUAN\": -8000, \"C\": -8000, \"DDD\": -8000, \"GOLD\": 8000, \"PSTH\": 8000, \"ABNB\": 16000, \"AMZN\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Frank Pallone Jr.",
           "Holdings": "{\"CVX\": -8000, \"C\": -8000, \"D\": -8000, \"PM\": -24000, \"EL\": -32500, \"GE\": -16000, \"TXN\": -32500, \"DIS\": -8000, \"MO\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Frank A. Lobiondo",
           "Holdings": "{\"BLK\": 8000, \"AAPL\": 16000, \"IBM\": -8000, \"QCOM\": -16000, \"GIS\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Feinstein, Dianne",
           "Holdings": "{\"ALLO\": -3000000, \"NVS\": 575000, \"GOOGL\": 400000, \"AMAT\": -175000, \"BA\": 25000, \"BAM\": 57500, \"CHTR\": 575000, \"CCI\": 275500, \"DHR\": -725000, \"DLR\": -350000, \"FDX\": -267500, \"FEYE\": -175000, \"INFO\": -575000, \"MSFT\": -\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Enzi, Michael B.",
           "Holdings": "{\"KEY\": -8000}",
           "Type": "Senator",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Elizabeth Fletcher",
           "Holdings": "{\"MMM\": -8000, \"ABT\": -8000, \"ACN\": -16000, \"ANTM\": 8000, \"BDX\": -24000, \"CACI\": 0, \"CCL\": 0, \"CERN\": -16000, \"CTSH\": -16000, \"COST\": -8000, \"DRI\": 0, \"DLTR\": -16000, \"ECL\": -8000, \"FDX\": 0, \"FISV\": -32000, \"HD\": -800\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Elaine Luria",
           "Holdings": "{\"BABA\": -625000, \"QS\": 8000, \"TSLA\": 8000, \"UBER\": 625000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Ed Perlmutter",
           "Holdings": "{\"BABA\": 0, \"AMZN\": 8000, \"COST\": 0, \"MSFT\": 0, \"NEM\": -8000, \"KR\": 0, \"BRK.B\": 8000, \"COIN\": 8000, \"GOOG\": 0, \"VZ\": 8000, \"AAPL\": -8000, \"GILD\": 0, \"KMI\": 0, \"HD\": -8000, \"WBA\": 0, \"SWK\": -48500, \"USB\": -81000, \"FB\":\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Ed Case",
           "Holdings": "{\"MRIN\": 8000, \"MO\": -75000, \"GE\": -8000, \"KMI\": -8000, \"MSFT\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Earl Blumenauer",
           "Holdings": "{\"ERJ\": 24000, \"F\": 16000, \"ICE\": 16000, \"NWN\": 37000, \"POR\": 8000, \"USB\": 0, \"DANOY\": 0, \"KR\": -8000, \"ALL\": 8000, \"AAPL\": 0, \"FDX\": 16000, \"GILD\": 16000, \"HHC\": -16000, \"TEL\": 16000, \"BRK.B\": 8000, \"CAT\": 8000, \"CBS\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Dwight Evans",
           "Holdings": "{\"APO\": 16000, \"HII\": -16000, \"KMI\": -8000, \"CG\": 16000, \"BABA\": 16000, \"GOOGL\": 16500, \"AMZN\": -48500, \"AEP\": 0, \"T\": 0, \"BRK.B\": -16000, \"DEO\": 8000, \"HASI\": -8000, \"INTC\": 0, \"TMO\": -8000, \"AWK\": 0, \"XOM\": 8000, \"N\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Duckworth, Tammy",
           "Holdings": "{\"DVMT\": -8000, \"BBL\": 0, \"DWDP\": -16000, \"ABT\": -8000, \"JNJ\": -8000, \"CC\": -8000, \"GME\": -8000, \"CAT\": -16000, \"POT\": -8000, \"MCD\": -8000, \"NEE\": -32500, \"VZ\": -32500, \"ITW\": -8000, \"DIS\": -8000, \"GS\": -8000, \"SOUHY\"\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Donna Shalala",
           "Holdings": "{\"TGNA\": -105500, \"AOS\": 8000, \"ABM\": -8000, \"AYI\": -16000, \"ADUS\": -8000, \"ADDYY\": 0, \"AMD\": 0, \"AGCO\": -8000, \"AAGIY\": -40500, \"ALK\": -16000, \"ALFVY\": -8000, \"ALLE\": 16000, \"AGN\": 0, \"AZSEY\": -32500, \"AIMC\": -8000, \u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr.",
           "Holdings": "{\"AAGIY\": -8000, \"CVS\": 8000, \"FVRR\": -8000, \"GH\": -8000, \"IXJ\": 8000, \"IYZ\": 8000, \"NDAQ\": 8000, \"NVS\": -8000, \"BBH\": 8000, \"VZ\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr",
           "Holdings": "{\"CONE\": -8000, \"DAIUF\": -8500, \"MSFT\": -24500, \"MSCI\": -32500, \"TDOC\": -16500, \"PEP\": 0, \"ASML\": 0, \"FLIR\": 24000, \"ACN\": 24000, \"GOOG\": -500, \"AMZN\": -24500, \"AAPL\": 40000, \"BRK.B\": 0, \"C\": -16500, \"CGNX\": 16000, \"C\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         },
         {
           "Politician": "Donald Sternoff  Beyer Jr",
           "Holdings": "{\"GOOG\": 8000, \"AAPL\": -16000, \"ASML\": 16000, \"BRK.B\": 24000, \"DAIUF\": -24000, \"ECL\": 0, \"FNV\": 8000, \"MSFT\": -16000, \"NEE\": -32500, \"REGN\": 24000, \"TDOC\": -32000, \"AAIGF\": 8000, \"EL\": 0, \"FVRR\": -8000, \"GS\": 56000, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-09-05T23:46:37.109442+00:00",
-          "_collected": "2026-09-05"
+          "_first_seen": "2026-09-06T15:22:20.343355+00:00",
+          "_collected": "2026-09-06"
         }
       ]
     },
@@ -4886,7 +4886,7 @@
       "label_en": "Bill summaries",
       "label_zh": "\u6cd5\u6848\u6458\u8981",
       "rows": 1175,
-      "last_seen": "2026-09-05",
+      "last_seen": "2026-09-06",
       "recent": [
         {
           "currentChamber": "House",
@@ -4899,7 +4899,7 @@
           "url": "https://api.congress.gov/v3/bill/119/hr/10224?format=json",
           "lastAction": "Introduced in House",
           "lastActionDate": "2026-09-02",
-          "_first_seen": "2026-09-05T23:46:39.592473+00:00"
+          "_first_seen": "2026-09-06T15:22:22.832961+00:00"
         },
         {
           "currentChamber": "House",
@@ -4912,20 +4912,7 @@
           "url": "https://api.congress.gov/v3/bill/119/hr/10296?format=json",
           "lastAction": "Introduced in House",
           "lastActionDate": "2026-09-03",
-          "_first_seen": "2026-09-05T23:46:39.592473+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "To designate the facility of the United States Postal Service located at 9995 Southeast Federal Highway in Hobe Sound, Florida, as the \"Special Operations Chief Petty Officer Aaron Carson Vaughn Post Office Building\".",
-          "congress": "119",
-          "number": "10279",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "This bill designates the facility of the United States Postal Service located at 9995 Southeast Federal Highway in Hobe Sound, Florida, as the \"Special Operations Chief Petty Officer Aaron Carson Vaughn Post Office Bu\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/10279?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-09-03",
-          "_first_seen": "2026-09-05T23:46:39.592473+00:00"
+          "_first_seen": "2026-09-06T15:22:22.832961+00:00"
         },
         {
           "currentChamber": "House",
@@ -4938,7 +4925,20 @@
           "url": "https://api.congress.gov/v3/bill/119/hr/10253?format=json",
           "lastAction": "Introduced in House",
           "lastActionDate": "2026-09-03",
-          "_first_seen": "2026-09-05T23:46:39.592473+00:00"
+          "_first_seen": "2026-09-06T15:22:22.832961+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "To designate the facility of the United States Postal Service located at 9995 Southeast Federal Highway in Hobe Sound, Florida, as the \"Special Operations Chief Petty Officer Aaron Carson Vaughn Post Office Building\".",
+          "congress": "119",
+          "number": "10279",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "This bill designates the facility of the United States Postal Service located at 9995 Southeast Federal Highway in Hobe Sound, Florida, as the \"Special Operations Chief Petty Officer Aaron Carson Vaughn Post Office Bu\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/10279?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-09-03",
+          "_first_seen": "2026-09-06T15:22:22.832961+00:00"
         },
         {
           "currentChamber": "Senate",
@@ -5219,258 +5219,258 @@
       "emoji": "\ud83d\udcf1",
       "label_en": "App ratings",
       "label_zh": "\u5e94\u7528\u8bc4\u5206",
-      "rows": 155303,
-      "last_seen": "2026-09-05",
+      "rows": 155938,
+      "last_seen": "2026-09-06",
       "recent": [
         {
-          "Ticker": "WMT",
-          "App": "Walmart Business: B2B Shopping",
-          "Created": "2023-07-18",
-          "Publisher": "Walmart",
-          "Rating": "4.86456",
-          "Count": "7679",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "FTS",
+          "App": "myFortis",
+          "Created": "2016-02-20",
+          "Publisher": "Fortis Healthcare Limited",
+          "Rating": "4.56111",
+          "Count": "180",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GABC",
-          "App": "German American Mobile Banking",
-          "Created": "2014-02-10",
-          "Publisher": "German American Bancorp, Inc.",
-          "Rating": "4.79157",
-          "Count": "9725",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
-        },
-        {
-          "Ticker": "GL",
-          "App": "Globe Life",
-          "Created": "2015-06-06",
-          "Publisher": "Globe Life And Accident Insurance Company",
-          "Rating": "2.85567",
-          "Count": "97",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
-        },
-        {
-          "Ticker": "GIS",
-          "App": "Nature Valley Pebble Beach",
-          "Created": "2021-08-14",
-          "Publisher": "General Mills Inc.",
+          "Ticker": "CEL",
+          "App": "CellApp",
+          "Created": "2015-03-18",
+          "Publisher": "Cellcom Israel LTD",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GIS",
-          "App": "Box Tops for Education\u2122",
-          "Created": "2016-09-07",
-          "Publisher": "General Mills Inc.",
-          "Rating": "4.68328",
-          "Count": "147734",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CDK",
+          "App": "CDK Lane 3.0",
+          "Created": "2017-10-10",
+          "Publisher": "CDK Global, Inc.",
+          "Rating": "2.21053",
+          "Count": "38",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GILD",
-          "App": "HIV Answers",
-          "Created": "2014-04-23",
-          "Publisher": "Gilead Sciences, Inc.",
-          "Rating": "4.33333",
-          "Count": "3",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
-        },
-        {
-          "Ticker": "GILD",
-          "App": "Gilead Event App",
-          "Created": "2022-12-14",
-          "Publisher": "Gilead Sciences, Inc.",
-          "Rating": "0.0",
-          "Count": "0",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
-        },
-        {
-          "Ticker": "GIL",
-          "App": "Gildan Product Locator",
-          "Created": "2019-12-30",
-          "Publisher": "Gildan Activewear Inc",
-          "Rating": "4.73529",
-          "Count": "34",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
-        },
-        {
-          "Ticker": "GIGM",
-          "App": "New TW MJ",
-          "Created": "2013-01-08",
-          "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
-          "Rating": "3.5",
-          "Count": "8",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
-        },
-        {
-          "Ticker": "GIGM",
-          "App": "TAIWAN MAHJONG HD",
-          "Created": "2011-03-26",
-          "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
-          "Rating": "4.06667",
-          "Count": "60",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
-        },
-        {
-          "Ticker": "GH",
-          "App": "Guardant Health Portal",
-          "Created": "2016-09-16",
-          "Publisher": "Guardant Health, Inc",
-          "Rating": "2.8",
+          "Ticker": "CDK",
+          "App": "CDK eSignature",
+          "Created": "2014-01-01",
+          "Publisher": "CDK Global, Inc.",
+          "Rating": "1.6",
           "Count": "5",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GGG",
-          "App": "Graco Auto Lube",
-          "Created": "2019-12-08",
-          "Publisher": "Graco Inc.",
-          "Rating": "4.33333",
-          "Count": "6",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CDK",
+          "App": "CDK MobileLink",
+          "Created": "2015-10-29",
+          "Publisher": "CDK Global, Inc.",
+          "Rating": "4.0",
+          "Count": "1",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GGG",
-          "App": "Graco BlueLink",
-          "Created": "2019-01-25",
-          "Publisher": "Graco Inc.",
-          "Rating": "3.66667",
-          "Count": "3",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CDNA",
+          "App": "AlloCare Transplant Health",
+          "Created": "2020-09-14",
+          "Publisher": "Caredx inc",
+          "Rating": "3.9186",
+          "Count": "86",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GGG",
-          "App": "Graco Sales Book",
-          "Created": "2015-09-14",
-          "Publisher": "Graco Inc.",
-          "Rating": "4.7",
-          "Count": "10",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CDW",
+          "App": "CDW Guardian",
+          "Created": "2020-10-03",
+          "Publisher": "CDW, LLC",
+          "Rating": "0.0",
+          "Count": "0",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GE",
-          "App": "Portland General Electric",
-          "Created": "2019-10-05",
-          "Publisher": "Portland General Electric Company",
-          "Rating": "4.18072",
-          "Count": "581",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CDZI",
+          "App": "Bank of Cadiz & Trust Co.",
+          "Created": "2016-09-15",
+          "Publisher": "Bank of Cadiz & Trust Co Inc",
+          "Rating": "4.79479",
+          "Count": "307",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GE",
-          "App": "General Electric Credit Union",
-          "Created": "2017-07-03",
-          "Publisher": "General Electric Credit Union",
-          "Rating": "4.77759",
-          "Count": "7410",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CEA",
+          "App": "China Eastern Airlines",
+          "Created": "2011-02-23",
+          "Publisher": "China Eastern Airlines Co., Ltd.",
+          "Rating": "2.54118",
+          "Count": "680",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GDOT",
-          "App": "Walmart MoneyCard\u00ae",
-          "Created": "2025-05-17",
-          "Publisher": "Green Dot Corporation",
-          "Rating": "4.22382",
-          "Count": "6961",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CELG",
+          "App": "REMS Companion App",
+          "Created": "2020-11-01",
+          "Publisher": "Celgene Corporation",
+          "Rating": "3.1875",
+          "Count": "32",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GDOT",
-          "App": "Amazon Flex Debit Card",
-          "Created": "2020-11-02",
-          "Publisher": "Green Dot Corporation",
-          "Rating": "4.72003",
-          "Count": "11437",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CC",
+          "App": "Chemours PT Calc",
+          "Created": "2011-11-22",
+          "Publisher": "The Chemours Company LLC",
+          "Rating": "4.61538",
+          "Count": "13",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GDOT",
-          "App": "Green Dot - Mobile Banking",
-          "Created": "2011-05-17",
-          "Publisher": "Green Dot Corporation",
-          "Rating": "3.42748",
-          "Count": "11942",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CERN",
+          "App": "Cerner Camera Capture",
+          "Created": "2014-12-18",
+          "Publisher": "Cerner Corporation",
+          "Rating": "3.9",
+          "Count": "20",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GDDY",
-          "App": "GoDaddy: Websites & Marketing",
-          "Created": "2012-07-05",
-          "Publisher": "GoDaddy Mobile LLC",
-          "Rating": "4.82728",
-          "Count": "106821",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CERN",
+          "App": "Cerner Message Center",
+          "Created": "2014-03-17",
+          "Publisher": "Cerner Corporation",
+          "Rating": "3.0",
+          "Count": "27",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GCO",
-          "App": "Journeys Sales Meeting",
-          "Created": "2016-02-16",
-          "Publisher": "Genesco Inc.",
-          "Rating": "2.55555",
-          "Count": "9",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CERN",
+          "App": "Cerner Staff Manager",
+          "Created": "2018-08-24",
+          "Publisher": "Cerner Corporation",
+          "Rating": "2.06452",
+          "Count": "31",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GCI",
-          "App": "Cincinnati Sports",
-          "Created": "2010-09-23",
-          "Publisher": "Gannett",
-          "Rating": "4.53856",
-          "Count": "4059",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CEVA",
+          "App": "Cardalis",
+          "Created": "2012-10-20",
+          "Publisher": "Ceva Sante Animale S.A.",
+          "Rating": "2.33612",
+          "Count": "238",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GCI",
-          "App": "The Detroit News: Local News",
-          "Created": "2014-09-19",
-          "Publisher": "Gannett",
-          "Rating": "4.54467",
-          "Count": "7241",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CEVA",
+          "App": "CEVA Link Transport",
+          "Created": "2025-01-16",
+          "Publisher": "CEVA Logistics Headoffice B.V.",
+          "Rating": "0.0",
+          "Count": "0",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GCI",
-          "App": "Milwaukee Journal Sentinel",
-          "Created": "2012-05-22",
-          "Publisher": "Gannett",
-          "Rating": "4.34407",
-          "Count": "5772",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CFBK",
+          "App": "Central Federal Mobile",
+          "Created": "2018-05-22",
+          "Publisher": "Central Federal Savings & Loan Association",
+          "Rating": "4.6338",
+          "Count": "71",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         },
         {
-          "Ticker": "GCI",
-          "App": "azcentral",
-          "Created": "2014-03-11",
-          "Publisher": "Gannett",
-          "Rating": "4.34806",
-          "Count": "6608",
-          "Time": "2026-09-05",
-          "_first_seen": "2026-09-05T23:46:40.357059+00:00"
+          "Ticker": "CFBK",
+          "App": "Hawaii Central FCU",
+          "Created": "2015-02-25",
+          "Publisher": "Hawaii Central Federal Credit Union",
+          "Rating": "4.05263",
+          "Count": "19",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
+        },
+        {
+          "Ticker": "CCB",
+          "App": "Coastal Financial Mobile",
+          "Created": "2015-03-19",
+          "Publisher": "Coastal Financial Credit Union Limited",
+          "Rating": "4.0",
+          "Count": "2",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
+        },
+        {
+          "Ticker": "CBZ",
+          "App": "CPS Comp Tool - LCMS Churches",
+          "Created": "2018-09-01",
+          "Publisher": "CBIZ, Inc.",
+          "Rating": "0.0",
+          "Count": "0",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
+        },
+        {
+          "Ticker": "CFX",
+          "App": "Redemption Church Denver",
+          "Created": "2018-12-06",
+          "Publisher": "Colfax Church",
+          "Rating": "5.0",
+          "Count": "4",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
+        },
+        {
+          "Ticker": "CAT",
+          "App": "Cat\u00ae Central",
+          "Created": "2022-12-21",
+          "Publisher": "Caterpillar Inc.",
+          "Rating": "4.58371",
+          "Count": "3846",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
+        },
+        {
+          "Ticker": "CAMP",
+          "App": "Calamp Installation Manager",
+          "Created": "2022-11-10",
+          "Publisher": "CalAmp Corp",
+          "Rating": "5.0",
+          "Count": "1",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
+        },
+        {
+          "Ticker": "CAN",
+          "App": "New Canaan Community YMCA",
+          "Created": "2018-12-01",
+          "Publisher": "NEW CANAAN COMMUNITY YMCA INC.",
+          "Rating": "4.74074",
+          "Count": "27",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
+        },
+        {
+          "Ticker": "CAR",
+          "App": "Avis - Car Rental",
+          "Created": "2009-04-25",
+          "Publisher": "AVIS BUDGET GROUP, INC.",
+          "Rating": "4.73255",
+          "Count": "455897",
+          "Time": "2026-09-06",
+          "_first_seen": "2026-09-06T15:22:23.731289+00:00"
         }
       ]
     },
@@ -5479,182 +5479,182 @@
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
       "rows": 314487,
-      "last_seen": "2026-09-05",
+      "last_seen": "2026-09-06",
       "recent": [
         {
-          "ticker": "D",
-          "owner_name": "EVERETT HARRIS & CO /CA/",
+          "ticker": "COIN",
+          "owner_name": "AQR CAPITAL MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "162221",
-          "_collected": "2026-09-05"
+          "shares": "80931",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "W1M Asset Management Ltd",
+          "ticker": "AMAT",
+          "owner_name": "CREDIT AGRICOLE S A",
           "owner_title": "Institution",
-          "shares": "1282430",
-          "_collected": "2026-09-05"
+          "shares": "735946",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "TWO SIGMA INVESTMENTS, LP",
+          "ticker": "AMAT",
+          "owner_name": "NEW YORK STATE COMMON RETIREMENT FUND",
           "owner_title": "Institution",
-          "shares": "1372004",
-          "_collected": "2026-09-05"
+          "shares": "847919",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Focus Partners Wealth",
+          "ticker": "AMAT",
+          "owner_name": "DekaBank Deutsche Girozentrale",
           "owner_title": "Institution",
-          "shares": "1359656",
-          "_collected": "2026-09-05"
+          "shares": "816742",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "TD ASSET MANAGEMENT INC",
+          "ticker": "AMAT",
+          "owner_name": "Qube Research & Technologies Ltd",
           "owner_title": "Institution",
-          "shares": "1343134",
-          "_collected": "2026-09-05"
+          "shares": "796497",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "ADAGE CAPITAL PARTNERS GP, L.L.C.",
+          "ticker": "AMAT",
+          "owner_name": "RAYMOND JAMES & ASSOCIATES",
           "owner_title": "Institution",
-          "shares": "1325594",
-          "_collected": "2026-09-05"
+          "shares": "785980",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
+          "ticker": "AMAT",
+          "owner_name": "FIFTH THIRD BANCORP",
           "owner_title": "Institution",
-          "shares": "1316311",
-          "_collected": "2026-09-05"
+          "shares": "753434",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Capital World Investors",
+          "ticker": "AMAT",
+          "owner_name": "ING GROEP NV",
           "owner_title": "Institution",
-          "shares": "1301143",
-          "_collected": "2026-09-05"
+          "shares": "752018",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "CIBC Bancorp USA Inc.",
+          "ticker": "AMAT",
+          "owner_name": "Aberdeen Group plc",
           "owner_title": "Institution",
-          "shares": "1294192",
-          "_collected": "2026-09-05"
+          "shares": "748775",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "SEI INVESTMENTS CO",
+          "ticker": "AMAT",
+          "owner_name": "Alecta Tjanstepension Omsesidigt",
           "owner_title": "Institution",
-          "shares": "1280571",
-          "_collected": "2026-09-05"
+          "shares": "735500",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Tidal Investments LLC",
+          "ticker": "AMAT",
+          "owner_name": "BROWN BROTHERS HARRIMAN & CO",
           "owner_title": "Institution",
-          "shares": "1155920",
-          "_collected": "2026-09-05"
+          "shares": "667312",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "PRUDENTIAL FINANCIAL INC",
+          "ticker": "AMAT",
+          "owner_name": "MACKENZIE FINANCIAL CORP",
           "owner_title": "Institution",
-          "shares": "1276465",
-          "_collected": "2026-09-05"
+          "shares": "713175",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
+          "ticker": "AMAT",
+          "owner_name": "WEALTH ENHANCEMENT ADVISORY SERVICES, LLC",
           "owner_title": "Institution",
-          "shares": "1258935",
-          "_collected": "2026-09-05"
+          "shares": "700511",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "COATUE MANAGEMENT LLC",
+          "ticker": "AMAT",
+          "owner_name": "JANE STREET GROUP, LLC",
           "owner_title": "Institution",
-          "shares": "1239043",
-          "_collected": "2026-09-05"
+          "shares": "696641",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "NEOS Investment Management LLC",
+          "ticker": "AMAT",
+          "owner_name": "APG Asset Management N.V.",
           "owner_title": "Institution",
-          "shares": "1237396",
-          "_collected": "2026-09-05"
+          "shares": "695240",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Raymond James Financial Services Advisors, Inc.",
+          "ticker": "AMAT",
+          "owner_name": "STIFEL FINANCIAL CORP",
           "owner_title": "Institution",
-          "shares": "1230972",
-          "_collected": "2026-09-05"
+          "shares": "688877",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "BESSEMER GROUP INC",
-          "owner_title": "Institution",
-          "shares": "1191421",
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Eurizon Capital SGR S.p.A.",
-          "owner_title": "Institution",
-          "shares": "1187497",
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
-          "owner_title": "Institution",
-          "shares": "1390861",
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "AMD",
+          "ticker": "AMAT",
           "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "1407261",
-          "_collected": "2026-09-05"
+          "shares": "682788",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Point72 Asset Management, L.P.",
+          "ticker": "AMAT",
+          "owner_name": "LSV ASSET MANAGEMENT",
           "owner_title": "Institution",
-          "shares": "1414656",
-          "_collected": "2026-09-05"
+          "shares": "677323",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "WOLIN HARRY A",
-          "owner_title": "SVP",
-          "shares": "1433596",
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Waverton Investment Management Ltd",
+          "ticker": "AMAT",
+          "owner_name": "AVIVA PLC",
           "owner_title": "Institution",
-          "shares": "1736942",
-          "_collected": "2026-09-05"
+          "shares": "850706",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Hudson Bay Capital Management LP",
+          "ticker": "AMAT",
+          "owner_name": "AGF MANAGEMENT LTD",
           "owner_title": "Institution",
-          "shares": "1622810",
-          "_collected": "2026-09-05"
+          "shares": "852219",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Russell Investments Group, Ltd.",
+          "ticker": "AMAT",
+          "owner_name": "MAVERICK CAPITAL LTD",
           "owner_title": "Institution",
-          "shares": "1614891",
-          "_collected": "2026-09-05"
+          "shares": "869943",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "AMAT",
+          "owner_name": "MENORA MIVTACHIM HOLDINGS LTD.",
+          "owner_title": "Institution",
+          "shares": "874054",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "AMAT",
+          "owner_name": "Squarepoint Ops LLC",
+          "owner_title": "Institution",
+          "shares": "1037833",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "AMAT",
+          "owner_name": "PRINCIPAL FINANCIAL GROUP INC",
+          "owner_title": "Institution",
+          "shares": "1008591",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "AMAT",
+          "owner_name": "ALKEON CAPITAL MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "1000000",
+          "_collected": "2026-09-06"
         }
       ]
     },
@@ -5662,178 +5662,218 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 1742,
-      "last_seen": "2026-09-05",
+      "rows": 1746,
+      "last_seen": "2026-09-06",
       "recent": [
         {
-          "ticker": "CTVA",
-          "name": "Samuel R. Eathington",
-          "role": "EVP, CTO",
+          "ticker": "ALB",
+          "name": "Netha N. Johnson, Jr.",
+          "role": "COO",
           "year": "2022",
-          "total_comp": "3106479.0",
-          "salary": "609231.0",
+          "total_comp": "2894484.0",
+          "salary": "576095.0",
           "bonus": null,
-          "_collected": "2026-09-05"
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "David J. Anderson",
-          "role": "Former EVP, CFO",
-          "year": "2023",
-          "total_comp": "4872840.0",
-          "salary": "841923.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
+          "ticker": "ALB",
+          "name": "Netha N. Johnson, Jr.",
+          "role": "COO",
+          "year": "2024",
+          "total_comp": "3315087.0",
+          "salary": "636571.0",
+          "bonus": "1576174.0",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "Charles V. Magro",
+          "ticker": "ALB",
+          "name": "J. Kent Masters, Jr.",
+          "role": "CEO",
+          "year": "2025",
+          "total_comp": "15513654.0",
+          "salary": "1400000.0",
+          "bonus": "7949640.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Netha N. Johnson, Jr.",
+          "role": "COO",
+          "year": "2025",
+          "total_comp": "5312779.0",
+          "salary": "459330.0",
+          "bonus": "1963949.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Eric W. Norris",
+          "role": "Executive Vice President, Chief Commercial Officer",
+          "year": "2025",
+          "total_comp": "4212206.0",
+          "salary": "653933.0",
+          "bonus": "1963949.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Neal R. Sheorey",
+          "role": "CFO",
+          "year": "2025",
+          "total_comp": "4125939.0",
+          "salary": "621923.0",
+          "bonus": "1963949.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Melissa H. Anderson",
+          "role": "Executive Vice President, Chief Business Transformation Officer",
+          "year": "2025",
+          "total_comp": "3228404.0",
+          "salary": "571529.0",
+          "bonus": "1382978.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Mark R. Mummert",
+          "role": "COO",
+          "year": "2025",
+          "total_comp": "2477454.0",
+          "salary": "510577.0",
+          "bonus": "1012871.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Kristin M. Coleman",
+          "role": "Former Executive Vice President, General Counsel and Corporate Secretary",
+          "year": "2024",
+          "total_comp": "4746800.0",
+          "salary": "645779.0",
+          "bonus": null,
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Neal R. Sheorey",
+          "role": "CFO",
+          "year": "2024",
+          "total_comp": "3463336.0",
+          "salary": "600000.0",
+          "bonus": "1576174.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Eric W. Norris",
+          "role": "Executive Vice President, Chief Commercial Officer",
+          "year": "2024",
+          "total_comp": "3434139.0",
+          "salary": "640181.0",
+          "bonus": "1576174.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "J. Kent Masters, Jr.",
           "role": "CEO",
           "year": "2024",
-          "total_comp": "14507058.0",
-          "salary": "1402308.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
+          "total_comp": "14368498.0",
+          "salary": "1400000.0",
+          "bonus": "7880872.0",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "David P. Johnson",
-          "role": "EVP, CFO",
+          "ticker": "ALB",
+          "name": "Melissa H. Anderson",
+          "role": "Executive Vice President, Chief Business Transformation Officer",
           "year": "2024",
-          "total_comp": "5838788.0",
-          "salary": "214712.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
+          "total_comp": "2440430.0",
+          "salary": "551250.0",
+          "bonus": "985432.0",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "David J. Anderson",
-          "role": "Former EVP, CFO",
-          "year": "2024",
-          "total_comp": "4961265.0",
-          "salary": "877500.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
+          "ticker": "ALB",
+          "name": "Neal R. Sheorey",
+          "role": "CFO",
+          "year": "2023",
+          "total_comp": "1089617.0",
+          "salary": "23077.0",
+          "bonus": "300000.0",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "Timothy P. Glenn",
-          "role": "Former EVP, Seed Business",
-          "year": "2024",
-          "total_comp": "3265205.0",
-          "salary": "701154.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "CTVA",
-          "name": "Robert D. King",
-          "role": "EVP, Crop Protection Business",
-          "year": "2024",
-          "total_comp": "2782821.0",
-          "salary": "675962.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "CTVA",
-          "name": "Cornel B. Fuerer",
-          "role": "SVP, Chief Legal & Public Affairs Officer & Secretary",
-          "year": "2024",
-          "total_comp": "2702626.0",
-          "salary": "642385.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "CTVA",
-          "name": "Charles V. Magro",
+          "ticker": "ALB",
+          "name": "J. Kent Masters, Jr.",
           "role": "CEO",
           "year": "2023",
-          "total_comp": "13234872.0",
-          "salary": "1341923.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
+          "total_comp": "14472114.0",
+          "salary": "1334038.0",
+          "bonus": "8232532.0",
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "Samuel R. Eathington",
-          "role": "EVP, CTO",
-          "year": "2024",
-          "total_comp": "2854718.0",
-          "salary": "675962.0",
+          "ticker": "ALB",
+          "name": "Eric W. Norris",
+          "role": "Executive Vice President, Chief Commercial Officer",
+          "year": "2022",
+          "total_comp": "3036167.0",
+          "salary": "601432.0",
           "bonus": null,
-          "_collected": "2026-09-05"
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "Timothy P. Glenn",
-          "role": "Former EVP, Seed Business",
-          "year": "2023",
-          "total_comp": "3459069.0",
-          "salary": "670962.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "CTVA",
-          "name": "Samuel R. Eathington",
-          "role": "EVP, CTO",
-          "year": "2023",
-          "total_comp": "2690163.0",
-          "salary": "645962.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "CTVA",
-          "name": "Robert D. King",
-          "role": "EVP, Crop Protection Business",
-          "year": "2023",
-          "total_comp": "2544037.0",
-          "salary": "641923.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
-        },
-        {
-          "ticker": "CTVA",
-          "name": "Charles V. Magro",
+          "ticker": "ALB",
+          "name": "J. Kent Masters, Jr.",
           "role": "CEO",
           "year": "2022",
-          "total_comp": "14762075.0",
-          "salary": "1299170.0",
+          "total_comp": "11118156.0",
+          "salary": "1139346.0",
           "bonus": null,
-          "_collected": "2026-09-05"
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "Robert D. King",
-          "role": "EVP, Crop Protection Business",
+          "ticker": "ALB",
+          "name": "Kristin M. Coleman",
+          "role": "Former Executive Vice President, General Counsel and Corporate Secretary",
           "year": "2022",
-          "total_comp": "6766237.0",
-          "salary": "450000.0",
+          "total_comp": "3017816.0",
+          "salary": "37673.0",
           "bonus": null,
-          "_collected": "2026-09-05"
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "David J. Anderson",
-          "role": "Former EVP, CFO",
-          "year": "2022",
-          "total_comp": "6742452.0",
-          "salary": "792115.0",
+          "ticker": "ALB",
+          "name": "Kristin M. Coleman",
+          "role": "Former Executive Vice President, General Counsel and Corporate Secretary",
+          "year": "2023",
+          "total_comp": "2550068.0",
+          "salary": "653000.0",
           "bonus": null,
-          "_collected": "2026-09-05"
+          "_collected": "2026-09-06"
         },
         {
-          "ticker": "CTVA",
-          "name": "Timothy P. Glenn",
-          "role": "Former EVP, Seed Business",
-          "year": "2022",
-          "total_comp": "3494923.0",
-          "salary": "646058.0",
-          "bonus": null,
-          "_collected": "2026-09-05"
+          "ticker": "ALB",
+          "name": "Netha N. Johnson, Jr.",
+          "role": "COO",
+          "year": "2023",
+          "total_comp": "3233769.0",
+          "salary": "622420.0",
+          "bonus": "1646506.0",
+          "_collected": "2026-09-06"
+        },
+        {
+          "ticker": "ALB",
+          "name": "Eric W. Norris",
+          "role": "Executive Vice President, Chief Commercial Officer",
+          "year": "2023",
+          "total_comp": "3446645.0",
+          "salary": "631973.0",
+          "bonus": "1646506.0",
+          "_collected": "2026-09-06"
         },
         {
           "ticker": "AVB",
@@ -5871,46 +5911,6 @@
           "role": "COO",
           "year": "2025",
           "total_comp": "4756899.0",
-          "salary": "680000.0",
-          "bonus": null,
-          "_collected": "2026-08-29"
-        },
-        {
-          "ticker": "AVB",
-          "name": "Kevin P. O\u2019Shea",
-          "role": "CFO",
-          "year": "2025",
-          "total_comp": "4236350.0",
-          "salary": "628000.0",
-          "bonus": null,
-          "_collected": "2026-08-29"
-        },
-        {
-          "ticker": "AVB",
-          "name": "Pamela R. Thomas",
-          "role": "Executive Vice President Portfolio and Asset Management",
-          "year": "2025",
-          "total_comp": "3090847.0",
-          "salary": "550000.0",
-          "bonus": null,
-          "_collected": "2026-08-29"
-        },
-        {
-          "ticker": "AVB",
-          "name": "Benjamin W. Schall",
-          "role": "CEO & President",
-          "year": "2024",
-          "total_comp": "9090073.0",
-          "salary": "1000000.0",
-          "bonus": null,
-          "_collected": "2026-08-29"
-        },
-        {
-          "ticker": "AVB",
-          "name": "Sean J. Breslin",
-          "role": "COO",
-          "year": "2024",
-          "total_comp": "4584757.0",
           "salary": "680000.0",
           "bonus": null,
           "_collected": "2026-08-29"
@@ -6404,56 +6404,56 @@
     "hf": [
       {
         "ticker": "AAPL",
-        "downloads_30d": 2343390.0,
-        "wow_pct": 8.6,
+        "downloads_30d": 2343881.0,
+        "wow_pct": 5.8,
         "hot": true
       },
       {
         "ticker": "BABA",
-        "downloads_30d": 199115388.0,
-        "wow_pct": 7.4,
+        "downloads_30d": 196669632.0,
+        "wow_pct": 3.0,
         "hot": true
       },
       {
         "ticker": "IBM",
-        "downloads_30d": 12104093.0,
-        "wow_pct": 5.6,
-        "hot": true
+        "downloads_30d": 11904654.0,
+        "wow_pct": 1.4,
+        "hot": false
       },
       {
         "ticker": "NVDA",
-        "downloads_30d": 36128119.0,
-        "wow_pct": 2.8,
+        "downloads_30d": 35732241.0,
+        "wow_pct": 0.1,
         "hot": false
       },
       {
         "ticker": "MSFT",
-        "downloads_30d": 31927743.0,
-        "wow_pct": 2.7,
-        "hot": false
-      },
-      {
-        "ticker": "META",
-        "downloads_30d": 77929603.0,
-        "wow_pct": -3.7,
-        "hot": false
-      },
-      {
-        "ticker": "GOOGL",
-        "downloads_30d": 215238659.0,
-        "wow_pct": -5.3,
+        "downloads_30d": 31613489.0,
+        "wow_pct": -2.0,
         "hot": false
       },
       {
         "ticker": "CRM",
-        "downloads_30d": 4475921.0,
-        "wow_pct": -6.6,
+        "downloads_30d": 4450102.0,
+        "wow_pct": -5.4,
+        "hot": false
+      },
+      {
+        "ticker": "META",
+        "downloads_30d": 76490185.0,
+        "wow_pct": -5.8,
+        "hot": false
+      },
+      {
+        "ticker": "GOOGL",
+        "downloads_30d": 210077407.0,
+        "wow_pct": -8.3,
         "hot": false
       },
       {
         "ticker": "AMZN",
-        "downloads_30d": 36931541.0,
-        "wow_pct": -10.4,
+        "downloads_30d": 36589332.0,
+        "wow_pct": -12.5,
         "hot": false
       }
     ],
@@ -7099,11 +7099,11 @@
       },
       {
         "ticker": "UCB",
-        "category": "Acquisitions",
+        "category": "Divestitures",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Divestitures"
       },
       {
         "ticker": "VESTUM",
@@ -11666,6 +11666,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "BMRN",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "COEP",
         "category": "Acquisitions",
         "confidence": "high",
@@ -13120,6 +13128,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "ROOT",
+        "category": "Issuer Tenders",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "NEOE3",
@@ -15370,14 +15386,6 @@
         "detail": "M&A / Divestitures"
       },
       {
-        "ticker": "JFB",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "JCI",
         "category": "M&A / Divestitures",
         "confidence": "high",
@@ -15573,6 +15581,14 @@
         "ticker": "RHS",
         "category": "Strategic Reviews",
         "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Strategic Reviews"
+      },
+      {
+        "ticker": "ROYL",
+        "category": "Strategic Reviews",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Strategic Reviews"
@@ -17658,6 +17674,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "TTE",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "NFJ",
         "category": "Issuer Tenders",
         "confidence": "high",
@@ -17749,6 +17773,14 @@
         "ticker": "BOTX",
         "category": "Acquisitions",
         "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "HOS",
+        "category": "Acquisitions",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -17890,14 +17922,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "RYAOF",
-        "category": "Issuer Tenders",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Issuer Tenders"
-      },
-      {
         "ticker": "TCGLF",
         "category": "Delistings",
         "confidence": "high",
@@ -17963,6 +17987,14 @@
       },
       {
         "ticker": "SAFX",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "BANR",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -18163,14 +18195,6 @@
       },
       {
         "ticker": "BBBYW",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "BTGO",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -18434,6 +18458,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "NVACW",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "TWOD",
         "category": "Delistings",
         "confidence": "high",
@@ -18642,14 +18674,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "VODPF",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
-      },
-      {
         "ticker": "ZOOZW",
         "category": "Strategic Reviews",
         "confidence": "high",
@@ -18680,6 +18704,22 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "FGRS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "CUBWU",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
       },
       {
         "ticker": "MBNKO",
@@ -19515,11 +19555,11 @@
       },
       {
         "ticker": "KDP",
-        "category": "Spin-Offs",
-        "confidence": "medium",
+        "category": "Divestitures",
+        "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Spin-Offs"
+        "detail": "Divestitures"
       },
       {
         "ticker": "MLM",
@@ -19826,7 +19866,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "T-PC",
+        "ticker": "T-PA",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -20987,11 +21027,11 @@
       },
       {
         "ticker": "KUST",
-        "category": "Divestitures",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Divestitures"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "MBIO",
@@ -22818,6 +22858,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "RDHL",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "KFY",
         "category": "Acquisitions",
         "confidence": "high",
@@ -22883,6 +22931,14 @@
       },
       {
         "ticker": "FRTT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ASRMF",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -23152,6 +23208,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "TCKRF",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "ES",
@@ -24858,7 +24922,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "AGQPF",
+        "ticker": "AQNB",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -24904,6 +24968,22 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "TKC",
+        "category": "Strategic Reviews",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Strategic Reviews"
+      },
+      {
+        "ticker": "RHP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "XTIA",
@@ -25325,25 +25405,14 @@
         "hot": true
       },
       {
-        "ticker": "TRV",
-        "net_up_30d": 24,
-        "breadth": 1.0,
-        "est_chg_30d": 5.78,
-        "n_analysts": 24,
-        "bull_ratio": 1.0,
+        "ticker": "SBUX",
+        "net_up_30d": 25,
+        "breadth": 0.93,
+        "est_chg_30d": 3.42,
+        "n_analysts": 27,
+        "bull_ratio": 0.96,
         "rising": true,
-        "revision_delta": 24,
-        "hot": true
-      },
-      {
-        "ticker": "UNH",
-        "net_up_30d": 24,
-        "breadth": 1.0,
-        "est_chg_30d": -0.0,
-        "n_analysts": 24,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 24,
+        "revision_delta": 25,
         "hot": true
       },
       {
@@ -25358,12 +25427,12 @@
         "hot": true
       },
       {
-        "ticker": "SBUX",
+        "ticker": "TRV",
         "net_up_30d": 24,
-        "breadth": 0.92,
-        "est_chg_30d": 3.42,
-        "n_analysts": 26,
-        "bull_ratio": 0.96,
+        "breadth": 1.0,
+        "est_chg_30d": 5.78,
+        "n_analysts": 24,
+        "bull_ratio": 1.0,
         "rising": true,
         "revision_delta": 24,
         "hot": true
@@ -25372,22 +25441,11 @@
         "ticker": "V",
         "net_up_30d": 24,
         "breadth": 0.75,
-        "est_chg_30d": 0.87,
+        "est_chg_30d": 0.35,
         "n_analysts": 32,
         "bull_ratio": 0.88,
         "rising": true,
         "revision_delta": 24,
-        "hot": true
-      },
-      {
-        "ticker": "TXN",
-        "net_up_30d": 23,
-        "breadth": 1.0,
-        "est_chg_30d": 0.68,
-        "n_analysts": 23,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 23,
         "hot": true
       },
       {
@@ -25424,6 +25482,17 @@
         "hot": true
       },
       {
+        "ticker": "TXN",
+        "net_up_30d": 23,
+        "breadth": 1.0,
+        "est_chg_30d": 0.68,
+        "n_analysts": 23,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 23,
+        "hot": true
+      },
+      {
         "ticker": "ISRG",
         "net_up_30d": 23,
         "breadth": 0.92,
@@ -25450,6 +25519,17 @@
         "net_up_30d": 22,
         "breadth": 1.0,
         "est_chg_30d": 2.26,
+        "n_analysts": 22,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 22,
+        "hot": true
+      },
+      {
+        "ticker": "JBHT",
+        "net_up_30d": 22,
+        "breadth": 1.0,
+        "est_chg_30d": 0.0,
         "n_analysts": 22,
         "bull_ratio": 1.0,
         "rising": true,
@@ -25769,13 +25849,6 @@
         "hot": true
       },
       {
-        "ticker": "NFLX",
-        "bull_ratio": 0.67,
-        "messages": 30,
-        "watchers": 521405,
-        "hot": true
-      },
-      {
         "ticker": "PLTR",
         "bull_ratio": 1.0,
         "messages": 30,
@@ -25784,16 +25857,16 @@
       },
       {
         "ticker": "GOOG",
-        "bull_ratio": 0.83,
+        "bull_ratio": 0.88,
         "messages": 30,
-        "watchers": 311652,
+        "watchers": 311656,
         "hot": true
       },
       {
         "ticker": "DIS",
         "bull_ratio": 0.94,
         "messages": 30,
-        "watchers": 290087,
+        "watchers": 290085,
         "hot": true
       },
       {
@@ -25805,37 +25878,37 @@
       },
       {
         "ticker": "INTC",
-        "bull_ratio": 1.0,
-        "messages": 29,
-        "watchers": 207931,
+        "bull_ratio": 0.94,
+        "messages": 30,
+        "watchers": 207918,
+        "hot": true
+      },
+      {
+        "ticker": "F",
+        "bull_ratio": 0.67,
+        "messages": 30,
+        "watchers": 186240,
         "hot": true
       },
       {
         "ticker": "XYZ",
-        "bull_ratio": 0.67,
+        "bull_ratio": 0.86,
         "messages": 30,
-        "watchers": 178728,
+        "watchers": 178742,
         "hot": true
       },
       {
         "ticker": "PYPL",
-        "bull_ratio": 0.78,
+        "bull_ratio": 1.0,
         "messages": 30,
-        "watchers": 166596,
-        "hot": true
-      },
-      {
-        "ticker": "MARA",
-        "bull_ratio": 0.82,
-        "messages": 30,
-        "watchers": 158224,
+        "watchers": 166608,
         "hot": true
       },
       {
         "ticker": "SOFI",
-        "bull_ratio": 0.85,
+        "bull_ratio": 0.86,
         "messages": 30,
-        "watchers": 156138,
+        "watchers": 156108,
         "hot": true
       },
       {
@@ -25846,10 +25919,17 @@
         "hot": true
       },
       {
-        "ticker": "WMT",
+        "ticker": "COIN",
+        "bull_ratio": 0.93,
+        "messages": 30,
+        "watchers": 138375,
+        "hot": true
+      },
+      {
+        "ticker": "UBER",
         "bull_ratio": 0.83,
         "messages": 30,
-        "watchers": 138873,
+        "watchers": 130658,
         "hot": true
       }
     ],
@@ -26122,26 +26202,26 @@
     "github": [
       {
         "ticker": "NET",
-        "stars": 15522,
-        "wow_pct": 0.71,
+        "stars": 15527,
+        "wow_pct": 0.74,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 190917,
-        "wow_pct": 0.61,
+        "stars": 190959,
+        "wow_pct": 0.63,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 198862,
-        "wow_pct": 0.55,
+        "stars": 198881,
+        "wow_pct": 0.56,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 249112,
-        "wow_pct": 0.44,
+        "stars": 249135,
+        "wow_pct": 0.45,
         "hot": true
       },
       {
@@ -26152,13 +26232,13 @@
       },
       {
         "ticker": "IBM",
-        "stars": 7775,
-        "wow_pct": 0.27,
+        "stars": 7776,
+        "wow_pct": 0.28,
         "hot": true
       },
       {
         "ticker": "NVDA",
-        "stars": 18392,
+        "stars": 18393,
         "wow_pct": 0.21,
         "hot": true
       },
@@ -26169,33 +26249,33 @@
         "hot": true
       },
       {
-        "ticker": "AMD",
-        "stars": 6819,
-        "wow_pct": 0.09,
+        "ticker": "DDOG",
+        "stars": 3718,
+        "wow_pct": 0.08,
         "hot": false
       },
       {
-        "ticker": "DDOG",
-        "stars": 3717,
-        "wow_pct": 0.05,
+        "ticker": "AMD",
+        "stars": 6818,
+        "wow_pct": 0.07,
         "hot": false
       },
       {
         "ticker": "MDB",
-        "stars": 28528,
-        "wow_pct": 0.05,
+        "stars": 28531,
+        "wow_pct": 0.06,
         "hot": false
       },
       {
         "ticker": "PLTR",
-        "stars": 22032,
+        "stars": 22033,
         "wow_pct": 0.05,
         "hot": false
       },
       {
         "ticker": "U",
-        "stars": 19661,
-        "wow_pct": 0.04,
+        "stars": 19663,
+        "wow_pct": 0.05,
         "hot": false
       },
       {
@@ -26206,7 +26286,7 @@
       },
       {
         "ticker": "GTLB",
-        "stars": 24551,
+        "stars": 24552,
         "wow_pct": 0.02,
         "hot": false
       },
@@ -26472,10 +26552,10 @@
         },
         {
           "ticker": "SVRE",
-          "buy_usd": 7977148416.0,
+          "buy_usd": 1135938816.0,
           "sell_usd": 0.0,
-          "net_usd": 7977148416.0,
-          "buyers": 6,
+          "net_usd": 1135938816.0,
+          "buyers": 1,
           "sellers": 0
         },
         {
@@ -26641,14 +26721,6 @@
           "sellers": 2
         },
         {
-          "ticker": "ANET",
-          "buy_usd": 0.0,
-          "sell_usd": 965035421.0,
-          "net_usd": -965035421.0,
-          "buyers": 0,
-          "sellers": 294
-        },
-        {
           "ticker": "DELL",
           "buy_usd": 0.0,
           "sell_usd": 954382133.0,
@@ -26657,12 +26729,20 @@
           "sellers": 1037
         },
         {
+          "ticker": "ANET",
+          "buy_usd": 0.0,
+          "sell_usd": 925899985.0,
+          "net_usd": -925899985.0,
+          "buyers": 0,
+          "sellers": 283
+        },
+        {
           "ticker": "ABNB",
           "buy_usd": 0.0,
-          "sell_usd": 815123938.0,
-          "net_usd": -815123938.0,
+          "sell_usd": 804133604.0,
+          "net_usd": -804133604.0,
           "buyers": 0,
-          "sellers": 140
+          "sellers": 136
         },
         {
           "ticker": "ILMN",
@@ -27992,229 +28072,229 @@
     ],
     "app_ratings": [
       {
-        "ticker": "UBER",
-        "rating": 4.84,
-        "reviews": 30187058,
-        "apps": 6,
-        "top_app": "Uber - Request a ride",
-        "review_velocity": 0.0001,
-        "lean": "strong"
-      },
-      {
         "ticker": "GOOGL",
         "rating": 4.7,
-        "reviews": 26402649,
+        "reviews": 26419496,
         "apps": 5,
         "top_app": "Google Drive",
-        "review_velocity": 0.0003,
-        "lean": "strong"
-      },
-      {
-        "ticker": "MSFT",
-        "rating": 4.77,
-        "reviews": 20076552,
-        "apps": 9,
-        "top_app": "Microsoft Outlook",
-        "review_velocity": 0.0002,
-        "lean": "strong"
-      },
-      {
-        "ticker": "WMT",
-        "rating": 4.82,
-        "reviews": 19171170,
-        "apps": 5,
-        "top_app": "Walmart: Shopping & Savings",
-        "review_velocity": 0.0005,
-        "lean": "strong"
-      },
-      {
-        "ticker": "LYFT",
-        "rating": 4.91,
-        "reviews": 17996701,
-        "apps": 3,
-        "top_app": "Lyft",
-        "review_velocity": 0.0003,
-        "lean": "strong"
-      },
-      {
-        "ticker": "SBUX",
-        "rating": 4.89,
-        "reviews": 8245644,
-        "apps": 4,
-        "top_app": "Starbucks",
-        "review_velocity": 0.0004,
+        "review_velocity": 0.0006,
         "lean": "strong"
       },
       {
         "ticker": "ETSY",
         "rating": 4.92,
-        "reviews": 7323427,
+        "reviews": 7325106,
         "apps": 2,
         "top_app": "Etsy: Shop from Real People",
         "review_velocity": 0.0002,
         "lean": "strong"
       },
       {
-        "ticker": "Z",
-        "rating": 4.8,
-        "reviews": 7639300,
-        "apps": 4,
-        "top_app": "Zillow Real Estate & Rentals",
-        "review_velocity": 0.0,
-        "lean": "strong"
-      },
-      {
-        "ticker": "LUV",
-        "rating": 4.84,
-        "reviews": 7181323,
-        "apps": 1,
-        "top_app": "Southwest Airlines: Travel App",
-        "review_velocity": 0.0002,
-        "lean": "strong"
-      },
-      {
-        "ticker": "SHOP",
-        "rating": 4.81,
-        "reviews": 7175570,
-        "apps": 4,
-        "top_app": "Shop: Track, Pay, Discover",
-        "review_velocity": 0.0,
-        "lean": "strong"
-      },
-      {
         "ticker": "DAL",
         "rating": 4.85,
-        "reviews": 7004228,
-        "apps": 3,
+        "reviews": 7004169,
+        "apps": 1,
         "top_app": "Fly Delta",
         "review_velocity": -0.0,
         "lean": "strong"
       },
       {
-        "ticker": "NFLX",
-        "rating": 4.75,
-        "reviews": 7203942,
+        "ticker": "EBAY",
+        "rating": 4.82,
+        "reviews": 5016461,
         "apps": 2,
-        "top_app": "Netflix",
-        "review_velocity": 0.0008,
+        "top_app": "eBay online shopping & selling",
+        "review_velocity": -0.0,
         "lean": "strong"
       },
       {
-        "ticker": "ROKU",
-        "rating": 4.73,
-        "reviews": 6082828,
-        "apps": 1,
-        "top_app": "The Roku App (Official)",
+        "ticker": "BAC",
+        "rating": 4.81,
+        "reviews": 5034465,
+        "apps": 3,
+        "top_app": "Bank of America Mobile Banking",
         "review_velocity": 0.0,
         "lean": "strong"
       },
       {
-        "ticker": "PINS",
+        "ticker": "DPZ",
         "rating": 4.78,
-        "reviews": 5758868,
+        "reviews": 4980892,
         "apps": 1,
-        "top_app": "Pinterest",
+        "top_app": "Domino's Pizza USA",
+        "review_velocity": -0.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "GRUB",
+        "rating": 4.75,
+        "reviews": 4831628,
+        "apps": 2,
+        "top_app": "Grubhub: Food Delivery",
         "review_velocity": 0.0002,
         "lean": "strong"
       },
       {
-        "ticker": "SNAP",
-        "rating": 4.51,
-        "reviews": 5926288,
+        "ticker": "AXP",
+        "rating": 4.88,
+        "reviews": 4397043,
         "apps": 1,
-        "top_app": "Snapchat",
-        "review_velocity": 0.0002,
+        "top_app": "Amex",
+        "review_velocity": -0.0079,
+        "lean": "strong"
+      },
+      {
+        "ticker": "CHTR",
+        "rating": 4.77,
+        "reviews": 4083032,
+        "apps": 4,
+        "top_app": "My Spectrum",
+        "review_velocity": 0.0009,
+        "lean": "strong"
+      },
+      {
+        "ticker": "HD",
+        "rating": 4.82,
+        "reviews": 3425296,
+        "apps": 1,
+        "top_app": "The Home Depot",
+        "review_velocity": -0.0333,
+        "lean": "strong"
+      },
+      {
+        "ticker": "ADBE",
+        "rating": 4.81,
+        "reviews": 2596872,
+        "apps": 4,
+        "top_app": "Adobe Scan: PDF & OCR Scanner",
+        "review_velocity": -0.3102,
+        "lean": "strong"
+      },
+      {
+        "ticker": "GPS",
+        "rating": 4.88,
+        "reviews": 2224989,
+        "apps": 4,
+        "top_app": "Old Navy: Shop for New Clothes",
+        "review_velocity": 0.0005,
+        "lean": "strong"
+      },
+      {
+        "ticker": "EB",
+        "rating": 4.9,
+        "reviews": 1825313,
+        "apps": 2,
+        "top_app": "Eventbrite",
+        "review_velocity": 0.0005,
+        "lean": "strong"
+      },
+      {
+        "ticker": "BBY",
+        "rating": 4.87,
+        "reviews": 1733056,
+        "apps": 1,
+        "top_app": "Best Buy: Tech Deals & Savings",
+        "review_velocity": 0.0005,
+        "lean": "strong"
+      },
+      {
+        "ticker": "CMG",
+        "rating": 4.68,
+        "reviews": 1827465,
+        "apps": 1,
+        "top_app": "Chipotle",
+        "review_velocity": 0.0012,
         "lean": "strong"
       }
     ],
     "patents": [
       {
         "ticker": "QCOM",
-        "patents": 991,
+        "patents": 1048,
         "ipc_classes": 45,
         "sample_title": "modulation and coding scheme table change based on constellation and code rate"
       },
       {
         "ticker": "TSM",
-        "patents": 803,
-        "ipc_classes": 52,
+        "patents": 861,
+        "ipc_classes": 53,
         "sample_title": "backside contact"
       },
       {
         "ticker": "IBM",
-        "patents": 550,
-        "ipc_classes": 52,
+        "patents": 618,
+        "ipc_classes": 54,
         "sample_title": "double-sided integrated circuit with electrostatic guard ring"
       },
       {
         "ticker": "AAPL",
-        "patents": 535,
-        "ipc_classes": 64,
+        "patents": 576,
+        "ipc_classes": 66,
         "sample_title": "method and system for generating at least one image of a real environment"
       },
       {
         "ticker": "INTC",
-        "patents": 464,
-        "ipc_classes": 48,
+        "patents": 481,
+        "ipc_classes": 49,
         "sample_title": "viewport switch latency reduction in live streaming"
       },
       {
         "ticker": "MSFT",
-        "patents": 407,
-        "ipc_classes": 44,
+        "patents": 431,
+        "ipc_classes": 46,
         "sample_title": "cryogenic removal of carbon dioxide from the atmosphere"
       },
       {
         "ticker": "MU",
-        "patents": 369,
-        "ipc_classes": 26,
+        "patents": 400,
+        "ipc_classes": 29,
         "sample_title": "advanced interconnection for wafer on wafer packaging"
       },
       {
         "ticker": "LPL",
-        "patents": 284,
-        "ipc_classes": 19,
+        "patents": 298,
+        "ipc_classes": 21,
         "sample_title": "display apparatus having a light-emitting device"
       },
       {
         "ticker": "AMAT",
-        "patents": 234,
-        "ipc_classes": 47,
+        "patents": 256,
+        "ipc_classes": 48,
         "sample_title": "patterning layer modification using directional radical ribbon beam"
       },
       {
         "ticker": "TXN",
-        "patents": 234,
-        "ipc_classes": 44,
+        "patents": 241,
+        "ipc_classes": 45,
         "sample_title": "high band-gap devices with a doped high band-gap gate electrode extension"
       },
       {
+        "ticker": "HMC",
+        "patents": 235,
+        "ipc_classes": 68,
+        "sample_title": "courteous mode for adjusting vehicle functions"
+      },
+      {
         "ticker": "SONY",
-        "patents": 211,
-        "ipc_classes": 49,
+        "patents": 223,
+        "ipc_classes": 50,
         "sample_title": "information processing apparatus and information processing method for users at remote locations to communicate naturally"
       },
       {
         "ticker": "NVDA",
-        "patents": 206,
-        "ipc_classes": 23,
+        "patents": 218,
+        "ipc_classes": 24,
         "sample_title": "highlight determination using one or more neural networks"
       },
       {
-        "ticker": "HMC",
-        "patents": 204,
-        "ipc_classes": 66,
-        "sample_title": "courteous mode for adjusting vehicle functions"
-      },
-      {
         "ticker": "BA",
-        "patents": 192,
-        "ipc_classes": 80,
+        "patents": 203,
+        "ipc_classes": 82,
         "sample_title": "wind tunnel turbulent airflow laser sensor system"
       },
       {
         "ticker": "BAC",
-        "patents": 171,
+        "patents": 187,
         "ipc_classes": 11,
         "sample_title": "pre-authorized, encrypted and secured qr code-based wallet to share money with authorized recipients"
       }
@@ -29571,7 +29651,7 @@
           "patent_cluster",
           "unusual_options"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +27 revision delta \u00b7 congress_cluster: 3 members net +4 \u00b7 patent_cluster: 234 grants, 47 IPC classes \u00b7 unusual_options: 4.12\u00d7 vol/OI, balanced"
+        "why": "analyst_upgrade_cluster: net upgrades +27 revision delta \u00b7 congress_cluster: 3 members net +4 \u00b7 patent_cluster: 256 grants, 48 IPC classes \u00b7 unusual_options: 4.12\u00d7 vol/OI, balanced"
       },
       {
         "ticker": "MU",
@@ -29583,7 +29663,7 @@
           "patent_cluster",
           "stocktwits_bull"
         ],
-        "why": "congress_cluster: 3 members net +6 \u00b7 insider_mspr: MSPR 100.0 \u00b7 patent_cluster: 369 grants, 26 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 213,009 watching"
+        "why": "congress_cluster: 3 members net +6 \u00b7 insider_mspr: MSPR 100.0 \u00b7 patent_cluster: 400 grants, 29 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 213,009 watching"
       },
       {
         "ticker": "PLTR",
@@ -29622,6 +29702,17 @@
         "why": "clinical_phase3_start: 9 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: LINZESS \u00b7 material_8k: 2 material 8-Ks (items 7.01, 8.01)"
       },
       {
+        "ticker": "ADBE",
+        "score": 3,
+        "weighted_score": 1.45,
+        "channel_list": [
+          "app_demand",
+          "insider_mspr",
+          "trump"
+        ],
+        "why": "app_demand: 4.81\u2605 \u00d7 2,596,872 reviews \u00b7 insider_mspr: MSPR 64.3 \u00b7 trump: ADOBE INC"
+      },
+      {
         "ticker": "NVDA",
         "score": 5,
         "weighted_score": 1.4,
@@ -29632,7 +29723,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +39 revision delta \u00b7 github_momentum: +0.21% stars \u00b7 patent_cluster: 206 grants, 23 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: Acquisitions"
+        "why": "analyst_upgrade_cluster: net upgrades +39 revision delta \u00b7 github_momentum: +0.21% stars \u00b7 patent_cluster: 218 grants, 24 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: Acquisitions"
       },
       {
         "ticker": "INTC",
@@ -29644,7 +29735,7 @@
           "patent_cluster",
           "stocktwits_bull"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +33 revision delta \u00b7 gov_grant: $11,196,831 federal grant/loan \u00b7 patent_cluster: 464 grants, 48 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 207,931 watching"
+        "why": "analyst_upgrade_cluster: net upgrades +33 revision delta \u00b7 gov_grant: $11,196,831 federal grant/loan \u00b7 patent_cluster: 481 grants, 49 IPC classes \u00b7 stocktwits_bull: 94% bull \u00b7 207,918 watching"
       },
       {
         "ticker": "SPCX",
@@ -29731,7 +29822,7 @@
           "hf_model_momentum",
           "patent_cluster"
         ],
-        "why": "13f_add: ARROWSTREET CAPITAL, LIMITED PARTNERSHIP +$3,022,607,684 \u00b7 hf_model_momentum: +8.6% model downloads \u00b7 patent_cluster: 535 grants, 64 IPC classes"
+        "why": "13f_add: ARROWSTREET CAPITAL, LIMITED PARTNERSHIP +$3,022,607,684 \u00b7 hf_model_momentum: +5.8% model downloads \u00b7 patent_cluster: 576 grants, 66 IPC classes"
       },
       {
         "ticker": "AZN",
@@ -29743,17 +29834,6 @@
           "special_situation"
         ],
         "why": "clinical_phase3_start: 33 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: TRUQAP \u00b7 special_situation: Acquisitions"
-      },
-      {
-        "ticker": "MSFT",
-        "score": 3,
-        "weighted_score": 1.1,
-        "channel_list": [
-          "app_demand",
-          "github_momentum",
-          "patent_cluster"
-        ],
-        "why": "app_demand: 4.77\u2605 \u00d7 20,076,552 reviews \u00b7 github_momentum: +0.61% stars \u00b7 patent_cluster: 407 grants, 44 IPC classes"
       },
       {
         "ticker": "ACM",
@@ -29774,17 +29854,6 @@
           "special_situation"
         ],
         "why": "gov_contract_accel: $22,364,880, 4.2x accel \u00b7 special_situation: Divestitures"
-      },
-      {
-        "ticker": "IBM",
-        "score": 3,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "github_momentum",
-          "hf_model_momentum",
-          "patent_cluster"
-        ],
-        "why": "github_momentum: +0.27% stars \u00b7 hf_model_momentum: +5.6% model downloads \u00b7 patent_cluster: 550 grants, 52 IPC classes"
       },
       {
         "ticker": "ALB",
@@ -29817,16 +29886,6 @@
         "why": "insider_mspr: MSPR 100.0 \u00b7 lobbying_spike: $130,000, 13.0x spike"
       },
       {
-        "ticker": "ADBE",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "insider_mspr",
-          "trump"
-        ],
-        "why": "insider_mspr: MSPR 64.3 \u00b7 trump: ADOBE INC"
-      },
-      {
         "ticker": "RTX",
         "score": 2,
         "weighted_score": 1.0,
@@ -29835,6 +29894,28 @@
           "unusual_options"
         ],
         "why": "analyst_upgrade_cluster: net upgrades +23 revision delta \u00b7 unusual_options: 4.28\u00d7 vol/OI, call-skew"
+      },
+      {
+        "ticker": "GOOGL",
+        "score": 3,
+        "weighted_score": 0.95,
+        "channel_list": [
+          "app_demand",
+          "cnbc_pick",
+          "github_momentum"
+        ],
+        "why": "app_demand: 4.7\u2605 \u00d7 26,419,496 reviews \u00b7 cnbc_pick: Karen Finerman \u00b7 github_momentum: +0.56% stars"
+      },
+      {
+        "ticker": "VST",
+        "score": 3,
+        "weighted_score": 0.95,
+        "channel_list": [
+          "insider_mspr",
+          "news_sentiment",
+          "special_situation"
+        ],
+        "why": "insider_mspr: MSPR 100.0 \u00b7 news_sentiment: 0.9 bullish news (50 art) \u00b7 special_situation: Spin-Offs"
       }
     ]
   }

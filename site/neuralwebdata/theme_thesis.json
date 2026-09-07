@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-09-06",
-  "generated_at": "2026-09-06T08:01:25Z",
+  "as_of": "2026-09-07",
+  "generated_at": "2026-09-07T00:13:14Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -129,10 +129,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-09-05",
+      "as_of": "2026-09-07",
       "thesis_id": "memory_storage.v1",
-      "content_hash": "sha256:d70954aac72c1052bce7f1aacfadb49951ae769c45f3224ea5d830c0ea00762f",
-      "prev_content_hash": "sha256:0ac4a7bbcf65524b06e057e841c00888815455d6b9586f9335c6b101bf00ba6b",
+      "content_hash": "sha256:0c6e97447bd98288f49fe810b10d8699338750362468195cdda06bc30f93b4e0",
+      "prev_content_hash": "sha256:d70954aac72c1052bce7f1aacfadb49951ae769c45f3224ea5d830c0ea00762f",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -187,7 +187,7 @@
           "rule_en": "If revision_breadth for memory_storage turns negative two consecutive prints, the HBM margin thesis is weakening — capacity may be catching demand.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.72"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.655"
         },
         {
           "id": "mem_f2",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-09-06",
+      "as_of": "2026-09-07",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:a782f2ac881aa53683d4685adc9905d0c348122b0312be2e410f7662d113075e",
-      "prev_content_hash": "sha256:782f08a23337514d66ab315ae21d0097c02195008b1eff144b5171e7e259b770",
+      "content_hash": "sha256:a71c99b5fa316ff5b48746929d011a11befaa49b76b49220f64d039d8a16b246",
+      "prev_content_hash": "sha256:a782f2ac881aa53683d4685adc9905d0c348122b0312be2e410f7662d113075e",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -527,7 +527,7 @@
           "rule_en": "If revision_breadth for robotics_automation falls below 0.0, earnings upgrades are not broadening — adoption is slower than the ROI case implies.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.885"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.837"
         },
         {
           "id": "robo_f2",
@@ -1072,10 +1072,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-08-22",
+      "as_of": "2026-09-07",
       "thesis_id": "medical_devices.v1",
-      "content_hash": "sha256:fbf96cbf100e3de00ff1182b974d5a715bc4ef745587248206a6ff600734c2d8",
-      "prev_content_hash": "sha256:f773bb417ace82da9d3938367a5e086134816e4e07d33fe552d41e4a09c71b71",
+      "content_hash": "sha256:9c5a01dacda4c99812693b8780dce73d3baa6efe769bc58a04a93d54ab3d1710",
+      "prev_content_hash": "sha256:fbf96cbf100e3de00ff1182b974d5a715bc4ef745587248206a6ff600734c2d8",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1129,7 +1129,7 @@
           "rule_en": "If revision_breadth for medical_devices falls below 0.0, hospital capex cycles are overriding the installed-base recurring revenue thesis.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.024"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.026"
         },
         {
           "id": "meddev_f2",
@@ -1149,10 +1149,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-09-06",
+      "as_of": "2026-09-07",
       "thesis_id": "diagnostics_lifesci.v1",
-      "content_hash": "sha256:c86a65c00161df1f9b3f0c33c9b4d12154596002e2aa9264d548ae498a37e6d1",
-      "prev_content_hash": "sha256:644ebe36e954fe08c6387aa636a1b314c60953b16d21ef6e1c854646ee380a77",
+      "content_hash": "sha256:02e7855b1333f021b076e49c1bdf8e5b1393b969fb396f2890046fae640193d8",
+      "prev_content_hash": "sha256:c86a65c00161df1f9b3f0c33c9b4d12154596002e2aa9264d548ae498a37e6d1",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1206,7 +1206,7 @@
           "rule_en": "If revision_breadth for diagnostics_lifesci remains below 0.1 for two consecutive months, biopharma R&D capex recovery is not yet flowing through to tools demand.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.603"
+          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.605"
         },
         {
           "id": "diag_f2",
@@ -1303,10 +1303,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-09-04",
+      "as_of": "2026-09-07",
       "thesis_id": "copper_steel_electrify.v1",
-      "content_hash": "sha256:09407fa37d7e446478066797586d0bdf49506d4bde29ea132bb55811d225f12e",
-      "prev_content_hash": "sha256:8a166e941341b17d48d56a83db0e35e056ef096998456a0c378881ef589b7ad6",
+      "content_hash": "sha256:499b2a88ebbbb6f58a5bd65bec62a520e1f7fb0615df885832fd7ae3aeb3d47b",
+      "prev_content_hash": "sha256:09407fa37d7e446478066797586d0bdf49506d4bde29ea132bb55811d225f12e",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1360,7 +1360,7 @@
           "rule_en": "If revision_breadth for copper_steel_electrify falls below 0.0, earnings upgrades from the electrification story are reversing — macro headwinds may be overwhelming structural demand.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.54"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.675"
         },
         {
           "id": "cu_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-09-06T08:01:25Z",
-  "inputs_hash": "sha256:fd19ac7ccf7f5ba7f91f46bd35fa2fed9649f7e8edb040cc4bbf84b557aa51a0",
+  "produced_at": "2026-09-07T00:13:14Z",
+  "inputs_hash": "sha256:2af87a6d0076b6759b9356e1b7315b16a109ef36697ea4c949fbfb6e9a25e0f1",
   "tier": "display"
 }

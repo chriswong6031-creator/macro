@@ -422,45 +422,30 @@
       },
       {
         "current_value": 67.54,
-        "delta": null,
+        "delta": 0.0,
         "metric_id": "cash_flow_momentum",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": null
+        "prior_value": 67.54
       },
       {
         "current_value": 51.14,
-        "delta": null,
+        "delta": 0.0,
         "metric_id": "credit_stress",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": null
+        "prior_value": 51.14
       }
     ],
     "null_reason": null,
     "prior_effective_date": "2026-07-01",
-    "prior_generation_id": "consumer_payments-US-ac7ed9e4e422b1c3",
+    "prior_generation_id": "consumer_payments-US-db43211081d52149",
     "prior_method_version": "consumer_payments.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
-    "changed_fingerprints": [
-      "cash_flow_momentum:cash_flow_momentum:2a53908704b37be6",
-      "cc_delinquency_rate_level:cc_delinquency_rate_level:8a90af5aec6c76eb",
-      "consumer_credit_nonrevolving_level:consumer_credit_nonrevolving_level:425250676a3e1f83",
-      "consumer_credit_nonrevolving_yoy:consumer_credit_nonrevolving_yoy:9cd84f41bf5deaef",
-      "consumer_credit_revolving_level:consumer_credit_revolving_level:42befbdf6af29767",
-      "consumer_credit_revolving_yoy:consumer_credit_revolving_yoy:a0868abf6c601906",
-      "consumer_credit_total_level:consumer_credit_total_level:c3850115c5147a0c",
-      "consumer_credit_total_yoy:consumer_credit_total_yoy:62d6efb45a1c360d",
-      "credit_stress:credit_stress:df0673ab13df5854",
-      "mortgage_delinquency_rate_level:mortgage_delinquency_rate_level:6b25e9f8bb4d5c10",
-      "personal_saving_rate_change_3m:personal_saving_rate_change_3m:758be08e01c866fe",
-      "personal_saving_rate_level:personal_saving_rate_level:7f792f498c6cae5e",
-      "real_disposable_income_level:real_disposable_income_level:e68b5daf3fa43dfc",
-      "real_disposable_income_yoy:real_disposable_income_yoy:2a1ee9e776ef7f0b"
-    ],
-    "correction_state": "superseded",
-    "note": "Same reference period as the predecessor print, but one or more owner-native metrics changed value: this print supersedes the prior one as a revision.",
-    "predecessor_generation_id": "consumer_payments-US-ac7ed9e4e422b1c3"
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "consumer_payments-US-db43211081d52149"
   },
   "drivers": {
     "balance_sheet": [
@@ -553,21 +538,21 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-06T04:48:12Z",
+    "built_at": "2026-09-06T21:23:24Z",
     "calculation_as_of": "2026-07-01",
-    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
-    "content_sha256": "db43211081d52149e490df4601a1f5d37e7e587ad16fbb1520926a8cc9dcf368",
-    "generation_id": "consumer_payments-US-db43211081d52149",
+    "code_version": "41929a0479ef0e5e4a8ac34086668c738c1e480f",
+    "content_sha256": "382cc0f3b5779173dffe9cf8f1cf88509e272f78ca56b70fd1e8a6cf14644752",
+    "generation_id": "consumer_payments-US-382cc0f3b5779173",
     "producer": "engine.market_os.macro_workspaces.consumer_payments",
     "rendered_at": null
   },
   "headline": {
     "effective_date": "2026-07-01",
     "hysteresis": {
-      "applied": false,
+      "applied": true,
       "band": 5.0,
       "held_prior": false,
-      "note": "no comparable prior print; raw threshold classification, hysteresis not applied"
+      "note": "raw classification already matches the prior print; no boundary crossing, hysteresis not engaged"
     },
     "method_version": "consumer_payments.compose.v1",
     "nearest_boundary": {
@@ -577,15 +562,15 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": null,
-      "dy": null,
-      "null_reason": "INSUFFICIENT_HISTORY",
-      "status": "ABSENT"
+      "dx": 0.0,
+      "dy": 0.0,
+      "null_reason": null,
+      "status": "PRESENT"
     },
     "prior_state": {
       "effective_date": "2026-07-01",
       "method_version": "consumer_payments.compose.v1",
-      "state_id": null
+      "state_id": "B"
     },
     "quadrant": {
       "x": 67.54,
@@ -603,7 +588,7 @@
       "en": "Cash-flow/spending momentum x consumer credit stress",
       "zh": "现金流/支出动能 × 消费信贷压力"
     },
-    "transition_distance": null
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [

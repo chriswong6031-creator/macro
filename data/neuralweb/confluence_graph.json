@@ -11,7 +11,7 @@
       "type": "engine",
       "label": "altdata",
       "meta": {
-        "n_spine_rows": 2368
+        "n_spine_rows": 2405
       }
     },
     {
@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 4
+        "n_spine_rows": 1
       }
     },
     {
@@ -67,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 4721
+        "n_spine_rows": 4791
       }
     },
     {
@@ -75,7 +75,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 4721
+        "n_spine_rows": 4791
       }
     },
     {
@@ -123,7 +123,7 @@
       "type": "engine",
       "label": "desk:thematic_desk",
       "meta": {
-        "n_spine_rows": 183
+        "n_spine_rows": 185
       }
     },
     {
@@ -139,7 +139,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 4879
+        "n_spine_rows": 5101
       }
     },
     {
@@ -155,7 +155,7 @@
       "type": "engine",
       "label": "narrative",
       "meta": {
-        "n_spine_rows": 967
+        "n_spine_rows": 991
       }
     },
     {
@@ -179,7 +179,7 @@
       "type": "engine",
       "label": "policy",
       "meta": {
-        "n_spine_rows": 89
+        "n_spine_rows": 92
       }
     },
     {
@@ -187,7 +187,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 23387
+        "n_spine_rows": 23727
       }
     },
     {
@@ -211,7 +211,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 565
+        "n_spine_rows": 579
       }
     },
     {
@@ -227,7 +227,7 @@
       "type": "engine",
       "label": "stock_desk",
       "meta": {
-        "n_spine_rows": 20
+        "n_spine_rows": 23
       }
     },
     {
@@ -235,7 +235,7 @@
       "type": "engine",
       "label": "stock_personality",
       "meta": {
-        "n_spine_rows": 2941
+        "n_spine_rows": 2942
       }
     },
     {
@@ -251,7 +251,7 @@
       "type": "engine",
       "label": "thematic_desk",
       "meta": {
-        "n_spine_rows": 8
+        "n_spine_rows": 9
       }
     },
     {
@@ -267,7 +267,7 @@
       "type": "engine",
       "label": "us_board",
       "meta": {
-        "n_spine_rows": 8051
+        "n_spine_rows": 8116
       }
     },
     {
@@ -275,7 +275,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 36743
+        "n_spine_rows": 37417
       }
     },
     {
@@ -283,7 +283,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 36743
+        "n_spine_rows": 37417
       }
     },
     {
@@ -291,7 +291,7 @@
       "type": "engine",
       "label": "whitehouse",
       "meta": {
-        "n_spine_rows": 195
+        "n_spine_rows": 196
       }
     },
     {
@@ -2420,7 +2420,7 @@
         "regime": "Global reflation",
         "risk": "risk-on",
         "usd_trend": "down",
-        "asof": "2026-09-05",
+        "asof": "2026-09-06",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "rates-driven",
@@ -2428,7 +2428,7 @@
         "regime_radar_dominant": null,
         "stance_word": "Watch — don't chase",
         "dominant_scenario": null,
-        "days_in_regime": 5
+        "days_in_regime": 6
       }
     },
     {
@@ -20973,29 +20973,29 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=40 ticker-level demand-vs-supply divergences b=n_divergences=40, top tickers=['SYY', 'CL', 'LULU', 'CHTR', "
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=39 ticker-level demand-vs-supply divergences b=n_divergences=39, top tickers=['SYY', 'CL', 'LULU', 'CHTR', "
     },
     {
       "src": "engine:altdata",
       "dst": "engine:intel_hub",
       "edge_type": "confirms",
-      "n": 40,
-      "lift": 0.00989,
+      "n": 41,
+      "lift": 0.00736,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0099 n=40 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0074 n=41 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 162,
-      "lift": -0.02944,
+      "n": 166,
+      "lift": -0.0294,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0294 n=162 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0294 n=166 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -21012,12 +21012,12 @@
       "src": "engine:altdata",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 45,
-      "lift": -0.00375,
+      "n": 46,
+      "lift": -0.00365,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0037 n=45 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0037 n=46 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -21045,12 +21045,12 @@
       "src": "engine:intel_hub",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 1239,
-      "lift": -0.00125,
+      "n": 1329,
+      "lift": 0.0014,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0013 n=1239 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0014 n=1329 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -21067,12 +21067,12 @@
       "src": "engine:intel_hub",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 76,
-      "lift": -0.02287,
+      "n": 90,
+      "lift": -0.02366,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0229 n=76 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0237 n=90 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -21090,11 +21090,11 @@
       "dst": "engine:radar",
       "edge_type": "confirms",
       "n": 20,
-      "lift": -0.01949,
+      "lift": -0.01956,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0195 n=20 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0196 n=20 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
@@ -21111,12 +21111,12 @@
       "src": "engine:radar",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 188,
-      "lift": -0.00566,
+      "n": 197,
+      "lift": -0.00806,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0057 n=188 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0081 n=197 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
@@ -21188,17 +21188,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.318 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
-    },
-    {
-      "src": "macro:rates_transmission",
-      "dst": "sector:xlf",
-      "edge_type": "headwind",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "rates headwind: asset=XLF net=-0.269 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
+      "note": "rates headwind: asset=XLB net=-0.316 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
     },
     {
       "src": "macro:rates_transmission",
@@ -21208,7 +21198,17 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.262 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
+      "note": "rates headwind: asset=XLK net=-0.265 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
+    },
+    {
+      "src": "macro:rates_transmission",
+      "dst": "sector:xlf",
+      "edge_type": "headwind",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "rates headwind: asset=XLF net=-0.265 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
     }
   ],
   "contradiction_summary": {
@@ -21225,16 +21225,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "40 ticker-level demand-vs-supply divergences"
+        "reading": "39 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=40, top tickers=['SYY', 'CL', 'LULU', 'CHTR', 'PCG']"
+        "reading": "n_divergences=39, top tickers=['SYY', 'CL', 'LULU', 'CHTR', 'PCG']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-09-05",
-      "note": "40 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: SYY, CL, LULU, CHTR, PCG.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-09-06",
+      "note": "39 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: SYY, CL, LULU, CHTR, PCG.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
   ],
@@ -21256,7 +21256,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-09-06T07:43:19Z",
-  "inputs_hash": "sha256:15e29d9f19b24b0ca88e5765746b8fb13cb2fd5001acd124ea39f3f728442ad7",
+  "produced_at": "2026-09-06T23:52:09Z",
+  "inputs_hash": "sha256:d2357de7afab1e8dac7ddcd0dc1955fa5fd6f314d0455732e42f8dd36dfd0245",
   "tier": "display"
 }

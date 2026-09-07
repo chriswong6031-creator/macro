@@ -2,7 +2,7 @@
   "schema": "override_shadow.v1",
   "stub": false,
   "stub_note": "v1: W1 measured overlay merged onto the W3 panel payload (weekly gated-vs-raw series, prior-cycle same-point context, cum gap). Per-cycle attribution + breakeven fan live in data/vector/gate_attribution.json.",
-  "generated_at": "2026-09-06 07:23 UTC",
+  "generated_at": "2026-09-06 23:36 UTC",
   "audience": "owner-only",
   "override": {
     "id": "midterm_blackout",
@@ -40,24 +40,24 @@
     "pivot_fit_note": "IN-SAMPLE: the same pivots also set the 1064/364 parameters \u2014 this is fit quality, not forecast skill."
   },
   "counterfactual": {
-    "asof": "2026-09-05",
+    "asof": "2026-09-06",
     "gated_pct": {
       "conservative": 100.0,
       "moderate": 100.0,
-      "aggressive": 98.7,
+      "aggressive": 98.5,
       "optimal": 100.0
     },
     "raw_pct": {
       "conservative": 100.0,
       "moderate": 100.0,
-      "aggressive": 98.7,
+      "aggressive": 98.5,
       "optimal": 100.0
     },
     "raw_source": "signals.parquet alloc_*_raw (W0 dual series)",
     "parity_ok": true,
-    "ytd_raw_mean_pct": 18.3,
-    "ytd_raw_days_gt0": 119,
-    "ytd_days": 248
+    "ytd_raw_mean_pct": 18.7,
+    "ytd_raw_days_gt0": 120,
+    "ytd_days": 249
   },
   "falsifiers": {
     "items": [
@@ -72,7 +72,7 @@
       {
         "key": "timing",
         "level": "ok",
-        "text": "Pre-bottom: ~26d until the projected window opens (Oct 2026). Scale in, don't lump in.",
+        "text": "Pre-bottom: ~25d until the projected window opens (Oct 2026). Scale in, don't lump in.",
         "evaluability": "in_window",
         "evaluable": true,
         "why": "W2: escalates to WATCH past the halving clock's worst historical case (2026-10-31 \u2014 inside the gate window), ALERT past the peak-anchored trail (2026-12-10)."
@@ -110,8 +110,8 @@
   "current_ungated_alloc": 1.0,
   "current_gated_alloc": 1.0,
   "cum_gap_pct": 0.0,
-  "gated_equity_final": 0.951573,
-  "raw_equity_final": 0.951573,
+  "gated_equity_final": 0.949295,
+  "raw_equity_final": 0.949295,
   "weekly_series": [
     {
       "date": "2026-01-04",
@@ -290,8 +290,8 @@
     },
     {
       "date": "2026-09-06",
-      "gated_equity": 0.951573,
-      "raw_equity": 0.951573
+      "gated_equity": 0.949295,
+      "raw_equity": 0.949295
     }
   ],
   "prior_cycles": {

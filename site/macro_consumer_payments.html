@@ -331,7 +331,7 @@
       <div><dt><span class="l-en">Calculation as-of</span><span class="l-zh">计算截止</span></dt>
            <dd><time>2026-07-01</time></dd></div>
       <div class="mq-nonclock"><dt><span class="l-en">Page built</span><span class="l-zh">页面生成</span></dt>
-           <dd><time>2026-09-06T05:36:57Z</time></dd></div>
+           <dd><time>2026-09-06T22:23:40Z</time></dd></div>
     </dl>
     <p class="mq-context-caveat"><span class="l-en">Page build time is not an economic clock and never makes a source fresh. This page is a static publication — it does not poll for live data.</span><span class="l-zh">页面生成时间并非经济时钟，不会使数据源变新。本页为静态发布 — 不会实时轮询数据。</span></p>
   </div>
@@ -482,7 +482,7 @@
            <dd><time>2026-07-01</time></dd></div>
       <div><dt><span class="l-en">Method version</span><span class="l-zh">方法版本</span></dt><dd><code>consumer_payments.compose.v1</code></dd></div>
       <div><dt><span class="l-en">Prior accepted print</span><span class="l-zh">上一已接受读数</span></dt>
-           <dd></dd></div>
+           <dd><strong>B</strong> <time>2026-07-01</time></dd></div>
     </dl>
   </div>
 
@@ -502,8 +502,8 @@
 
     <div class="mq-axis-cell mq-axis-cell-vector">
       <span class="mq-axis-name"><span class="l-en">1-month vector</span><span class="l-zh">一个月位移向量</span></span>
-      <strong class="mq-axis-value"><span class="mq-absent"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why"><span class="l-en">Insufficient history</span><span class="l-zh">历史数据不足</span></span></span></strong>
-      <span class="mq-axis-direction"><span class="l-en">No vector is drawn: there is no method-comparable prior print to move from.</span><span class="l-zh">不绘制向量：不存在方法可比的历史读数作为起点。</span></span>
+      <strong class="mq-axis-value">Δx 0 · Δy 0</strong>
+      <span class="mq-axis-direction"><span class="l-en">Movement since the prior accepted print</span><span class="l-zh">相对上一已接受读数的位移</span></span>
     </div>
 
     <div class="mq-axis-cell">
@@ -596,9 +596,8 @@
     <div><span><span class="l-en">Consumer credit stress</span><span class="l-zh">消费信贷压力</span></span><strong>51.14</strong><em><span class="l-en">Higher = more stress</span><span class="l-zh">数值越高＝压力越大</span></em></div>
     <div><span><span class="l-en">Boundary</span><span class="l-zh">分界</span></span><strong>50.00 / 50.00</strong><em><span class="l-en">Fixed, disclosed threshold on each axis</span><span class="l-zh">每条坐标轴上固定且已披露的阈值</span></em></div>
     <div><span><span class="l-en">Hysteresis band</span><span class="l-zh">滞回带</span></span><strong>±5.00</strong>
-         <em><span class="l-en">Not applied: no comparable prior print</span><span class="l-zh">未应用：不存在可比的历史读数</span></em></div>
+         <em><span class="l-en">Applied against the prior print</span><span class="l-zh">已对照上一读数应用</span></em></div>
   </div>
-  <p class="mq-map-note"><span class="l-en">No movement arrow is drawn.</span><span class="l-zh">未绘制位移箭头。</span> <span class="mq-absent mq-absent-inline"><span class="mq-dash" aria-hidden="true">—</span><span class="mq-absent-why"><span class="l-en">Insufficient history</span><span class="l-zh">历史数据不足</span></span></span></p>
 </figure>
       <section class="mq-diagnostics" aria-labelledby="mq-diagnostics-title">
   <div class="mq-section-head">
@@ -668,15 +667,15 @@
       </tr>
       <tr>
         <th scope="row"><span class="l-en">Cash flow momentum</span><span class="l-zh">Cash flow momentum</span></th>
-        <td>None</td>
         <td>67.54</td>
-        <td class="mq-delta mq-delta-flat">None</td>
+        <td>67.54</td>
+        <td class="mq-delta mq-delta-flat">0</td>
       </tr>
       <tr>
         <th scope="row"><span class="l-en">Credit stress</span><span class="l-zh">Credit stress</span></th>
-        <td>None</td>
         <td>51.14</td>
-        <td class="mq-delta mq-delta-flat">None</td>
+        <td>51.14</td>
+        <td class="mq-delta mq-delta-flat">0</td>
       </tr>
     </tbody>
   </table>
@@ -1915,14 +1914,14 @@
     <h3 id="mq-lineage-title"><span class="l-en">Correction and method lineage</span><span class="l-zh">更正与方法沿革</span></h3>
   </div>
   <dl class="mq-method-grid">
-    <div><dt><span class="l-en">Correction state</span><span class="l-zh">更正状态</span></dt><dd><span class="l-en">Superseded</span><span class="l-zh">已被取代</span></dd></div>
+    <div><dt><span class="l-en">Correction state</span><span class="l-zh">更正状态</span></dt><dd><span class="l-en">No correction recorded</span><span class="l-zh">无更正记录</span></dd></div>
     <div><dt><span class="l-en">Predecessor generation</span><span class="l-zh">前一代产物</span></dt>
-         <dd><code>consumer_payments-US-ac7ed9e4e422b1c3</code></dd></div>
+         <dd><code>consumer_payments-US-db43211081d52149</code></dd></div>
     <div><dt><span class="l-en">Changed fingerprints</span><span class="l-zh">已变更指纹</span></dt>
-         <dd>cash_flow_momentum:cash_flow_momentum:2a53908704b37be6, cc_delinquency_rate_level:cc_delinquency_rate_level:8a90af5aec6c76eb, consumer_credit_nonrevolving_level:consumer_credit_nonrevolving_level:425250676a3e1f83, consumer_credit_nonrevolving_yoy:consumer_credit_nonrevolving_yoy:9cd84f41bf5deaef, consumer_credit_revolving_level:consumer_credit_revolving_level:42befbdf6af29767, consumer_credit_revolving_yoy:consumer_credit_revolving_yoy:a0868abf6c601906, consumer_credit_total_level:consumer_credit_total_level:c3850115c5147a0c, consumer_credit_total_yoy:consumer_credit_total_yoy:62d6efb45a1c360d, credit_stress:credit_stress:df0673ab13df5854, mortgage_delinquency_rate_level:mortgage_delinquency_rate_level:6b25e9f8bb4d5c10, personal_saving_rate_change_3m:personal_saving_rate_change_3m:758be08e01c866fe, personal_saving_rate_level:personal_saving_rate_level:7f792f498c6cae5e, real_disposable_income_level:real_disposable_income_level:e68b5daf3fa43dfc, real_disposable_income_yoy:real_disposable_income_yoy:2a1ee9e776ef7f0b</dd></div>
-    <div><dt><span class="l-en">Hysteresis</span><span class="l-zh">滞回</span></dt><dd>no comparable prior print; raw threshold classification, hysteresis not applied</dd></div>
+         <dd><span class="mq-dash">—</span></dd></div>
+    <div><dt><span class="l-en">Hysteresis</span><span class="l-zh">滞回</span></dt><dd>raw classification already matches the prior print; no boundary crossing, hysteresis not engaged</dd></div>
   </dl>
-  <p class="mq-lineage-note">Same reference period as the predecessor print, but one or more owner-native metrics changed value: this print supersedes the prior one as a revision.</p>
+  <p class="mq-lineage-note">Same reference period as the predecessor print; no tracked metric changed value (no-change republication).</p>
 </section>
     </section>
   </div>
@@ -2507,11 +2506,11 @@
       <dl class="mq-clocks">
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Artifact built</span><span class="l-zh">产物生成</span></span><span class="mq-clock-meaning"><span class="l-en">Producer generation time. Not an economic clock.</span><span class="l-zh">生产端生成时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-06T04:48:12Z</time></dd>
+          <dd><time>2026-09-06T21:23:24Z</time></dd>
         </div>
         <div class="mq-clock">
           <dt><span class="mq-clock-name"><span class="l-en">Page built</span><span class="l-zh">页面生成</span></span><span class="mq-clock-meaning"><span class="l-en">Static page render time. Not an economic clock.</span><span class="l-zh">静态页面渲染时间，并非经济时钟。</span></span></dt>
-          <dd><time>2026-09-06T05:36:57Z</time></dd>
+          <dd><time>2026-09-06T22:23:40Z</time></dd>
         </div>
       </dl>
     </section>
@@ -2521,11 +2520,11 @@
       <dl class="mq-method-grid">
         <div><dt><span class="l-en">Artifact path</span><span class="l-zh">产物路径</span></dt><dd><code>macrodata/workspaces/consumer_payments/US/latest.json</code></dd></div>
         <div><dt><span class="l-en">Manifest path</span><span class="l-zh">清单路径</span></dt><dd><code>macrodata/workspaces/manifest.json</code></dd></div>
-        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">db43211081d52149e490df4601a1f5d37e7e587ad16fbb1520926a8cc9dcf368</code></dd></div>
-        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>69388</dd></div>
-        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>consumer_payments-US-db43211081d52149</code></dd></div>
+        <div><dt><span class="l-en">Content hash</span><span class="l-zh">内容哈希</span></dt><dd><code class="mq-hash">382cc0f3b5779173dffe9cf8f1cf88509e272f78ca56b70fd1e8a6cf14644752</code></dd></div>
+        <div><dt><span class="l-en">Bytes</span><span class="l-zh">字节数</span></dt><dd>68187</dd></div>
+        <div><dt><span class="l-en">Generation id</span><span class="l-zh">产物代号</span></dt><dd><code>consumer_payments-US-382cc0f3b5779173</code></dd></div>
         <div><dt><span class="l-en">Producer</span><span class="l-zh">生产者</span></dt><dd><code>engine.market_os.macro_workspaces.consumer_payments</code></dd></div>
-        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>08c0f88a549d409155d0359c535044510f56dbf2</code></dd></div>
+        <div><dt><span class="l-en">Producer code version</span><span class="l-zh">生产端代码版本</span></dt><dd><code>41929a0479ef0e5e4a8ac34086668c738c1e480f</code></dd></div>
         <div><dt><span class="l-en">Client contract</span><span class="l-zh">客户端契约</span></dt><dd><code>mastermind.macro_workspace_snapshot.v1@1.0.0</code></dd></div>
       </dl>
       <p class="mq-lineage-note"><span class="l-en">The page validated this artifact against the closed schema and recomputed its content hash before rendering. A mismatch renders a refusal page instead of a state.</span><span class="l-zh">本页在渲染前已按封闭 schema 校验该产物并重新计算其内容哈希。若不匹配，将呈现拒绝页面而非任何状态读数。</span></p>

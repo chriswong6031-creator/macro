@@ -55,7 +55,7 @@
         ],
         "unmeasurable": {
           "altdata": 12,
-          "altdata_conv": 2,
+          "altdata_conv": 1,
           "basket_turn.v1": 4,
           "ca_board": 10,
           "china_news": 3,
@@ -101,7 +101,7 @@
     ],
     "unmeasurable": {
       "altdata": 12,
-      "altdata_conv": 2,
+      "altdata_conv": 1,
       "basket_turn.v1": 4,
       "ca_board": 10,
       "china_news": 3,

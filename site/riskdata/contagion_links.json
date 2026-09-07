@@ -1,6 +1,6 @@
 {
   "schema": "contagion_links.v1",
-  "built": "2026-09-06T07:23:35.459768+00:00",
+  "built": "2026-09-06T23:36:43.872417+00:00",
   "params": {
     "structural_version": "structural.v1",
     "dy_window": 150,
@@ -996,5 +996,5 @@
     "ez": "2026-09-04"
   },
   "gaps": [],
-  "timing_sec": 0.45
+  "timing_sec": 0.37
 }

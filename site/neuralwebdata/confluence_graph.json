@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-09-03",
+  "asof": "2026-09-04",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 1
+        "n_spine_rows": 4
       }
     },
     {
@@ -51,7 +51,7 @@
       "type": "engine",
       "label": "china_special_sits",
       "meta": {
-        "n_spine_rows": 108
+        "n_spine_rows": 109
       }
     },
     {
@@ -67,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 4683
+        "n_spine_rows": 4721
       }
     },
     {
@@ -75,7 +75,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 4683
+        "n_spine_rows": 4721
       }
     },
     {
@@ -131,7 +131,7 @@
       "type": "engine",
       "label": "hk_board",
       "meta": {
-        "n_spine_rows": 2680
+        "n_spine_rows": 2684
       }
     },
     {
@@ -139,7 +139,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 4741
+        "n_spine_rows": 4879
       }
     },
     {
@@ -147,7 +147,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 470
+        "n_spine_rows": 481
       }
     },
     {
@@ -187,7 +187,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 23379
+        "n_spine_rows": 23387
       }
     },
     {
@@ -203,7 +203,7 @@
       "type": "engine",
       "label": "reflex.cortex_attention",
       "meta": {
-        "n_spine_rows": 156
+        "n_spine_rows": 162
       }
     },
     {
@@ -211,7 +211,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 551
+        "n_spine_rows": 565
       }
     },
     {
@@ -227,7 +227,7 @@
       "type": "engine",
       "label": "stock_desk",
       "meta": {
-        "n_spine_rows": 17
+        "n_spine_rows": 20
       }
     },
     {
@@ -235,7 +235,7 @@
       "type": "engine",
       "label": "stock_personality",
       "meta": {
-        "n_spine_rows": 2942
+        "n_spine_rows": 2941
       }
     },
     {
@@ -251,7 +251,7 @@
       "type": "engine",
       "label": "thematic_desk",
       "meta": {
-        "n_spine_rows": 7
+        "n_spine_rows": 8
       }
     },
     {
@@ -275,7 +275,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 36579
+        "n_spine_rows": 36743
       }
     },
     {
@@ -283,7 +283,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 36579
+        "n_spine_rows": 36743
       }
     },
     {
@@ -2420,15 +2420,15 @@
         "regime": "Global reflation",
         "risk": "risk-on",
         "usd_trend": "down",
-        "asof": "2026-09-04",
+        "asof": "2026-09-05",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "rates-driven",
         "dollar_day_flag": false,
-        "regime_radar_dominant": "intervention_risk",
-        "stance_word": "Get ready",
-        "dominant_scenario": "intervention_risk",
-        "days_in_regime": 4
+        "regime_radar_dominant": null,
+        "stance_word": "Watch — don't chase",
+        "dominant_scenario": null,
+        "days_in_regime": 5
       }
     },
     {
@@ -2439,20 +2439,20 @@
         "subtype": "rates_transmission",
         "state": {
           "rates": {
-            "real_10y": 2.45,
-            "real_10y_pctile": 0.99,
-            "real_10y_chg_63d_bp": 25.0,
-            "nominal_10y": 4.79,
-            "curve_2s10s": 0.43,
-            "curve_tp_adj": 1.31,
-            "policy_gap": 0.76,
+            "real_10y": 2.42,
+            "real_10y_pctile": 0.98,
+            "real_10y_chg_63d_bp": 22.0,
+            "nominal_10y": 4.77,
+            "curve_2s10s": 0.41,
+            "curve_tp_adj": 1.29,
+            "policy_gap": 0.71,
             "regime": "restrictive",
             "direction": "rising",
-            "real_10y_chg_22d_bp": 4.0,
+            "real_10y_chg_22d_bp": 1.0,
             "turn_watch": "extreme_watch",
             "label": {
-              "en": "Real 10y 2.45% (restrictive, rising — at a 5y extreme)",
-              "zh": "实际10年期 2.45%（偏紧，处于5年极值）"
+              "en": "Real 10y 2.42% (restrictive, rising — at a 5y extreme)",
+              "zh": "实际10年期 2.42%（偏紧，处于5年极值）"
             }
           },
           "inflation": {
@@ -2533,7 +2533,7 @@
         "regime": "mixed / no clear trend",
         "correlation_verdict": "converging",
         "state_text": "mixed / no clear trend",
-        "asof": "2026-09-04",
+        "asof": "2026-09-05",
         "display_only": true,
         "source_lobe": "cross_asset_flows"
       }
@@ -2617,7 +2617,7 @@
         "subtype": "market_structure",
         "regime": "long",
         "agreement": "split",
-        "cor1m_regime": "normal",
+        "cor1m_regime": "dispersion",
         "asof": "2026-09-04",
         "display_only": true,
         "source_lobe": "world_state.market_structure"
@@ -20973,7 +20973,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=43 ticker-level demand-vs-supply divergences b=n_divergences=43, top tickers=['SYY', 'CL', 'NET', 'LULU', '"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=40 ticker-level demand-vs-supply divergences b=n_divergences=40, top tickers=['SYY', 'CL', 'LULU', 'CHTR', "
     },
     {
       "src": "engine:altdata",
@@ -21188,7 +21188,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.342 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
+      "note": "rates headwind: asset=XLB net=-0.318 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
     },
     {
       "src": "macro:rates_transmission",
@@ -21198,7 +21198,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLF net=-0.288 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
+      "note": "rates headwind: asset=XLF net=-0.269 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
     },
     {
       "src": "macro:rates_transmission",
@@ -21208,7 +21208,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.281 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
+      "note": "rates headwind: asset=XLK net=-0.262 verdict=headwind source_lobe=rates_transmission asof=2026-09-04"
     }
   ],
   "contradiction_summary": {
@@ -21225,16 +21225,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "43 ticker-level demand-vs-supply divergences"
+        "reading": "40 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=43, top tickers=['SYY', 'CL', 'NET', 'LULU', 'BF-B']"
+        "reading": "n_divergences=40, top tickers=['SYY', 'CL', 'LULU', 'CHTR', 'PCG']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-09-04",
-      "note": "43 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: SYY, CL, NET, LULU, BF-B.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-09-05",
+      "note": "40 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: SYY, CL, LULU, CHTR, PCG.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
   ],
@@ -21256,7 +21256,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-09-05T14:27:21Z",
-  "inputs_hash": "sha256:4379ac32d881b1d8a7c90e5303dc96eac0ff398b8318b41caa4582bc5ef59d93",
+  "produced_at": "2026-09-06T07:43:19Z",
+  "inputs_hash": "sha256:15e29d9f19b24b0ca88e5765746b8fb13cb2fd5001acd124ea39f3f728442ad7",
   "tier": "display"
 }

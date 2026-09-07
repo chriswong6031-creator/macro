@@ -1,9 +1,9 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-09-06",
-  "generated_utc": "2026-09-06T07:45:30.968220+00:00",
+  "generated_utc": "2026-09-06T23:54:12.495020+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
-  "regime_read": "Convergence is concentrated in semiconductors/AI infrastructure and select healthcare, but several signals are sentiment-heavy or internally mixed. With no scored track record yet, conviction remains modest and the clearest non-extended reads are MU, NVDA, MSFT, MRK, and a contrarian INTC setup [track_record].",
+  "regime_read": "The pack shows a broad semiconductor/AI-infrastructure convergence (MU, AMAT, NVDA, INTC) with political-actor holdings and patent activity rather than a single clean trade; healthcare names (MRK, ABBV) carry a distinct catalyst channel but no supporting actor cluster, while a label-mismatch flags HUT as a concealed AI-infrastructure pivot behind an American Bitcoin crypto label. No track record exists yet, so all reads are held at low conviction: the actionable axis default is caution, not confirmation.",
   "brain_present": true,
   "brain_usable": true,
   "article3": {
@@ -11,100 +11,22 @@
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
     "evidence_asof": "2026-09-06",
-    "evaluated_at": "2026-09-06T07:44:23+00:00"
+    "evaluated_at": "2026-09-06T23:53:10+00:00"
   },
   "is_context_only": true,
   "calibration": {
     "n_scored": 0,
     "hit_rate": null,
-    "open": 16,
+    "open": 18,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 84,
-  "n_broken": 33,
+  "n_signals": 81,
+  "n_broken": 31,
   "signals": [
     {
-      "ticker": "NVDA",
-      "signal_score": 93,
-      "conviction": "medium",
-      "action": "ACCUMULATE",
-      "direction": "long",
-      "source": "brain",
-      "weighted_score": 1.9,
-      "convergence_score": 6,
-      "channels": [
-        "affiliation",
-        "analyst_upgrade_cluster",
-        "github_momentum",
-        "patent_cluster",
-        "retail_buzz",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 8.5,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -2.2,
-      "ret_20d": 2.9,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Jensen Huang",
-          "rel": "CONTROLS",
-          "kind": "exec"
-        },
-        {
-          "actor": "Nancy Pelosi",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Marjorie Taylor Greene",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Michael McCaul",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Jim Cramer",
-          "rel": "TALKS_ABOUT",
-          "kind": "influencer"
-        },
-        {
-          "actor": "Paul Pelosi",
-          "rel": "AFFILIATES_WITH",
-          "kind": "influencer"
-        }
-      ],
-      "n_affiliated_actors": 6,
-      "thesis": "Developer adoption, patent activity, unanimous bullish analyst signals, and substantial disclosed congressional exposure align around continued AI-platform demand [github_momentum] [patent_cluster] [analyst_upgrade_cluster] [actor:Nancy Pelosi] [actor:Marjorie Taylor Greene] [actor:Michael McCaul]. The shares are not extended by the pack's 60-day relative-strength rule, although dark-pool positioning is slightly below its measured norm and does not confirm accumulation.",
-      "second_order": [
-        "MU \u2014 AI compute growth implies greater demand for advanced memory [patent_cluster] [congress_cluster]",
-        "AMAT \u2014 continued accelerator and memory investment can support fabrication-equipment demand [patent_cluster]",
-        "MSFT \u2014 cloud and AI application demand can benefit from continued AI-compute adoption [app_demand] [github_momentum] [actor:Sam Altman]"
-      ],
-      "falsifier": {
-        "text": "Developer-model usage and patent momentum roll over together while analyst signals cease to be broadly bullish.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "NVDA",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 60
-        }
-      },
-      "clamped": null
-    },
-    {
       "ticker": "MU",
-      "signal_score": 85,
-      "conviction": "medium",
+      "signal_score": 73,
+      "conviction": "low",
       "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
@@ -134,13 +56,14 @@
         }
       ],
       "n_affiliated_actors": 1,
-      "thesis": "The pack's strongest weighted convergence combines net congressional buying across three members, uniformly positive measured insider activity, a sizable patent cluster, and bullish retail sentiment; modest 60-day relative strength leaves the setup non-extended [congress_cluster] [insider_mspr] [patent_cluster] [stocktwits_bull]. Ro Khanna's disclosed affiliation adds an influence-graph link but is qualitative rather than decisive [actor:Ro Khanna].",
+      "thesis": "MU is the highest-weighted scored cluster (2.4) with five independent channels converging: congress_cluster (net 6, 3 members), insider_mspr at 100.0 (top decile), 400 patents, bull-biased stocktwits (1.0), and a disclosed qualitative affiliation with Rep. Ro Khanna [actor:Ro Khanna]. With rs_vs_spy_60d at only 7.6 and not extended, entry is not yet gone; this reads as early-stage alignment in memory/semis rather than a chase.",
       "second_order": [
-        "AMAT \u2014 memory-capacity investment could transmit into semiconductor-equipment demand, though its options signal is mixed [patent_cluster] [unusual_options]",
-        "INTC \u2014 broader domestic-semiconductor policy support is suggested by its grant and patent signals [gov_grant] [patent_cluster]"
+        "AMAT \u2014 memory capex implies wafer-fab equipment pull-through",
+        "INTC \u2014 shared US semiconductor policy beneficiary via gov_grant + patent clusters",
+        "LRCX? \u2014 not in pack but memory-cyclical equipment peer implied by MU capex"
       ],
       "falsifier": {
-        "text": "Congressional net activity turns negative and measured insider activity loses its positive reading while patent momentum weakens.",
+        "text": "MU's 60-day relative strength breaks above +35pp against SPY and the name flags extended, or the next insider filing shows net selling despite today's 100.0 mspr reading.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MU",
@@ -197,57 +120,79 @@
       "clamped": null
     },
     {
-      "ticker": "MSFT",
-      "signal_score": 70,
+      "ticker": "NVDA",
+      "signal_score": 73,
       "conviction": "low",
-      "action": "ACCUMULATE",
+      "action": "WATCH",
       "direction": "long",
       "source": "brain",
-      "weighted_score": 1.6,
-      "convergence_score": 4,
+      "weighted_score": 1.9,
+      "convergence_score": 6,
       "channels": [
         "affiliation",
-        "app_demand",
+        "analyst_upgrade_cluster",
         "github_momentum",
-        "patent_cluster"
+        "patent_cluster",
+        "retail_buzz",
+        "special_situation"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": 19.5,
+      "rs_vs_spy_60d": 8.5,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
-      "off_high_252": -7.1,
-      "ret_20d": 0.1,
+      "off_high_252": -2.2,
+      "ret_20d": 2.9,
       "above_50dma": true,
       "entry_tier": null,
       "affiliations": [
         {
-          "actor": "Sam Altman",
-          "rel": "PARTNERS_WITH",
+          "actor": "Jensen Huang",
+          "rel": "CONTROLS",
           "kind": "exec"
         },
         {
-          "actor": "Bill Ackman",
+          "actor": "Nancy Pelosi",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Michael McCaul",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Jim Cramer",
+          "rel": "TALKS_ABOUT",
+          "kind": "influencer"
+        },
+        {
+          "actor": "Paul Pelosi",
           "rel": "AFFILIATES_WITH",
-          "kind": "fund"
+          "kind": "influencer"
         }
       ],
-      "n_affiliated_actors": 2,
-      "thesis": "High app engagement, strong model-download activity, GitHub momentum, and a large patent cluster create a coherent enterprise-software and AI-demand signal [app_demand] [github_momentum] [patent_cluster]. The factual partnership with Sam Altman links that demand to the AI ecosystem [actor:Sam Altman], but the signal lacks corroboration from contracts, insiders, or smart-money holdings.",
+      "n_affiliated_actors": 6,
+      "thesis": "NVDA shows the densest actor graph in the pack: three sitting politicians hold stakes (Pelosi, Marjorie Taylor Greene, McCaul), Jensen Huang CONTROLS, Jim Cramer TALKS_ABOUT, and Paul Pelosi is affiliated. Six channels fire (affiliation, analyst_upgrade_cluster, github_momentum, patent_cluster, retail_buzz, special_situation). Yet congress_position_usd of $211.5M and rs_vs_spy_60d of 8.5 with heavy retail coverage mean this is crowded, not early: WATCH rather than accumulate, despite the alignment.",
       "second_order": [
-        "NVDA \u2014 cloud AI demand implies continued accelerator consumption [github_momentum] [patent_cluster]",
-        "MU \u2014 greater AI workload intensity can raise advanced-memory requirements [patent_cluster]",
-        "GOOGL \u2014 strong model-download and app-demand signals suggest the AI-platform demand is broader than one vendor [app_demand] [github_momentum]"
+        "MU \u2014 HBM/memory content per NVDA GPU rises",
+        "AMAT \u2014 NVDA's foundry/supplier capex pulls equipment",
+        "INTC \u2014 competitor/beneficiary of AI compute policy tailwinds"
       ],
       "falsifier": {
-        "text": "App engagement and model-download momentum decline together without a compensating rise in another independent demand channel.",
+        "text": "NVDA's 60-day relative strength crosses +35pp against SPY, or a subsequent congressional disclosure shows Pelosi/McCaul reducing their stakes.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "MSFT",
+          "subject_ticker": "NVDA",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 60
+          "horizon_d": 70
         }
       },
       "clamped": null
@@ -330,20 +275,20 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": "Multiple Phase III starts and an FDA label-expansion signal align with a positive special-situation channel, while the pack records a Trump-linked buy-side signal [clinical_phase3_start] [fda_label_expansion] [special_situation] [trump]. The read remains a watch because three clinical halts introduce meaningful pipeline risk and the political signal is a single, potentially noisy channel.",
+      "thesis": "MRK shows a distinct catalyst pattern: trump_side buy, 11 Phase 3 starts against 3 halts, FDA label expansion, and special_situation, with $39.0M in congress positions. This is a catalyst-driven healthcare setup, but there are no actors and the rs_vs_spy_60d of 20.7 is elevated; the entry is not extended by the +35pp threshold but is not early either. WATCH for the catalyst to land.",
       "second_order": [
-        "ABBV \u2014 parallel Phase III and FDA label-expansion activity suggests a broader large-pharma catalyst cycle [clinical_phase3_start] [fda_label_expansion]",
-        "Healthcare services \u2014 proposed Medicare care-planning and reimbursement measures could support treatment coordination, but remain only introduced legislation [bill:HR10087] [bill:S5180]"
+        "ABBV \u2014 correlated healthcare catalyst (9 Phase 3 starts, FDA label expansion)",
+        "UNH? \u2014 Medicare coverage bills (HR10087) may shift oncology payment flows"
       ],
       "falsifier": {
-        "text": "Clinical halts increase or the FDA label-expansion catalyst is withdrawn or materially delayed.",
+        "text": "MRK's 60-day relative strength climbs toward +35pp against SPY, or a Phase 3 start converts into a public clinical halt/safety signal.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MRK",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 90
+          "horizon_d": 60
         }
       },
       "clamped": null
@@ -417,10 +362,10 @@
     {
       "ticker": "ABBV",
       "signal_score": 49,
-      "conviction": "medium",
+      "conviction": "low",
       "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
+      "direction": "long",
+      "source": "brain",
       "weighted_score": 1.45,
       "convergence_score": 3,
       "channels": [
@@ -439,6 +384,90 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": "ABBV carries a compact three-channel pattern: 9 Phase 3 starts against 2 halts, FDA label expansion, and two material 8-K filings in 30 days, plus $62.4M in congress positions. No actors and no trump flag, so this is a pure catalyst read with modest breadth. rs_vs_spy_60d of 8.4 is benign; WATCH, as the 8-K and Phase 3 activity are the only independent confirmations.",
+      "second_order": [
+        "MRK \u2014 shared Medicare oncology policy tailwind (HR10087)",
+        "REGN? \u2014 branded pharma FDA-catalyst cluster peer"
+      ],
+      "falsifier": {
+        "text": "ABBV's material_8k count drops to zero over the next 30 days, or a Phase 3 start converts into a clinical halt.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "ABBV",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "clamped": null
+    },
+    {
+      "ticker": "ADBE",
+      "signal_score": 49,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.45,
+      "convergence_score": 3,
+      "channels": [
+        "app_demand",
+        "insider_mspr",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": 7.8,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -27.5,
+      "ret_20d": 0.5,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "MSFT",
+      "signal_score": 49,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.2,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "github_momentum",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 19.5,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -7.1,
+      "ret_20d": 0.1,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Sam Altman",
+          "rel": "PARTNERS_WITH",
+          "kind": "exec"
+        },
+        {
+          "actor": "Bill Ackman",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 2,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -469,6 +498,42 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "BAC",
+      "signal_score": 47,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.3,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "app_demand",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 9.1,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -2.8,
+      "ret_20d": -0.3,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Warren Buffett",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -706,42 +771,6 @@
       "clamped": null
     },
     {
-      "ticker": "UBER",
-      "signal_score": 39,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.1,
-      "convergence_score": 3,
-      "channels": [
-        "affiliation",
-        "app_demand",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 4.0,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -24.3,
-      "ret_20d": 1.0,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Bill Ackman",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 1,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "MCK",
       "signal_score": 38,
       "conviction": "medium",
@@ -771,29 +800,36 @@
       "clamped": null
     },
     {
-      "ticker": "ADBE",
+      "ticker": "AXP",
       "signal_score": 36,
       "conviction": "medium",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 1.05,
-      "convergence_score": 2,
+      "weighted_score": 1.1,
+      "convergence_score": 3,
       "channels": [
-        "insider_mspr",
-        "trump"
+        "affiliation",
+        "app_demand",
+        "special_situation"
       ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 7.8,
+      "trump_linked": false,
+      "rs_vs_spy_60d": -2.1,
       "no_price_data": false,
       "extended": false,
       "rolling_over": false,
-      "off_high_252": -27.5,
-      "ret_20d": 0.5,
-      "above_50dma": true,
+      "off_high_252": -14.6,
+      "ret_20d": -4.3,
+      "above_50dma": false,
       "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
+      "affiliations": [
+        {
+          "actor": "Warren Buffett",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -824,41 +860,6 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "BAC",
-      "signal_score": 34,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.9,
-      "convergence_score": 2,
-      "channels": [
-        "affiliation",
-        "patent_cluster"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": 9.1,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -2.8,
-      "ret_20d": -0.3,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Warren Buffett",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -914,6 +915,35 @@
       "off_high_252": -11.4,
       "ret_20d": -8.0,
       "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "CHTR",
+      "signal_score": 32,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.95,
+      "convergence_score": 2,
+      "channels": [
+        "app_demand",
+        "material_8k"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 3.9,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -46.2,
+      "ret_20d": -0.4,
+      "above_50dma": true,
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
@@ -1096,69 +1126,9 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
-    },
-    {
-      "ticker": "NOW",
-      "signal_score": 31,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.7,
-      "convergence_score": 2,
-      "channels": [
-        "special_situation",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 26.7,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -26.5,
-      "ret_20d": 13.1,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
     }
   ],
   "broken_signals": [
-    {
-      "ticker": "AMAT",
-      "signal_score": 55,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 2.2,
-      "convergence_score": 4,
-      "channels": [
-        "analyst_upgrade_cluster",
-        "congress_cluster",
-        "patent_cluster",
-        "unusual_options"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -14.9,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -37.0,
-      "ret_20d": -15.6,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
     {
       "ticker": "GOOGL",
       "signal_score": 47,
@@ -1238,6 +1208,37 @@
       "clamped": null
     },
     {
+      "ticker": "INTC",
+      "signal_score": 39,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 4,
+      "channels": [
+        "analyst_upgrade_cluster",
+        "gov_grant",
+        "patent_cluster",
+        "stocktwits_bull"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -16.9,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -32.0,
+      "ret_20d": -5.8,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "AMD",
       "signal_score": 38,
       "conviction": "high",
@@ -1293,42 +1294,6 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "LUV",
-      "signal_score": 34,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.1,
-      "convergence_score": 3,
-      "channels": [
-        "activist_13d",
-        "affiliation",
-        "app_demand"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -9.9,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -26.7,
-      "ret_20d": -15.4,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Paul Singer",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1451,30 +1416,80 @@
       "clamped": null
     },
     {
-      "ticker": "IBM",
-      "signal_score": 27,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.05,
-      "convergence_score": 3,
+      "ticker": "AMAT",
+      "signal_score": 25,
+      "conviction": "low",
+      "action": "AVOID",
+      "direction": "short",
+      "source": "brain",
+      "weighted_score": 2.2,
+      "convergence_score": 4,
       "channels": [
-        "github_momentum",
-        "hf_model_momentum",
-        "patent_cluster"
+        "analyst_upgrade_cluster",
+        "congress_cluster",
+        "patent_cluster",
+        "unusual_options"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": -19.6,
+      "rs_vs_spy_60d": -14.9,
       "no_price_data": false,
       "extended": false,
       "rolling_over": true,
-      "off_high_252": -28.1,
-      "ret_20d": -0.3,
+      "off_high_252": -37.0,
+      "ret_20d": -15.6,
       "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": "AMAT carries a four-channel convergence (analyst_upgrade_cluster, congress_cluster, patent_cluster, unusual_options) with 256 patents, $40.9M in congress positions across 3 members, and a 0.97 analyst bull ratio. The unusual_options put/call of 1.07 is slightly protective but the 0.611 vol/OI ratio indicates elevated positioning. rs_vs_spy_60d of -14.9 means the name has lagged badly and is non-extended \u2014 an interesting contrarian setup tied to the MU/NVDA capex cycle, but the option data is mixed, so WATCH.",
+      "second_order": [
+        "MU \u2014 AMAT's equipment goes into memory fabs",
+        "NVDA \u2014 AMAT supplies semiconductor manufacturing for AI chips",
+        "INTC \u2014 US fab buildouts need AMAT tools"
+      ],
+      "falsifier": {
+        "text": "AMAT's unusual_options put/call ratio rises further above 1.2 while vol/OI stays elevated, or the congressional stakes decline in the next disclosure.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "AMAT",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 60
+        }
+      },
+      "clamped": "lean 'overweight' \u2192 'underweight' (deterministic witness); action 'WATCH' \u2192 'AVOID' (deterministic ceiling)"
+    },
+    {
+      "ticker": "LUV",
+      "signal_score": 21,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.7,
+      "convergence_score": 2,
+      "channels": [
+        "activist_13d",
+        "affiliation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -9.9,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -26.7,
+      "ret_20d": -15.4,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Paul Singer",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1875,25 +1890,25 @@
       "clamped": null
     },
     {
-      "ticker": "PINS",
-      "signal_score": 15,
+      "ticker": "IBM",
+      "signal_score": 16,
       "conviction": "medium",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 0.6,
+      "weighted_score": 0.7,
       "convergence_score": 2,
       "channels": [
-        "activist_13d",
-        "app_demand"
+        "github_momentum",
+        "patent_cluster"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": -12.7,
+      "rs_vs_spy_60d": -19.6,
       "no_price_data": false,
       "extended": false,
       "rolling_over": true,
-      "off_high_252": -46.2,
-      "ret_20d": -13.9,
+      "off_high_252": -28.1,
+      "ret_20d": -0.3,
       "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],
@@ -1962,35 +1977,6 @@
       "clamped": null
     },
     {
-      "ticker": "WMT",
-      "signal_score": 12,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.55,
-      "convergence_score": 2,
-      "channels": [
-        "app_demand",
-        "stocktwits_bull"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -17.4,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -20.0,
-      "ret_20d": -4.0,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "GSK",
       "signal_score": 10,
       "conviction": "medium",
@@ -2048,6 +2034,35 @@
         }
       ],
       "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "HIMS",
+      "signal_score": 9,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.35,
+      "convergence_score": 2,
+      "channels": [
+        "retail_buzz",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -6.7,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -55.8,
+      "ret_20d": -12.3,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
       "thesis": null,
       "second_order": [],
       "falsifier": null,

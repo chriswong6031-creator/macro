@@ -352,7 +352,7 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "liquidity_regime-US-974a839949a33e44",
+    "prior_generation_id": "liquidity_regime-US-bf79bf4e0d001082",
     "prior_method_version": "liquidity_regime.compose.v1",
     "status": "PRESENT"
   },
@@ -360,7 +360,7 @@
     "changed_fingerprints": [],
     "correction_state": "none",
     "note": "Same reference period as the predecessor print; no source component changed value (no-change republication).",
-    "predecessor_generation_id": "liquidity_regime-US-974a839949a33e44"
+    "predecessor_generation_id": "liquidity_regime-US-bf79bf4e0d001082"
   },
   "drivers": {
     "balance_sheet": [
@@ -467,11 +467,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-06T04:48:12Z",
+    "built_at": "2026-09-06T21:23:24Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
-    "content_sha256": "bf79bf4e0d001082f8edc227698a1eeb4c69c126e1edc41e0ed07e413fc12420",
-    "generation_id": "liquidity_regime-US-bf79bf4e0d001082",
+    "code_version": "41929a0479ef0e5e4a8ac34086668c738c1e480f",
+    "content_sha256": "cda6778b4f655170e866155db5b4e9551559a13ccf60f440d5000c7e9474cc14",
+    "generation_id": "liquidity_regime-US-cda6778b4f655170",
     "producer": "engine.market_os.macro_workspaces.liquidity_regime",
     "rendered_at": null
   },
