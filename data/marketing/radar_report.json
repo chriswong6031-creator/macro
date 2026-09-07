@@ -2,7 +2,7 @@
   "schema": "marketing.radar_report/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-09-06T08:41:39Z",
+  "produced_at": "2026-09-07T00:51:03Z",
   "tier": "display",
   "as_of": "2026-09-06",
   "feeds": [
@@ -15,8 +15,8 @@
     {
       "name": "confluence",
       "ok": true,
-      "n_assets": 5,
-      "as_of": "2026-09-05"
+      "n_assets": 4,
+      "as_of": "2026-09-06"
     },
     {
       "name": "earnings",
@@ -38,7 +38,7 @@
     }
   ],
   "posted_recent": {
-    "n_tickers": 924,
+    "n_tickers": 935,
     "window_plans": 7
   },
   "surplus": [
@@ -195,20 +195,12 @@
       "opportunity_id": "radar-earnings-KFY-2026-09-06"
     },
     {
-      "ticker": "HON",
-      "feed": "confluence",
-      "why": "confluence combo Weekly reclaims 100-day line + weekly RSI stack curls up + RSI-21 washed out firing, test WR 66%",
-      "as_of": "2026-09-05",
-      "staleness_days": 1,
-      "opportunity_id": "radar-confluence-HON-2026-09-05"
-    },
-    {
       "ticker": "PH",
       "feed": "confluence",
       "why": "confluence combo Weekly short-term uptrend + RSI-14 washed out + POC retest holds firing, test WR 64%",
-      "as_of": "2026-09-05",
-      "staleness_days": 1,
-      "opportunity_id": "radar-confluence-PH-2026-09-05"
+      "as_of": "2026-09-06",
+      "staleness_days": 0,
+      "opportunity_id": "radar-confluence-PH-2026-09-06"
     },
     {
       "ticker": "AEP",
@@ -323,14 +315,6 @@
       "opportunity_id": "radar-movers-FICO-2026-09-04"
     },
     {
-      "ticker": "GPRO",
-      "feed": "movers",
-      "why": "S&P mover +22.3% 1D ()",
-      "as_of": "2026-09-04",
-      "staleness_days": 2,
-      "opportunity_id": "radar-movers-GPRO-2026-09-04"
-    },
-    {
       "ticker": "LZB",
       "feed": "prophet",
       "why": "active Prophet plan LZB-BULL-20260727, phase triggered_pre_t1, conviction 10",
@@ -361,19 +345,35 @@
       "as_of": "2026-09-04",
       "staleness_days": 2,
       "opportunity_id": "radar-movers-PATH-2026-09-04"
+    },
+    {
+      "ticker": "PSQL",
+      "feed": "movers",
+      "why": "S&P mover -18.4% 1D ()",
+      "as_of": "2026-09-04",
+      "staleness_days": 2,
+      "opportunity_id": "radar-movers-PSQL-2026-09-04"
+    },
+    {
+      "ticker": "SKDD",
+      "feed": "movers",
+      "why": "S&P mover -16.2% 1D ()",
+      "as_of": "2026-09-04",
+      "staleness_days": 2,
+      "opportunity_id": "radar-movers-SKDD-2026-09-04"
     }
   ],
   "queue": {
-    "added": 19,
-    "expired": 27,
-    "total": 457,
-    "open": 225,
-    "doa_skipped": 9
+    "added": 1,
+    "expired": 0,
+    "total": 429,
+    "open": 226,
+    "doa_skipped": 10
   },
   "tiers_summary": {
     "as_of": "2026-09-04",
     "t1": 28,
-    "t2": 430,
+    "t2": 429,
     "t3": 2155
   },
   "cadence": {
