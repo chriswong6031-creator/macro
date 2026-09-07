@@ -205,6 +205,94 @@ def test_young_lock_refuses_even_with_no_live_process(repo, monkeypatch, capsys)
     assert "::error" in blob
 
 
+# ── `gather_live_processes` — the real per-platform probe (round-2 verify) ──
+# (round 1/2 review: "attack the liveness probe — a process whose cwd is a
+# SUBDIRECTORY of the worktree; a process with the gitdir open but cwd
+# elsewhere; lsof timing out". The subdirectory-cwd case already worked (lsof
+# `+D` recurses), but two real gaps existed: (a) on Darwin, if only ONE of the
+# two required lsof calls failed/timed out, the probe still returned a
+# confirmed (partial) result instead of None, silently dropping exactly the
+# half that might have found the holder; (b) on Linux, the git-dir
+# "open file, cwd elsewhere" case was never checked at all — only cwd was.)
+
+def test_gather_live_processes_darwin_partial_probe_failure_is_unconfirmed(
+    monkeypatch, tmp_path,
+):
+    """If the cwd-scoped lsof call succeeds but the git-dir-scoped one
+    fails/times out (or vice versa), the whole probe must come back
+    unconfirmed (None) — a probe that only half-answered is not proof nothing
+    holds the lock."""
+    monkeypatch.setattr(WS.platform, "system", lambda: "Darwin")
+
+    def cwd_ok_gitdir_fails(args):
+        if "-d" in args:  # the cwd-scoped probe
+            return "p123\nfcwd\n/somewhere\n"
+        return None  # the git-dir open-file probe "timed out"
+
+    monkeypatch.setattr(WS, "_run_lsof", cwd_ok_gitdir_fails)
+    assert WS.gather_live_processes(tmp_path / "wt", tmp_path / "gitdir") is None
+
+    def gitdir_ok_cwd_fails(args):
+        if "-d" in args:
+            return None  # the cwd-scoped probe "timed out"
+        return "p456\nfcwd\n/other\n"
+
+    monkeypatch.setattr(WS, "_run_lsof", gitdir_ok_cwd_fails)
+    assert WS.gather_live_processes(tmp_path / "wt", tmp_path / "gitdir") is None
+
+
+def test_gather_live_processes_linux_detects_gitdir_open_file_when_cwd_elsewhere(
+    monkeypatch, tmp_path,
+):
+    """A process with the lock file open via an fd, but whose cwd is
+    elsewhere, must still be detected on Linux — the same coverage the
+    macOS `lsof -F pn +D <git_dir>` call already provides."""
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+    gitdir = tmp_path / "gitdir"
+    gitdir.mkdir()
+    other_cwd = tmp_path / "elsewhere"
+    other_cwd.mkdir()
+    lockfile = gitdir / "index.lock"
+    lockfile.write_bytes(b"")
+
+    proc_root = tmp_path / "proc"
+    pid_dir = proc_root / "4242"
+    pid_dir.mkdir(parents=True)
+    os.symlink(other_cwd, pid_dir / "cwd")
+    fd_dir = pid_dir / "fd"
+    fd_dir.mkdir()
+    os.symlink(lockfile, fd_dir / "9")
+
+    monkeypatch.setattr(WS.platform, "system", lambda: "Linux")
+
+    procs = WS.gather_live_processes(worktree, gitdir, proc_root=proc_root)
+
+    assert procs is not None
+    assert any(p["pid"] == 4242 for p in procs), f"missed gitdir-open-file holder: {procs}"
+
+
+def test_gather_live_processes_linux_still_detects_cwd_under_worktree(monkeypatch, tmp_path):
+    """Regression guard: adding the fd/git-dir check must not break the
+    existing cwd-under-worktree detection."""
+    worktree = tmp_path / "worktree"
+    worktree.mkdir()
+    sub = worktree / "sub"
+    sub.mkdir()
+
+    proc_root = tmp_path / "proc"
+    pid_dir = proc_root / "777"
+    pid_dir.mkdir(parents=True)
+    os.symlink(sub, pid_dir / "cwd")
+
+    monkeypatch.setattr(WS.platform, "system", lambda: "Linux")
+
+    procs = WS.gather_live_processes(worktree, None, proc_root=proc_root)
+
+    assert procs is not None
+    assert any(p["pid"] == 777 for p in procs)
+
+
 # ── `lock_is_stale` — pure predicate, no real processes ─────────────────────
 
 def test_lock_is_stale_pure_predicate(tmp_path):

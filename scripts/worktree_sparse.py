@@ -269,53 +269,72 @@ def _parse_lsof_pn(text: str) -> list[dict]:
     return records
 
 
-def gather_live_processes(worktree_root: Path, git_dir: Path | None) -> list[dict] | None:
+def gather_live_processes(
+    worktree_root: Path, git_dir: Path | None, *, proc_root: Path = Path("/proc"),
+) -> list[dict] | None:
     """Best-effort snapshot of live processes holding ``worktree_root`` (as
     cwd) or ``git_dir`` (as any open file), for ``lock_is_stale`` to consume.
 
     Returns ``[{"pid": int, "cwd": str|None, "open_files": [str, ...]}, ...]``.
     Returns ``None`` when the probe itself could not be trusted — no platform
-    support, or every underlying call failed — so a caller must then fail
-    closed (never conclude "nothing is alive" from an unconfirmed probe).
+    support, or ANY attempted underlying check failed (not just "every"
+    check) — so a caller must then fail closed (never conclude "nothing is
+    alive" from a probe that only partially came back). A probe where one of
+    two required checks times out is exactly as untrustworthy as one where
+    both do: silently keeping the half that succeeded would report a
+    confirmed-empty (or confirmed-partial) result while the other half — the
+    one that might have found the actual holder — was never really checked.
 
     macOS: ``lsof -a -d cwd -F pn +D <worktree_root>`` (processes whose cwd is
-    under the worktree) plus ``lsof -F pn +D <git_dir>`` (any open file under
-    the git-dir, which also covers a live git process still touching the lock
-    itself). Linux: ``/proc/*/cwd`` symlinks, same worktree_root scope.
+    under the worktree — ``+D`` recurses into subdirectories, so a process
+    whose cwd is a subdirectory of the worktree is caught too) plus
+    ``lsof -F pn +D <git_dir>`` (any open file under the git-dir — catches a
+    process with the lock file open even when its cwd is elsewhere, and also
+    covers a live git process still touching the lock itself). Both checks
+    must succeed for the result to be trusted; either failing makes the whole
+    probe unconfirmed. Linux: ``/proc/*/cwd`` symlinks for the worktree scope,
+    plus ``/proc/*/fd/*`` symlinks for the git-dir scope (the same two-check
+    shape as macOS, so the "gitdir open, cwd elsewhere" case is covered on
+    both platforms) — ``proc_root`` is injectable so tests can point this at a
+    synthetic tree without a real Linux host.
     """
     system = platform.system()
     if system == "Darwin":
         by_pid: dict[int, dict] = {}
-        probed = False
         cwd_out = _run_lsof(["-a", "-d", "cwd", "-F", "pn", "+D", str(worktree_root)])
-        if cwd_out is not None:
-            probed = True
-            for rec in _parse_lsof_pn(cwd_out):
+        if cwd_out is None:
+            return None  # cwd probe untrustworthy — cannot confirm liveness at all
+        for rec in _parse_lsof_pn(cwd_out):
+            entry = by_pid.setdefault(
+                rec["pid"], {"pid": rec["pid"], "cwd": None, "open_files": []},
+            )
+            if rec["paths"]:
+                entry["cwd"] = rec["paths"][0]
+        if git_dir is not None:
+            file_out = _run_lsof(["-F", "pn", "+D", str(git_dir)])
+            if file_out is None:
+                return None  # git-dir probe untrustworthy — same fail-closed rule
+            for rec in _parse_lsof_pn(file_out):
                 entry = by_pid.setdefault(
                     rec["pid"], {"pid": rec["pid"], "cwd": None, "open_files": []},
                 )
-                if rec["paths"]:
-                    entry["cwd"] = rec["paths"][0]
-        if git_dir is not None:
-            file_out = _run_lsof(["-F", "pn", "+D", str(git_dir)])
-            if file_out is not None:
-                probed = True
-                for rec in _parse_lsof_pn(file_out):
-                    entry = by_pid.setdefault(
-                        rec["pid"], {"pid": rec["pid"], "cwd": None, "open_files": []},
-                    )
-                    entry["open_files"].extend(rec["paths"])
-        return list(by_pid.values()) if probed else None
+                entry["open_files"].extend(rec["paths"])
+        return list(by_pid.values())
     if system == "Linux":
-        proc_dir = Path("/proc")
-        if not proc_dir.is_dir():
+        if not proc_root.is_dir():
             return None
         try:
             target = worktree_root.resolve()
         except OSError:
             target = worktree_root
+        git_target: Path | None = None
+        if git_dir is not None:
+            try:
+                git_target = git_dir.resolve()
+            except OSError:
+                git_target = git_dir
         try:
-            entries = list(proc_dir.iterdir())
+            entries = list(proc_root.iterdir())
         except OSError:
             return None
         records: list[dict] = []
@@ -323,11 +342,37 @@ def gather_live_processes(worktree_root: Path, git_dir: Path | None) -> list[dic
             if not entry.name.isdigit():
                 continue
             try:
-                link = (entry / "cwd").resolve()
-            except OSError:
+                pid = int(entry.name)
+            except ValueError:
                 continue
-            if link == target or target in link.parents:
-                records.append({"pid": int(entry.name), "cwd": str(link), "open_files": []})
+            cwd_link: Path | None
+            try:
+                cwd_link = (entry / "cwd").resolve()
+            except OSError:
+                cwd_link = None
+            matched = cwd_link is not None and (
+                cwd_link == target or target in cwd_link.parents
+            )
+            if not matched and git_target is not None:
+                fd_dir = entry / "fd"
+                try:
+                    fd_entries = list(fd_dir.iterdir())
+                except OSError:
+                    fd_entries = []
+                for fd in fd_entries:
+                    try:
+                        fd_link = fd.resolve()
+                    except OSError:
+                        continue
+                    if fd_link == git_target or git_target in fd_link.parents:
+                        matched = True
+                        break
+            if matched:
+                records.append({
+                    "pid": pid,
+                    "cwd": str(cwd_link) if cwd_link is not None else None,
+                    "open_files": [],
+                })
         return records
     return None  # unsupported platform: fail closed, never claim "nothing alive"
 
