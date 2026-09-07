@@ -95,6 +95,8 @@ from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 log = logging.getLogger("macro.support")
+
+from lib.help_directory import route_for_tier
 router = APIRouter()
 
 # --------------------------------------------------------------------------- #
@@ -286,16 +288,22 @@ def _resolve_user(authorization: str | None) -> dict | None:
         return None
 
 
-def _tier_for(user_id: str) -> str | None:
-    """Tier snapshot at submission time, via the billing spine's read path. None on failure."""
+def _tier_for_state(user_id: str) -> tuple[str | None, bool]:
+    """(tier, tier_known). tier_known is False ONLY when the read raised —
+    an anonymous submitter is a known-absent plan, not an unreadable one."""
     if not user_id:
-        return None
+        return None, True
     try:
         from app import billing  # noqa: PLC0415
-        return billing.read_entitlement(user_id).get("tier")
+        return billing.read_entitlement(user_id).get("tier"), True
     except Exception as exc:  # noqa: BLE001
-        log.debug("support: tier snapshot failed for %s (%s)", user_id, type(exc).__name__)
-        return None
+        log.debug("support: plan snapshot failed for %s (%s)", user_id, type(exc).__name__)
+        return None, False
+
+
+def _tier_for(user_id: str) -> str | None:
+    """Tier snapshot at submission time, via the billing spine's read path. None on failure."""
+    return _tier_for_state(user_id)[0]
 
 
 def ticket_ref(ticket_id: str) -> str:
@@ -347,7 +355,7 @@ def _mail_configured() -> bool:
 
 
 def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
-                     email: str, tier: str | None, lang: str | None) -> str:
+                     email: str, tier: str | None, lang: str | None, queue: str) -> str:
     """Tell the operator a ticket arrived. Never raises; returns the mailer status."""
     to = ""
     try:
@@ -363,8 +371,10 @@ def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
             [
                 {"kind": "kv",
                  "en": [("From", email), ("Topic", topic), ("Tier", tier or "unknown"),
+                        ("Queue", queue),
                         ("Language", lang or "unknown"), ("Ticket", ticket_id)],
                  "zh": [("发件人", email), ("主题", topic), ("套餐", tier or "未知"),
+                        ("队列", queue),
                         ("语言", lang or "未知"), ("工单", ticket_id)]},
                 {"en": subject, "zh": subject},
                 {"kind": "quote", "en": excerpt, "zh": excerpt},
@@ -378,7 +388,7 @@ def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
             template="ticket_operator_notify",
             cls="transactional",
             to_email=to,
-            subject=f"[support/{topic}] {subject[:120]}",
+            subject=f"[support/{queue}/{topic}] {subject[:120]}",
             html=html,
             text=text,
             idem_key=f"ticket-notify:{ticket_id}",
@@ -468,7 +478,7 @@ def _ack_submitter(*, ticket_id: str, topic: str, subject: str, message: str,
 
 def _send_ticket_mail(*, ticket_id: str, topic: str, subject: str, message: str,
                       email: str, tier: str | None, lang: str | None,
-                      user_id: str | None,
+                      user_id: str | None, queue: str,
                       stamp: tuple[str, str, str, str] | None = None) -> None:
     """Both sends for one new ticket, off the request path (see the module docstring).
 
@@ -480,7 +490,8 @@ def _send_ticket_mail(*, ticket_id: str, topic: str, subject: str, message: str,
     """
     try:
         notified = _notify_operator(ticket_id=ticket_id, topic=topic, subject=subject,
-                                    message=message, email=email, tier=tier, lang=lang)
+                                    message=message, email=email, tier=tier, lang=lang,
+                                    queue=queue)
         acked = _ack_submitter(ticket_id=ticket_id, topic=topic, subject=subject,
                                message=message, email=email, user_id=user_id, stamp=stamp)
         log.info("support: ticket %s mail (notify=%s ack=%s)", ticket_id, notified, acked)
@@ -536,8 +547,13 @@ def create_ticket(body: TicketRequest, request: Request,
     # whole reason this returns 200 instead of 400.
     if (body.website or "").strip():
         log.info("support: honeypot tripped — dropped")
+        fake_routing = route_for_tier(None, tier_known=True)
         return {"ok": True, "ticket_id": str(uuid.uuid4()),
-                "sent": _sent_stamp()[0], "mail": _mail_configured()}
+                "sent": _sent_stamp()[0], "mail": _mail_configured(),
+                "routing": {"plan": fake_routing["plan_id"],
+                            "promise_en": fake_routing["promise_en"],
+                            "promise_zh": fake_routing["promise_zh"],
+                            "note_en": fake_routing["note_en"], "note_zh": fake_routing["note_zh"]}}
 
     # ---- time-to-fill ---------------------------------------------------------
     # Optional by contract (the W2 form always sends it). A t0 in the FUTURE is clock
@@ -572,7 +588,12 @@ def create_ticket(body: TicketRequest, request: Request,
     email = verified_email or (body.email or "").strip()
     if not _EMAIL_RE.match(email):
         raise HTTPException(400, "a valid email address is required")
-    tier = _tier_for(user_id) if user_id else None
+    tier, tier_known = _tier_for_state(user_id) if user_id else (None, True)
+    # signed_in=bool(user_id) disambiguates a signed-in account with no readable plan
+    # value from an anonymous submitter — otherwise both collapse onto the same
+    # (tier=None, tier_known=True) inputs and the signed-in user is told the false
+    # "you were not signed in" sentence (review finding B-F13-3 MAJOR-1).
+    routing = route_for_tier(tier, tier_known=tier_known, signed_in=bool(user_id))
 
     # ONE stamp per ticket: the response prints it on the page's success slip and the ack
     # email prints it in its own. Two clocks read a few hundred ms apart would show the
@@ -592,6 +613,8 @@ def create_ticket(body: TicketRequest, request: Request,
             "ua": (request.headers.get("user-agent") or "")[:300],
             "ip_hash": _ip_hash(ip),
             "authed": bool(user_id),
+            "queue": routing["queue"],
+            "plan_read": routing["plan_read"],
         },
     }
     try:
@@ -619,7 +642,8 @@ def create_ticket(body: TicketRequest, request: Request,
     background_tasks.add_task(
         _send_ticket_mail,
         ticket_id=str(ticket_id), topic=topic, subject=subject, message=message,
-        email=email, tier=tier, lang=lang, user_id=user_id, stamp=stamp,
+        email=email, tier=tier, lang=lang, user_id=user_id, queue=routing["queue"],
+        stamp=stamp,
     )
     # `mail` is what keeps the page's success slip honest: with the sends deferred, the
     # response cannot know a disposition, but it CAN say whether a relay exists at all.
@@ -628,4 +652,7 @@ def create_ticket(body: TicketRequest, request: Request,
     mail_on = _mail_configured()
     log.info("support: ticket %s filed (topic=%s authed=%s mail=%s)",
              ticket_id, topic, bool(user_id), "deferred" if mail_on else "off")
-    return {"ok": True, "ticket_id": str(ticket_id), "sent": stamp[0], "mail": mail_on}
+    return {"ok": True, "ticket_id": str(ticket_id), "sent": stamp[0], "mail": mail_on,
+            "routing": {"plan": routing["plan_id"], "promise_en": routing["promise_en"],
+                        "promise_zh": routing["promise_zh"],
+                        "note_en": routing["note_en"], "note_zh": routing["note_zh"]}}

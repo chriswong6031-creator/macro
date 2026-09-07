@@ -21,7 +21,7 @@ sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
 from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
-from lib.help_directory import help_directory_view_model  # noqa: E402
+from lib.help_directory import help_page_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -115,7 +115,10 @@ def build(site=None) -> None:
     help_error: Exception | None = None
     help_vm: dict | None = None
     try:
-        help_vm = help_directory_view_model(config.ROOT)
+        # SAME builder scripts.build_site.build_help_page calls — one function,
+        # one place, so a new view-model key can never reach one renderer and
+        # miss the other (review finding B-F13-3 BLOCKER-1).
+        help_vm = help_page_view_model(config.ROOT)
         write_page(
             site / "help.html",
             env.get_template("help.html.j2").render(
