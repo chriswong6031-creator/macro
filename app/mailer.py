@@ -996,3 +996,147 @@ def verify_unsub_token(t: str, action: str = "unsubscribe") -> str | None:
     if not hmac.compare_digest(expect, given):
         return None
     return ident
+
+
+# --------------------------------------------------------------------------- #
+# Alert message type (packet B-F08-1b -- additive; STATUSES/send/render_email unchanged)
+# --------------------------------------------------------------------------- #
+ALERT_TEMPLATE = "alert_fire"
+ALERT_CLS = "transactional"
+
+_ALERT_BANNED_TOKENS = (
+    "READ_OK", "READ_UNAVAILABLE", "READ_NO_COVERAGE", "fire_event_id", "idem_key",
+    "alert_outbox", "alert_runs", "::", "outcome=", "falsif", "refut", "证伪", "tripwire",
+)
+
+
+def alert_idem_key(fire_event_id: str, attempt: int = 0) -> str:
+    """``alert_fire:<fire_event_id>`` -- THE idempotency key (F08 freeze section 6).
+
+    ``attempt=0`` (the default) is BYTE-IDENTICAL to the original single-arg key, so
+    every alert already resolved under the old signature keeps resolving to the same
+    ``email_log`` row. ``attempt>0`` mints a DISTINCT key per retry -- a mailer
+    ``'duplicate'`` is terminal for one idem_key forever (the ``email_log`` row it
+    names never leaves whatever status it settled at), so a retry that reused the
+    same key could never send again. This was review round 3's BLOCKER; see
+    ``engine/alert_delivery_drain.py``'s ``_alert_idem_key`` (pinned identical below
+    the module docstring there) and its ``drain()`` retry path.
+    """
+    base = f"{ALERT_TEMPLATE}:{fire_event_id}"
+    return base if not attempt else f"{base}:{attempt}"
+
+
+def _alert_plain(value, fallback_en: str, fallback_zh: str, *, zh: bool = False) -> str:
+    v = str(value or "")
+    if not v or any(tok in v for tok in _ALERT_BANNED_TOKENS):
+        return fallback_zh if zh else fallback_en
+    return v
+
+
+def _alert_fired_at_display(fired_at) -> str:
+    if not fired_at:
+        return "time not recorded"
+    try:
+        import datetime as _dt
+        s = str(fired_at).replace("Z", "+00:00")
+        dt = _dt.datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=_dt.timezone.utc)
+        dt = dt.astimezone(_dt.timezone.utc)
+        return dt.strftime("%Y-%m-%d %H:%M UTC")
+    except Exception:  # noqa: BLE001
+        return "time not recorded"
+
+
+def compose_alert(payload: dict, *, lang: str = "en") -> dict:
+    """Pure -- turn one ``alert_outbox.payload`` row into a plain-language email.
+
+    No IO. Refuses machine text / raw slugs (F08 freeze plain-language filter); an
+    offending source string is replaced by the neutral fallback rather than dropped
+    or sent verbatim.
+    """
+    payload = payload or {}
+    ticker = _alert_plain(payload.get("ticker"), "this name", "该标的")
+    raw_condition = str(payload.get("condition_plain") or "")
+    # The frozen outbox payload carries ONE source string with no zh field (F08 freeze
+    # section 6) -- there is nothing to genuinely select between, and fabricating a
+    # translation is out of scope (no LLM-originated text, section 8). Detect which
+    # language the source actually is and keep the OTHER slot on its neutral fallback,
+    # rather than showing the untranslated source in both slots under a language label
+    # it does not match -- that was the parity bug (title_zh == English condition_plain).
+    if any("\u4e00" <= ch <= "\u9fff" for ch in raw_condition):
+        condition_plain = _alert_plain(None, "a condition you set was met", "你设置的条件已触发")
+        condition_plain_zh = _alert_plain(raw_condition, "a condition you set was met",
+                                          "你设置的条件已触发", zh=True)
+    else:
+        condition_plain = _alert_plain(payload.get("condition_plain"),
+                                       "a condition you set was met", "你设置的条件已触发")
+        condition_plain_zh = _alert_plain(None, "a condition you set was met",
+                                          "你设置的条件已触发", zh=True)
+    evidence_url = payload.get("evidence_url") or ""
+    if any(tok in str(evidence_url) for tok in _ALERT_BANNED_TOKENS):
+        evidence_url = ""
+    fired_at_display = _alert_fired_at_display(payload.get("fired_at"))
+    one_liner = _alert_plain(payload.get("subject"), condition_plain, condition_plain_zh)
+
+    if lang == "zh":
+        subject = f"{ticker} 提醒 · {ticker} alert"
+    else:
+        subject = f"{ticker} alert · {ticker} 提醒"
+
+    blocks: list = [
+        {"en": f"{condition_plain} on {ticker}.",
+         "zh": f"{ticker}：{condition_plain_zh}。"},
+        {"en": f"This is one of the names you are watching: {ticker}.",
+         "zh": f"这是你正在关注的标的之一：{ticker}。"},
+    ]
+    if evidence_url:
+        blocks.append({"kind": "button", "en": "Open the evidence", "zh": "查看依据", "url": evidence_url})
+    else:
+        blocks.append({"kind": "fine",
+                       "en": "No evidence link was available for this alert.",
+                       "zh": "这条提醒没有可用的依据链接。"})
+    blocks.append({"kind": "kv",
+                   "en": [("Noticed at", fired_at_display)],
+                   "zh": [("发现时间", fired_at_display)]})
+    blocks.append({"kind": "fine",
+                   "en": "Research display only — not advice.",
+                   "zh": "仅供研究展示，不构成投资建议。"})
+
+    return {
+        "subject": subject,
+        "title_en": one_liner if lang != "zh" else condition_plain,
+        "title_zh": condition_plain_zh,
+        "eyebrow": "ALERT",
+        "preheader": one_liner,
+        "why_en": f"You set an alert on {ticker}.",
+        "why_zh": f"你为 {ticker} 设置了提醒。",
+        "blocks": blocks,
+    }
+
+
+def send_alert(*, fire_event_id: str, to_email: str, payload: dict,
+              lang: str = "en", user_id=None, attempt: int = 0) -> str:
+    """Compose + send ONE fired-alert email. Returns a mailer status string.
+
+    Returns one of ``app.mailer.STATUSES`` plus ``'duplicate'``. No parallel enum
+    (F08 freeze section 8). ``attempt`` (default 0, byte-identical key) is the
+    drain's retry counter -- passed straight to ``alert_idem_key`` so a later retry
+    of a terminally-failed row claims a FRESH ``email_log`` row instead of colliding
+    with the first attempt's (review round 3 BLOCKER).
+    """
+    c = compose_alert(payload, lang=lang)
+    html, text = render_email(
+        c["title_en"], c["title_zh"], c["blocks"],
+        eyebrow=c["eyebrow"], preheader=c["preheader"],
+        why_en=c["why_en"], why_zh=c["why_zh"],
+        unsubscribe_url="",
+        follow=False,
+    )
+    # review round 5 MINOR-3: no try/except DuplicateKey here -- send() already
+    # catches DuplicateKey internally (see send()'s own step 1) and returns the
+    # string 'duplicate' directly; it never raises DuplicateKey to its caller. The
+    # previous except clause was unreachable and encoded a false contract belief.
+    return send(template=ALERT_TEMPLATE, cls=ALERT_CLS, to_email=to_email,
+               subject=c["subject"], html=html, text=text,
+               idem_key=alert_idem_key(fire_event_id, attempt=attempt), user_id=user_id)

@@ -6258,6 +6258,10 @@ jobs:
         run: python -m pytest tests/test_admin_email_center.py -v
       - name: unsubscribe page + per-matcher serving boundary (templates/unsubscribe.html.j2)
         run: python -m pytest tests/test_unsubscribe_page.py -v
+      - name: pinned alert email message type (app/mailer.py alert template)
+        run: python -m pytest tests/test_mailer_alert_template.py -v
+      - name: alert outbox delivery drain (engine/alert_delivery_drain.py, scripts/drain_alert_outbox.py)
+        run: python -m pytest tests/test_alert_delivery_drain.py -v
 
   serving-observability:
     if: ${{ false }}
