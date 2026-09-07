@@ -692,6 +692,13 @@ entries:
     section: 3
     section_name: estimator_laws
 
+  - topic: 'Public API v0 admission scope (packet B-F12-5, closes MO-PAID-055/084, MO-DELTA-036/037)'
+    key: LAW-F12-PUBLIC-API-V0-SCOPED
+    verdict: 'Public API v0 is admitted only self-scoped: user-scoped keys until tenancy (0014) exists, shared download-quota meter (never a second meter), no repo internals (`DNR:KILL-PUBLIC-INTERNALS`), gates G1-G4 as written in `MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md`'
+    source: '`research/market_intelligence_productization/MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md`; `agentos/decisions/DEC-F12-PUBLIC-API-V0-ADMISSION-2026-09-06.md`; Meta-CEO B ruling r2 2026-09-06'
+    section: 3
+    section_name: estimator_laws
+
   - topic: 'PSS-RH1 exact SR3 label as an adverse synchronized relief-rally hazard'
     key: HOLD-PSS-RH1-RELIEF-HAZARD
     verdict: 'PROSPECTIVE-ONLY ACCRUAL — lawful use of the SR3 mechanism inversion, but historical SR3 rows count as zero and the 2026-07-24 boundary is absolute. Frozen 799-name membership; one exact configuration; 63-session maturity; no interim effect reads; sole formal read only after ≥500 matured primary paths / ≥250 names / ≥12 action months spanning ≥365d / ≥30 informative strata. No entry, rank, size, gate, alert, user-display, or auto-promotion authority. Even full qualification opens only a separately preregistered intervention review. Do not backfill, retime, tune, expose per-ticker state, or combine historical outcomes with prospective confirmation.'
