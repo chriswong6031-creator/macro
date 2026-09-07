@@ -783,10 +783,20 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 .dpanel:last-child{margin-bottom:0;}
 .dpanel h3{margin:0 0 10px;font-size:12px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
 .dpanel .dfoot{margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.5;}
-/* macro PR 6920 round-3 MAJOR 1: a receipt chip inside .dfoot (identity
-   refusals/disclosures) inherited no spacing rule from `.ss-gate .c` or
-   `.ss-chk-h .c` — same scoping family, explicit rule for this parent. */
-.dfoot .c{margin-left:6px;color:var(--muted);}
+/* macro PR 6920 round-4 review MAJOR-3 fix: round-3's `.dfoot .c` rule set
+   only `color:var(--muted)`, identical to the `.dpanel .dfoot` color it
+   inherits already — a no-op, so the code sat inline with the sentence,
+   indistinguishable from the prose (each refusal/disclosure line also ran
+   on into the next via " · ", a run-on paragraph). Each line now gets its
+   own row (`<br>` in the template between items) and the code is a real
+   bordered pill — same family as `.ci-tag`/`.ss-chip`/`.schip` elsewhere in
+   this file, using the shared pill-radius token (`--r-pill`, same fallback
+   convention `templates/reference.html.j2` already uses), a `--hair`
+   border and a `--muted`-tinted fill, never a new palette or component. */
+.dfoot-row{display:inline-block;}
+.dfoot .c{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:var(--r-pill,999px);
+  border:1px solid var(--hair);background:color-mix(in srgb,var(--muted) 12%,transparent);
+  color:var(--muted);font-size:9.5px;letter-spacing:.02em;}
 .dcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
 .dcard{background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hair);border-radius:12px;padding:11px 13px;}
 .dcard .dk{font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
@@ -1922,15 +1932,15 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
             <span class="v">{{ t(lg.result_en, lg.result_zh) }}</span>
             {% if lg.code %}<span class="c ss-id">{{ lg.code }}</span>{% endif %}
           </div>
-          {% if lg.desc %}<p class="ss-chk-d">{{ lg.desc }}</p>{% endif %}
+          {% if lg.desc_en %}<p class="ss-chk-d">{{ t(lg.desc_en, lg.desc_zh) }}</p>{% endif %}
           {% if lg.artifact %}<p class="ss-chk-s"><span class="ss-id">{{ lg.artifact }}</span></p>{% endif %}
           {% if lg.reader %}<p class="ss-chk-s">{{ t('read by', '读取方') }} <span class="ss-id">{{ lg.reader }}</span></p>{% endif %}
           {% if lg.reads %}<dl class="ss-chk-v">{% for v in lg.reads %}<dt>{{ v.k }}</dt><dd>{{ v.v if v.v else '—' }}</dd>{% endfor %}</dl>{% endif %}
         </div>
         {% endfor %}
         {% if ss.identity.equalities %}<ul class="dnotes">{% for e in ss.identity.equalities %}<li class="ss-id">{{ e }}</li>{% endfor %}</ul>{% endif %}
-        {% if ss.identity.refusals %}<div class="dfoot">{{ t('Held back', '暂不呈现') }}: {% for r in ss.identity.refusals %}{{ t(r.en, r.zh) }}<span class="c ss-id">{{ r.code }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
-        {% if ss.identity.disclosures %}<div class="dfoot">{% for d in ss.identity.disclosures %}{{ t(d.en, d.zh) }}{% if d.code %}<span class="c ss-id">{{ d.code }}</span>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+        {% if ss.identity.refusals %}<div class="dfoot">{{ t('Held back', '暂不呈现') }}: {% for r in ss.identity.refusals %}<span class="dfoot-row">{{ t(r.en, r.zh) }} <span class="c ss-id">{{ r.code }}</span></span>{% if not loop.last %}<br>{% endif %}{% endfor %}</div>{% endif %}
+        {% if ss.identity.disclosures %}<div class="dfoot">{% for d in ss.identity.disclosures %}<span class="dfoot-row">{{ t(d.en, d.zh) }}{% if d.code %} <span class="c ss-id">{{ d.code }}</span>{% endif %}</span>{% if not loop.last %}<br>{% endif %}{% endfor %}</div>{% endif %}
       </section>
       {% endif %}
 

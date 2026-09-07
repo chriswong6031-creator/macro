@@ -3586,6 +3586,28 @@ _SS_DISCLOSURES: dict[str, dict[str, str]] = {
     },
 }
 
+# Chairman plain-language law (2026-09-06), macro#6920 round-4 review MAJOR-2:
+# `identity_proof.legs[].description` is the one-line gate sentence printed
+# under each identity-check header (`.ss-chk-d`) — it was passed straight
+# through from the engine (`lg.desc`) with no `t()` call, so a NEW string
+# added to `engine/security_state.py`'s M1 failure shell (owner-identity
+# batch never ran this cycle) rendered in English even on the ZH page, and
+# was the LARGEST text in that block. Keyed on (check, code) rather than the
+# literal sentence, because the same `check` id ("R8") carries several
+# different descriptions depending on `code` (round-2's `_leg_receipt` calls
+# in `engine/security_state.py`) — a code-only key would collide. Only the
+# M1-shell entry is listed: every other leg description in this file predates
+# this PR and is the pre-existing, separately-tracked MINOR-2 systemic issue,
+# not something this PR's own new text may hide behind.
+_SS_LEG_DESC: dict[tuple[str, str], dict[str, str]] = {
+    ("R8", "IDENTITY_UNRESOLVED"): {
+        "en": "This cycle's owner-identity batch was unavailable; this subject is the frozen "
+        "pinned-allowlist mapping for this ticker, not a live owner read.",
+        "zh": "本周期所有者身份批处理不可用；本证券主体为该股票代码的冻结准入映射，"
+        "并非实时读取的所有者身份数据。",
+    },
+}
+
 
 # ── Plain words for the sub-reads the contract nests inside a leg ───────────
 # `legs.opportunity_context` is four separate owner reads in one leg. Printing
@@ -3748,6 +3770,17 @@ def _ss_disclosure_rows(raw_list: Any) -> list[dict[str, str]]:
 
     See `_ss_split_disclosure` and `_SS_DISCLOSURES` (macro#6920 round-3
     MAJOR #2) — never returns the raw "CODE: description" string as-is.
+
+    macro#6920 round-4 review MAJOR-1 (ruling text: "the `_ss_prettify`
+    fallback stays only as a last resort that ALSO keeps the engine's
+    description text"): for a code with NO `_SS_DISCLOSURES` house-copy
+    entry, the engine's own description text is the fallback — never a
+    slug-derived pseudo-word that throws the description away. `_ss_prettify`
+    is reached only when there is no description text at all (defensive —
+    every disclosure the engine emits today carries one). Both slots get the
+    same text in this last-resort case (there is no house translation to
+    reach for), which is the pre-existing, separately-tracked MINOR-2
+    EN-into-ZH duplication — not new here, and not what this fix closes.
     """
     rows: list[dict[str, str]] = []
     for raw_d in (_clean_str(e) for e in (raw_list or [])):
@@ -3758,8 +3791,8 @@ def _ss_disclosure_rows(raw_list: Any) -> list[dict[str, str]]:
         if house:
             d_en, d_zh = house["en"], house["zh"]
         else:
-            pretty = _ss_prettify(d_code or d_text)
-            d_en, d_zh = pretty, pretty
+            fallback = d_text.strip() if d_text and d_text.strip() else _ss_prettify(d_code or d_text)
+            d_en, d_zh = fallback, fallback
         rows.append({"code": d_code, "en": d_en, "zh": d_zh})
     return rows
 
@@ -4229,9 +4262,19 @@ def build_security_state(blob: dict | None) -> dict | None:
             res = _SS_RESULT.get(res_code, {"tone": "off",
                                             "en": _ss_prettify(res_code) or "not stated",
                                             "zh": _ss_prettify(res_code) or "未说明"})
+            leg_check = _clean_str(lg.get("check") or lg.get("leg") or lg.get("name") or "")
+            leg_code = _clean_str(lg.get("code") or "")
+            desc_raw = _clean_str(lg.get("description") or "")
+            # macro#6920 round-4 review MAJOR-2: house-copy this leg's gate
+            # sentence when a mapping exists (see `_SS_LEG_DESC`); otherwise
+            # the raw engine description passes through unchanged (same
+            # pre-existing behaviour as every other leg, MINOR-2).
+            desc_house = _SS_LEG_DESC.get((leg_check, leg_code)) if leg_code else None
+            desc_en, desc_zh = (desc_house["en"], desc_house["zh"]) if desc_house else (desc_raw, desc_raw)
             id_legs.append({
-                "check": _clean_str(lg.get("check") or lg.get("leg") or lg.get("name") or ""),
-                "desc": _clean_str(lg.get("description") or ""),
+                "check": leg_check,
+                "desc_en": desc_en,
+                "desc_zh": desc_zh,
                 "artifact": _clean_str(lg.get("artifact") or ""),
                 "reader": _clean_str(lg.get("reader") or ""),
                 "reads": _ss_field_rows(lg.get("values_read")),
@@ -4239,7 +4282,7 @@ def build_security_state(blob: dict | None) -> dict | None:
                 "result_en": res["en"], "result_zh": res["zh"],
                 "tone": res["tone"],
                 "ok": res_code == "PASS",
-                "code": _clean_str(lg.get("code") or ""),
+                "code": leg_code,
             })
 
         # The tally under the grid is the grid's own legend: same rail shapes,

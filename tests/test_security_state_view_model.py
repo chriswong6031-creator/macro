@@ -312,7 +312,13 @@ def test_compiled_golden_object_reaches_the_view_model() -> None:
     assert len(view["identity"]["legs"]) == len(contract_legs)
     for src, out in zip(contract_legs, view["identity"]["legs"]):
         assert out["check"] == src["check"]
-        assert out["desc"] == src["description"]
+        # macro#6920 round-4: `desc` split into `desc_en`/`desc_zh` (house
+        # copy lookup, see `_SS_LEG_DESC`). AAPL's real R1..R9 legs have no
+        # house-copy entry (that table lists only the M1-shell leg this PR
+        # added), so both slots still carry the raw engine description —
+        # this test's ORIGINAL byte-identity claim, unchanged.
+        assert out["desc_en"] == src["description"]
+        assert out["desc_zh"] == src["description"]
         assert out["artifact"] == src["artifact"]
         assert out["reader"] == src["reader"]
         assert out["result"] == str(src["result"]).lower()
@@ -1013,6 +1019,38 @@ def test_every_compile_path_refusal_code_has_house_copy_with_no_prettify_fallbac
     engine_src = (REPO / "engine" / "security_state.py").read_text()
     codes = set(re.findall(r'refusals\.append\("([A-Z][A-Z0-9_]*)"\)', engine_src))
     codes |= set(re.findall(r'"refusals":\s*\["([A-Z][A-Z0-9_]*)"\]', engine_src))
+
+    # macro#6920 round-4 review MINOR-2: the two `re.findall` calls above only
+    # recognise `refusals.append("LITERAL")` and `"refusals": ["LITERAL"]` —
+    # a future `refusals.extend([...])`, `refusals += [...]`, or an appended
+    # variable (`refusals.append(code_var)`) would add a ninth code that
+    # slips past both regexes and leaves this test's coverage claim silently
+    # stale. This walks every line mentioning `refusals` and fails loudly on
+    # any shape that is neither one of the two recognised literal forms nor
+    # one of the three known non-mutating/benign references (the `list[str]`
+    # initializer, the `if refusals:` guard, and `"refusals": refusals` final
+    # assembly) — so an unrecognised shape is a test failure, not a gap.
+    _benign = re.compile(
+        r'^\s*refusals:\s*list\[str\]\s*=\s*\[\]\s*$'
+        r'|^\s*if refusals:\s*$'
+        r'|^\s*"refusals":\s*refusals,\s*$'
+    )
+    _literal_append = re.compile(r'^\s*refusals\.append\("[A-Z][A-Z0-9_]*"\)\s*$')
+    _literal_dict = re.compile(r'^\s*"refusals":\s*\["[A-Z][A-Z0-9_]*"\],?\s*$')
+    for lineno, line in enumerate(engine_src.splitlines(), start=1):
+        if "refusals" not in line:
+            continue
+        if _benign.match(line) or _literal_append.match(line) or _literal_dict.match(line):
+            continue
+        pytest.fail(
+            f"engine/security_state.py:{lineno}: `refusals` is used in a shape this "
+            f"test's code-coverage extraction does not recognise ({line.strip()!r}) — "
+            "a `.extend(`, `+=`, or a non-literal `.append(var)` would add a code "
+            "this test's regex cannot see, going stale silently. Update the "
+            "extraction regexes above (and this allow-list) together with whatever "
+            "new code this line adds."
+        )
+
     assert codes == {
         "SECURITY_SUPERSEDED", "IDENTITY_UNRESOLVED", "ISSUER_GROUP_AMBIGUOUS",
         "LISTING_KEY_INCOHERENT", "IDENTITY_CORRECTED", "SUBJECT_NATIVE_PARITY_FAILED",
@@ -1051,6 +1089,110 @@ def test_every_compile_path_refusal_code_has_house_copy_with_no_prettify_fallbac
             f"{code}: rendered refusal does not match its _SS_GATES house copy: {refusal!r}"
         )
         assert refusal["en"] != pretty, f"{code}: rendered refusal fell back to the bare prettification"
+
+
+def test_unmapped_disclosure_code_keeps_the_engine_description_not_a_prettified_slug() -> None:
+    """macro#6920 round-3 ruling MAJOR-1 (binding): "the `_ss_prettify`
+    fallback stays only as a last resort that ALSO keeps the engine's
+    description text." Round-4's `_ss_disclosure_rows` still discarded the
+    description whenever a code prefix was present but unmapped, replacing
+    it with `_ss_prettify(code)` in BOTH language slots (round-4 review
+    MAJOR-1). This is the reviewer's own literal repro command, pinned.
+    """
+    from scripts.build_ticker_pages import _ss_disclosure_rows, _ss_prettify
+
+    rows = _ss_disclosure_rows([
+        "FUTURE_UNMAPPED_CODE: alias epoch valid_from 2026-01-01, owner batch skipped",
+    ])
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["code"] == "FUTURE_UNMAPPED_CODE"
+    # The engine's own description text must survive — never thrown away in
+    # favor of a slug-derived pseudo-word.
+    assert row["en"] == "alias epoch valid_from 2026-01-01, owner batch skipped"
+    assert row["zh"] == "alias epoch valid_from 2026-01-01, owner batch skipped"
+    assert row["en"] != _ss_prettify("FUTURE_UNMAPPED_CODE")
+
+    # A code with NO description text at all (defensive path) still falls
+    # back to the prettified code rather than rendering blank.
+    blank_rows = _ss_disclosure_rows(["FUTURE_UNMAPPED_CODE_NO_TEXT:   "])
+    assert blank_rows[0]["en"] == _ss_prettify("FUTURE_UNMAPPED_CODE_NO_TEXT")
+
+
+def test_m1_shell_gate_description_renders_a_real_bilingual_sentence() -> None:
+    """macro#6920 round-4 review MAJOR-2: `identity_proof.legs[].description`
+    (the gate sentence under `.ss-chk-d`, e.g. "Identity checks") was passed
+    to the template as `lg.desc` with no `t()` call — a NEW string this PR's
+    own M1 failure shell (`engine.security_state.compile_security_state_failure`,
+    `owner_read_completed=False`) added rendered in English even on the ZH
+    page, and it was the LARGEST text in that panel. The PR body had argued
+    this was "cosmetic ... not user-facing" because the disclosures line
+    next to it is bilingual — the review found the body's own committed ZH
+    screenshot proved the gate sentence itself was not. Fixed via
+    `_SS_LEG_DESC`, keyed on (check, code) so it cannot collide with the
+    OTHER "R8" leg descriptions (the normal AAPL-reachable path and the
+    owner-composed COMPILER_FAILURE shell) that are unrelated pre-existing
+    text.
+    """
+    from scripts.build_ticker_pages import _SS_LEG_DESC
+
+    contract = _contract(identity_proof={
+        "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
+        "legs": [{
+            "check": "R8",
+            "description": "owner-identity batch was unavailable this cycle; subject is the "
+            "frozen pinned allowlist mapping for this ticker, never a live owner read",
+            "artifact": "SecurityStateSubject (frozen pinned allowlist config, not a producer owner receipt)",
+            "reader": "scripts/build_stock_library.py::_read_security_state_identity_rows",
+            "values_read": [{"field": "subject_ticker_display", "value": "MSFT"}],
+            "result": "fail", "code": "IDENTITY_UNRESOLVED",
+        }],
+        "equalities": [], "refusals": ["IDENTITY_UNRESOLVED"], "disclosures": [],
+    })
+    view = build_security_state({"security_state": contract})
+    assert view is not None
+    leg = view["identity"]["legs"][0]
+
+    house = _SS_LEG_DESC[("R8", "IDENTITY_UNRESOLVED")]
+    assert leg["desc_en"] == house["en"] and leg["desc_zh"] == house["zh"]
+    assert leg["desc_en"] != leg["desc_zh"], "ZH slot must be real Chinese, not the English duplicated"
+    assert re.search(r"[一-鿿]", leg["desc_zh"]), f"desc_zh is not Chinese: {leg['desc_zh']!r}"
+    # The raw engine sentence must not leak through unmapped.
+    assert "owner-identity batch was unavailable this cycle" not in leg["desc_en"] or leg["desc_en"] == house["en"]
+
+    import jinja2
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(REPO / "templates")),
+        undefined=jinja2.ChainableUndefined,
+    )
+    html = env.get_template("ticker.html.j2").render(
+        security_state=view, ticker="MSFT", name="Microsoft Corp.",
+    )
+    assert house["en"] in html
+    assert house["zh"] in html
+    # The raw engine-only English sentence (pre-fix behaviour) is gone.
+    assert "owner-identity batch was unavailable this cycle" not in html
+
+    # A DIFFERENT "R8" leg (the normal AAPL-reachable path, no house-copy
+    # entry for this check/code pair) must be unaffected — its description
+    # still passes through raw in both slots, same as every other leg
+    # (pre-existing MINOR-2, out of this fix's scope).
+    other_contract = _contract(identity_proof={
+        "state": "PROVEN", "method": "owner_backed_chain.v1",
+        "legs": [{
+            "check": "R8",
+            "description": "master issuer_cik agrees with the owner-composed current CIK; "
+            "a present workspace also agrees",
+            "artifact": "x", "reader": "y", "values_read": [], "result": "pass", "code": None,
+        }],
+        "equalities": [], "refusals": [], "disclosures": [],
+    })
+    other_view = build_security_state({"security_state": other_contract})
+    assert other_view is not None
+    other_leg = other_view["identity"]["legs"][0]
+    assert other_leg["desc_en"] == other_leg["desc_zh"] == (
+        "master issuer_cik agrees with the owner-composed current CIK; a present workspace also agrees"
+    )
 
 
 def _prettify_words(code: str) -> str:
