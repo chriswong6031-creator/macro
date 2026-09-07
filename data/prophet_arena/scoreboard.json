@@ -1,6 +1,6 @@
 {
   "schema": "prophet_arena.scoreboard/v1",
-  "as_of": "2026-09-05",
+  "as_of": "2026-09-06",
   "tier": "display",
   "authority": {
     "tier": "display",
@@ -294,7 +294,7 @@
     }
   ],
   "tonight": {
-    "asof": "2026-09-05",
+    "asof": "2026-09-06",
     "standouts_as_of": "2026-09-04",
     "price_through": "2026-09-04",
     "source_delayed": false,
@@ -305,7 +305,7 @@
     "dispersion": {
       "mode": "not_lean_in",
       "state": "neutral",
-      "artifact_as_of": "2026-09-05",
+      "artifact_as_of": "2026-09-06",
       "stale_sessions": 0,
       "cap": 6,
       "path": "data/dispersion/regime.json"
@@ -334,7 +334,7 @@
           "2B",
           "3B"
         ],
-        "runtime_s": 20.8
+        "runtime_s": 23.4
       }
     },
     "policies": {
@@ -353,10 +353,10 @@
           "PLMR",
           "PCRX",
           "VRT",
-          "OKE",
           "NOVT",
-          "AEO",
+          "OKE",
           "SGI",
+          "AEO",
           "VST",
           "MC",
           "ACM",
@@ -372,8 +372,8 @@
           "ARLO",
           "SMPL",
           "TEL",
-          "CNM",
           "BXMT",
+          "CNM",
           "NABL",
           "MIR"
         ],
@@ -394,7 +394,7 @@
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-05",
+          "recorded_at": "2026-09-06",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -485,7 +485,7 @@
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-05",
+          "recorded_at": "2026-09-06",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -550,7 +550,7 @@
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-05",
+          "recorded_at": "2026-09-06",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -593,7 +593,7 @@
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-05",
+          "recorded_at": "2026-09-06",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -650,7 +650,7 @@
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-05",
+          "recorded_at": "2026-09-06",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -692,10 +692,10 @@
           "PLMR",
           "PCRX",
           "VRT",
-          "OKE",
           "NOVT",
-          "AEO",
+          "OKE",
           "SGI",
+          "AEO",
           "VST",
           "MC",
           "ACM",
@@ -711,8 +711,8 @@
           "ARLO",
           "SMPL",
           "TEL",
-          "CNM",
           "BXMT",
+          "CNM",
           "NABL",
           "MIR"
         ],
@@ -733,7 +733,7 @@
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-05",
+          "recorded_at": "2026-09-06",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [
@@ -829,7 +829,7 @@
           "skipped_no_spot": 0,
           "skipped_door_w_no_geometry": 0,
           "skipped_door_w_tickers": [],
-          "recorded_at": "2026-09-05",
+          "recorded_at": "2026-09-06",
           "price_basis_date": "2026-09-04",
           "clock_errors": [],
           "validation_failures": [

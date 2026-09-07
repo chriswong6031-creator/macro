@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PPC-BULL-20260604",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "at_t1",
   "detection_phase": "at_t1",
-  "management_confidence": 68.9,
-  "raw_confidence": 66.9,
-  "delta_vs_base": 8.9,
+  "management_confidence": 67.7,
+  "raw_confidence": 66.2,
+  "delta_vs_base": 7.7,
   "recommended_action": "hold",
   "human_state": "T1 Hit \u2014 Holding",
   "components": {
     "validity": 100.0,
     "progress": 53.3,
-    "pace": 81.2,
+    "pace": 76.9,
     "retention": 46.7,
     "overlay": 64.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.838,
     "dist_to_t1_r": 0.662,
     "dist_to_t2_r": 2.162,
-    "horizon_pct_used": 42.2,
+    "horizon_pct_used": 44.4,
     "p1": 0.5588,
     "p2": 0.2794,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-19",
   "_first_t1_ts": "2026-08-21",
   "_first_t2_ts": null,
-  "days_elapsed": 19,
-  "tau": 0.4222
+  "days_elapsed": 20,
+  "tau": 0.4444
 }

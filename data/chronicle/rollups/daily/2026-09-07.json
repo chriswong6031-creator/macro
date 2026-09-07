@@ -1,0 +1,272 @@
+{
+  "as_of": "2026-09-07",
+  "coverage": {
+    "end": "2026-09-06",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-26 to 2026-09-06; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-26"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-09-06",
+      "events": []
+    },
+    {
+      "date": "2026-09-05",
+      "events": [
+        {
+          "date": "2026-09-05",
+          "id": "cev-research_vault-07235b002427",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nplanbrs3lh-00989e",
+          "tickers": [],
+          "title": "Goldman Sachs: End of Week Market Intelligence laborious",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-09-05",
+          "id": "cev-research_vault-36e72f2ed45f",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ofdgxn8actc-3aa4c8",
+          "tickers": [],
+          "title": "MUFG: Asia FX Weekly Focus on China data and US CPI",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-09-04",
+      "events": [
+        {
+          "date": "2026-09-04",
+          "id": "cev-regime_flip-b429da6748fc",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-09-04#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q3 Stagflation → Q2 Reflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-09-04",
+          "id": "cev-research_vault-0f5ecd141d35",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-8fml7fm4kca-f8a815",
+          "tickers": [],
+          "title": "Jefferies: JEF Macro Weekly Intervention & Fiscal Tremors; The AI Momentum Rout",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-09-04",
+          "id": "cev-research_vault-69adb93d93ad",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-xxjbrz3h6ig-72c2a2",
+          "tickers": [],
+          "title": "Bank of America: High Yield Toolkit Industrials & Services Weekly 62 earnings, VRRM new Avis & Hertz contracts, and WNC revolver A&E",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-09-04",
+          "id": "cev-research_vault-76796f1d0421",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kdpqxd1itta-e1617a",
+          "tickers": [],
+          "title": "Goldman Sachs: Connecting the Dots Macro vs. Micro, Conviction List, Deutsche Bank, RE snippets and Telco leverage plus key research",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-09-04",
+          "id": "cev-research_vault-85499a52d198",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-d4mxtf49d7o-7dd08c",
+          "tickers": [],
+          "title": "Goldman Sachs: EM Weekly Kickstart MSCI EM closed flat w w amid rate oil risks",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-09-04",
+          "id": "cev-research_vault-958797e541db",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-8fgafxf3vnd-aabf2b",
+          "tickers": [],
+          "title": "Societe Generale: Credit Strategy Outlook 4Q 2026 Rolling with the punches II",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-09-04",
+          "id": "cev-research_vault-a17cc3734240",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-wv9ciqpeuum-13b775",
+          "tickers": [],
+          "title": "Goldman Sachs: Asia Pacific Weekly Kickstart MXAPJ closed flat for a second straight week amid higher bond yields, and rising oil prices",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "events": [
+        {
+          "date": "2026-09-03",
+          "id": "cev-regime_flip-0ced0faa0211",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-09-03#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q1 Goldilocks → Q4 Growth-scare",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "events": []
+    },
+    {
+      "date": "2026-09-01",
+      "events": []
+    },
+    {
+      "date": "2026-08-31",
+      "events": [
+        {
+          "date": "2026-08-31",
+          "id": "cev-regime_flip-2b71e9b9c0b4",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-31#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q1 Goldilocks → Q3 Stagflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-31",
+          "id": "cev-regime_flip-582af2b47649",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-31#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q4 Growth-scare → Q1 Goldilocks",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "events": []
+    },
+    {
+      "date": "2026-08-27",
+      "events": []
+    },
+    {
+      "date": "2026-08-26",
+      "events": [
+        {
+          "date": "2026-08-26",
+          "id": "cev-earnings_call-ca68fc7932a3",
+          "kind": "earnings",
+          "source": "earnings_call",
+          "source_ref": "defeatbeta:KSS:2027Q2",
+          "tickers": [
+            "KSS"
+          ],
+          "title": "Earnings call: KSS Q2 FY2027 — steady",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-26",
+          "id": "cev-earnings_call-d567ef034b6c",
+          "kind": "earnings",
+          "source": "earnings_call",
+          "source_ref": "defeatbeta:HPQ:2026Q3",
+          "tickers": [
+            "HPQ"
+          ],
+          "title": "Earnings call: HPQ Q3 FY2026 — confident",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-26",
+          "id": "cev-earnings_call-da6413252c4c",
+          "kind": "earnings",
+          "source": "earnings_call",
+          "source_ref": "defeatbeta:WSM:2027Q2",
+          "tickers": [
+            "WSM"
+          ],
+          "title": "Earnings call: WSM Q2 FY2027 — confident",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-26",
+          "id": "cev-earnings_call-ea9e03453410",
+          "kind": "earnings",
+          "source": "earnings_call",
+          "source_ref": "defeatbeta:PLAB:2026Q3",
+          "tickers": [
+            "PLAB"
+          ],
+          "title": "Earnings call: PLAB Q3 FY2026 — steady",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-26",
+          "id": "cev-earnings_call-eb73ae022f9c",
+          "kind": "earnings",
+          "source": "earnings_call",
+          "source_ref": "defeatbeta:P:2027Q2",
+          "tickers": [
+            "P"
+          ],
+          "title": "Earnings call: P Q2 FY2027 — confident",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-26",
+          "id": "cev-earnings_call-f0274e1326b8",
+          "kind": "earnings",
+          "source": "earnings_call",
+          "source_ref": "defeatbeta:HEI:2026Q3",
+          "tickers": [
+            "HEI"
+          ],
+          "title": "Earnings call: HEI Q3 FY2026 — confident",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-26",
+          "id": "cev-earnings_call-f93f92404085",
+          "kind": "earnings",
+          "source": "earnings_call",
+          "source_ref": "defeatbeta:CRM:2027Q2",
+          "tickers": [
+            "CRM"
+          ],
+          "title": "Earnings call: CRM Q2 FY2027 — confident",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-26",
+          "id": "cev-prophet_ledger-050fd6c4e75c",
+          "kind": "signal_close",
+          "source": "prophet_ledger",
+          "source_ref": "WSO-BULL-20260625",
+          "tickers": [
+            "WSO"
+          ],
+          "title": "Prophet close: WSO BULL → INVALIDATED (+0.8% in 5d)",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

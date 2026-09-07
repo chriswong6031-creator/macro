@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FDS-BULL-20260708",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 47.7,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 100.0,
     "progress": 46.9,
-    "pace": 15.3,
+    "pace": 14.0,
     "retention": 82.6,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.915,
     "dist_to_t1_r": 0.585,
     "dist_to_t2_r": 2.085,
-    "horizon_pct_used": 124.4,
+    "horizon_pct_used": 126.7,
     "p1": 0.6101,
     "p2": 0.305,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 56,
-  "tau": 1.2444
+  "days_elapsed": 57,
+  "tau": 1.2667
 }

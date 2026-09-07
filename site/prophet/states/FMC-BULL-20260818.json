@@ -1,12 +1,12 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FMC-BULL-20260818",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "at_t1",
   "detection_phase": "at_t1",
-  "management_confidence": 80.9,
+  "management_confidence": 80.8,
   "raw_confidence": 80.7,
-  "delta_vs_base": 20.9,
+  "delta_vs_base": 20.8,
   "recommended_action": "hold",
   "human_state": "T1 Hit \u2014 Holding",
   "components": {
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 2.489,
     "dist_to_t1_r": 0.011,
     "dist_to_t2_r": 1.511,
-    "horizon_pct_used": 33.3,
+    "horizon_pct_used": 35.6,
     "p1": 0.9924,
     "p2": 0.4962,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-21",
   "_first_t1_ts": "2026-09-03",
   "_first_t2_ts": null,
-  "days_elapsed": 15,
-  "tau": 0.3333
+  "days_elapsed": 16,
+  "tau": 0.3556
 }

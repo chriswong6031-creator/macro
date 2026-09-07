@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "WH-BULL-20260625",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 31.0,
-  "raw_confidence": 28.3,
-  "delta_vs_base": -29.0,
+  "management_confidence": 29.2,
+  "raw_confidence": 27.0,
+  "delta_vs_base": -30.8,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 11.4,
     "progress": 0.0,
-    "pace": 41.0,
+    "pace": 35.3,
     "retention": 50.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.218,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 35.6,
+    "horizon_pct_used": 37.8,
     "p1": -0.5212,
     "p2": -0.2606,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 16,
-  "tau": 0.3556
+  "days_elapsed": 17,
+  "tau": 0.3778
 }

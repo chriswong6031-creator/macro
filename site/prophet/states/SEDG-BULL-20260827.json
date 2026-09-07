@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "SEDG-BULL-20260827",
-  "asof": "2026-09-05",
+  "asof": "2026-09-06",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 64.4,
-  "raw_confidence": 64.9,
-  "delta_vs_base": 4.4,
+  "management_confidence": 64.2,
+  "raw_confidence": 63.9,
+  "delta_vs_base": 4.2,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
     "progress": 20.3,
-    "pace": 98.7,
+    "pace": 93.9,
     "retention": 50.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.3,
     "dist_to_t1_r": 1.2,
     "dist_to_t2_r": 2.7,
-    "horizon_pct_used": 20.0,
+    "horizon_pct_used": 22.2,
     "p1": 0.2001,
     "p2": 0.1001,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-09-03",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 9,
-  "tau": 0.2
+  "days_elapsed": 10,
+  "tau": 0.2222
 }
