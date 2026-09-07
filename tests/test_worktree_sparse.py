@@ -484,7 +484,7 @@ def test_hook_removes_a_confirmed_stale_lock_with_warning(hook_worktree, monkeyp
     assert str(lock) in blob
 
 
-def test_hook_refuses_on_a_live_held_lock_even_when_old(hook_worktree, monkeypatch):
+def test_hook_refuses_on_a_live_held_lock_even_when_old(hook_worktree, monkeypatch, capsys):
     hook = _load_hook()
     gitdir = Path(_git(hook_worktree, "rev-parse", "--path-format=absolute", "--git-dir"))
     lock = gitdir / "index.lock"
@@ -495,6 +495,60 @@ def test_hook_refuses_on_a_live_held_lock_even_when_old(hook_worktree, monkeypat
     with pytest.raises(RuntimeError, match="refusing to run"):
         hook.apply_sparse(hook_worktree, hook_worktree, "HEAD", {"big"})
     assert lock.exists(), "a live-held lock must never be auto-deleted"
+
+    # Frozen spec item 2: "a live/young/unconfirmed lock refuses with a bare
+    # `::error` line starting the line". round-1 verify (9df97a50) fixed the
+    # liveness probe's fail-open gap but left this refusal going out only
+    # through log()/fail(), which prints "WorktreeCreate: refusing to run
+    # ..." — no ::error token at all, and any token behind that prefix would
+    # not start the line either way (house law: GitHub annotations must
+    # START the line). This RED-first-failed before the fix in apply_sparse.
+    blob = "".join(capsys.readouterr())
+    error_lines = [ln for ln in blob.splitlines() if "::error" in ln]
+    assert error_lines, f"no ::error annotation emitted for a refused lock:\n{blob}"
+    assert any(ln.startswith("::error") for ln in error_lines), (
+        f"::error annotation does not start its line:\n{blob}")
+
+
+def test_hook_live_pids_holding_fails_closed_when_cwd_probe_is_untrustworthy(monkeypatch):
+    """Frozen spec item 1: an unconfirmed probe is treated as LIVE (fail
+    closed). round-1 verify (9df97a50) fixed this in
+    scripts.worktree_sparse.gather_live_processes but left the hook's
+    duplicate `_live_pids_holding` returning a confirmed (partial) result
+    whenever the OTHER lsof call succeeded — dropping exactly the half that
+    might have found the holder. This directly exercises the hook's own
+    `_run_lsof` failure handling (the reviewer's exact gap: the existing
+    suite only ever monkeypatched `_live_pids_holding` wholesale)."""
+    hook = _load_hook()
+
+    def fake_lsof(args):
+        # cwd-scoped call (`-a -d cwd ...`) times out / is untrustworthy;
+        # git-dir-scoped call succeeds with an empty (trustworthy) answer.
+        return None if "cwd" in args else ""
+
+    monkeypatch.setattr(hook, "_run_lsof", fake_lsof)
+    monkeypatch.setattr(hook.platform, "system", lambda: "Darwin")
+
+    result = hook._live_pids_holding(Path("/tmp/some-worktree"), Path("/tmp/some-worktree/.git"))
+
+    assert result is None, (
+        "a partially-failed lsof probe must return None (unconfirmed), not a "
+        "confirmed-empty/partial pid set")
+
+
+def test_hook_live_pids_holding_fails_closed_when_gitdir_probe_is_untrustworthy(monkeypatch):
+    """Same gap, the other order: cwd probe succeeds, git-dir probe fails."""
+    hook = _load_hook()
+
+    def fake_lsof(args):
+        return None if "cwd" not in args else ""
+
+    monkeypatch.setattr(hook, "_run_lsof", fake_lsof)
+    monkeypatch.setattr(hook.platform, "system", lambda: "Darwin")
+
+    result = hook._live_pids_holding(Path("/tmp/some-worktree"), Path("/tmp/some-worktree/.git"))
+
+    assert result is None
 
 
 def test_hook_fails_loud_on_a_postcondition_mismatch(hook_worktree):

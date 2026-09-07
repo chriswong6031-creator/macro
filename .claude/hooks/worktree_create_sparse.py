@@ -283,23 +283,29 @@ def _parse_lsof_pn(text: str) -> list[tuple[int, list[str]]]:
 def _live_pids_holding(worktree_root: Path, git_dir: Path) -> set[int] | None:
     """PIDs with ``worktree_root`` as cwd or any open file under ``git_dir``.
 
-    None when the probe itself could not be trusted (no lsof on this
-    platform, or every call failed) — the caller must then fail closed and
-    treat the lock as possibly live, never as proof nothing holds it.
+    None when the probe itself could not be trusted — no lsof on this
+    platform, or EITHER required call failed (not just both) — the caller
+    must then fail closed and treat the lock as possibly live, never as proof
+    nothing holds it. A probe where only one of the two checks came back is
+    exactly as untrustworthy as one where neither did: silently keeping the
+    half that succeeded would report a confirmed-empty result while the
+    other half — the one that might have found the actual holder — was
+    never really checked (mirrors scripts.worktree_sparse.gather_live_processes,
+    duplicated here for the same import-independence reason as
+    ``load_profile``).
     """
     if platform.system() != "Darwin":
         return None  # this host is macOS; no Linux /proc fallback needed here
     pids: set[int] = set()
-    probed = False
     cwd_out = _run_lsof(["-a", "-d", "cwd", "-F", "pn", "+D", str(worktree_root)])
-    if cwd_out is not None:
-        probed = True
-        pids.update(pid for pid, _paths in _parse_lsof_pn(cwd_out))
+    if cwd_out is None:
+        return None  # cwd probe untrustworthy — cannot confirm liveness at all
+    pids.update(pid for pid, _paths in _parse_lsof_pn(cwd_out))
     file_out = _run_lsof(["-F", "pn", "+D", str(git_dir)])
-    if file_out is not None:
-        probed = True
-        pids.update(pid for pid, _paths in _parse_lsof_pn(file_out))
-    return pids if probed else None
+    if file_out is None:
+        return None  # git-dir probe untrustworthy — same fail-closed rule
+    pids.update(pid for pid, _paths in _parse_lsof_pn(file_out))
+    return pids
 
 
 def _clear_stale_locks(dest: Path) -> tuple[list[str], list[Path]]:
@@ -395,11 +401,25 @@ def apply_sparse(dest: Path, repo_root: Path, base: str, exclude: set[str]) -> N
     _removed, still_locked = _clear_stale_locks(dest)
     if still_locked:
         named = ", ".join(str(p) for p in still_locked)
-        raise RuntimeError(
-            f"refusing to run `git sparse-checkout` — {named} exists and is "
-            f"either held by a live process or younger than "
-            f"{STALE_LOCK_MIN_AGE_S}s"
+        reason = (
+            f"{named} exists and is either held by a live process or "
+            f"younger than {STALE_LOCK_MIN_AGE_S}s"
         )
+        # Bare, line-starting ::error — never through log()/fail(), which
+        # prefix with "WorktreeCreate: " and would hide the token behind that
+        # prefix (house law: GitHub only recognizes an annotation token that
+        # STARTS the line — see AGENTS.md "GitHub annotations must START the
+        # line"). This is the frozen-spec-mandated refusal signal for a
+        # live/young/unconfirmed lock (spec item 2); the postcondition-
+        # mismatch raise below is a separate, already-loud-elsewhere path
+        # (its ::error is emitted by scripts.worktree_sparse.apply_profile's
+        # equivalent check) and is out of scope for this fix.
+        print(
+            f"::error title=worktree-sparse-lock-refused::refusing to run "
+            f"`git sparse-checkout` — {reason}",
+            file=sys.stderr, flush=True,
+        )
+        raise RuntimeError(f"refusing to run `git sparse-checkout` — {reason}")
     git(dest, "sparse-checkout", "init", "--cone")
     git(dest, "sparse-checkout", "set", "--cone", "--", *include)
     omitted = sorted(set(tracked) & exclude)
