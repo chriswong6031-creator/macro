@@ -18,7 +18,7 @@
     }
   },
   "excluded": [],
-  "generated_at": "2026-09-06T00:00:00Z",
+  "generated_at": "2026-09-07T00:00:00Z",
   "honesty": {
     "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
     "authority": "this tool measures and screenshots; it scores, ranks, and judges nothing",
@@ -77,13 +77,13 @@
         "asof_present": true,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 3330,
+            "document_height_px": 3317,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 0,
-        "document_height_px": 3330,
+        "document_height_px": 3317,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
@@ -103,7 +103,7 @@
           "viewport": "desktop"
         },
         "panel_count": 7,
-        "payload_bytes_total": 532221,
+        "payload_bytes_total": 77823,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 17,
@@ -112,24 +112,24 @@
         "source_present": false,
         "todo_placeholder_hit_count": 0,
         "todo_placeholder_hits": [],
-        "visible_word_count": 804
+        "visible_word_count": 806
       },
-      "page_id": "_ipo_not_evaluable.html",
-      "registry_route": "/_ipo_not_evaluable.html",
-      "route": "/_ipo_not_evaluable.html",
-      "route_kind": "explicit_override",
+      "page_id": "macro:ipo",
+      "registry_route": "/ipo.html",
+      "route": "/ipo.html",
+      "route_kind": "page",
       "states": [
         {
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 569480,
+          "bytes": 570949,
           "captured": true,
-          "file": "80818b5acf9c6791.png",
+          "file": "61cec68575a633a0.png",
           "force_state": null,
-          "height": 3330,
+          "height": 3317,
           "locale": "en",
-          "sha256": "80818b5acf9c67917a1aedd53095c9cf5921acdb00d0347fac34d5b8dc2aeeb2",
+          "sha256": "61cec68575a633a0bd1925d16a409743bf576c97dcdac9183b5ccd7bee67cc34",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -142,7 +142,7 @@
   "schema": "mastermind.p0_evidence.v2",
   "selection": {
     "explicit_routes": [
-      "/_ipo_not_evaluable.html"
+      "/ipo.html"
     ],
     "max_pages": 30,
     "mode": "explicit_routes",
@@ -156,10 +156,10 @@
   "target": {
     "base_url": null,
     "kind": "site_dir",
-    "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/wf_aaaf6f7a-545-10",
-    "resolved_sha_or_none": "a8214e19d7db034bebc15246dc754375b638b812",
-    "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/wf_aaaf6f7a-545-10 (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
-    "site_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/wf_aaaf6f7a-545-10/site"
+    "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mo-fix-6904",
+    "resolved_sha_or_none": "73ac97f660502ec1395c08e290b39b9fb6be7e03",
+    "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mo-fix-6904 (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
+    "site_dir": "/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/mo-fix-6904/site"
   },
   "tool": {
     "module_ref": "scripts/capture_page_evidence.py",
