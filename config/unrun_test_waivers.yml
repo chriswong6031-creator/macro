@@ -90,3 +90,13 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+tests/test_market_ontology_f11_post_vertical_contract.py: >-
+  MO-BB4 packet B-F11-3 (PR #6963): records-only contract doc + agentos DEC test for
+  F00C ledger rows MO-PAID-031/032/054. Frozen spec forbids hand-editing
+  .github/ci/legacy-jobs.yml (global CI invalidator, ci-authority hit) for a
+  three-file records-only packet with no product code. Suite is pure text
+  assertions (no network, no data/, no site/) and passes locally via
+  `python -m pytest tests/test_market_ontology_f11_post_vertical_contract.py -q`.
+  Owner: WS:MARKET-OS. Delete this row and wire the file into the signal-contract
+  research-resident step in .github/ci/legacy-jobs.yml when a non-invalidating pack
+  path exists or a future F11 implementation slice already touches that file.
