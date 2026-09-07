@@ -58,13 +58,15 @@ Display-tier ships freely; authority does not.
 The cockpit is a projection. It composes nothing: every panel reads the frozen
 `security_state.v1` object and renders it.
 
+`legs.opportunity_context.dislocation` and `legs.opportunity_context.market_incorporation` are OUT of panel 5 for this packet — no B1B panel reads them yet; a future slice that surfaces either needs its own scope record.
+
 | # | Panel | Frozen source in `security_state.v1` | Tier |
 |---|---|---|---|
 | 1 | Overview | `coverage` + `dominant_degradation` + `legs.state.summary` | `display_only` |
 | 2 | Evidence | `legs.evidence` (K1 `EvidenceRef` / `EvidenceBlock` ids only) | `display_only` |
 | 3 | Event chronology | `legs.change` (`event_refs`, `source_available_at`, `correction_state`) | `display_only` |
 | 4 | Company drivers | `legs.state.deterministic_state_refs` | `display_only` |
-| 5 | Prophet and availability | `legs.opportunity_context` (`prophet_ref`, `entry_availability_ref`, `state`, `reason`) | `display_only` |
+| 5 | Prophet and availability | `legs.opportunity_context.prophet.{ref, state, reason}` and `legs.opportunity_context.entry.{state, available, null_reason}` | `display_only` |
 | 6 | Risks / failed gates | `legs.risk` (`risk_refs`, `failed_gates`, `strongest_unresolved_fact`) | `display_only` |
 | 7 | Next observables | `legs.catalyst` (`next_observables`, `deadlines`) | `display_only` |
 | 8 | Owner/model receipts | `identity_proof`, `as_of`, `content_sha256`, per-leg receipts | `display_only` |
