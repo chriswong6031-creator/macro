@@ -19,6 +19,7 @@ Four things are pinned, all of them regressions this file exists to prevent:
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -41,6 +42,38 @@ def _axis(view: dict, key: str) -> dict:
         if a["key"] == key:
             return a
     raise AssertionError(f"axis {key!r} missing from the view model")
+
+
+def _k1_bundle(engine, subject, workspace, disposition: str, manifest_sha256: str | None) -> dict:
+    from lib.evidence_foundation import compile_recipe
+
+    recipe = engine._build_k1_recipe(subject=subject)
+    empty = compile_recipe(recipe, blocks=[], references={})
+    found = None
+    if disposition == "found" and isinstance(workspace, dict):
+        lifecycle = workspace.get("lifecycle") or {}
+        reference = engine._build_k1_reference(
+            subject=subject,
+            generation_id=workspace["generation_id"], event_id=workspace["event_id"],
+            manifest_sha256=manifest_sha256,
+            source_available_at=lifecycle.get("source_available_at"),
+            observed_at=lifecycle.get("observed_at"),
+            generated_at=workspace.get("generated_at"),
+        )
+        block = engine._build_k1_block([reference], subject=subject)
+        found = {
+            "reference_id": reference["reference_id"],
+            "block_id": block["evidence_block_id"],
+            "compilation": compile_recipe(
+                recipe, blocks=[block], references={reference["reference_id"]: reference},
+            ),
+        }
+    return {
+        "subject_cik": subject.issuer_cik,
+        "recipe_id": recipe["recipe_id"],
+        "empty_compilation": empty,
+        "found": found,
+    }
 
 
 def _render_section(view: dict, lang: str = "en") -> str:
@@ -156,7 +189,28 @@ GOLDEN_BLOB = {
 def _compile_golden() -> dict:
     """Compile the golden AAPL object with the real compiler."""
     engine = pytest.importorskip("engine.security_state")
+    subject = engine.SecurityStateSubject(
+        security_id="SEC:US-XNAS-AAPL",
+        issuer_id="ISS:US-XNAS-AAPL",
+        listing_key="US-XNAS-AAPL",
+        ticker_display="AAPL",
+        issuer_cik="0000320193",
+        owner_evidence=(
+            ("decision_date", "2026-09-04"),
+            ("alias_reader", "VendorAliasTable.resolve(store)"),
+            ("issuer_reader", "IssuerMaster.issuer_of_security"),
+            ("cik_reader", "IssuerMaster.cik_of_issuer"),
+        ),
+    )
     return engine.compile_security_state(
+        validator=engine.build_security_state_validator(
+            json.loads(engine.SCHEMA_PATH.read_text(encoding="utf-8"))
+        ),
+        subject=subject,
+        k1_bundle=_k1_bundle(
+            engine, subject, GOLDEN_WORKSPACE, "found",
+            "c3b9495028c07e6bf1eb385f520f0b3c57064b84ea430540ba9a0808cd2d14db",
+        ),
         now=GOLDEN_NOW,
         security_master_row=dict(GOLDEN_SECURITY_MASTER_ROW),
         issuer_master_rows=[dict(r) for r in GOLDEN_ISSUER_MASTER_ROWS],
@@ -168,6 +222,51 @@ def _compile_golden() -> dict:
         blob=GOLDEN_BLOB,
         manifest_sha256="c3b9495028c07e6bf1eb385f520f0b3c57064b84ea430540ba9a0808cd2d14db",
     )
+
+
+def test_compiled_msft_object_reaches_the_existing_view_model() -> None:
+    engine = pytest.importorskip("engine.security_state")
+    subject = engine.SecurityStateSubject(
+        security_id="SEC:US-XNAS-MSFT",
+        issuer_id="ISS:US-XNAS-MSFT",
+        listing_key="US-XNAS-MSFT",
+        ticker_display="MSFT",
+        issuer_cik="0000789019",
+        owner_evidence=(
+            ("decision_date", "2026-09-04"),
+            ("alias_reader", "VendorAliasTable.resolve(store)"),
+            ("issuer_reader", "IssuerMaster.issuer_of_security"),
+            ("cik_reader", "IssuerMaster.cik_of_issuer"),
+        ),
+    )
+    row = {
+        "security_id": subject.security_id, "issuer_id": subject.issuer_id,
+        "issuer_state": "RESOLVED", "issuer_cik": subject.issuer_cik,
+        "listing_key": subject.listing_key, "country": "US", "mic": "XNAS",
+        "inception_code": "MSFT", "security_state": None, "superseded_by": None,
+    }
+    blob = {**GOLDEN_BLOB, "ticker": "MSFT", "name": "Microsoft Corp."}
+    compiled = engine.compile_security_state(
+        subject=subject,
+        validator=engine.build_security_state_validator(
+            json.loads(engine.SCHEMA_PATH.read_text(encoding="utf-8"))
+        ),
+        now=GOLDEN_NOW, security_master_row=row,
+        k1_bundle=_k1_bundle(engine, subject, None, "not_published", None),
+        issuer_master_rows=[{
+            "issuer_id": subject.issuer_id, "cik": subject.issuer_cik,
+            "status": "active",
+        }],
+        issuer_security_ids=[subject.security_id], issuer_migration_matches=[],
+        security_migration_matches=[], workspace=None,
+        workspace_disposition="not_published", blob=blob, manifest_sha256=None,
+    )
+    view = build_security_state({"security_state": compiled})
+    assert view is not None
+    assert view["ticker_display"] == "MSFT"
+    assert view["security_id"] == "SEC:US-XNAS-MSFT"
+    assert view["issuer_id"] == "ISS:US-XNAS-MSFT"
+    assert view["listing_key"] == "US-XNAS-MSFT"
 
 
 def test_compiled_golden_object_reaches_the_view_model() -> None:
@@ -253,7 +352,7 @@ def _contract(**over) -> dict:
                 "check": "R1",
                 "description": "security_master row exists, security_state/superseded_by both null",
                 "artifact": "data/reference/security_master.parquet",
-                "reader": "scripts/build_stock_library.py::_read_identity_rows",
+                "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
                 "values_read": [
                     {"field": "row_present", "value": True},
                     {"field": "security_state", "value": None},
@@ -551,7 +650,7 @@ def test_identity_receipts_render_their_actual_fields() -> None:
     assert "R1" in html
     assert "security_master row exists" in html
     assert "data/reference/security_master.parquet" in html
-    assert "_read_identity_rows" in html
+    assert "_read_security_state_identity_rows" in html
     assert "row_present" in html
     assert "true" in html
     assert "security_state</dt>" in html and "null" in html

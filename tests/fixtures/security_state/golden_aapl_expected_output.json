@@ -6,7 +6,7 @@
   "listing_key": "US-XNAS-AAPL",
   "ticker_display": "AAPL",
   "generated_at": "2026-08-23T12:00:00Z",
-  "content_sha256": "42d8696d1d3a00682fa8e0681ca01f8fe30a21797cb2a70247ab86a49fb1d3a7",
+  "content_sha256": "0a5f9710a8339caada4e3172546c4721b525163a8768644f2d1b2316a563253f",
   "as_of": {
     "market_at": "2026-08-23",
     "source_frontier_at": "2026-07-30T20:30:28Z",
@@ -29,7 +29,7 @@
         "check": "R1",
         "description": "security_master row exists, security_state/superseded_by both null",
         "artifact": "data/reference/security_master.parquet",
-        "reader": "scripts/build_stock_library.py::_read_identity_rows (declared master artifact)",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows (declared master artifact)",
         "values_read": [
           {
             "field": "row_present",
@@ -42,6 +42,22 @@
           {
             "field": "superseded_by",
             "value": null
+          },
+          {
+            "field": "owner_alias_reader",
+            "value": "VendorAliasTable.resolve(store)"
+          },
+          {
+            "field": "owner_cik_reader",
+            "value": "IssuerMaster.cik_of_issuer"
+          },
+          {
+            "field": "owner_decision_date",
+            "value": "2026-09-04"
+          },
+          {
+            "field": "owner_issuer_reader",
+            "value": "IssuerMaster.issuer_of_security"
           }
         ],
         "result": "pass",
@@ -49,9 +65,9 @@
       },
       {
         "check": "R2",
-        "description": "security_master.issuer_id names the pinned issuer, issuer_state RESOLVED",
+        "description": "security_master.issuer_id names the owner-composed issuer, issuer_state RESOLVED",
         "artifact": "data/reference/security_master.parquet",
-        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "issuer_id",
@@ -67,9 +83,9 @@
       },
       {
         "check": "R3",
-        "description": "issuer_master carries exactly one active row for the pinned CIK",
+        "description": "issuer_master carries exactly one active row binding the owner-composed issuer and CIK",
         "artifact": "data/reference/issuer_master.parquet",
-        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "cik",
@@ -78,6 +94,10 @@
           {
             "field": "matching_row_count",
             "value": 1
+          },
+          {
+            "field": "issuer_id",
+            "value": "ISS:US-XNAS-AAPL"
           },
           {
             "field": "status",
@@ -89,9 +109,9 @@
       },
       {
         "check": "R4",
-        "description": "the pinned issuer's CURRENT security set is exactly {SEC:US-XNAS-AAPL}",
+        "description": "the owner-composed issuer's CURRENT security set is exactly {SEC:US-XNAS-AAPL}",
         "artifact": "data/reference/security_master.parquet",
-        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "security_set",
@@ -127,7 +147,7 @@
         "check": "R6",
         "description": "zero matching rows in issuer_migrations.parquet/security_migrations.parquet",
         "artifact": "data/reference/issuer_migrations.parquet, data/reference/security_migrations.parquet",
-        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "issuer_migration_matches",
@@ -143,7 +163,7 @@
       },
       {
         "check": "R7",
-        "description": "workspace parity: event_id/company_id/filing cik all bind to the pinned CIK (vacuous pass when no workspace is available this cycle)",
+        "description": "workspace parity: event_id/company_id/filing cik all bind to the owner-composed CIK (vacuous pass when no workspace is available this cycle)",
         "artifact": "event_workspace.v1 (owner-native workspace body)",
         "reader": "engine.neuralweb.company_intelligence_reader.load_workspace_with_disposition",
         "values_read": [
@@ -169,9 +189,9 @@
       },
       {
         "check": "R8",
-        "description": "master issuer_cik agrees with the workspace-native CIK (vacuous pass when no workspace is available this cycle)",
+        "description": "master issuer_cik agrees with the owner-composed current CIK; a present workspace also agrees",
         "artifact": "data/reference/security_master.parquet + event_workspace.v1",
-        "reader": "scripts/build_stock_library.py::_read_identity_rows",
+        "reader": "scripts/security_state_producer.py::_read_security_state_identity_rows",
         "values_read": [
           {
             "field": "workspace_available",
@@ -179,6 +199,10 @@
           },
           {
             "field": "master_issuer_cik",
+            "value": "0000320193"
+          },
+          {
+            "field": "subject_issuer_cik",
             "value": "0000320193"
           },
           {
@@ -191,7 +215,7 @@
       },
       {
         "check": "R9",
-        "description": "corroboration: workspace primary alias agrees with master (mic, inception_code)",
+        "description": "corroboration: workspace primary alias agrees with the owner subject's current alias and listing venue",
         "artifact": "event_workspace.v1 issuer.listings[]",
         "reader": "engine.neuralweb.company_intelligence_reader.load_workspace_with_disposition",
         "values_read": [
@@ -265,7 +289,7 @@
         "check": "R8",
         "left": "master.issuer_cik",
         "left_value": "0000320193",
-        "right": "workspace_native_cik",
+        "right": "owner_subject.issuer_cik",
         "right_value": "0000320193",
         "equal": true
       },
@@ -273,15 +297,15 @@
         "check": "R9",
         "left": "workspace primary alias (mic,ticker)",
         "left_value": "XNAS:AAPL",
-        "right": "master (mic,inception_code)",
+        "right": "owner subject current alias (listing mic,ticker_display)",
         "right_value": "XNAS:AAPL",
         "equal": true
       }
     ],
     "refusals": [],
     "disclosures": [
-      "CIK_LEG_UNOWNED_ACCESS: issuer_cik read from declared master artifacts (identity_seams.yml master.artifacts); SecurityIssuerRow omits the column",
-      "NO_GENERAL_NAMESPACE_RENDERER: company_identity.v1 (xnas:AAPL) and Data OS (SEC:US-XNAS-AAPL) grammars are disjoint; this proof is instance-scoped to the golden security and refuses ambiguity",
+      "CIK_LEG_OWNER_BACKED_CURRENT_ONLY: issuer CIK read through canonical IssuerMaster.cik_of_issuer; current registrant evidence only, not historical lineage",
+      "OWNER_COMPOSED_SUBJECT_CURRENT_ONLY: security_id, issuer_id, listing_key and ticker_display composed through current VendorAliasTable and IssuerMaster readers at one injected decision date",
       "ISSUERMASTER_CURRENT_IDENTITY_ONLY: no asof-scoped issuer lineage; proof is current-identity",
       "ALIAS_EPOCH_VALID_FROM: corroboration alias window start is a placeholder floor, not evidence"
     ]
