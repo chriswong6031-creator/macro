@@ -1,0 +1,169 @@
+# config/capability_health.yml — F13 V1 capability registry (declarative CONFIG, not a
+# store). Read by scripts/build_capability_health.py, resolved by
+# engine/capability_health.py.
+#
+# SEED COHORT LAW (frozen commission §1): every entry below names ONLY receipt sources
+# verified to exist in the code read while building this registry (2026-09-04) — no
+# receipt source here is invented. Two commission candidates were DROPPED rather than
+# guessed at:
+#   * "brain chat gateway" — no synapse artifact is produced by
+#     engine/neuralweb/brain_gateway.py (it is a live FastAPI service, not a nightly
+#     artifact producer), and no confirmed engine.llm_auth `lane` string for its model
+#     calls was found in the code read. Adding it would have required inventing either
+#     an artifact id or a provider_rung ref.
+#   * "research vault (quota state)" — the download-quota ledger
+#     (engine/research_vault/download_quota.py) is per-user runtime state under
+#     $MACRO_API_STATE_DIR, not a deterministic repo artifact; data/research_vault/ has
+#     no config/synapse.yml registration and no data/run_status.json source key.
+# Both are reported as GAPS in the F13 V1 build packet, not silently worked around.
+#
+# receipt_sources[].type is a CLOSED vocabulary enforced by
+# engine.capability_health.validate_registry / RECEIPT_TYPES:
+#   output_health_artifact — ref is a config/synapse.yml artifact id; the loader reads
+#                             it out of scripts.build_output_health's resolved view.
+#   nightly_lane            — ref is a data/run_status.json `sources.<ref>` key (or the
+#                             literal `__global__` for the top-level `last_run` heartbeat).
+#   provider_rung           — ref is the `lane` string engine/provider_health.py rows are
+#                             recorded under (engine.llm_auth.make_call(lane=...)).
+#   sentinel_probe          — ref is a scripts/freshness_sentinel.py SURFACES id, read
+#                             from the already-written site/live/staleness.json (this
+#                             builder makes no network calls of its own).
+#
+# clocks declared per receipt_sources[i] name which of last_attempted / last_successful /
+# data_as_of / render_release that specific source can supply; the loader only ever
+# writes the clocks it declares.
+
+capabilities:
+  - id: prophet_us
+    label_en: "Prophet — US Board"
+    label_zh: "Prophet — 美股看板"
+    owner: "prophet program"
+    artifacts:
+      - site/prophet/index.json
+    receipt_sources:
+      - type: output_health_artifact
+        ref: prophet-index
+        clocks: [data_as_of]
+    # A `nightly_lane: __global__` heartbeat source was DROPPED here (repair 2026-09-04,
+    # post-review). `__global__` can only ever bind last_attempted — `scripts/collect.py`
+    # writes data/run_status.json's top-level `last_run` unconditionally regardless of
+    # per-source outcome, so it never proves a success. Under the (correct, ruled)
+    # worst-fold law that a source with no prior success is could_not_look and can never
+    # be masked by a sibling (engine.capability_health's C1/I3 repair), keeping it here
+    # would have permanently forced prophet_us to could_not_look even when prophet-index
+    # itself reads confidently healthy — a source that can NEVER contribute anything but
+    # could_not_look adds no honest signal, only permanent poison. prophet-index alone is
+    # the real receipt for this capability.
+    stale_after_hours: 30
+    # ROUND-6 repair (MAJOR-2, 2026-09-06 independent review): this text used to name
+    # raw file paths and script names (nightly-liveness.yml, site/prophet/index.json,
+    # scripts/prophet_rescue.py) verbatim — internal slugs, not plain words. Rewritten
+    # to describe what to check and what already happens automatically, with no
+    # internal names.
+    next_action_hint: >-
+      If this looks wrong, check whether last night's update ran and finished
+      successfully. A missed or failed update is automatically retried on its own
+      schedule.
+    next_action_hint_zh: >-
+      如果这里显示异常，请检查昨晚的更新是否已成功运行完成；未运行或失败的更新会按
+      计划自动重试。
+
+  - id: market_reference
+    label_en: "Market Reference Data Build"
+    label_zh: "市场参考数据构建"
+    owner: "data ingestion"
+    artifacts:
+      - data/run_status.json
+    # ROUND-3 repair (2026-09-06 independent review, item 1): fred/yahoo are
+    # `nightly_lane` sources — they never truthfully bind `data_as_of`. Their
+    # `last_date` is collectors/base.py's group-MAX OBSERVATION date across the
+    # source's own stored series, not an as-of instant (fred's FEDTARMD FOMC
+    # projection series legitimately carries a far-future last_date on a completely
+    # healthy lane). scripts/build_capability_health.py's `nightly_lane_facts` no
+    # longer maps `last_date` onto `data_as_of` at all, so declaring that clock here
+    # would only ever describe a clock this source can never actually supply.
+    receipt_sources:
+      - type: nightly_lane
+        ref: fred
+        clocks: [last_attempted, last_successful]
+      - type: nightly_lane
+        ref: yahoo
+        clocks: [last_attempted, last_successful]
+    stale_after_hours: 30
+    # ROUND-6 repair (MAJOR-2): plain words, no file names, job names, or source slugs.
+    next_action_hint: >-
+      Check whether last night's data update ran and completed successfully for the
+      underlying market data feeds.
+    next_action_hint_zh: >-
+      请检查昨晚的数据更新是否已针对相关市场数据源成功运行完成。
+
+  - id: stock_dossiers
+    # ROUND-6 repair (MAJOR-2): dropped the raw internal slug "(R2 stockdata)" from the
+    # label — a capability's name should read as a name, not carry a storage detail.
+    label_en: "Stock Dossiers"
+    label_zh: "个股档案"
+    owner: "long-hold / stockdata"
+    artifacts:
+      - site/stockdata/mag7_regime.json
+      - "site/stockdata/<TICKER>.json"
+    receipt_sources:
+      - type: output_health_artifact
+        ref: mag7-regime-site
+        clocks: [data_as_of]
+      - type: output_health_artifact
+        ref: stock-personality-block
+        clocks: [data_as_of]
+    stale_after_hours: 30
+    # ROUND-6 repair (MAJOR-2): the previous text published the internal verdict name
+    # "could_not_look" plus raw refs/paths (mag7-regime-site, stock-personality-block,
+    # publish_r2) verbatim. Rewritten in plain words with no internal names.
+    next_action_hint: >-
+      An unclear reading here is expected when checking from a local copy of the
+      code — this data only exists on the live site. Check the live site directly to
+      confirm its status.
+    next_action_hint_zh: >-
+      在本地代码环境中看到状态不明是正常现象——这部分数据只存在于正式网站上；请直接
+      查看正式网站以确认其状态。
+
+  - id: foresight_desk
+    label_en: "Thematic Foresight Desk"
+    label_zh: "主题前瞻台"
+    owner: "qualitative-intelligence"
+    artifacts:
+      - site/basketdata/foresight_cascade.json
+      - data/foresight/health_log.jsonl
+    receipt_sources:
+      - type: output_health_artifact
+        ref: site-foresight-cascade
+        clocks: [data_as_of]
+    stale_after_hours: 30
+    # ROUND-6 repair (MAJOR-2): dropped the script/file path and internal state names
+    # (DARK/PARTIAL) in favor of a plain description of what to check.
+    next_action_hint: >-
+      Check the most recent build record for this feed to see which parts are
+      missing or incomplete.
+    next_action_hint_zh: >-
+      查看该功能最近一次的构建记录，确认其中哪些部分缺失或不完整。
+
+  - id: chronicle
+    label_en: "Market Context Chronicle"
+    label_zh: "市场脉络编年志"
+    owner: "chronicle / event spine"
+    artifacts:
+      - data/chronicle/manifest.json
+      - data/chronicle/state_log.jsonl
+    receipt_sources:
+      - type: output_health_artifact
+        ref: chronicle-manifest
+        clocks: [data_as_of]
+      - type: output_health_artifact
+        ref: chronicle-state-log
+        clocks: [data_as_of]
+    stale_after_hours: 30
+    # ROUND-6 repair (MAJOR-2): dropped the workflow/script names and the raw exit-code
+    # jargon ("rc != 0") in favor of a plain description of what to check.
+    next_action_hint: >-
+      Check the nightly build log for this feed to see whether its update step
+      failed.
+    next_action_hint_zh: >-
+      查看该功能的夜间构建日志，确认其更新步骤是否失败。

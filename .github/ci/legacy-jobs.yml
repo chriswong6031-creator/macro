@@ -2822,6 +2822,19 @@ jobs:
       - name: adapter registry must stay populated
         run: |
           python -c "from scripts.collect import all_adapters; n = len(all_adapters()); assert n > 100, f'adapter registry gutted: only {n} adapters registered'; print(f'{n} adapters registered')"
+      # F13 V1 capability-health-freshness, BUILDER half (2026-09-05 independent
+      # review repair). tests/test_build_capability_health.py's M6 tests statically
+      # cross-check config/capability_health.yml's `nightly_lane` refs against THIS
+      # job's own subject — scripts/collect.py's all_adapters() registry (read via AST,
+      # never imported, same "adapter registry must stay populated" spirit as the step
+      # above) — so this job already owns the closure the suite touches. APPENDED,
+      # never inserted, for the same run_ci_pack.py::_run_job first-non-zero-step
+      # reason the T1/T4 steps in intelligence-registry document. This job has no
+      # `scope: exclusive`/curated `paths:` (inference-derived), so no manual path-list
+      # entry is needed here — unlike intelligence-registry, where wiring this same
+      # suite would have required hand-enumerating ~60 collector-closure files.
+      - name: "capability health & freshness projection — builder (F13 V1)"
+        run: python -m pytest tests/test_build_capability_health.py -q
 
   capital-structure-intelligence:
     if: ${{ false }}
@@ -3530,6 +3543,21 @@ jobs:
       - "templates/measurement.html.j2"
       - "templates/methodology.html.j2"
       - "templates/support.html.j2"
+      # F13 V1 capability-health-freshness engine suite 2026-09-05 (independent review
+      # repair): tests/test_capability_health.py is a PURE engine test — it imports only
+      # engine.capability_health (already covered by the earned engine/** glob below)
+      # and touches no other file, so it is safe here alongside T1/T4. Its sibling
+      # tests/test_build_capability_health.py (the adapter/builder suite) is wired into
+      # collector-registry INSTEAD (see that job) — its M6 tests statically read
+      # scripts/collect.py, whose own lazy `from collectors.X import Y` closure pulls in
+      # ~60 files (yahoo/cboe_indices/massive_flatfiles/nyfed_primary_dealer/... and
+      # their own transitive imports), which curated_exclusive_closure_findings then
+      # requires an EXCLUSIVE job's declared `paths:` to enumerate in full — exactly the
+      # `collectors/`-enumeration smear this job's own header comments warn against
+      # adding. collector-registry has no `scope: exclusive` (paths are inference-
+      # derived, not curated), so it absorbs that closure automatically with no list to
+      # hand-maintain, and is already the tripwire for collect.py's adapter registry.
+      - "tests/test_capability_health.py"
       - "tests/test_check_intelligence_registry.py"
       - "tests/test_intelligence_registry.py"
       - "tests/test_output_health.py"
@@ -3566,6 +3594,18 @@ jobs:
       # dependency beyond the pytest/pyyaml line already installed above.
       - name: "output health contract (Eval OS T4)"
         run: python -m pytest tests/test_output_health.py -q
+      # F13 V1 — capability health & freshness projection, ENGINE half only. Same job
+      # as T4 above (this is the very next layer: it JOINS output_health's already-
+      # resolved view with data/run_status.json into one per-capability verdict) and
+      # same reasoning for APPENDING rather than inserting: a new step ahead of T1/T4
+      # would hide either behind it on the first non-zero return. Fixture-rooted by
+      # construction, same law as T4 — nothing here asserts on live
+      # config/capability_health.yml content or live estate freshness, so it needs no
+      # dependency beyond the pytest/pyyaml line already installed above. The BUILDER
+      # half (tests/test_build_capability_health.py) is wired into collector-registry
+      # instead — see the `paths:` comment above for why it cannot share this job.
+      - name: "capability health & freshness projection — engine (F13 V1)"
+        run: python -m pytest tests/test_capability_health.py -q
 
   neural-web-core:
     if: ${{ false }}
