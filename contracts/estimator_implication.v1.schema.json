@@ -16,6 +16,56 @@
     {"required": ["action"]}, {"required": ["trade"]}, {"required": ["signal"]},
     {"required": ["alpha"]}, {"required": ["target"]}, {"required": ["weight"]}
   ]},
+  "allOf": [
+    {
+      "$comment": "Null-pairing floor (round-2 review, minor): a payload carrying any null value at a known nullable site (point_estimate.value, an uncertainty[].value, honest_n.sample_n, honest_n.episode_n, a diagnostics[].passed) must not validate against this schema with an empty null_reasons array — a consumer validating against the schema alone must not accept a null with no disclosure. Per-site 1:1 pairing (each null's own code must appear in null_reasons) is enforced in Python by validate_payload(), which this schema-level check cannot fully express without a $data extension; this is the floor the schema itself can guarantee.",
+      "if": {
+        "anyOf": [
+          {
+            "required": ["point_estimate"],
+            "properties": {
+              "point_estimate": {"type": "object", "required": ["value"],
+                "properties": {"value": {"type": "null"}}}
+            }
+          },
+          {
+            "required": ["uncertainty"],
+            "properties": {
+              "uncertainty": {"type": "array",
+                "contains": {"type": "object", "required": ["value"],
+                  "properties": {"value": {"type": "null"}}}}
+            }
+          },
+          {
+            "required": ["honest_n"],
+            "properties": {
+              "honest_n": {"type": "object", "required": ["sample_n"],
+                "properties": {"sample_n": {"type": "null"}}}
+            }
+          },
+          {
+            "required": ["honest_n"],
+            "properties": {
+              "honest_n": {"type": "object", "required": ["episode_n"],
+                "properties": {"episode_n": {"type": "null"}}}
+            }
+          },
+          {
+            "required": ["diagnostics"],
+            "properties": {
+              "diagnostics": {"type": "array",
+                "contains": {"type": "object", "required": ["passed"],
+                  "properties": {"passed": {"type": "null"}}}}
+            }
+          }
+        ]
+      },
+      "then": {
+        "required": ["null_reasons"],
+        "properties": {"null_reasons": {"type": "array", "minItems": 1}}
+      }
+    }
+  ],
   "properties": {
     "schema": {"const": "mastermind.estimator_implication/v1"},
     "payload_id": {"type": "string", "pattern": "^eimp_[0-9a-f]{64}$"},

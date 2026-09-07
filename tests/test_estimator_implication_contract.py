@@ -286,6 +286,91 @@ def test_es_artifact_digest_mismatch_degrades_to_a_typed_refusal_not_a_crash(mon
     assert es_refusals[0]["detail"]["zh"].strip()
 
 
+def test_es_contract_validation_failure_is_not_swallowed_as_artifact_unavailable(monkeypatch):
+    # Regression (round-2 review, MAJOR): the earlier m6 fix widened the try
+    # in build_estimator_implications to enclose BOTH
+    # compose_event_study_implication AND validate_payload(es_payload),
+    # catching (ImplicationContractError, FileNotFoundError) around both.
+    # validate_payload raises ImplicationContractError for every genuine
+    # contract violation it owns (forbidden promotion field, payload_id
+    # mismatch, missing null-reason pairing, non-false authority block) --
+    # so a composer bug that produced a payload carrying a forbidden
+    # promotion field no longer raised: it degraded to a typed
+    # "artifact_unavailable" refusal and the caller saw a successful build,
+    # defeating the promotion firewall at this module's only public entry
+    # point. validate_payload must sit OUTSIDE the try, so its raise
+    # propagates exactly like the SC payload's validate_payload already does.
+    stub = _StubLedger(registered=[eimp.SC_FAMILY, ES_FAMILY])
+
+    def _bad_compose(root=REPO_ROOT, *, ledger=None, family_id=ES_FAMILY):
+        payload = copy.deepcopy(
+            compose_event_study_implication(root, ledger=ledger, family_id=family_id)
+        )
+        payload["rank"] = 1  # forbidden promotion field injected by a hypothetical bug
+        return payload
+
+    monkeypatch.setattr(eimp, "compose_event_study_implication", _bad_compose)
+    with pytest.raises((ImplicationContractError, ValidationError)):
+        build_estimator_implications(ledger=stub)
+
+
+def test_es_digest_mismatch_refusal_detail_has_no_raw_exception_text_and_real_zh(monkeypatch):
+    # Regression (round-2 review, minor): the refusal's detail.en used to
+    # interpolate the caught Python exception verbatim (f"({exc})"), leaking
+    # internal field names/paths into a user-facing string, while detail.zh
+    # was a fixed generic sentence with no corresponding content -- breaking
+    # EN/ZH parity. Both languages must now be genuine, content-matched
+    # translations with no raw exception text.
+    monkeypatch.setattr(eimp, "ES_RESULT_SHA256", "0" * 64)
+    envelope = build_estimator_implications()
+    es_refusals = [r for r in envelope["refusals"] if r["estimator_id"] == "engine.seasonality.event_study"]
+    assert len(es_refusals) == 1
+    detail = es_refusals[0]["detail"]
+    assert "expected" not in detail["en"] and "observed" not in detail["en"], \
+        "detail.en must not leak the raw digest-mismatch exception text"
+    assert eimp.ES_RESULT_SHA256 not in detail["en"]
+    assert detail["zh"].strip() and detail["zh"] != detail["en"]
+
+
+def test_diagnostic_null_passed_requires_its_own_null_reasons_entry():
+    # Regression (round-2 review, minor): diagnostics[].passed is a nullable
+    # spot in the schema (["boolean", "null"]) but validate_payload's
+    # nullable_spots list never covered it, so a diagnostic with passed=None
+    # validated with no null_reasons disclosure at all.
+    payload = copy.deepcopy(compose_synthetic_control_implication())
+    payload["diagnostics"][0]["passed"] = None
+    # A null diagnostics[].passed with an empty null_reasons array is now
+    # rejected at the SCHEMA level too (minor #2's null-pairing floor), so
+    # this can raise either there or in validate_payload's own by-code check
+    # -- both are the fix, whichever fires first.
+    with pytest.raises((ImplicationContractError, ValidationError)):
+        validate_payload(payload)
+
+    # Adding the matching entry (named by that diagnostic's own code) fixes it.
+    fixed = copy.deepcopy(payload)
+    fixed["null_reasons"].append({
+        "code": fixed["diagnostics"][0]["code"],
+        "reason": {"en": "test reason", "zh": "测试原因"},
+        "detail": {"en": "test detail", "zh": "测试详情"},
+    })
+    validate_payload(fixed)
+
+
+def test_schema_itself_rejects_a_null_with_empty_null_reasons():
+    # Regression (round-2 review, minor): the shipped schema did not itself
+    # carry the null-pairing rule -- enforcement lived only in Python, so a
+    # consumer validating against the schema alone (never calling
+    # validate_payload) accepted a payload with a null and an empty
+    # null_reasons array. This exercises the schema DIRECTLY via
+    # Draft202012Validator, bypassing validate_payload's Python checks.
+    stub = _StubLedger(registered=[ES_FAMILY])
+    payload = copy.deepcopy(compose_event_study_implication(ledger=stub))
+    assert payload["uncertainty"][0]["value"] is None
+    payload["null_reasons"] = []
+    with pytest.raises(ValidationError):
+        Draft202012Validator(load_contract()).validate(payload)
+
+
 def test_composer_performs_no_writes_and_no_network():
     source = (REPO_ROOT / "engine" / "estimator_implication.py").read_text(encoding="utf-8")
     assert not re.search(r'open\([^)]*["\']w', source)

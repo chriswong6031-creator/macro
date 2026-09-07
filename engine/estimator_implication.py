@@ -493,6 +493,9 @@ def validate_payload(payload: Mapping[str, Any]) -> dict:
         nullable_spots.append("honest_n.sample_n")
     if payload["honest_n"]["episode_n"] is None:
         nullable_spots.append("honest_n.episode_n")
+    for d in payload.get("diagnostics", []):
+        if d["passed"] is None:
+            nullable_spots.append(d["code"])
     # Every null site needs its OWN matching null_reasons entry, named by that
     # site's own code — not merely at-least-one code anywhere in the array.
     # A payload with four nulls and one unrelated reason must not validate.
@@ -521,10 +524,21 @@ def build_estimator_implications(root: Path = REPO_ROOT, *, ledger=None) -> dict
     validate_payload(sc_payload)
     payloads.append(sc_payload)
 
+    # NOTE (round-2 review, MAJOR): validate_payload(es_payload) must sit
+    # OUTSIDE this try/except, never inside it. compose_event_study_implication
+    # can legitimately fail on artifact-availability grounds only (an
+    # unregistered family, a digest mismatch, a missing file) — those degrade
+    # to a typed refusal for this estimator alone. validate_payload instead
+    # raises ImplicationContractError for a genuine CONTRACT violation (a
+    # forbidden promotion field, a payload_id mismatch, a missing null-reason
+    # pairing, a non-false authority block) produced by a bug in this
+    # composer's own output — that must propagate and fail loudly, exactly
+    # like the synthetic-control payload's validate_payload above, never be
+    # relabeled as "artifact could not be read or verified" and hidden behind
+    # a successful-looking envelope. Catching it here would defeat the
+    # promotion firewall at this module's only public entry point.
     try:
         es_payload = compose_event_study_implication(root, ledger=ledger)
-        validate_payload(es_payload)
-        payloads.append(es_payload)
     except UnregisteredSearchFamily:
         refusals.append({
             "estimator_id": "engine.seasonality.event_study",
@@ -538,21 +552,40 @@ def build_estimator_implications(root: Path = REPO_ROOT, *, ledger=None) -> dict
             },
             "source": ES_RESULT_PATH,
         })
-    except (ImplicationContractError, FileNotFoundError) as exc:
-        # A digest mismatch or a missing result artifact must degrade to a
-        # typed refusal for THIS estimator only, never destroy the whole
-        # envelope — the synthetic-control payload above already succeeded
-        # and must still be published.
+    except FileNotFoundError:
+        # The result artifact file is missing from disk entirely.
         refusals.append({
             "estimator_id": "engine.seasonality.event_study",
             "refusal_code": "artifact_unavailable",
             "detail": {
                 "en": "No implication is published for this event study: its result "
-                      f"artifact could not be read or verified ({exc}).",
-                "zh": "本事件研究不发布含义：其结果产物无法读取或校验。",
+                      "artifact file could not be found on disk.",
+                "zh": "本事件研究不发布含义：其结果产物文件在磁盘上未找到。",
             },
             "source": ES_RESULT_PATH,
         })
+    except ImplicationContractError:
+        # _verify_digest raises this specific, narrow case (digest mismatch)
+        # from inside compose_event_study_implication itself, before any
+        # payload exists to validate — an artifact-availability failure, not
+        # a contract violation. This is deliberately the ONLY
+        # ImplicationContractError this function ever catches; the one
+        # validate_payload can raise (below) is never inside this try.
+        refusals.append({
+            "estimator_id": "engine.seasonality.event_study",
+            "refusal_code": "artifact_unavailable",
+            "detail": {
+                "en": "No implication is published for this event study: its result "
+                      "artifact has changed since it was pinned, so it could not be "
+                      "verified against the recorded digest.",
+                "zh": "本事件研究不发布含义：其结果产物自登记基准以来已发生变化，"
+                      "无法通过摘要校验。",
+            },
+            "source": ES_RESULT_PATH,
+        })
+    else:
+        validate_payload(es_payload)
+        payloads.append(es_payload)
 
     return {
         "schema": ENVELOPE_SCHEMA,
