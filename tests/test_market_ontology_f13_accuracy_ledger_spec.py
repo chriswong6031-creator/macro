@@ -155,6 +155,18 @@ def test_claim_id_digest_includes_resolves_at():
     assert "millisecond precision" in TEXT
 
 
+def test_claim_id_digest_does_not_misclaim_sameness_with_trial_ledger_hash():
+    # Review finding: engine/trial_ledger.py:61 _hash is sha1, not sha256, so
+    # the spec must not claim "same digest discipline" with a precedent whose
+    # algorithm differs. It may claim the shared 16-hex-truncation discipline.
+    assert "same digest discipline as `engine/trial_ledger.py:61 _hash`" not in TEXT
+    assert (
+        "distinct algorithm from, but the same 16-hex-truncation discipline as, "
+        "`engine/trial_ledger.py:61 _hash` (which hashes with sha1, not sha256)"
+        in TEXT
+    )
+
+
 def test_team_rollup_is_deferred_not_killed():
     assert "DEFERRED, NOT KILLED" in TEXT
     assert "team-accuracy rollup" in TEXT
@@ -228,12 +240,40 @@ def test_glance_copy_includes_the_two_null_disclosures_bilingually():
     assert "有 {n} 条判断无法核对" in zh
 
 
+def test_glance_copy_includes_the_early_days_line_bilingually():
+    # Review finding: §5's 1-9-episode line ("Too early to say — checked {n}
+    # of your calls so far.") must be in the verbatim glance-copy block too,
+    # or the successor UI packet has to invent the combined sentence itself.
+    en = _extract_block("EN")
+    zh = _extract_block("ZH")
+    assert "Too early to say — checked {n} of your calls so far." in en
+    assert "还看不出来——目前核对了你的 {n} 条判断。" in zh
+
+
 def test_dnr_key_cited_in_colon_form():
     dnr_mentions = re.findall(r"DNR[:\w-]*", TEXT)
     assert dnr_mentions, "expected at least one DNR: citation"
     for mention in re.findall(r"\bDNR\b[^\n]{0,40}", TEXT):
         assert "DNR:" in mention or mention.strip() == "DNR"
     assert "row 54" not in TEXT
+    # House law: cite registry rows as DNR:<KEY>, never by row/line number —
+    # numbers shift on every append. Catches any "DO_NOT_REBUILD.md:NN" citation,
+    # not only the one literal "row 54" phrasing checked above.
+    assert re.search(r"DO_NOT_REBUILD\.md:\d+", TEXT) is None
+
+
+def test_dnr_llm_confidence_citation_does_not_overclaim_registry_scope():
+    # Review finding: the registry row DNR:KILL-LLM-CONFIDENCE is scoped to CHF
+    # surfaces (research/DO_NOT_REBUILD.md), not "anywhere in this ledger" as
+    # the spec's citation implied. The spec may still apply the same house
+    # principle independently; it must not attribute that scope to the row.
+    assert (
+        "That registry row's own scope is CHF surfaces, "
+        "`research/DO_NOT_REBUILD.md`; this ledger applies the same A7 "
+        "no-origination principle independently, not by extending that "
+        "row's scope."
+        in TEXT
+    )
 
 
 def test_f00c_dependency_claim_cites_row_key_and_quotes_it():
@@ -241,19 +281,28 @@ def test_f00c_dependency_claim_cites_row_key_and_quotes_it():
     # (MO-DELTA-007), not merely a line number, and quote the row's own words
     # rather than paraphrasing them.
     assert "row key `MO-DELTA-007`" in TEXT
+    quoted = (
+        "DEFER — dependency the Thesis-object vertical "
+        "(user claim authoring surface) before Eval OS can score it"
+    )
     assert (
         "next_bounded_child` field, quoted verbatim: "
-        '"DEFER — dependency the Thesis-object vertical '
-        '(user claim authoring surface) before Eval OS can score it"'
+        f'"{quoted}"'
         in TEXT
     )
     csv_path = ROOT / "research" / "market_intelligence_productization" / \
         "MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv"
     assert csv_path.exists()
-    csv_text = csv_path.read_text(encoding="utf-8")
-    assert "MO-DELTA-007" in csv_text
-    assert (
-        "DEFER — dependency the Thesis-object vertical (user claim authoring "
-        "surface) before Eval OS can score it"
-        in csv_text
-    ), "quoted next_bounded_child text must match the live CSV row verbatim"
+    import csv as csv_module
+    with csv_path.open(encoding="utf-8", newline="") as fh:
+        rows = list(csv_module.DictReader(fh))
+    matches = [r for r in rows if r.get("id") == "MO-DELTA-007"]
+    assert len(matches) == 1, "expected exactly one MO-DELTA-007 row in the CSV"
+    # MINOR-5 (review): the prior version of this test only checked that the
+    # quote appeared somewhere in the CSV text — it must be bound to the
+    # MO-DELTA-007 row's own next_bounded_child field, which is the claim
+    # ruling item (4) actually locks.
+    assert matches[0]["next_bounded_child"] == quoted, (
+        "spec's quoted next_bounded_child text must equal the live "
+        "MO-DELTA-007 row's own next_bounded_child field, verbatim"
+    )

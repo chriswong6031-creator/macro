@@ -15,7 +15,7 @@ A JSONL record, one line per claim, append-only. Frozen field table:
 
 | field | type | rule |
 |---|---|---|
-| `claim_id` | str | stable id, `sha256` of `(user_id, subject, condition, stated_at, resolves_at)` first 16 hex — `resolves_at` is included so two claims sharing a `stated_at` tick (same user, subject, condition) still mint distinct ids; same digest discipline as `engine/trial_ledger.py:61 _hash` |
+| `claim_id` | str | stable id, `sha256` of `(user_id, subject, condition, stated_at, resolves_at)` first 16 hex — `resolves_at` is included so two claims sharing a `stated_at` tick (same user, subject, condition) still mint distinct ids; distinct algorithm from, but the same 16-hex-truncation discipline as, `engine/trial_ledger.py:61 _hash` (which hashes with sha1, not sha256) |
 | `user_id` | str | Supabase auth uid ONLY (identity gate: Stock Identity + Data OS + Supabase auth; the browser client is the bundled `templates/supabase.js`). Never an email, never a display name |
 | `subject` | obj | `{"kind": "security"\|"macro_series"\|"basket", "id": "<Stock Identity id or canonical series key>"}` — resolved through Stock Identity, never a free-text ticker |
 | `stated_at` | str | RFC-3339 UTC, **millisecond precision**, set server-side at submission. Immutable |
@@ -35,7 +35,7 @@ Corrections: an amended claim is appended as a NEW record with `supersedes: "<cl
 - **Aggregate Brier** — computed by `engine.validation.brier_reliability(p, y)` (`engine/validation.py:525`) over the episode-level pairs above, which returns `{}` below **30** episode pairs; the display floor mirrors `_BRIER_MIN_PAIRS = 10` (`engine/explanation_memory.py:69`), so between 10 and 29 episode pairs the surface prints the null note, not a number.
 - **Hit-rate** — `resolved_hits / resolved_episodes`, episode-denominated (§3).
 - **Verdict vocabulary is REUSED, not reinvented**: the six strings at `engine/explanation_memory.py:32-39`. Attribution beyond hit/miss (right-for-right-reason vs right-wrong-reason) is detail tier only.
-- **No composite.** Brier and hit-rate are printed side by side, never blended into one "accuracy score" — `research/DO_NOT_REBUILD.md:51` (`DNR:KILL-FUSED-COMPOSITE`).
+- **No composite.** Brier and hit-rate are printed side by side, never blended into one "accuracy score" — `DNR:KILL-FUSED-COMPOSITE` (`research/DO_NOT_REBUILD.md`).
 
 do_not_redo (MO-DELTA-007): no universal analyst score conflating quality, retention, alpha, or P&L.
 
@@ -53,7 +53,7 @@ NO LEADERBOARD: no cross-user ranking, no percentile against other users, no tea
 
 DEFERRED, NOT KILLED: MO-DELTA-007's own row (`…F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv:126`) names a second, non-ranking capability — a team-accuracy rollup — distinct from cross-user ranking. This spec permanently forbids ranking/leaderboard use of *this ledger's data* within its own contract (forbidden use 6, above) — a prohibition scoped to this spec's own forbidden-uses list, not a codebase-wide `DNR:KILL-*` registry kill (no such row is minted by this packet, and none is owed for a prohibition that binds only this spec's own contract); it does NOT adjudicate the non-ranking rollup, which stays deferred pending a separate adjudication (a future `DEC-*` or an explicit `DNR:KILL-*` row) rather than being foreclosed by this frozen spec.
 
-DNR:KILL-LLM-CONFIDENCE — no LLM-originated number anywhere in this ledger: the model never states a probability, never grades an outcome, never adjusts a score.
+DNR:KILL-LLM-CONFIDENCE — no LLM-originated number anywhere in this ledger: the model never states a probability, never grades an outcome, never adjusts a score. (That registry row's own scope is CHF surfaces, `research/DO_NOT_REBUILD.md`; this ledger applies the same A7 no-origination principle independently, not by extending that row's scope.)
 
 Forbidden uses — the score is:
 1. never an input to any signal, factor, organ state, or Neural Web artifact;
@@ -70,7 +70,7 @@ The null ladder (frozen, plain-word, no statistics). Two **independently-keyed**
 
 Hit-rate axis (keyed on resolved episodes):
 - 0 resolved episodes → *"Nothing has settled yet. Your first call gets checked on the day you set."*
-- 1–9 resolved episodes → *"Too early to say — checked 3 of your calls so far."* (integer count only)
+- 1–9 resolved episodes → *"Too early to say — checked {n} of your calls so far."* ({n} = the actual settled-call count; never a bare stat)
 - ≥10 resolved episodes → hit-rate stance shown (§6 stance mapping).
 
 Calibration axis (keyed on probability-carrying episode pairs, independent of the resolved-episode count above — this is the axis `engine.validation.brier_reliability` (§2) is actually keyed on):
@@ -89,6 +89,7 @@ Mostly landing so far
 Mixed so far
 Not landing yet
 Nothing has settled yet. Your first call gets checked on the day you set.
+Too early to say — checked {n} of your calls so far.
 Checked so far: {n} of your calls.
 Not enough settled calls yet to check how well your odds match reality.
 {n} calls could not be checked — the data they named wasn't there.
@@ -102,6 +103,7 @@ This is a learning record. It never changes what we show you, what we rank, or w
 目前好坏参半
 目前还没落在正确一边
 还没有到期的判断。第一条会在你设定的那天核对。
+还看不出来——目前核对了你的 {n} 条判断。
 已核对：你的 {n} 条判断。
 还没有足够的已结算判断来核对你的把握是否准确。
 有 {n} 条判断无法核对——所引用的数据不存在。
