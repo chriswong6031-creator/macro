@@ -364,6 +364,23 @@ def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None,
                    "zh": "hincl2 事件研究产物记录了 h=20 处 DSR 选定的均值及其支持"
                          "样本数，但未记录相应的 t 统计量，因此不确定性字段保留为"
                          "空，而非伪造。"},
+    }, {
+        # honest_n.episode_n regression (round-4 review, MAJOR): episode_n
+        # may never exceed sample_n. This artifact records 466 roster-add
+        # events but only 276 of them reach the h=20 horizon, and it does not
+        # record WHICH distinct episodes are among those 276 -- so episode_n
+        # is left null rather than fabricating a denominator, and never
+        # substituted with n_months (that substitution is reserved for the
+        # OTHER (synthetic-control) artifact's monthly-cluster t-stat
+        # denominator, per the ruling).
+        "code": "honest_n.episode_n",
+        "reason": {"en": "Distinct contributing episodes not recorded",
+                   "zh": "未记录具体的独立事件"},
+        "detail": {"en": "466 roster-add events recorded; 276 reach the 20d "
+                         "horizon; contributing distinct episodes not recorded "
+                         "by the artifact",
+                   "zh": "该产物记录了 466 次纳入事件；其中 276 次到达 20 天"
+                         "窗口；构成这一数字的具体独立事件未被该产物记录"},
     }]
     uncertainty = [{
         "code": "hincl2_announce_caar_h20_t",
@@ -390,12 +407,11 @@ def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None,
     }]
 
     limitations = [{
-        "en": "This payload composes only once family_id is registered; the real "
-              "engine.trial_ledger has no such registration today, so in "
-              "production this path raises UnregisteredSearchFamily instead.",
-        "zh": "本载荷仅在 family_id 已登记时才会生成；当前真实的 "
-              "engine.trial_ledger 尚无该登记，因此在生产环境中此路径会抛出 "
-              "UnregisteredSearchFamily。",
+        "en": "This payload only appears once its search family is registered; "
+              "no such registration exists in production today, so this "
+              "estimator normally refuses instead of publishing a result.",
+        "zh": "此载荷仅在其搜索族已登记时才会出现；当前生产环境中并无该登记，"
+              "因此该估计量通常会拒绝生成结果，而不会发布。",
     }]
 
     es_module_sha256 = sha256_file(root / ES_MODULE_PATH)
@@ -429,14 +445,13 @@ def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None,
         "uncertainty": uncertainty,
         "honest_n": {
             "sample_n": int(curve_n),
-            "episode_n": int(data["roster_add_events"]),
+            "episode_n": None,
             "basis": {"en": "sample_n counts the h=20 curve's supporting "
-                            "observations; episode_n counts roster_add_events "
-                            "(the distinct corporate-action episodes proposed "
-                            "before any coverage/fit filtering)",
-                      "zh": "sample_n 为 h=20 曲线的支持观测数；episode_n 为 "
-                            "roster_add_events（在覆盖率/拟合筛选之前提出的独立"
-                            "公司行为事件数）"},
+                            "observations; episode_n is left null because this "
+                            "artifact does not record which distinct roster-add "
+                            "episodes contribute at that horizon",
+                      "zh": "sample_n 为 h=20 曲线的支持观测数；episode_n 留空，"
+                            "因为该产物未记录到达该窗口的具体独立事件"},
         },
         "diagnostics": diagnostics,
         "quality": "DIAGNOSTIC_ONLY",
@@ -547,8 +562,8 @@ def build_estimator_implications(root: Path = REPO_ROOT, *, ledger=None) -> dict
                 "en": "No implication is published for this event study: its search "
                       "family was never written to the trial ledger, so the "
                       "multiple-testing budget it spent is unrecorded.",
-                "zh": "本事件研究不发布含义："
-                      "其搜索族未登记入试验账本。",
+                "zh": "本事件研究不发布含义：其搜索族从未登记入试验账本，"
+                      "因此其所耗费的多重检验预算未被记录。",
             },
             "source": ES_RESULT_PATH,
         })

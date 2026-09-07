@@ -124,6 +124,95 @@ def test_synthetic_control_honest_n_is_populated_from_the_artifact():
     assert payload["honest_n"]["basis"]["zh"].strip()
 
 
+def test_episode_n_never_exceeds_sample_n_for_any_emitted_payload():
+    # Regression (round-4 review, MAJOR): honest_n.episode_n must never
+    # exceed honest_n.sample_n -- a fabricated denominator would overstate
+    # the honest episode-level precision. Exercised against every payload the
+    # composer can actually emit today (the default envelope) AND against the
+    # event-study's hypothetical positive-compose path (a test-registered
+    # ledger), since that path is not reachable through the default envelope
+    # while the real ledger leaves the family unregistered.
+    envelope = build_estimator_implications()
+    for payload in envelope["payloads"]:
+        sample_n = payload["honest_n"]["sample_n"]
+        episode_n = payload["honest_n"]["episode_n"]
+        assert episode_n is None or (sample_n is not None and episode_n <= sample_n), (
+            f"{payload['estimator_id']}: episode_n={episode_n} exceeds "
+            f"sample_n={sample_n}"
+        )
+
+    stub = _StubLedger(registered=[ES_FAMILY])
+    es_payload = compose_event_study_implication(ledger=stub)
+    sample_n = es_payload["honest_n"]["sample_n"]
+    episode_n = es_payload["honest_n"]["episode_n"]
+    assert episode_n is None or (sample_n is not None and episode_n <= sample_n)
+
+
+def test_event_study_episode_n_is_null_never_fabricated_from_roster_add_events():
+    # Regression (round-4 review, MAJOR): episode_n used to be the raw
+    # roster_add_events count (466 in the pinned artifact), which exceeds
+    # sample_n (the h=20 curve's 276 supporting observations, from
+    # event_curve_announce["20"]) -- a fabricated, oversized denominator. The
+    # artifact records how many roster-add events reach h=20 in aggregate
+    # (276) but not WHICH distinct episodes those are, so episode_n must be
+    # null with a plain, EN/ZH-paired reason naming both real counts -- never
+    # a substitute (n_months is reserved for the OTHER (synthetic-control)
+    # artifact's monthly-cluster t-stat denominator).
+    stub = _StubLedger(registered=[ES_FAMILY])
+    payload = compose_event_study_implication(ledger=stub)
+    validate_payload(payload)
+
+    assert payload["honest_n"]["sample_n"] == 276
+    assert payload["honest_n"]["episode_n"] is None
+
+    entry = next(nr for nr in payload["null_reasons"] if nr["code"] == "honest_n.episode_n")
+    assert "466" in entry["detail"]["en"] and "276" in entry["detail"]["en"]
+    assert "roster_add_events" not in entry["detail"]["en"],         "no raw Python/JSON identifier in a user-facing string"
+    assert entry["reason"]["en"].strip() and entry["reason"]["zh"].strip()
+    assert entry["detail"]["zh"].strip() and entry["detail"]["zh"] != entry["detail"]["en"]
+    # Same facts as the EN detail: both real counts appear in the ZH text too
+    # (parity), not merely a non-empty placeholder translation.
+    assert "466" in entry["detail"]["zh"] and "276" in entry["detail"]["zh"]
+
+    assert "roster_add_events" not in payload["honest_n"]["basis"]["en"]
+    assert "roster_add_events" not in payload["honest_n"]["basis"]["zh"]
+
+
+def test_unregistered_family_refusal_detail_has_en_zh_clause_parity():
+    # Regression (round-4 review, MINOR-1): the refusal that actually fires
+    # against the real pinned artifact today (unregistered_search_family) had
+    # an EN detail with two clauses (never registered; so the multiple-testing
+    # budget spent is unrecorded) but a ZH detail carrying only the first
+    # clause -- same facts must appear in both languages, not a shortened
+    # translation.
+    envelope = build_estimator_implications()
+    refusal = next(r for r in envelope["refusals"]
+                   if r["refusal_code"] == "unregistered_search_family")
+    detail = refusal["detail"]
+    assert "trial ledger" in detail["en"] and "试验账本" in detail["zh"]
+    assert "multiple-testing" in detail["en"]
+    # The ZH clause naming the multiple-testing-budget consequence, not just
+    # the registration fact.
+    assert "多重检验" in detail["zh"],         "zh detail dropped the multiple-testing-budget clause the en detail carries"
+
+
+def test_event_study_limitations_text_has_no_raw_identifiers_or_exception_names():
+    # Regression (round-4 review, MINOR-2): the limitations text used to name
+    # raw internal identifiers (family_id, engine.trial_ledger) and a Python
+    # exception class name (UnregisteredSearchFamily) verbatim inside a
+    # user-facing string with no separate `detail` field to relegate them
+    # into. Plain words only, in both languages.
+    stub = _StubLedger(registered=[ES_FAMILY])
+    payload = compose_event_study_implication(ledger=stub)
+    banned = ("family_id", "engine.trial_ledger", "UnregisteredSearchFamily",
+              "FileNotFoundError", "ImplicationContractError", "Traceback")
+    for lim in payload["limitations"]:
+        for text in (lim["en"], lim["zh"]):
+            for token in banned:
+                assert token not in text, f"{token!r} leaked into limitations text: {text!r}"
+        assert lim["zh"].strip() and lim["zh"] != lim["en"]
+
+
 def test_diagnostics_zh_detail_is_a_genuine_translation_not_a_pointer():
     payload = compose_synthetic_control_implication()
     for d in payload["diagnostics"]:
