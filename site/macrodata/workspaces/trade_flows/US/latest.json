@@ -166,44 +166,44 @@
     "deltas": [
       {
         "current_value": -88576.0,
-        "delta": null,
+        "delta": 0.0,
         "metric_id": "trade_balance_level",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": null
+        "prior_value": -88576.0
       },
       {
         "current_value": 310723.0,
-        "delta": null,
+        "delta": 0.0,
         "metric_id": "exports_level",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": null
+        "prior_value": 310723.0
       },
       {
         "current_value": 399299.0,
-        "delta": null,
+        "delta": 0.0,
         "metric_id": "imports_level",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": null
+        "prior_value": 399299.0
       },
       {
         "current_value": 0.7782,
-        "delta": null,
+        "delta": 0.0,
         "metric_id": "export_import_coverage_ratio",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": null
+        "prior_value": 0.7782
       }
     ],
     "null_reason": null,
-    "prior_effective_date": null,
-    "prior_generation_id": "trade_flows-US-1b3e1de4f2c60bbd",
+    "prior_effective_date": "2026-07-01",
+    "prior_generation_id": "trade_flows-US-b9e28b4bed2b5c3c",
     "prior_method_version": "trade_flows.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [],
     "correction_state": "none",
-    "note": "Reference period differs from the predecessor print (a new observation, not a revision of the same period); no correction asserted.",
-    "predecessor_generation_id": "trade_flows-US-1b3e1de4f2c60bbd"
+    "note": "Same reference period as the predecessor print; no tracked metric changed value (no-change republication).",
+    "predecessor_generation_id": "trade_flows-US-b9e28b4bed2b5c3c"
   },
   "drivers": {
     "balance_sheet": [
@@ -338,11 +338,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-06T04:48:12Z",
+    "built_at": "2026-09-06T21:23:24Z",
     "calculation_as_of": "2026-07-01",
-    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
-    "content_sha256": "b9e28b4bed2b5c3cd57577b8100641eb4b719a69f047281c3fe91ea89fa003af",
-    "generation_id": "trade_flows-US-b9e28b4bed2b5c3c",
+    "code_version": "41929a0479ef0e5e4a8ac34086668c738c1e480f",
+    "content_sha256": "bfae87c70950ea4be2a8fbc236bca4e1154a8aef1b43e0b86349ccc54fa69e03",
+    "generation_id": "trade_flows-US-bfae87c70950ea4b",
     "producer": "engine.market_os.macro_workspaces.trade_flows",
     "rendered_at": null
   },
@@ -368,7 +368,7 @@
       "status": "ABSENT"
     },
     "prior_state": {
-      "effective_date": null,
+      "effective_date": "2026-07-01",
       "method_version": "trade_flows.compose.v1",
       "state_id": null
     },

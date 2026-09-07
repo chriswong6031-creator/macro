@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-09-04",
-    "built": "2026-09-06T06:13:57.196639+00:00",
+    "built": "2026-09-06T23:00:11.877481+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -411,7 +411,7 @@
           "key": "macro",
           "label_en": "Macro impulse (reflation)",
           "label_zh": "宏观动能（再通胀）",
-          "value": -0.09,
+          "value": -0.1,
           "weight": 0.5,
           "state": "neutral",
           "note_en": "Rising copper/gold + breakevens = reflation = a duration headwind.",
@@ -679,9 +679,9 @@
         "asof": "2026-09-03"
       },
       "em_fx_basket": {
-        "value": 0.0,
+        "value": -0.01,
         "vel_5d_z": null,
-        "vel_20d_z": 1.287,
+        "vel_20d_z": 1.276,
         "asof": "2026-09-06"
       },
       "em_equity_breadth": {

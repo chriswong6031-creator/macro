@@ -360,10 +360,10 @@
     "deltas": [
       {
         "current_value": 56.93,
-        "delta": -0.83,
+        "delta": 0.0,
         "metric_id": "financial_conditions_level",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 57.76
+        "prior_value": 56.93
       },
       {
         "current_value": 49.67,
@@ -375,19 +375,15 @@
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "financial_conditions-US-669f7127a24a9704",
+    "prior_generation_id": "financial_conditions-US-331e372f98b005f9",
     "prior_method_version": "financial_conditions.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
-    "changed_fingerprints": [
-      "vol_regime:move_pctile:419d488b3a286bec",
-      "vol_regime:vix:9c9d5fc881291371",
-      "vol_regime:vol_regime_risk_score:9ca20098b2704b13"
-    ],
-    "correction_state": "superseded",
-    "note": "Same reference period as the predecessor print, but one or more owner-native source values changed: this print supersedes the prior one as a revision.",
-    "predecessor_generation_id": "financial_conditions-US-669f7127a24a9704"
+    "changed_fingerprints": [],
+    "correction_state": "none",
+    "note": "Same reference period as the predecessor print; no source value changed (no-change republication).",
+    "predecessor_generation_id": "financial_conditions-US-331e372f98b005f9"
   },
   "drivers": {
     "balance_sheet": [
@@ -508,11 +504,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-06T04:48:12Z",
+    "built_at": "2026-09-06T21:23:24Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
-    "content_sha256": "331e372f98b005f98f2e3567b0ab14231a94ea666b057b86ff957c2fb20d4425",
-    "generation_id": "financial_conditions-US-331e372f98b005f9",
+    "code_version": "41929a0479ef0e5e4a8ac34086668c738c1e480f",
+    "content_sha256": "ec042f91f04ab8ff590e21005d7adeebbd276436860b65130459bd8f2c663226",
+    "generation_id": "financial_conditions-US-ec042f91f04ab8ff",
     "producer": "engine.market_os.macro_workspaces.financial_conditions",
     "rendered_at": null
   },
@@ -532,7 +528,7 @@
     },
     "null_reason": null,
     "one_month_vector": {
-      "dx": -0.83,
+      "dx": 0.0,
       "dy": 0.0,
       "null_reason": null,
       "status": "PRESENT"
@@ -558,7 +554,7 @@
       "en": "Financial conditions regime",
       "zh": "金融条件体制"
     },
-    "transition_distance": 0.83
+    "transition_distance": 0.0
   },
   "implications": {
     "items": [

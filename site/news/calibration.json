@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-09-05",
-  "n_events_logged": 621,
+  "asof": "2026-09-06",
+  "n_events_logged": 623,
   "n_events_graded": 295,
   "classes": [
     {
@@ -86,7 +86,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 193,
+      "n": 194,
       "n_graded": 63,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -151,7 +151,7 @@
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 48,
+      "n": 49,
       "n_graded": 5,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -280,7 +280,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 1048,
+    "n_sampled": 1058,
     "n_graded": 0,
     "classes": []
   }

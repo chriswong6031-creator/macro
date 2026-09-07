@@ -1,7 +1,7 @@
 {
   "schema": "radar_ic.v2",
   "as_of": "2026-09-06",
-  "generated_at": "2026-09-06T07:45:45.323667+00:00",
+  "generated_at": "2026-09-06T23:54:28.520341+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
@@ -10,16 +10,16 @@
   ],
   "seed_horizon_cal_d": 91,
   "n_snapshots": 13177,
-  "n_matured": 9254,
-  "ic_all": -0.1363,
-  "ic_all_signed": -0.068,
+  "n_matured": 9265,
+  "ic_all": -0.1353,
+  "ic_all_signed": -0.0671,
   "ic_rolling_90": 0.2037,
   "by_bucket": {
     "0-40": {
-      "n": 8118,
-      "n_directional": 7916,
-      "hit_rate": 0.473,
-      "mean_fwd_ret": -0.0018
+      "n": 8129,
+      "n_directional": 7927,
+      "hit_rate": 0.474,
+      "mean_fwd_ret": -0.0021
     },
     "40-70": {
       "n": 924,
@@ -38,77 +38,77 @@
     "POSITIVE_DIVERGENCE": {
       "n": 1759,
       "dir_accuracy": 0.426,
-      "excess_vs_base": -0.029,
+      "excess_vs_base": -0.028,
       "mean_fwd_ret": -0.0132
     },
     "CONFIRMED_UP": {
       "n": 1776,
       "dir_accuracy": 0.358,
-      "excess_vs_base": -0.097,
+      "excess_vs_base": -0.096,
       "mean_fwd_ret": -0.0347
     },
     "NEGATIVE_DIVERGENCE": {
-      "n": 2913,
+      "n": 2914,
       "dir_accuracy": 0.54,
-      "excess_vs_base": -0.005,
+      "excess_vs_base": -0.006,
       "mean_fwd_ret": -0.0071
     },
     "CONFIRMED_DOWN": {
-      "n": 2594,
-      "dir_accuracy": 0.473,
-      "excess_vs_base": -0.072,
-      "mean_fwd_ret": 0.0102
+      "n": 2604,
+      "dir_accuracy": 0.475,
+      "excess_vs_base": -0.071,
+      "mean_fwd_ret": 0.0094
     }
   },
   "base_rate": {
-    "n": 9254,
-    "p_up": 0.455,
-    "mean_fwd_ret": -0.0083,
-    "median_fwd_ret": -0.0092
+    "n": 9265,
+    "p_up": 0.454,
+    "mean_fwd_ret": -0.0085,
+    "median_fwd_ret": -0.0095
   },
-  "note": "9254 matured row-observations (horizon=21d; 1787 distinct episodes). Base rate P(beat SPY)=0.455. IC_all=-0.1363 (unsigned legacy), IC_signed=-0.068. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
+  "note": "9265 matured row-observations (horizon=21d; 1788 distinct episodes). Base rate P(beat SPY)=0.454. IC_all=-0.1353 (unsigned legacy), IC_signed=-0.0671. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
   "by_horizon": {
     "21": {
-      "n_matured": 9254,
-      "ic_all": -0.1363,
-      "ic_all_signed": -0.068,
+      "n_matured": 9265,
+      "ic_all": -0.1353,
+      "ic_all_signed": -0.0671,
       "ic_rolling_90": 0.2037,
       "ic_daily_hac": {
-        "mean_ic": -0.0293,
-        "ic_vol": 0.1735,
-        "ic_ir": -0.169,
-        "ic_ir_ann": -1.095,
-        "t_hac": -0.485,
-        "p_hac": 0.6277,
+        "mean_ic": -0.0298,
+        "ic_vol": 0.1733,
+        "ic_ir": -0.172,
+        "ic_ir_ann": -1.114,
+        "t_hac": -0.494,
+        "p_hac": 0.6215,
         "hit": 0.512,
         "n": 41,
         "hac_lags": 21,
         "hac_lags_requested": 21
       },
       "ic_daily_hac_claims": {
-        "mean_ic": 0.0329,
+        "mean_ic": 0.0328,
         "ic_vol": 0.1834,
         "ic_ir": 0.179,
-        "ic_ir_ann": 1.161,
-        "t_hac": 0.626,
-        "p_hac": 0.5313,
+        "ic_ir_ann": 1.159,
+        "t_hac": 0.625,
+        "p_hac": 0.5319,
         "hit": 0.61,
         "n": 41,
         "hac_lags": 21,
         "hac_lags_requested": 21
       },
       "base_rate": {
-        "n": 9254,
-        "p_up": 0.455,
-        "mean_fwd_ret": -0.0083,
-        "median_fwd_ret": -0.0092
+        "n": 9265,
+        "p_up": 0.454,
+        "mean_fwd_ret": -0.0085,
+        "median_fwd_ret": -0.0095
       },
       "by_bucket": {
         "0-40": {
-          "n": 8118,
-          "n_directional": 7916,
-          "hit_rate": 0.473,
-          "mean_fwd_ret": -0.0018
+          "n": 8129,
+          "n_directional": 7927,
+          "hit_rate": 0.474,
+          "mean_fwd_ret": -0.0021
         },
         "40-70": {
           "n": 924,
@@ -127,26 +127,26 @@
         "POSITIVE_DIVERGENCE": {
           "n": 1759,
           "dir_accuracy": 0.426,
-          "excess_vs_base": -0.029,
+          "excess_vs_base": -0.028,
           "mean_fwd_ret": -0.0132
         },
         "CONFIRMED_UP": {
           "n": 1776,
           "dir_accuracy": 0.358,
-          "excess_vs_base": -0.097,
+          "excess_vs_base": -0.096,
           "mean_fwd_ret": -0.0347
         },
         "NEGATIVE_DIVERGENCE": {
-          "n": 2913,
+          "n": 2914,
           "dir_accuracy": 0.54,
-          "excess_vs_base": -0.005,
+          "excess_vs_base": -0.006,
           "mean_fwd_ret": -0.0071
         },
         "CONFIRMED_DOWN": {
-          "n": 2594,
-          "dir_accuracy": 0.473,
-          "excess_vs_base": -0.072,
-          "mean_fwd_ret": 0.0102
+          "n": 2604,
+          "dir_accuracy": 0.475,
+          "excess_vs_base": -0.071,
+          "mean_fwd_ret": 0.0094
         }
       },
       "by_kind": {
@@ -158,16 +158,16 @@
           "mean_fwd_ret": -0.0122
         },
         "ticker": {
-          "n": 8441,
-          "n_directional": 8229,
+          "n": 8452,
+          "n_directional": 8240,
           "n_nonclaim": 212,
           "dir_accuracy": 0.466,
-          "mean_fwd_ret": -0.0079
+          "mean_fwd_ret": -0.0082
         }
       },
       "claims": {
-        "n": 4672,
-        "n_directional": 4672,
+        "n": 4673,
+        "n_directional": 4673,
         "n_nonclaim": 0,
         "dir_accuracy": 0.497,
         "mean_fwd_ret": -0.0094,
@@ -175,21 +175,21 @@
         "excess_vs_base": -0.014
       },
       "diagonal": {
-        "n": 4370,
-        "n_directional": 4370,
+        "n": 4380,
+        "n_directional": 4380,
         "n_nonclaim": 0,
-        "dir_accuracy": 0.426,
-        "mean_fwd_ret": -0.008,
-        "base_dart": 0.508,
-        "excess_vs_base": -0.082
+        "dir_accuracy": 0.428,
+        "mean_fwd_ret": -0.0085,
+        "base_dart": 0.509,
+        "excess_vs_base": -0.081
       },
       "episodes": {
-        "n_matured": 1787,
+        "n_matured": 1788,
         "base_rate": {
-          "n": 1787,
+          "n": 1788,
           "p_up": 0.426,
-          "mean_fwd_ret": -0.0156,
-          "median_fwd_ret": -0.0149
+          "mean_fwd_ret": -0.0157,
+          "median_fwd_ret": -0.015
         },
         "claims": {
           "n": 889,
@@ -201,27 +201,27 @@
           "excess_vs_base": 0.025
         },
         "diagonal": {
-          "n": 824,
-          "n_directional": 824,
+          "n": 825,
+          "n_directional": 825,
           "n_nonclaim": 0,
           "dir_accuracy": 0.465,
-          "mean_fwd_ret": -0.0151
+          "mean_fwd_ret": -0.0153
         },
-        "ic_signed": 0.0075
+        "ic_signed": 0.0077
       },
-      "note": "9254 matured row-observations (horizon=21d; 1787 distinct episodes). Base rate P(beat SPY)=0.455. IC_all=-0.1363 (unsigned legacy), IC_signed=-0.068. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
+      "note": "9265 matured row-observations (horizon=21d; 1788 distinct episodes). Base rate P(beat SPY)=0.454. IC_all=-0.1353 (unsigned legacy), IC_signed=-0.0671. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
     },
     "63": {
-      "n_matured": 2096,
-      "ic_all": -0.3331,
-      "ic_all_signed": -0.2928,
+      "n_matured": 2105,
+      "ic_all": -0.3311,
+      "ic_all_signed": -0.2843,
       "ic_rolling_90": -0.1373,
       "ic_daily_hac": {
-        "mean_ic": -0.3034,
-        "ic_vol": 0.1522,
-        "ic_ir": -1.993,
-        "ic_ir_ann": -22.375,
-        "t_hac": -7.14,
+        "mean_ic": -0.2959,
+        "ic_vol": 0.1544,
+        "ic_ir": -1.917,
+        "ic_ir_ann": -21.517,
+        "t_hac": -6.74,
         "p_hac": 0.0,
         "hit": 0.0,
         "n": 13,
@@ -229,29 +229,29 @@
         "hac_lags_requested": 63
       },
       "ic_daily_hac_claims": {
-        "mean_ic": -0.1541,
-        "ic_vol": 0.2414,
-        "ic_ir": -0.638,
-        "ic_ir_ann": -7.167,
-        "t_hac": -3.306,
-        "p_hac": 0.0009,
+        "mean_ic": -0.1452,
+        "ic_vol": 0.2465,
+        "ic_ir": -0.589,
+        "ic_ir_ann": -6.613,
+        "t_hac": -2.924,
+        "p_hac": 0.0035,
         "hit": 0.308,
         "n": 13,
         "hac_lags": 12,
         "hac_lags_requested": 63
       },
       "base_rate": {
-        "n": 2096,
-        "p_up": 0.408,
-        "mean_fwd_ret": -0.0217,
-        "median_fwd_ret": -0.0364
+        "n": 2105,
+        "p_up": 0.407,
+        "mean_fwd_ret": -0.023,
+        "median_fwd_ret": -0.038
       },
       "by_bucket": {
         "0-40": {
-          "n": 1604,
-          "n_directional": 1604,
-          "hit_rate": 0.47,
-          "mean_fwd_ret": 0.0178
+          "n": 1613,
+          "n_directional": 1613,
+          "hit_rate": 0.471,
+          "mean_fwd_ret": 0.0159
         },
         "40-70": {
           "n": 348,
@@ -270,25 +270,25 @@
         "POSITIVE_DIVERGENCE": {
           "n": 879,
           "dir_accuracy": 0.42,
-          "excess_vs_base": 0.012,
+          "excess_vs_base": 0.013,
           "mean_fwd_ret": 0.0081
         },
         "CONFIRMED_UP": {
-          "n": 785,
-          "dir_accuracy": 0.348,
-          "excess_vs_base": -0.06,
-          "mean_fwd_ret": -0.0715
+          "n": 789,
+          "dir_accuracy": 0.346,
+          "excess_vs_base": -0.061,
+          "mean_fwd_ret": -0.0725
         },
         "NEGATIVE_DIVERGENCE": {
-          "n": 198,
-          "dir_accuracy": 0.621,
-          "excess_vs_base": 0.029,
-          "mean_fwd_ret": -0.0365
+          "n": 203,
+          "dir_accuracy": 0.631,
+          "excess_vs_base": 0.038,
+          "mean_fwd_ret": -0.0451
         },
         "CONFIRMED_DOWN": {
           "n": 234,
           "dir_accuracy": 0.406,
-          "excess_vs_base": -0.186,
+          "excess_vs_base": -0.187,
           "mean_fwd_ret": 0.0463
         }
       },
@@ -301,58 +301,58 @@
           "mean_fwd_ret": -0.0099
         },
         "ticker": {
-          "n": 1869,
-          "n_directional": 1869,
+          "n": 1878,
+          "n_directional": 1878,
           "n_nonclaim": 0,
-          "dir_accuracy": 0.416,
-          "mean_fwd_ret": -0.0231
+          "dir_accuracy": 0.417,
+          "mean_fwd_ret": -0.0246
         }
       },
       "claims": {
-        "n": 1077,
-        "n_directional": 1077,
+        "n": 1082,
+        "n_directional": 1082,
         "n_nonclaim": 0,
-        "dir_accuracy": 0.457,
-        "mean_fwd_ret": -0.0001,
+        "dir_accuracy": 0.459,
+        "mean_fwd_ret": -0.0019,
         "base_dart": 0.442,
-        "excess_vs_base": 0.015
+        "excess_vs_base": 0.017
       },
       "diagonal": {
-        "n": 1019,
-        "n_directional": 1019,
+        "n": 1023,
+        "n_directional": 1023,
         "n_nonclaim": 0,
-        "dir_accuracy": 0.361,
-        "mean_fwd_ret": -0.0444,
+        "dir_accuracy": 0.36,
+        "mean_fwd_ret": -0.0453,
         "base_dart": 0.45,
-        "excess_vs_base": -0.089
+        "excess_vs_base": -0.09
       },
       "episodes": {
-        "n_matured": 418,
+        "n_matured": 420,
         "base_rate": {
-          "n": 418,
-          "p_up": 0.392,
-          "mean_fwd_ret": -0.0317,
-          "median_fwd_ret": -0.0504
+          "n": 420,
+          "p_up": 0.39,
+          "mean_fwd_ret": -0.033,
+          "median_fwd_ret": -0.0515
         },
         "claims": {
-          "n": 217,
-          "n_directional": 217,
+          "n": 218,
+          "n_directional": 218,
           "n_nonclaim": 0,
-          "dir_accuracy": 0.479,
-          "mean_fwd_ret": -0.021,
+          "dir_accuracy": 0.482,
+          "mean_fwd_ret": -0.0226,
           "base_dart": 0.455,
-          "excess_vs_base": 0.024
+          "excess_vs_base": 0.027
         },
         "diagonal": {
-          "n": 201,
-          "n_directional": 201,
+          "n": 202,
+          "n_directional": 202,
           "n_nonclaim": 0,
-          "dir_accuracy": 0.413,
-          "mean_fwd_ret": -0.0432
+          "dir_accuracy": 0.411,
+          "mean_fwd_ret": -0.0441
         },
-        "ic_signed": -0.1534
+        "ic_signed": -0.1453
       },
-      "note": "2096 matured row-observations (horizon=63d; 418 distinct episodes). Base rate P(beat SPY)=0.408. IC_all=-0.3331 (unsigned legacy), IC_signed=-0.2928. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
+      "note": "2105 matured row-observations (horizon=63d; 420 distinct episodes). Base rate P(beat SPY)=0.407. IC_all=-0.3311 (unsigned legacy), IC_signed=-0.2843. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
     },
     "91": {
       "n_matured": 0,
@@ -429,8 +429,8 @@
     "status": "null",
     "basis": {
       "horizon": 21,
-      "t_hac": 0.626,
-      "mean_ic": 0.0329,
+      "t_hac": 0.625,
+      "mean_ic": 0.0328,
       "n_days": 41,
       "n_claim_episodes": 889
     },

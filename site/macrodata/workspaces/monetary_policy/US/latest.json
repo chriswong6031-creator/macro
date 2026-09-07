@@ -162,11 +162,11 @@
         "prior_value": 3.63
       },
       {
-        "current_value": 59.0,
-        "delta": -1.0,
+        "current_value": 61.0,
+        "delta": 2.0,
         "metric_id": "market_implied_path_12m_bp",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 60.0
+        "prior_value": 59.0
       },
       {
         "current_value": 0.41,
@@ -176,27 +176,27 @@
         "prior_value": 0.41
       },
       {
-        "current_value": 8.0,
-        "delta": -1.0,
+        "current_value": 9.0,
+        "delta": 1.0,
         "metric_id": "dots_vs_market_gap_bp",
         "note": "same method version; numeric comparison permitted",
-        "prior_value": 9.0
+        "prior_value": 8.0
       }
     ],
     "null_reason": null,
     "prior_effective_date": "2026-09-04",
-    "prior_generation_id": "monetary_policy-US-f34a17d7d958f0ae",
+    "prior_generation_id": "monetary_policy-US-b30a0321e2f9e070",
     "prior_method_version": "monetary_policy.compose.v1",
     "status": "PRESENT"
   },
   "corrections": {
     "changed_fingerprints": [
-      "dots_vs_market_gap_bp:dots_vs_market_gap_bp:bca96bf0170578ec",
-      "market_implied_path_12m_bp:market_implied_path_12m_bp:16ee40b85cfdba05"
+      "dots_vs_market_gap_bp:dots_vs_market_gap_bp:5046836315f14c40",
+      "market_implied_path_12m_bp:market_implied_path_12m_bp:91a6a7388444f6fd"
     ],
     "correction_state": "superseded",
     "note": "Same reference period as the predecessor print, but one or more owner-native metrics changed value: this print supersedes the prior one as a revision.",
-    "predecessor_generation_id": "monetary_policy-US-f34a17d7d958f0ae"
+    "predecessor_generation_id": "monetary_policy-US-b30a0321e2f9e070"
   },
   "drivers": {
     "balance_sheet": [
@@ -261,7 +261,7 @@
       {
         "coverage_state": "PRESENT",
         "driver_id": "market_implied_path_12m_bp",
-        "impact_magnitude": 59.0,
+        "impact_magnitude": 61.0,
         "impact_sign": 1,
         "label": {
           "en": "Market-implied 12m path",
@@ -270,12 +270,12 @@
         "note": "positive = market prices net hikes over 12m; negative = net cuts; a market PRICE, not a forecast",
         "owner_field": "board.rate_path_row.implied_bp_12m",
         "unit": "bp",
-        "value": 59.0
+        "value": 61.0
       },
       {
         "coverage_state": "PRESENT",
         "driver_id": "dots_vs_market_gap_bp",
-        "impact_magnitude": 8.0,
+        "impact_magnitude": 9.0,
         "impact_sign": 1,
         "label": {
           "en": "Dots vs market gap",
@@ -284,7 +284,7 @@
         "note": "positive = market prices a higher rate than the FOMC SEP median dot",
         "owner_field": "board.rate_path_row.gap.gap_bp",
         "unit": "bp",
-        "value": 8.0
+        "value": 9.0
       },
       {
         "coverage_state": "PRESENT",
@@ -317,11 +317,11 @@
     ]
   },
   "generation": {
-    "built_at": "2026-09-06T04:48:12Z",
+    "built_at": "2026-09-06T21:23:24Z",
     "calculation_as_of": "2026-09-04",
-    "code_version": "08c0f88a549d409155d0359c535044510f56dbf2",
-    "content_sha256": "b30a0321e2f9e070d23e234dde8a8583a62ed06c2ef2ccf45046807bf413054f",
-    "generation_id": "monetary_policy-US-b30a0321e2f9e070",
+    "code_version": "41929a0479ef0e5e4a8ac34086668c738c1e480f",
+    "content_sha256": "22a1cf243e1349082df716042119515db7f6eb203f8cc8a4efa500f53a906aee",
+    "generation_id": "monetary_policy-US-22a1cf243e134908",
     "producer": "engine.market_os.macro_workspaces.monetary_policy",
     "rendered_at": null
   },
@@ -413,8 +413,8 @@
         "horizon": "months",
         "implication_id": "dots_vs_market_read",
         "text": {
-          "en": "At end-2026 the market implies 3.88% vs the Fed's 3.8% median dot (8bp - market ≈ the Fed). This is a market PRICE (futures-implied), not a Fed forecast or stated intent.",
-          "zh": "在end-2026，市场隐含3.88%，对比美联储3.8%的中位点（8个基点 — 市场与美联储基本一致）。这是市场价格（期货隐含），并非美联储预测或既定意图。"
+          "en": "At end-2026 the market implies 3.89% vs the Fed's 3.8% median dot (9bp - market ≈ the Fed). This is a market PRICE (futures-implied), not a Fed forecast or stated intent.",
+          "zh": "在end-2026，市场隐含3.89%，对比美联储3.8%的中位点（9个基点 — 市场与美联储基本一致）。这是市场价格（期货隐含），并非美联储预测或既定意图。"
         },
         "trace_ref": "data/rates_command/latest.json#board.rate_path_row.gap"
       }
@@ -611,7 +611,7 @@
           "value": null
         },
         "unit": "bp",
-        "value": 59.0,
+        "value": 61.0,
         "value_type": "basis_points"
       },
       {
@@ -647,7 +647,7 @@
           "value": null
         },
         "unit": "percent",
-        "value": 4.05,
+        "value": 4.06,
         "value_type": "percent"
       },
       {
@@ -683,7 +683,7 @@
           "value": null
         },
         "unit": "percent",
-        "value": 4.22,
+        "value": 4.24,
         "value_type": "percent"
       },
       {
@@ -755,7 +755,7 @@
           "value": null
         },
         "unit": "bp",
-        "value": 8.0,
+        "value": 9.0,
         "value_type": "basis_points"
       },
       {
@@ -1187,7 +1187,7 @@
           "value": null
         },
         "unit": "days",
-        "value": 11.0,
+        "value": 10.0,
         "value_type": "count"
       },
       {
@@ -1223,7 +1223,7 @@
           "value": null
         },
         "unit": "days",
-        "value": 5.0,
+        "value": 4.0,
         "value_type": "count"
       },
       {
@@ -1259,7 +1259,7 @@
           "value": null
         },
         "unit": "days",
-        "value": 13.0,
+        "value": 12.0,
         "value_type": "count"
       }
     ]

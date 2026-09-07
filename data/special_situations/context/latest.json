@@ -1,16 +1,16 @@
 {
   "schema": "special_sits_context.v1",
   "asof": "2026-09-06",
-  "built": "2026-09-06T06:21:23Z",
+  "built": "2026-09-06T23:06:48Z",
   "is_context_only": true,
   "disclaimer": "Context only — event tracking + display-tier setup ranking, never a signal or sizing input.",
   "counts": {
-    "total": 1370,
-    "new_today": 30,
+    "total": 1386,
+    "new_today": 60,
     "grade_a": 0,
     "grade_b": 2,
     "with_arb": 23,
-    "cross_border": 547
+    "cross_border": 551
   },
   "top_setups": [
     {
@@ -50,6 +50,44 @@
       "why_zh": [
         "买点设置已触发",
         "此类事件历史表现强",
+        "EDGAR披露已确认"
+      ]
+    },
+    {
+      "ticker": "PAGS",
+      "company": "PagSeguro Digital Ltd.",
+      "category": "Capital Returns",
+      "stage": "announced",
+      "grade": "C",
+      "score": 45.0,
+      "tier": "T2",
+      "mc_musd": null,
+      "date_filed": "2026-09-01",
+      "why": [
+        "Buy setup live",
+        "EDGAR filing confirmed"
+      ],
+      "why_zh": [
+        "买点设置已触发",
+        "EDGAR披露已确认"
+      ]
+    },
+    {
+      "ticker": "GPRO",
+      "company": "GoPro, Inc.",
+      "category": "Acquisitions",
+      "stage": "announced",
+      "grade": "C",
+      "score": 45.0,
+      "tier": "T2",
+      "mc_musd": null,
+      "date_filed": "2026-09-01",
+      "why": [
+        "Buy setup live",
+        "EDGAR filing confirmed"
+      ],
+      "why_zh": [
+        "买点设置已触发",
         "EDGAR披露已确认"
       ]
     },
@@ -170,56 +208,44 @@
         "买点设置已触发",
         "EDGAR披露已确认"
       ]
-    },
-    {
-      "ticker": "BBUC",
-      "company": "Brookfield Business Corporation",
-      "category": "Divestitures",
-      "stage": "",
-      "grade": "C",
-      "score": 42.0,
-      "tier": null,
-      "mc_musd": 9700.0,
-      "date_filed": "2026-06-21",
-      "why": [
-        "Deeply oversold (weeks)",
-        "Strong history for this event type"
-      ],
-      "why_zh": [
-        "周线深度超卖",
-        "此类事件历史表现强"
-      ]
-    },
-    {
-      "ticker": "AA",
-      "company": "Alcoa Corp",
-      "category": "Acquisitions",
-      "stage": "registered",
-      "grade": "C",
-      "score": 41.0,
-      "tier": null,
-      "mc_musd": 13147.22754898993,
-      "date_filed": "2026-09-01",
-      "why": [
-        "Deeply oversold (weeks)",
-        "Strong history for this event type",
-        "EDGAR filing confirmed"
-      ],
-      "why_zh": [
-        "周线深度超卖",
-        "此类事件历史表现强",
-        "EDGAR披露已确认"
-      ]
     }
   ],
   "changes": {
     "items": [
       {
         "kind": "new",
+        "ticker": "OMC",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
         "ticker": "PCG",
         "category": "Strategic Reviews",
         "from": null,
         "to": "initiated"
+      },
+      {
+        "kind": "new",
+        "ticker": "BTGO",
+        "category": "Strategic Reviews",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "JFB",
+        "category": "Deal Terminations",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "DIN",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
       },
       {
         "kind": "new",
@@ -356,6 +382,55 @@
       },
       {
         "kind": "new",
+        "ticker": "TKC",
+        "category": "Strategic Reviews",
+        "from": null,
+        "to": "initiated"
+      },
+      {
+        "kind": "new",
+        "ticker": "BAFN",
+        "category": "Rights Offerings",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "CABR",
+        "category": "Rights Offerings",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
+        "ticker": "VODPF",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "LGL",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "SHPH",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ROOT",
+        "category": "Issuer Tenders",
+        "from": null,
+        "to": "live"
+      },
+      {
+        "kind": "new",
         "ticker": "MEOH",
         "category": "Divestitures",
         "from": null,
@@ -370,10 +445,31 @@
       },
       {
         "kind": "new",
+        "ticker": "KDP",
+        "category": "Divestitures",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
         "ticker": "NRRWF",
         "category": "Delistings",
         "from": null,
         "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "SNAL",
+        "category": "Delistings",
+        "from": null,
+        "to": "notice"
+      },
+      {
+        "kind": "new",
+        "ticker": "CUBWU",
+        "category": "Deal Terminations",
+        "from": null,
+        "to": "de-SPAC"
       },
       {
         "kind": "new",
@@ -392,6 +488,34 @@
       {
         "kind": "new",
         "ticker": "MZHOF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "grade_up",
+        "ticker": "PAGS",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "C"
+      },
+      {
+        "kind": "new",
+        "ticker": "RLXXF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "RYAOF",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "RYDAF",
         "category": "Capital Returns",
         "from": null,
         "to": "announced"
@@ -432,6 +556,97 @@
         "to": "announced"
       },
       {
+        "kind": "new",
+        "ticker": "RDHL",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "ASRMF",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "TCKRF",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "TTE",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "BMRN",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "GPRO",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "HOS",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "KFY",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "KUST",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "RHP",
+        "category": "Acquisitions",
+        "from": null,
+        "to": "closed"
+      },
+      {
+        "kind": "new",
+        "ticker": "STRD",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "AQNB",
+        "category": "Divestitures",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
+        "ticker": "SLFQF",
+        "category": "Other",
+        "from": null,
+        "to": "announced"
+      },
+      {
         "kind": "grade_up",
         "ticker": "BBUC",
         "category": "Divestitures",
@@ -439,7 +654,7 @@
         "to": "C"
       }
     ],
-    "n": 32
+    "n": 63
   },
   "prev_state": {
     "asof": "2026-09-05",
@@ -5851,8 +6066,16 @@
     }
   },
   "_current_by_key": {
+    "OMC|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
     "PCG|Strategic Reviews": {
       "stage": "initiated",
+      "grade": null
+    },
+    "BTGO|Strategic Reviews": {
+      "stage": "announced",
       "grade": null
     },
     "VRXAW|Strategic Reviews": {
@@ -5971,6 +6194,10 @@
       "stage": "announced",
       "grade": null
     },
+    "JFB|Deal Terminations": {
+      "stage": "announced",
+      "grade": null
+    },
     "PLOW|Capital Returns": {
       "stage": "announced",
       "grade": null
@@ -5980,6 +6207,14 @@
       "grade": null
     },
     "FIVE|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "DIN|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
+    "DINO|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
@@ -6109,10 +6344,6 @@
     },
     "TNMWF|Other": {
       "stage": "announced",
-      "grade": null
-    },
-    "POLEW|Other": {
-      "stage": "de-SPAC",
       "grade": null
     },
     "BRC|Other": {
@@ -6252,10 +6483,6 @@
       "grade": null
     },
     "SJ|Acquisitions": {
-      "stage": "announced",
-      "grade": null
-    },
-    "RYDAF|Acquisitions": {
       "stage": "announced",
       "grade": null
     },
@@ -6551,28 +6778,40 @@
       "stage": "target-response",
       "grade": null
     },
+    "TKC|Strategic Reviews": {
+      "stage": "initiated",
+      "grade": null
+    },
     "ROYL|Strategic Reviews": {
       "stage": "initiated",
       "grade": null
     },
-    "NVACW|Spin-Offs": {
-      "stage": "closed",
+    "BAFN|Rights Offerings": {
+      "stage": "live",
       "grade": null
     },
-    "POLEW|SPACs": {
-      "stage": "de-SPAC",
+    "CABR|Rights Offerings": {
+      "stage": "live",
       "grade": null
     },
-    "JONEU|SPACs": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "CUBWU|SPACs": {
-      "stage": "de-SPAC",
-      "grade": null
-    },
-    "YDKG|Restructuring": {
+    "VODPF|Other": {
       "stage": "announced",
+      "grade": null
+    },
+    "POLEW|Other": {
+      "stage": "de-SPAC",
+      "grade": null
+    },
+    "LGL|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "SHPH|Other": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ROOT|Issuer Tenders": {
+      "stage": "live",
       "grade": null
     },
     "NFJ|Issuer Tenders": {
@@ -6595,8 +6834,8 @@
       "stage": "announced",
       "grade": null
     },
-    "QMCO|Divestitures": {
-      "stage": "announced",
+    "KDP|Divestitures": {
+      "stage": "closed",
       "grade": null
     },
     "BXBL|Delistings": {
@@ -6631,6 +6870,10 @@
       "stage": "notice",
       "grade": null
     },
+    "SNAL|Delistings": {
+      "stage": "notice",
+      "grade": null
+    },
     "USGO|Delistings": {
       "stage": "notice",
       "grade": null
@@ -6649,6 +6892,10 @@
     },
     "LNTO|Deal Terminations": {
       "stage": "announced",
+      "grade": null
+    },
+    "CUBWU|Deal Terminations": {
+      "stage": "de-SPAC",
       "grade": null
     },
     "MIR|Capital Returns": {
@@ -6689,17 +6936,17 @@
     },
     "PAGS|Capital Returns": {
       "stage": "announced",
-      "grade": null
+      "grade": "C"
     },
-    "RDGT|Capital Returns": {
+    "RLXXF|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
-    "TCKRF|Capital Returns": {
+    "RYAOF|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
-    "INDP|Capital Returns": {
+    "RYDAF|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
@@ -6727,19 +6974,55 @@
       "stage": "announced",
       "grade": null
     },
+    "RDHL|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "ASRMF|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "RYDAF|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "TCKRF|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
+    "TTE|Acquisitions": {
+      "stage": "announced",
+      "grade": null
+    },
     "BANR|Acquisitions": {
       "stage": "announced",
+      "grade": null
+    },
+    "BMRN|Acquisitions": {
+      "stage": "closed",
       "grade": null
     },
     "FGRS|Acquisitions": {
       "stage": "closed",
       "grade": null
     },
-    "HLX|Acquisitions": {
+    "GPRO|Acquisitions": {
+      "stage": "announced",
+      "grade": "C"
+    },
+    "HOS|Acquisitions": {
       "stage": "closed",
       "grade": null
     },
-    "SHPH|Acquisitions": {
+    "KFY|Acquisitions": {
+      "stage": "closed",
+      "grade": null
+    },
+    "KUST|Acquisitions": {
+      "stage": "closed",
+      "grade": null
+    },
+    "RHP|Acquisitions": {
       "stage": "closed",
       "grade": null
     },
@@ -6939,7 +7222,7 @@
       "stage": "announced",
       "grade": null
     },
-    "STRK|Capital Returns": {
+    "STRD|Capital Returns": {
       "stage": "announced",
       "grade": null
     },
@@ -7043,7 +7326,7 @@
       "stage": "live",
       "grade": null
     },
-    "AGQPF|Divestitures": {
+    "AQNB|Divestitures": {
       "stage": "announced",
       "grade": null
     },
@@ -7719,10 +8002,6 @@
       "stage": "announced",
       "grade": null
     },
-    "DINO|Capital Returns": {
-      "stage": "announced",
-      "grade": null
-    },
     "HNVR|Capital Returns": {
       "stage": "announced",
       "grade": null
@@ -7823,7 +8102,7 @@
       "stage": "announced",
       "grade": null
     },
-    "SUNFF|Other": {
+    "SLFQF|Other": {
       "stage": "announced",
       "grade": null
     },
@@ -11337,8 +11616,8 @@
       "ticker": "LGMK",
       "company": "LogicMark, Inc.",
       "gross_spread_pct": 64.57,
-      "annualized_pct": 144055.1,
-      "days_to_close": 25
+      "annualized_pct": 195085.7,
+      "days_to_close": 24
     },
     {
       "ticker": "SMTI",

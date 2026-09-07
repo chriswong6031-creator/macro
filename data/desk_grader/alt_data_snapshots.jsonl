@@ -3243,3 +3243,7 @@
 {"date":"2026-09-06","ticker":"SNOW","departed":true,"left_desk":"2026-09-06","last_rank":21,"last_score":36}
 {"date":"2026-09-06","ticker":"TRV","departed":true,"left_desk":"2026-09-06","last_rank":23,"last_score":34}
 {"date":"2026-09-06","ticker":"USAR","departed":true,"left_desk":"2026-09-06","last_rank":null,"last_score":17}
+{"date":"2026-09-06","ticker":"AXP","rank":20,"score":36,"lean":1,"broken":false}
+{"date":"2026-09-06","ticker":"CHTR","rank":24,"score":32,"lean":1,"broken":false}
+{"date":"2026-09-06","ticker":"INTC","rank":null,"score":9,"lean":1,"broken":true}
+{"date":"2026-09-06","ticker":"HIMS","rank":null,"score":9,"lean":1,"broken":true}

@@ -1,29 +1,29 @@
 {
   "schema": "subsector_rotation.track_record.v1",
   "as_of": "2026-09-04",
-  "generated_at": "2026-09-06T04:52:05.359591+00:00",
+  "generated_at": "2026-09-06T21:27:28.607395+00:00",
   "is_context_only": true,
   "n_snapshots": 9137,
   "n_days": 34,
   "horizons": {
     "5": {
       "n_matured": 8192,
-      "score_ic": 0.0017,
-      "score_ic_t_hac": 0.025,
-      "score_ic_t_gate": 0.025,
-      "score_ic_t_iid": 0.027,
+      "score_ic": 0.0015,
+      "score_ic_t_hac": 0.022,
+      "score_ic_t_gate": 0.022,
+      "score_ic_t_iid": 0.024,
       "hac_anticonservative": false,
       "ic_span_days": 63,
       "indep_windows": 9.0,
       "indep_windows_required": 6.0,
       "score_ic_detail": {
-        "mean_ic": 0.0017,
-        "ic_vol": 0.3461,
-        "ic_ir": 0.005,
-        "ic_ir_ann": 0.015,
-        "t_hac": 0.025,
-        "p_hac": 0.9802,
-        "hit": 0.484,
+        "mean_ic": 0.0015,
+        "ic_vol": 0.346,
+        "ic_ir": 0.004,
+        "ic_ir_ann": 0.014,
+        "t_hac": 0.022,
+        "p_hac": 0.9824,
+        "hit": 0.452,
         "n": 31,
         "hac_lags": 5,
         "hac_lags_requested": 5,
@@ -51,8 +51,8 @@
       },
       "v2": {
         "n_matured": 2841,
-        "score_ic": -0.0247,
-        "score_ic_t_hac": -0.465,
+        "score_ic": -0.0253,
+        "score_ic_t_hac": -0.48,
         "by_stage": {
           "emerging": {
             "n": 322,
@@ -75,8 +75,8 @@
     "10": {
       "n_matured": 7633,
       "score_ic": 0.0131,
-      "score_ic_t_hac": 0.136,
-      "score_ic_t_gate": 0.136,
+      "score_ic_t_hac": 0.135,
+      "score_ic_t_gate": 0.135,
       "score_ic_t_iid": 0.236,
       "hac_anticonservative": false,
       "ic_span_days": 60,
@@ -86,9 +86,9 @@
         "mean_ic": 0.0131,
         "ic_vol": 0.2984,
         "ic_ir": 0.044,
-        "ic_ir_ann": 0.197,
-        "t_hac": 0.136,
-        "p_hac": 0.892,
+        "ic_ir_ann": 0.196,
+        "t_hac": 0.135,
+        "p_hac": 0.8925,
         "hit": 0.448,
         "n": 29,
         "hac_lags": 10,
@@ -117,8 +117,8 @@
       },
       "v2": {
         "n_matured": 2282,
-        "score_ic": -0.0964,
-        "score_ic_t_hac": -2.433,
+        "score_ic": -0.0967,
+        "score_ic_t_hac": -2.441,
         "by_stage": {
           "emerging": {
             "n": 254,
@@ -140,21 +140,21 @@
     },
     "21": {
       "n_matured": 6110,
-      "score_ic": 0.0649,
-      "score_ic_t_hac": 0.67,
-      "score_ic_t_gate": 0.67,
-      "score_ic_t_iid": 0.943,
+      "score_ic": 0.0652,
+      "score_ic_t_hac": 0.674,
+      "score_ic_t_gate": 0.674,
+      "score_ic_t_iid": 0.948,
       "hac_anticonservative": false,
       "ic_span_days": 48,
       "indep_windows": 1.63,
       "indep_windows_required": 6.0,
       "score_ic_detail": {
-        "mean_ic": 0.0649,
-        "ic_vol": 0.3301,
-        "ic_ir": 0.197,
-        "ic_ir_ann": 1.275,
-        "t_hac": 0.67,
-        "p_hac": 0.5029,
+        "mean_ic": 0.0652,
+        "ic_vol": 0.3299,
+        "ic_ir": 0.198,
+        "ic_ir_ann": 1.281,
+        "t_hac": 0.674,
+        "p_hac": 0.5006,
         "hit": 0.478,
         "n": 23,
         "hac_lags": 21,
@@ -193,7 +193,7 @@
           },
           "neutral": {
             "n": 602,
-            "mean_fwd_rel": 0.0042,
+            "mean_fwd_rel": 0.0041,
             "hit_rate": null
           },
           "fading": {
@@ -229,7 +229,7 @@
         },
         "neutral": {
           "n": 1121,
-          "mean_fwd_rel": 0.0148,
+          "mean_fwd_rel": 0.0147,
           "hit_rate": null
         },
         "fading": {
@@ -337,28 +337,28 @@
       "5": {
         "n": 8192,
         "n_v2": 2841,
-        "ic": 0.0017,
-        "ic_v2": -0.0247,
-        "gap": -0.0264,
-        "t_hac": 0.025,
-        "t_hac_v2": -0.465
+        "ic": 0.0015,
+        "ic_v2": -0.0253,
+        "gap": -0.0268,
+        "t_hac": 0.022,
+        "t_hac_v2": -0.48
       },
       "10": {
         "n": 7633,
         "n_v2": 2282,
         "ic": 0.0131,
-        "ic_v2": -0.0964,
-        "gap": -0.1095,
-        "t_hac": 0.136,
-        "t_hac_v2": -2.433
+        "ic_v2": -0.0967,
+        "gap": -0.1098,
+        "t_hac": 0.135,
+        "t_hac_v2": -2.441
       },
       "21": {
         "n": 6110,
         "n_v2": 760,
-        "ic": 0.0649,
+        "ic": 0.0652,
         "ic_v2": null,
         "gap": null,
-        "t_hac": 0.67,
+        "t_hac": 0.674,
         "t_hac_v2": null
       },
       "63": {

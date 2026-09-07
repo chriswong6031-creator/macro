@@ -4837,3 +4837,4 @@
 {"date": "2026-09-04", "ticker": "KLIC", "score": 14.0, "percentile": 0.5685483870967742, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
 {"date": "2026-09-04", "ticker": "PWR", "score": 10.0, "percentile": 0.4112903225806452, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
 {"date": "2026-09-04", "ticker": "FICO", "score": 0.0, "percentile": 0.06854838709677419, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-09-04", "ticker": "GME", "score": 14.0, "percentile": 0.568, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}

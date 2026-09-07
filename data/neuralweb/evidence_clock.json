@@ -1,20 +1,20 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-09-06",
-  "generated_utc": "2026-09-06T08:02:13Z",
+  "as_of": "2026-09-07",
+  "generated_utc": "2026-09-07T00:14:44Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 315,
     "by_state": {
       "overdue": 15,
-      "due": 10,
+      "due": 11,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 286
+      "accruing": 285
     },
     "n_acknowledged": 0,
     "top_due": {
@@ -22,7 +22,7 @@
       "due_at": "2026-06-22",
       "owner_program": "qualitative-intelligence"
     },
-    "morning_line": "25 due/overdue, 1 missing, 286 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
+    "morning_line": "26 due/overdue, 1 missing, 285 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
   },
   "rows": [
     {
@@ -133,7 +133,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3514,
+        "n_open": 3584,
         "n_past_check_by": 2719
       },
       "allowed_actions": [
@@ -181,7 +181,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3514,
+        "n_open": 3584,
         "n_past_check_by": 2719
       },
       "allowed_actions": [
@@ -229,7 +229,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 29298,
+        "n_open": 29672,
         "n_past_check_by": 20280
       },
       "allowed_actions": [
@@ -277,7 +277,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 29298,
+        "n_open": 29672,
         "n_past_check_by": 20280
       },
       "allowed_actions": [
@@ -418,7 +418,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 179,
-        "n_past_check_by": 165
+        "n_past_check_by": 166
       },
       "allowed_actions": [
         "inspect",
@@ -465,7 +465,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 4288,
+        "n_open": 4348,
         "n_past_check_by": 2694
       },
       "allowed_actions": [
@@ -577,7 +577,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1336,
+        "n_open": 1345,
         "n_past_check_by": 423
       },
       "allowed_actions": [
@@ -609,7 +609,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 342,
+        "n_open": 345,
         "n_past_check_by": 311
       },
       "allowed_actions": [
@@ -856,13 +856,45 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:nwci-board-cells-powered",
+      "source_system": "experiments",
+      "subject_id": "nwci-board-cells-powered",
+      "subject_type": "infrastructure_check",
+      "owner_program": "neural-web",
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-07",
+      "as_of": "2026-07-08",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "see masterplan section 4",
+        "cadence": "one-time",
+        "status": "registered",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "rule_experiments:disp_gate_1",
       "source_system": "rule_experiments",
       "subject_id": "disp_gate_1",
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-09-06",
+      "due_at": "2026-09-07",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -894,7 +926,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-09-06",
+      "due_at": "2026-09-07",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -926,7 +958,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-09-06",
+      "due_at": "2026-09-07",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -958,7 +990,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-09-06",
+      "due_at": "2026-09-07",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -1114,8 +1146,8 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 86288,
-        "n_with_falsifier": 760,
+        "n_claims": 87252,
+        "n_with_falsifier": 773,
         "falsifier_coverage": "0.9%",
         "blocking_reason": "falsifier coverage 0.9%; not a promotion-grade substrate"
       },
@@ -1131,37 +1163,6 @@
       "evidence_refs": [
         "data/qledger/claims.jsonl"
       ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:nwci-board-cells-powered",
-      "source_system": "experiments",
-      "subject_id": "nwci-board-cells-powered",
-      "subject_type": "infrastructure_check",
-      "owner_program": "neural-web",
-      "clock_type": "come_back_on",
-      "due_at": "2026-09-07",
-      "as_of": "2026-07-08",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "see masterplan section 4",
-        "cadence": "one-time",
-        "status": "registered"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -9612,7 +9613,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 20,
+        "n_open": 23,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9644,7 +9645,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 8,
+        "n_open": 9,
         "n_past_check_by": 0
       },
       "allowed_actions": [
