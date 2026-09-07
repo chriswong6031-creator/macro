@@ -2,9 +2,18 @@
 
 Pure projection over the EXISTING tripwire latch machine
 (engine/falsifier_tripwires.py) -- no new analysis lifecycle, no scoring, no send.
-Reads the committed data/cycle_ontology/{falsifiers,tripwire_state}.json produced by
-the render lane (.github/workflows/render.yml:946 -> scripts/build_cycle.py:311-321),
-joins them to active Supabase Thesis Objects BY SUBJECT, and enqueues one
+
+Provenance of the two committed files this module reads (round-3 review MINOR-2:
+the prior docstring wrongly claimed BOTH files are render-produced -- measured
+against the actual code, only one is):
+  - data/cycle_ontology/falsifiers.json is AUTHORED input -- "the compiled DSL
+    registry" itself (engine/falsifier_tripwires.py:5). It is NOT produced by
+    this repo's render lane; it is read by it.
+  - data/cycle_ontology/tripwire_state.json IS produced by the render lane: it
+    is the persisted latch state written by
+    `falsifier_tripwires.evaluate_and_persist()`, called from
+    `.github/workflows/render.yml:946` -> `scripts/build_cycle.py:311-321`.
+This module joins both to active Supabase Thesis Objects BY SUBJECT, and enqueues one
 public.alert_outbox row per not-yet-notified FIRED window. Delivery belongs to F08
 (scripts/drain_alert_outbox.py). Notification latency is <= one nightly cycle after the
 render that latched the fire. human_research_only: informational; no trading authority,
@@ -46,6 +55,18 @@ backing a thesis-condition fire, so the conceptual synthetic identity
 is rendered through `uuid5` rather than stored as the literal string, which the
 `uuid` column would reject -- see `synthetic_alert_id()`.
 
+Glance-tier subject display (META-CEO RULING M3, round-3 review BLOCKER 1): the
+committed falsifiers.json corpus carries no human `label` field on any entry
+today. Title-casing the raw internal cycle slug (e.g. 'spx' -> 'Spx', 'pgms' ->
+'Pgms', 'em-equities' -> 'Em Equities') is NOT a genuine plain-language label --
+it is still the internal slug/abbreviation, merely reformatted, and is exactly
+the class of untranslated engine jargon the plain-language law bans from the
+glance tier. `_glance_subject()` therefore uses a window's `label` field only
+when the corpus actually supplies one; a TICKER symbol (a real, universally-
+shown market identifier) is always safe and is used directly; a CYCLE-scope
+window with no `label` falls back to a fully-translated generic sentence that
+never names the cycle at all, in both EN and ZH.
+
 Disclosure (META-CEO RULING M1): terminal's alerts_engine.py guards its own
 per-position fires with a "guarded one-shot disarm" PATCH against the fired alert
 row (Freeze `research/MARKET_ONTOLOGY_F08_ARCHITECTURE_FREEZE_2026-09-05.md:60`).
@@ -67,7 +88,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 import urllib.request
 import urllib.error
 import uuid as _uuid_mod
@@ -145,6 +165,12 @@ class MonitorResult:
     unmappable_n: int
     run_id: str
     planned_n: int = 0
+    # A window that fired BEFORE the thesis existed is pre-existing history,
+    # not a new transition (_not_stale), and is suppressed from enqueue --
+    # but a run that suppressed N such windows must not be byte-identical in
+    # its log line to a run that saw nothing at all (round-3 review MINOR-1:
+    # MonitorPlan.stale_n was computed then silently discarded).
+    stale_n: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -311,15 +337,38 @@ def user_condition_text(falsifiers: Any) -> str:
     return "; ".join(str(f) for f in falsifiers if f)
 
 
-def _display_for(window: dict, subject: tuple[str, str]) -> str:
-    """A human-readable label -- never the raw internal slug (house law: no raw
-    slugs in user-facing text). Ticker subjects display the ticker itself;
-    cycle subjects humanize the slug ('long-bonds' -> 'Long Bonds')."""
+def _glance_subject(window: dict, subject: tuple[str, str]) -> str | None:
+    """The safe glance-tier subject label, or None when no safe label exists.
+
+    META-CEO RULING M3 else-branch (round-3 review BLOCKER 1): a humanized/
+    title-cased form of the raw internal cycle slug ('long_bonds' ->
+    'Long Bonds') is STILL the internal slug -- it is not a genuine plain-
+    language label just because the underscores were swapped for spaces and
+    the words capitalized. The real committed corpus carries no `label` field
+    today, so every cycle-scope window falls through to None (caller uses the
+    generic fallback sentence). A TICKER symbol is a real, universally-shown
+    market identifier (not an internal abbreviation) and is always safe to
+    use directly. A future corpus `label` field wins over both when present.
+    """
+    label = window.get("label")
+    if label:
+        return str(label).strip()
     kind, norm = subject
     if kind == "ticker":
         return norm
-    slug = window.get("cycle") or norm
-    return re.sub(r"[_\-]+", " ", str(slug)).strip().title()
+    return None
+
+
+def _close_sentence(text: str) -> str:
+    """Append a terminal period only when `text` doesn't already end with one
+    (round-3 review MINOR-4): the user's byte-verbatim condition text may
+    already end in '.'/'!'/'?', and blindly appending another produced a
+    double period ('...decisively..') in the composed glance sentence. This
+    never mutates the stored `condition_plain` field itself -- only the
+    derived summary sentence's closing punctuation."""
+    if text and text[-1] in ".!?":
+        return text
+    return f"{text}."
 
 
 def compose_payload(
@@ -336,31 +385,39 @@ def compose_payload(
     title = (thesis.get("title") or "").strip() or "your thesis"
     condition = user_condition_text(thesis.get("falsifiers"))
     has_condition = bool(condition)
-    display = _display_for(window, subject)
+    display = _glance_subject(window, subject)
     kind, _norm = subject
     evidence_url = f"{evidence_base.rstrip('/')}/cycle.html"
     engine_window_plain = window.get("claim", "") or ""
     engine_window_plain_zh = window.get("claim_zh", "") or ""
 
-    subject_line = f"A window we watch for {display} has closed"
-    subject_line_zh = f"你关注的“{display}”窗口已关闭"
+    if display:
+        subject_line = f"A window we watch for {display} has closed"
+        subject_line_zh = f"你关注的“{display}”窗口已关闭"
+        closed_prefix = f"A window we watch for {display} has closed."
+        closed_prefix_zh = f"你关注的“{display}”窗口已关闭。"
+    else:
+        # META-CEO RULING M3 else-branch: no safe human label exists for this
+        # window's subject (a cycle-scope window without a corpus `label`) --
+        # fall back to a fully-translated generic sentence that never names
+        # the raw/humanized internal slug, in either language.
+        subject_line = "A market condition we watch for your thesis has changed"
+        subject_line_zh = "你关注的一项市场条件已发生变化"
+        closed_prefix = "A market condition we watch for your thesis has changed."
+        closed_prefix_zh = "你关注的一项市场条件已发生变化。"
 
     if has_condition:
         summary_plain = (
-            f'A window we watch for {display} has closed. Your thesis "{title}" '
-            f"lists: {condition}."
+            f'{closed_prefix} Your thesis "{title}" lists: {_close_sentence(condition)}'
         )
         summary_plain_zh = (
-            f"你关注的“{display}”窗口已关闭。你的论点《{title}》列出的条件："
+            f"{closed_prefix_zh}你的论点《{title}》列出的条件："
             f"{condition}{TRANSLATION_PENDING_ZH_MARKER}"
         )
         condition_plain_zh = f"{condition}{TRANSLATION_PENDING_ZH_MARKER}"
     else:
-        summary_plain = (
-            f"A window we watch for {display} has closed. Your thesis lists no "
-            f"conditions yet."
-        )
-        summary_plain_zh = f"你关注的“{display}”窗口已关闭。你的论点尚未列出任何条件。"
+        summary_plain = f"{closed_prefix} Your thesis lists no conditions yet."
+        summary_plain_zh = f"{closed_prefix_zh}你的论点尚未列出任何条件。"
         condition_plain_zh = ""
 
     return {
@@ -691,6 +748,7 @@ def run(
             duplicate_n=0,
             no_coverage_n=plan.no_coverage_n,
             unmappable_n=plan.unmappable_n,
+            stale_n=plan.stale_n,
             run_id=run_id,
         )
     existing_ids = {r["fire_event_id"] for r in (existing_read.rows or [])}
@@ -712,6 +770,7 @@ def run(
             duplicate_n=duplicate_n,
             no_coverage_n=plan.no_coverage_n,
             unmappable_n=plan.unmappable_n,
+            stale_n=plan.stale_n,
             run_id=run_id,
             planned_n=len(to_send),
         )
@@ -730,6 +789,7 @@ def run(
             duplicate_n=duplicate_n,
             no_coverage_n=plan.no_coverage_n,
             unmappable_n=plan.unmappable_n,
+            stale_n=plan.stale_n,
             run_id=run_id,
         )
 
@@ -744,6 +804,7 @@ def run(
         duplicate_n=duplicate_n,
         no_coverage_n=plan.no_coverage_n,
         unmappable_n=plan.unmappable_n,
+        stale_n=plan.stale_n,
         run_id=run_id,
         planned_n=len(to_send),
     )

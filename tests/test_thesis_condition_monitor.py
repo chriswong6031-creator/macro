@@ -264,6 +264,12 @@ def test_payload_condition_plain_is_the_users_own_falsifier_verbatim():
     assert payload["condition_plain"] != window["claim"]
     assert window["claim"] not in payload["summary_plain"]
     assert payload["engine_window_plain"] == window["claim"]
+    # Round-3 review MINOR-4: this fixture's falsifier already ends in '.' --
+    # the composed sentence must not double it up ("..").
+    assert ".." not in payload["summary_plain"]
+    assert payload["summary_plain"].endswith(
+        "lists: breadth rolls over decisively."
+    )
 
 
 def test_condition_plain_is_byte_verbatim_no_rstrip():
@@ -278,6 +284,28 @@ def test_condition_plain_is_byte_verbatim_no_rstrip():
     )
     assert trailing in payload["condition_plain"]
     assert payload["condition_plain"] == trailing
+
+
+def test_summary_plain_never_double_periods_regardless_of_condition_punctuation():
+    """META-CEO RULING round-3 review MINOR-4: `condition_plain` stays
+    byte-verbatim (MINOR-1), but the derived `summary_plain` sentence must
+    never carry a double terminal period whether or not the user's own text
+    already ends with one."""
+    window = _tripwire_entry()
+    for falsifier, expected_tail in (
+        ("breadth rolls over decisively.", "lists: breadth rolls over decisively."),
+        ("breadth rolls over decisively", "lists: breadth rolls over decisively."),
+        ("is the rate cut priced in?", "lists: is the rate cut priced in?"),
+        ("really over!", "lists: really over!"),
+    ):
+        payload = monitor.compose_payload(
+            thesis={"id": THESIS_ID, "version": 1, "title": "t", "falsifiers": [falsifier]},
+            window=window, subject=("ticker", "AAPL"), evidence_base=monitor.EVIDENCE_BASE,
+        )
+        assert ".." not in payload["summary_plain"], payload["summary_plain"]
+        assert payload["summary_plain"].endswith(expected_tail), payload["summary_plain"]
+        # condition_plain itself is untouched -- byte-verbatim per MINOR-1.
+        assert payload["condition_plain"] == falsifier
 
 
 def test_condition_plain_joins_multiple_falsifiers_verbatim():
@@ -302,6 +330,32 @@ def test_no_falsifiers_states_so_plainly():
 
 
 def test_glance_sentence_matches_the_ruling_template_en_and_zh():
+    """A window with an explicit corpus `label` uses the labelled-branch
+    template (the ruling's literal 'if the corpus entry has one' path)."""
+    window = _tripwire_entry(scope="cycle", cycle="long_bonds", tickers=())
+    window["label"] = "Long-Duration Treasuries"
+    payload = monitor.compose_payload(
+        thesis={"id": THESIS_ID, "version": 1, "title": "My rates thesis",
+                "falsifiers": ["10y real yield breaks back below 1.5%"]},
+        window=window, subject=("cycle", "long_bonds"), evidence_base=monitor.EVIDENCE_BASE,
+    )
+    assert payload["summary_plain"] == (
+        'A window we watch for Long-Duration Treasuries has closed. Your thesis '
+        '"My rates thesis" lists: 10y real yield breaks back below 1.5%.'
+    )
+    assert "Long-Duration Treasuries" in payload["summary_plain_zh"]
+    assert "My rates thesis" in payload["summary_plain_zh"]
+    assert "10y real yield breaks back below 1.5%" in payload["summary_plain_zh"]
+    assert monitor.TRANSLATION_PENDING_ZH_MARKER in payload["summary_plain_zh"]
+
+
+def test_glance_sentence_else_branch_when_corpus_has_no_plain_label():
+    """META-CEO RULING M3 else-branch (round-3 review BLOCKER 1): the real
+    committed corpus carries NO `label` field on any entry, so this is the
+    path every real cycle-scope fire actually takes. A title-cased humanized
+    slug ('long_bonds' -> 'Long Bonds') is NOT a plain-language label and must
+    never appear -- that exact string was the round-3 review's measured
+    defect ('Spx'/'Pgms'/'Vol'/'Em Equities' reaching the glance tier)."""
     window = _tripwire_entry(scope="cycle", cycle="long_bonds", tickers=())
     payload = monitor.compose_payload(
         thesis={"id": THESIS_ID, "version": 1, "title": "My rates thesis",
@@ -309,10 +363,14 @@ def test_glance_sentence_matches_the_ruling_template_en_and_zh():
         window=window, subject=("cycle", "long_bonds"), evidence_base=monitor.EVIDENCE_BASE,
     )
     assert payload["summary_plain"] == (
-        'A window we watch for Long Bonds has closed. Your thesis "My rates thesis" '
-        "lists: 10y real yield breaks back below 1.5%."
+        'A market condition we watch for your thesis has changed. Your thesis '
+        '"My rates thesis" lists: 10y real yield breaks back below 1.5%.'
     )
-    assert "Long Bonds" in payload["summary_plain_zh"]
+    for banned in ("Long Bonds", "long_bonds", "Long_Bonds"):
+        assert banned not in payload["summary_plain"]
+        assert banned not in payload["summary_plain_zh"]
+        assert banned not in payload["subject"]
+        assert banned not in payload["subject_zh"]
     assert "My rates thesis" in payload["summary_plain_zh"]
     assert "10y real yield breaks back below 1.5%" in payload["summary_plain_zh"]
     assert monitor.TRANSLATION_PENDING_ZH_MARKER in payload["summary_plain_zh"]
@@ -363,15 +421,36 @@ def test_payload_never_infers_engine_direction_stance():
             assert term not in haystack, f"banned term {term!r} in payload {haystack!r}"
 
 
-def test_subject_names_the_display_not_the_engine_slug():
+def test_subject_uses_the_corpus_plain_label_when_present():
+    """META-CEO RULING M3 'if' branch: a window that DOES carry a genuine
+    corpus `label` uses it verbatim -- this is the one case where a
+    subject-specific name is safe to show."""
+    window = _tripwire_entry(scope="cycle", cycle="long_bonds", tickers=())
+    window["label"] = "Long-Duration Treasuries"
+    payload = monitor.compose_payload(
+        thesis={"id": THESIS_ID, "version": 1, "title": "My rates thesis", "falsifiers": []},
+        window=window, subject=("cycle", "long_bonds"), evidence_base=monitor.EVIDENCE_BASE,
+    )
+    assert payload["subject"] == "A window we watch for Long-Duration Treasuries has closed"
+    assert "long_bonds" not in payload["subject"]
+    assert "subject_zh" in payload and "Long-Duration Treasuries" in payload["subject_zh"]
+
+
+def test_subject_falls_back_to_generic_phrase_when_no_plain_label_exists():
+    """META-CEO RULING M3 else-branch (round-3 review BLOCKER 1): a cycle
+    window with no corpus `label` must NEVER surface the raw or humanized
+    internal slug as its subject, in either language."""
     window = _tripwire_entry(scope="cycle", cycle="long_bonds", tickers=())
     payload = monitor.compose_payload(
         thesis={"id": THESIS_ID, "version": 1, "title": "My rates thesis", "falsifiers": []},
         window=window, subject=("cycle", "long_bonds"), evidence_base=monitor.EVIDENCE_BASE,
     )
-    assert payload["subject"] == "A window we watch for Long Bonds has closed"
+    assert payload["subject"] == "A market condition we watch for your thesis has changed"
     assert "long_bonds" not in payload["subject"]
-    assert "subject_zh" in payload and "Long Bonds" in payload["subject_zh"]
+    assert "Long Bonds" not in payload["subject"]
+    assert "subject_zh" in payload
+    assert "Long Bonds" not in payload["subject_zh"]
+    assert "long_bonds" not in payload["subject_zh"]
 
 
 def test_tables_absent_yields_read_unavailable_and_zero_enqueue(monkeypatch):
@@ -428,6 +507,25 @@ def test_dormant_by_default_forces_dry_run(monkeypatch):
     assert captured["dry_run"] is True
 
 
+def test_entry_point_log_line_reports_stale_n(monkeypatch, capsys):
+    """Round-3 review MINOR-1: the log line must distinguish a run that
+    suppressed N stale (pre-thesis) windows from a run that saw nothing --
+    both used to print byte-identically."""
+    monkeypatch.delenv("THESIS_MONITOR_ENABLE", raising=False)
+
+    def fake_run(**kwargs):
+        return monitor.MonitorResult(
+            outcome="ok", read_state=monitor.READ_OK, error_class=None,
+            evaluated_n=1, matched_n=1, enqueued_n=0, duplicate_n=0,
+            no_coverage_n=0, unmappable_n=0, run_id="x", stale_n=3,
+        )
+
+    monkeypatch.setattr(monitor, "run", fake_run)
+    entry.main([])
+    out = capsys.readouterr().out
+    assert "stale=3" in out
+
+
 def test_no_data_or_site_writes():
     src = open(monitor.__file__, encoding="utf-8").read()
     assert "write_text(" not in src
@@ -474,6 +572,10 @@ def test_window_fired_before_thesis_creation_does_not_backfire(monkeypatch):
     result = monitor.run(dry_run=False)
     assert result.enqueued_n == 0
     assert posted == []
+    # Round-3 review MINOR-1: a suppressed stale window must be visible on
+    # the result (previously computed by plan_enqueue then silently dropped
+    # before it ever reached MonitorResult or the log line).
+    assert result.stale_n == 1
 
 
 def test_window_fired_after_thesis_creation_still_enqueues(monkeypatch):
@@ -497,6 +599,13 @@ def test_display_never_uses_a_raw_cycle_slug():
     )
     assert "long_bonds" not in payload["subject"]
     assert "long_bonds" not in payload["summary_plain"]
+    # Round-3 review BLOCKER 1: a humanized/title-cased form of the raw slug
+    # ('long_bonds' -> 'Long Bonds') is STILL the raw slug -- a de-underscored
+    # /title-cased form must be just as absent as the literal slug.
+    assert "Long Bonds" not in payload["subject"]
+    assert "Long Bonds" not in payload["summary_plain"]
+    assert "Long Bonds" not in payload["subject_zh"]
+    assert "Long Bonds" not in payload["summary_plain_zh"]
     # A cycle subject's display label is not a tradable ticker symbol.
     assert payload["ticker"] is None
 
@@ -670,6 +779,14 @@ def test_real_committed_falsifiers_join_and_stay_plain_language():
         for term in monitor._BANNED_TERMS + ("cuts against", "supports the read"):
             assert term not in haystack, f"banned term {term!r} in real-data payload {haystack!r}"
         assert str(cycle) not in payload["subject"]  # no raw slug
+        # Round-3 review BLOCKER 1: the guard above only greps the LITERAL
+        # slug -- a de-underscored/title-cased form ('spx' -> 'Spx', 'pgms' ->
+        # 'Pgms', 'em-equities' -> 'Em Equities') passed it while still
+        # leaking untranslated internal jargon. Check the humanized form too.
+        humanized = re.sub(r"[_\-]+", " ", str(cycle)).strip()
+        assert humanized.lower() not in haystack, (
+            f"humanized cycle slug {humanized!r} in real-data payload {haystack!r}"
+        )
         # engine_window_plain still carries the real claim -- proves the
         # corpus actually flowed through, not a vacuous pass.
         assert payload["engine_window_plain"] == e.get("claim", "")
@@ -683,17 +800,58 @@ _DIGIT_TILDE_RE = re.compile(r"~[\d,]+")
 _JARGON_ABBREVIATIONS = ("SOX", "DRAM", "ASP")
 
 
+def test_synthetic_tilde_and_abbrev_jargon_never_leaks_into_glance_tier():
+    """Round-3 review MINOR-3: the real-corpus jargon-leak test below is a
+    DATA-COUPLED CI tripwire if its "at least one real entry exercises this
+    pattern" proof depends on today's *authored* falsifiers.json content --
+    editing or retiring the one entry that happens to carry a tilde/abbrev
+    would red the `falsifier-tripwires` CI job for a reason unrelated to this
+    module. This synthetic, corpus-independent test proves the non-vacuity of
+    the tilde/abbreviation leak guard directly (no dependency on what today's
+    authored corpus happens to contain), so the real-corpus test can safely
+    report rather than hard-fail when the live corpus's jargon shape drifts."""
+    window = dict(
+        _tripwire_entry(scope="cycle", cycle="semis_top", tickers=()),
+        claim="SOX ~14,655 with DRAM ASP still falling",
+    )
+    payload = monitor.compose_payload(
+        thesis={"id": THESIS_ID, "version": 1, "title": "watch",
+                "falsifiers": ["a plain condition with no jargon"]},
+        window=window, subject=("cycle", "semis_top"), evidence_base=monitor.EVIDENCE_BASE,
+    )
+    glance = " ".join(
+        str(payload.get(k, "")) for k in
+        ("subject", "subject_zh", "summary_plain", "summary_plain_zh",
+         "condition_plain", "condition_plain_zh")
+    )
+    assert not _DIGIT_TILDE_RE.search(glance), "digit+tilde jargon leaked into glance tier"
+    for abbrev in _JARGON_ABBREVIATIONS:
+        assert abbrev not in glance, f"abbreviation {abbrev!r} leaked into glance tier"
+    # Tier-2 field DOES carry the raw claim -- proves this isn't vacuous.
+    assert payload["engine_window_plain"] == window["claim"]
+
+
 @pytest.mark.needs_full_checkout("data")
 def test_real_corpus_engine_jargon_never_leaks_into_glance_tier():
+    """Real-corpus companion to the synthetic test above. Its non-vacuity does
+    NOT depend on the live corpus containing a tilde/abbreviation claim today
+    (round-3 review MINOR-3) -- that guarantee lives in the synthetic test,
+    which cannot be defeated by an authored-data edit. This test additionally
+    asserts the humanized/title-cased form of every real cycle slug (e.g.
+    'spx' -> 'Spx') never leaks into the glance tier either -- the exact gap
+    the round-3 review measured (BLOCKER 1: 'Spx'/'Pgms'/'Vol'/'Em Equities'
+    reaching the glance-tier subject/summary via title-casing)."""
     entries, _state, error_class = monitor.load_tripwire_view()
     assert error_class is None
     assert len(entries) > 0
     checked_tilde = 0
     checked_abbrev = 0
+    checked_cycles = 0
     for e in entries:
         cycle = e.get("cycle")
         if not cycle:
             continue
+        checked_cycles += 1
         subject = ("cycle", str(cycle).lower())
         fake_window = dict(e)
         fake_window["fired_on"] = "2026-09-05"
@@ -719,7 +877,19 @@ def test_real_corpus_engine_jargon_never_leaks_into_glance_tier():
                 assert abbrev not in glance, (
                     f"abbreviation {abbrev!r} leaked into glance tier for {e.get('id')}"
                 )
+        # A humanized/title-cased cycle slug is STILL the raw slug (BLOCKER 1)
+        # -- never just the underscore/hyphen form checked elsewhere.
+        humanized = re.sub(r"[_\-]+", " ", str(cycle)).strip()
+        assert humanized.lower() not in glance.lower(), (
+            f"humanized cycle slug {humanized!r} leaked into glance tier for {e.get('id')}"
+        )
         # Tier-2 field DOES carry the raw claim -- proves this isn't vacuous.
         assert payload["engine_window_plain"] == claim
-    assert checked_tilde > 0, "expected the real corpus to exercise a digit+tilde claim"
-    assert checked_abbrev > 0, "expected the real corpus to exercise an abbreviation"
+    assert checked_cycles > 0, "expected at least one real cycle-scoped falsifier"
+    # These do NOT hard-fail (MINOR-3): whether today's authored corpus happens
+    # to contain a tilde/abbreviation claim is content drift, not a defect in
+    # this module -- the synthetic test above already proves the mechanism.
+    if checked_tilde == 0:
+        print("note: no real falsifier entry currently carries a digit+tilde claim")
+    if checked_abbrev == 0:
+        print("note: no real falsifier entry currently carries a tracked abbreviation")

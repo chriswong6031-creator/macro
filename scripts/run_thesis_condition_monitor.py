@@ -63,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(
         "thesis-monitor: outcome=%s read_state=%s evaluated=%d matched=%d %s=%d "
-        "duplicate=%d no_coverage=%d unmappable=%d dry_run=%s run_id=%s"
+        "duplicate=%d no_coverage=%d unmappable=%d stale=%d dry_run=%s run_id=%s"
         % (
             result.outcome,
             result.read_state,
@@ -74,6 +74,11 @@ def main(argv: list[str] | None = None) -> int:
             result.duplicate_n,
             result.no_coverage_n,
             result.unmappable_n,
+            # A window that fired before its subscribing thesis existed is
+            # suppressed as pre-existing history, not a new transition -- a
+            # run that suppressed N of those must not log identically to a
+            # run that saw nothing (round-3 review MINOR-1).
+            result.stale_n,
             dry_run,
             result.run_id,
         ),
