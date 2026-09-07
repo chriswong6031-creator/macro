@@ -77,12 +77,19 @@ What **is** single-issuer is the ORCL **watch chip** only: templates/bonds.html.
 reaches no credit-labelled template), but a *different* module renders a *different*,
 explicitly credit-labelled leg: templates/dashboard.html.j2:14029 —
 `'E4_credit_stress':       {'en':'Credit stress','zh':'信用压力'},` — and its bilingual scare-tip
-blurb at templates/dashboard.html.j2:102 (`'信用压力——高收益利差（OAS）快速走阔、垃圾债跑输国债…'`).
+blurb at templates/dashboard.html.j2:101-102 (EN `'Credit stress — high-yield spreads (OAS)
+widening fast…'`, ZH `'信用压力——高收益利差（OAS）快速走阔、垃圾债跑输国债…'`).
 The leg is driven by engine/rates_inflation_command.py:557-575 (`# E4 — credit_stress (weight 1)`,
 `hy_oas_z = _safe_get(tx, "breakeven_decomp", "costate", "hy_oas_z")`, `"key": "E4_credit_stress"`),
-built by `build_board()` and rendered onto the rates/inflation command page via
-scripts/build_rates_command.py:128. So the credit_stress *axis*, taken across all its producing
-modules, is not entirely dark — it reaches exactly one credit-labelled consumer surface today.
+built by `build_board()` — the artifact function called at scripts/build_rates_command.py:129
+(`artifact = build_board()`, imported at :128), which writes `data/rates_command/latest.json`.
+That artifact is a different consumer's input, not a render call: scripts/build_site.py:6077-6079
+loads the file, :6701 places it in the render context as `rates_command=rates_command`, and
+:6802 renders it onto the dashboard page (`env.get_template("dashboard.html.j2").render(**vm,
+mode="macro")`) — the same template that carries the E4 label and blurb above. So the
+credit_stress *axis*, taken across all its producing modules, is not entirely dark — it reaches
+exactly one credit-labelled consumer surface today, by way of the dashboard render, not
+`build_rates_command.py` itself.
 
 MO-DELTA-008's `missing` cell is wrong as written. The corrected gap is: no *dedicated* HY/IG
 credit page exists — the aggregate gauges live as one card inside bonds.html, not as their own

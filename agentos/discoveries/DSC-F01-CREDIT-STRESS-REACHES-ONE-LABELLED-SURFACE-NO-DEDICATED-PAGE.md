@@ -8,10 +8,13 @@ claim: >
   watch chip at templates/bonds.html.j2:775-782. Separately, the credit_stress AXIS reaches
   exactly one credit-labelled consumer surface today: templates/dashboard.html.j2:14029
   (`'E4_credit_stress': {'en':'Credit stress','zh':'信用压力'},`) and its bilingual blurb at
-  templates/dashboard.html.j2:102, driven by engine/rates_inflation_command.py:557-575
+  templates/dashboard.html.j2:101-102, driven by engine/rates_inflation_command.py:557-575
   (`# E4 — credit_stress (weight 1)`, `hy_oas_z = _safe_get(tx, "breakeven_decomp", "costate",
-  "hy_oas_z")`, `"key": "E4_credit_stress"`) and rendered onto the rates/inflation command page
-  via scripts/build_rates_command.py:128. engine/market_drivers.py's OWN credit_stress family
+  "hy_oas_z")`, `"key": "E4_credit_stress"`). `build_board()` (called at
+  scripts/build_rates_command.py:129) only writes the artifact `data/rates_command/latest.json`;
+  it renders nothing itself — the dashboard page is rendered by scripts/build_site.py:6802 after
+  loading that artifact at :6077-6079 and placing it in the render context at :6701.
+  engine/market_drivers.py's OWN credit_stress family
   (:99-107) still reaches no credit-labelled template under its own name (grep of templates/
   for market_drivers returns zero hits) — that null is unchanged — and engine/bond_cross_asset.py:165
   writes no artifact of its own, persisting only through scripts/build_bonds.py:1572 into
@@ -36,10 +39,11 @@ kind: architecture
 verified_at: 2026-09-06
 verified_by: >
   templates/bonds.html.j2:707-726; scripts/build_bonds.py:748;
-  engine/credit_momentum.py:1596-1597; templates/dashboard.html.j2:14029,102;
-  engine/rates_inflation_command.py:557-575; scripts/build_rates_command.py:128;
+  engine/credit_momentum.py:1596-1597; templates/dashboard.html.j2:14029,101-102;
+  engine/rates_inflation_command.py:557-575; scripts/build_rates_command.py:129;
+  scripts/build_site.py:6077-6079,6701,6802;
   gh pr view 6904 --json state,headRefName,title,files
-scope: [macro, engine/credit_*, engine/bond_cross_asset.py, engine/market_drivers.py, engine/rates_inflation_command.py, templates/bonds.html.j2, templates/dashboard.html.j2, F01]
+scope: [macro, engine/credit_*, engine/bond_cross_asset.py, engine/market_drivers.py, engine/rates_inflation_command.py, templates/bonds.html.j2, templates/dashboard.html.j2, scripts/build_rates_command.py, scripts/build_site.py, F01]
 confidence: verified
 ---
 

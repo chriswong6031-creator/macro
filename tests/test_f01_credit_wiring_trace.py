@@ -55,10 +55,12 @@ def test_every_source_path_named_in_the_trace_still_exists():
         "engine/credit_momentum.py",
         "engine/bond_cross_asset.py",
         "engine/market_drivers.py",
+        "engine/rates_inflation_command.py",
         "templates/bonds.html.j2",
         "templates/commodities.html.j2",
         "templates/commodity_strategies.html.j2",
         "templates/spr.html.j2",
+        "templates/dashboard.html.j2",
         "scripts/build_bonds.py",
         "scripts/build_commodities.py",
         "scripts/build_commodity_strategies.py",
@@ -89,6 +91,44 @@ def test_line_anchors_are_in_range():
             assert count >= m_i, f"{clean} has {count} lines, trace cites range end {m_i}"
         checked += 1
     assert checked > 10, "too few line anchors were actually checked"
+
+
+def test_major_a_e4_credit_surface_anchors_pin_actual_content():
+    """MAJOR-A (ruling): the ruling-mandated E4_credit_stress anchors must pin real
+    content, not just be "in range". test_line_anchors_are_in_range only checks that
+    the cited files have >= n lines — a paragraph naming these anchors could be
+    deleted entirely, or the plane could drift by thousands of lines in the 14k-line
+    dashboard template, and that test would stay green either way. This test reads
+    the exact cited lines and asserts they still hold the E4 credit-stress content,
+    so it fails loudly the moment the credit plane moves out from under the record
+    (config/unrun_test_waivers.yml's own justification for this suite)."""
+    dash = ROOT / "templates/dashboard.html.j2"
+    eng = ROOT / "engine/rates_inflation_command.py"
+    assert dash.exists(), f"missing: {dash}"
+    assert eng.exists(), f"missing: {eng}"
+    dash_lines = _read(dash).splitlines()
+    eng_lines = _read(eng).splitlines()
+
+    # templates/dashboard.html.j2:14029 — the E4_credit_stress dashboard label row.
+    line_14029 = dash_lines[14029 - 1]
+    assert "E4_credit_stress" in line_14029, (
+        f"dashboard.html.j2:14029 no longer holds E4_credit_stress: {line_14029!r}"
+    )
+
+    # templates/dashboard.html.j2:101-102 — the bilingual credit scare-tip blurb
+    # (EN at :101, ZH at :102 — the pair, not either line alone).
+    blurb = "\n".join(dash_lines[100:102])
+    assert "Credit stress" in blurb, f"dashboard.html.j2:101 missing EN credit blurb: {blurb!r}"
+    assert "信用压力" in blurb, f"dashboard.html.j2:102 missing ZH credit blurb: {blurb!r}"
+
+    # engine/rates_inflation_command.py:557-575 — the E4 credit_stress leg.
+    leg = "\n".join(eng_lines[556:575])
+    assert "E4_credit_stress" in leg, (
+        f"rates_inflation_command.py:557-575 no longer holds E4_credit_stress: {leg!r}"
+    )
+    assert "hy_oas" in leg, (
+        f"rates_inflation_command.py:557-575 no longer reads hy_oas: {leg!r}"
+    )
 
 
 def test_dsc_carries_both_admission_gates():
