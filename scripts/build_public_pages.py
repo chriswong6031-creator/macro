@@ -21,6 +21,7 @@ sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
 from lib.chat_allowance import chat_allowance_view_model  # noqa: E402
+from lib.glossary import glossary_view_model  # noqa: E402
 from lib.help_directory import help_directory_view_model  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
@@ -131,6 +132,25 @@ def build(site=None) -> None:
             flush=True,
         )
 
+    glossary_error: Exception | None = None
+    glossary_vm: dict | None = None
+    try:
+        glossary_vm = glossary_view_model(config.ROOT)
+        write_page(
+            site / "glossary.html",
+            env.get_template("glossary.html.j2").render(
+                generated_utc=generated,
+                **glossary_vm,
+            ),
+        )
+    except Exception as exc:  # noqa: BLE001 — re-raised after the other pages land
+        glossary_error = exc
+        print(
+            "::error title=glossary-source::glossary page NOT rebuilt — "
+            f"{str(exc).splitlines()[0] if str(exc) else type(exc).__name__}",
+            flush=True,
+        )
+
     # The plans page is the only remaining page that reads mutable product config. A malformed
     # config/brain.yml or config/plans.yml must not take support.html, unsubscribe.html and
     # the asset re-stamp down with it — scripts/ci/public_render.sh runs under `set -e`, so
@@ -162,12 +182,16 @@ def build(site=None) -> None:
     )
     if help_error is not None:
         raise help_error
+    if glossary_error is not None:
+        raise glossary_error
     if plans_error is not None:
         raise plans_error
     assert help_vm is not None
+    assert glossary_vm is not None
     log.info(
-        "wrote public pages (help=%s links · Essential $%s/$%s · Pro $%s/$%s · Founding $%s/year)",
+        "wrote public pages (help=%s links · glossary=%s terms · Essential $%s/$%s · Pro $%s/$%s · Founding $%s/year)",
         len(help_vm["entries"]),
+        glossary_vm["term_count"],
         vm["essential"]["monthly_pm"],
         vm["essential"]["annual_pm"],
         vm["pro"]["monthly_pm"],

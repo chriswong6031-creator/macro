@@ -87,6 +87,14 @@ HELP_LINKS: tuple[HelpLink, ...] = (
         href="measurement.html",
     ),
     HelpLink(
+        id="glossary",
+        category="research",
+        label_en="Glossary",
+        label_zh="词汇表",
+        source_template="templates/glossary.html.j2",
+        href="glossary.html",
+    ),
+    HelpLink(
         id="support",
         category="platform",
         label_en="Support",

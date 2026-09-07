@@ -3527,6 +3527,10 @@ jobs:
       - "templates/_navlinks.html.j2"
       - "templates/_public_footer.html.j2"
       - "templates/_public_nav.html.j2"
+      # F13-1 closure widening 2026-09-06 (contract-delta): build_site's
+      # source-bound help directory now also validates the public
+      # glossary page against this template.
+      - "templates/glossary.html.j2"
       - "templates/measurement.html.j2"
       - "templates/methodology.html.j2"
       - "templates/support.html.j2"
@@ -7082,6 +7086,10 @@ jobs:
       - "templates/_navlinks.html.j2"
       - "templates/_public_footer.html.j2"
       - "templates/_public_nav.html.j2"
+      # F13-1 closure widening 2026-09-06 (contract-delta): build_site's
+      # source-bound help directory now also validates the public
+      # glossary page against this template.
+      - "templates/glossary.html.j2"
       - "templates/measurement.html.j2"
       - "templates/methodology.html.j2"
       - "templates/support.html.j2"
@@ -8783,6 +8791,12 @@ jobs:
         run: pip install pytest pyyaml jinja2
       - name: public fastlane split + rendered pricing copy pins
         run: python -m pytest tests/test_public_render_fastlane.py tests/test_help_directory.py tests/test_help_directory_contract.py -q
+      # F13-1 (2026-09-06): the public glossary directory is built by the same
+      # scripts/build_public_pages.py fast path and shares this job's exact
+      # dependency line (pytest pyyaml jinja2) with the help-directory suites
+      # immediately above.
+      - name: public glossary directory (view-model contract + rendered-page wiring)
+        run: python -m pytest tests/test_glossary.py tests/test_glossary_contract.py -q
 
   press-lane:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
@@ -11085,6 +11099,10 @@ jobs:
       - "templates/canada.html.j2"
       - "templates/china.html.j2"
       - "templates/dashboard.html.j2"
+      # F13-1 closure widening 2026-09-06 (contract-delta): build_site's
+      # source-bound help directory now also validates the public glossary
+      # page against this template.
+      - "templates/glossary.html.j2"
       - "templates/hk.html.j2"
       - "templates/intl.html.j2"
       - "templates/measurement.html.j2"

@@ -81,7 +81,7 @@ def test_shared_public_nav_matches_landing_core_information_architecture():
     assert "https://www.mastermind-x.com/research_vault.html" in shared_hrefs
     # The shared research menu can carry a small number of deep public research
     # destinations that do not need a duplicate landing-page hero card.
-    shared_only = {"stocks/earnings/index.html"}
+    shared_only = {"stocks/earnings/index.html", "glossary.html"}
     assert shared_hrefs <= landing_hrefs | shared_only
     assert shared_only <= shared_hrefs
     assert "help.html" in landing_hrefs
