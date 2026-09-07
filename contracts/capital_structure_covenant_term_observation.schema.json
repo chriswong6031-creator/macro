@@ -285,8 +285,10 @@
         "rights_class": {
           "type": "string",
           "enum": [
-            "public_filing",
+            "public_source_link",
+            "excerpt_permitted",
             "internal_only",
+            "do_not_redistribute",
             "unknown"
           ]
         },
@@ -303,11 +305,24 @@
           "type": "boolean"
         },
         "publication": {
-          "type": "string",
-          "enum": [
-            "sec_edgar_public",
-            "internal"
-          ]
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "disposition",
+            "excerpt_char_count",
+            "personal_data_redacted"
+          ],
+          "properties": {
+            "disposition": {
+              "const": "public_fact_only"
+            },
+            "excerpt_char_count": {
+              "const": 0
+            },
+            "personal_data_redacted": {
+              "type": "boolean"
+            }
+          }
         },
         "spans": {
           "type": "array",
@@ -490,8 +505,12 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["period_end", "ratio"],
+            "required": ["period_start", "period_end", "ratio"],
             "properties": {
+              "period_start": {
+                "type": ["string", "null"],
+                "format": "date"
+              },
               "period_end": {
                 "type": ["string", "null"],
                 "format": "date"

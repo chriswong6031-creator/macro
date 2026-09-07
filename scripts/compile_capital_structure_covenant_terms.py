@@ -339,17 +339,30 @@ def main(argv: Sequence[str] | None = None) -> int:
     step, and this process still exits 0."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.parse_args(argv)
-    root = _data_root()
+    # Everything that can raise -- including resolving the data root itself --
+    # stays inside this one try block. Round-3 review Major 3: `root =
+    # _data_root()` used to sit OUTSIDE the try, so a config/import failure
+    # there (or anywhere else in this function) would propagate past this
+    # wrapper and kill the daily.yml step before the fail-closed health gate
+    # ever ran -- exactly the F13 outcome BLOCKER-1 required this wrapper to
+    # prevent. `root` defaults to the repo-relative data dir so the failure
+    # marker still has somewhere to land even if `_data_root()` itself failed.
+    root = _repo_root() / "data" / "capital_structure"
     try:
+        root = _data_root()
         result = compile_from_disk(root)
     except Exception as exc:  # noqa: BLE001 -- deliberate catch-all, see docstring
         reason = f"{type(exc).__name__}: {exc}"
-        marker_path = _write_failure_marker(root, reason)
+        try:
+            marker_path: Path | None = _write_failure_marker(root, reason)
+        except Exception as marker_exc:  # noqa: BLE001 -- marker write must never re-raise
+            marker_path = None
+            reason = f"{reason} (failure marker write also failed: {marker_exc})"
         print(json.dumps({
             "status": "failed",
             "schema": COVENANT_TERM_SCHEMA,
             "reason": reason[:500],
-            "marker": str(marker_path),
+            "marker": str(marker_path) if marker_path is not None else None,
         }, sort_keys=True))
         return 0
     _clear_failure_marker(root)

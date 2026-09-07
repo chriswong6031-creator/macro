@@ -381,11 +381,21 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
                                          section_label_normalized, name, byte_start, byte_end)
                 validate_locator(locator, len(encoded))
                 schedule_payload = [
-                    {"period_end": row["period_end"], "ratio": row["ratio"]} for row in schedule_rows
+                    {
+                        "period_start": row["start_date"].isoformat(),
+                        "period_end": row["period_end"],
+                        "ratio": row["ratio"],
+                    }
+                    for row in schedule_rows
                 ]
                 state = {"disposition": "direct", "reason": None}
                 reported = {"raw": value_text, "unit": "ratio", "value": None, "schedule": schedule_payload}
+                # Deep-copy the schedule list: `dict(reported)` alone would leave
+                # reported["schedule"] and normalized["schedule"] as the SAME list
+                # object (a shallow copy), so a downstream mutation of either view
+                # would silently rewrite both.
                 normalized = dict(reported)
+                normalized["schedule"] = [dict(row) for row in schedule_payload]
                 spans = [{"locator": locator, "locator_type": "text_range"}]
                 extraction_method = "deterministic"
                 review_status = "final"
@@ -403,15 +413,29 @@ def extract_candidates(manifest: Mapping[str, Any], text: str) -> list[dict[str,
             spans = [{"locator": locator, "locator_type": "text_range"}]
             extraction_method = "deterministic"
             review_status = "final"
+        # Narrowed to exactly the four fields the covenant observation contract's
+        # `filing` sub-schema allows (additionalProperties: false) -- the source
+        # manifest's own `filing` block carries extra keys (e.g. `file_number`,
+        # `file_number_provenance`) that belong to the source-identity contract,
+        # not this one; passing manifest["filing"] through wholesale fails
+        # schema validation on every real filing (round-3 review Blocker 1).
+        manifest_filing = manifest["filing"]
+        filing = {
+            "accession": manifest_filing.get("accession"),
+            "form": manifest_filing.get("form"),
+            "filing_date": manifest_filing.get("filing_date"),
+            "accepted_at": manifest_filing.get("accepted_at"),
+        }
         candidates.append({
             "schema": COVENANT_TERM_SCHEMA,
             "logical_observation_id": logical_observation_id_for(manifest_id, clause_id, name),
             "issuer_id": (manifest.get("issuer") or {}).get("issuer_id"),
-            "filing": manifest["filing"],
+            "filing": filing,
             "document": {
                 "source_manifest_id": manifest_id,
                 "source_id": manifest.get("source_id"),
                 "document_role": document.get("document_role"),
+                "document_type": document.get("document_type"),
                 "canonical_url": document.get("canonical_url"),
                 "content_sha256": document.get("content_sha256"),
                 "child_document_type": document.get("document_type"),

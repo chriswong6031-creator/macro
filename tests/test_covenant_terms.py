@@ -319,6 +319,47 @@ def test_stepped_schedule_with_no_dates_at_all_is_still_ambiguous():
     assert coverage["reported"] == {"raw": None, "unit": None, "value": None}
 
 
+def test_direct_observations_validate_against_the_covenant_term_observation_contract():
+    """RED-first for round-3 review BLOCKER 1: `compile_from_disk()`'s only
+    production validation path (`_validate_observation_lineage` ->
+    `_validate_schema`) raised on every direct observation this producer
+    emitted, so the daily.yml step wired to that path was guaranteed to hit
+    `covenant_extraction: {state: "failed"}` on 100% of runs -- never
+    "covered", regardless of BLOCKER-1/BLOCKER-2 being otherwise fixed.
+    Reproduced with jsonschema directly against a real head (54250f3b):
+    5 errors -- `filing.file_number` not allowed (the producer passed
+    manifest["filing"] through wholesale instead of narrowing to the four
+    fields the contract's `filing` sub-schema permits), `document.document_type`
+    missing (required by the contract but never set), and
+    `evidence.rights_class` / `evidence.publication` using an invented
+    narrower vocabulary the contract did not share with either the real
+    source-manifest shape or the `document_term_observation` precedent
+    contract it claims to mirror. This test runs the exact same
+    Draft202012Validator repro the reviewer used, against the two direct
+    observations from the real committed Corsair fixture."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    from jsonschema import Draft202012Validator, FormatChecker
+
+    schema = _json.loads(
+        (_Path(__file__).parent.parent / "contracts"
+         / "capital_structure_covenant_term_observation.schema.json").read_text(encoding="utf-8")
+    )
+    manifest = _manifest()
+    text = _text()
+    observations = ct.compile_observations(manifest, text, generated_at="2026-09-06T00:00:00Z")
+    direct = [o for o in observations if o["state"]["disposition"] == "direct"]
+    assert len(direct) >= 1
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    for obs in direct:
+        errors = list(validator.iter_errors(obs))
+        assert errors == [], [
+            (".".join(str(part) for part in e.absolute_path) or "<root>", e.message)
+            for e in errors
+        ]
+
+
 def test_current_step_selection_is_a_step_function_of_the_row_start_dates():
     """Unit-level check of _select_current_step/_parse_schedule_rows against
     the exact Corsair leverage grid text, independent of the extraction-

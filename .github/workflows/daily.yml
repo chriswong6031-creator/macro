@@ -1207,6 +1207,13 @@ jobs:
         # typed covenant_extraction:{state:failed, reason} marker (read by the
         # health gate immediately below) and exits 0 -- a producer bug may never
         # fail the fail-closed health gate itself (F13 alarm-bus law).
+        # continue-on-error is a belt-and-suspenders second layer for the one
+        # failure mode main()'s own try/except cannot catch: a module-import-time
+        # exception (e.g. a broken `from engine... import`) that happens before
+        # main() ever runs, which would otherwise still fail this step and, with
+        # no continue-on-error, the whole job before the health gate step below
+        # -- round-3 review Major 3.
+        continue-on-error: true
         env:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           R2_CAPITAL_STRUCTURE_ENDPOINT: ${{ secrets.R2_CAPITAL_STRUCTURE_ENDPOINT }}
