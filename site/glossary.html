@@ -89,7 +89,7 @@ a{color:inherit;text-decoration:none}
 .gl-domain-h{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:0;padding:0 0 12px;border-bottom:1px solid var(--line);font:680 clamp(20px,2.6vw,26px)/1.2 var(--font-ui);letter-spacing:-.02em}
 .gl-domain-n{color:var(--muted);font:650 11px/1 var(--font-mono);letter-spacing:.1em}
 .gl-list{margin:0}
-.gl-row{position:relative;display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:8px 28px;padding:18px 14px 18px 0;border-bottom:1px solid var(--line);transition:background .16s ease}
+.gl-row{position:relative;display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:8px 28px;padding:18px 14px 18px 0;border-bottom:1px solid var(--line);scroll-margin-top:96px;transition:background .16s ease}
 .gl-row:hover{background:var(--panel)}
 .gl-row[hidden]{display:none}
 .gl-term{margin:0;display:flex;flex-direction:column;gap:7px;min-width:0}
@@ -516,7 +516,7 @@ body.public-page{padding-top:0}
     <h2 class="gl-domain-h"><span><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="gl-domain-n" data-domain-count>10</span></h2>
     <dl class="gl-list">
 
-      <div class="gl-row" id="gl-market-state-score" data-glossary-row data-domain="macro" data-letter="M" data-search="market state score 市场状态分 a 0–100 read of how the us market is behaving right now — risk-on, mixed, or risk-off. it confirms the tape; it does not forecast it.">
+      <div class="gl-row" id="gl-market-state-score" data-glossary-row data-domain="macro" data-letter="M" data-search="market state score 市场状态分 a 0–100 read of how the us market is behaving right now — risk-on, mixed, or risk-off. it confirms the tape; it does not forecast it. 0–100 的读数，说明美股当下的状态：风险偏好、混合或避险。它确认当前走势，而不是预测未来。">
         <span class="gl-anchor" id="gl-letter-M" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Market State Score</span><span class="l-zh">市场状态分</span></span>
@@ -528,7 +528,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-macro-regime-quadrant" data-glossary-row data-domain="macro" data-letter="M" data-search="macro regime quadrant 宏观周期象限 which of four backdrops the market is trading in, set by whether growth and inflation are rising or falling.">
+      <div class="gl-row" id="gl-macro-regime-quadrant" data-glossary-row data-domain="macro" data-letter="M" data-search="macro regime quadrant 宏观周期象限 which of four backdrops the market is trading in, set by whether growth and inflation are rising or falling. 决定市场所处的四种经济环境之一，取决于经济增长与通胀是上升还是下降。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Macro Regime Quadrant</span><span class="l-zh">宏观周期象限</span></span>
           <a class="gl-src" href="macro.html"><span class="l-en">Macro dashboard</span><span class="l-zh">宏观仪表盘</span></a>
@@ -539,7 +539,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-transition-state" data-glossary-row data-domain="macro" data-letter="R" data-search="regime stability read 周期稳定度 how settled the current economic backdrop is — freshly confirmed, holding steady, showing early cracks, or just changed.">
+      <div class="gl-row" id="gl-transition-state" data-glossary-row data-domain="macro" data-letter="R" data-search="regime stability read 周期稳定度 how settled the current economic backdrop is — freshly confirmed, holding steady, showing early cracks, or just changed. 说明当前经济环境有多稳定：刚确认、保持稳定、出现裂痕，还是刚刚转变。">
         <span class="gl-anchor" id="gl-letter-R" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Regime Stability Read</span><span class="l-zh">周期稳定度</span></span>
@@ -551,7 +551,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-pullback-risk-radar" data-glossary-row data-domain="macro" data-letter="P" data-search="pullback risk radar 回撤风险雷达 an early warning on the odds of a sharp drop, built from seven kinds of market scare. it advises on size, not on what to own.">
+      <div class="gl-row" id="gl-pullback-risk-radar" data-glossary-row data-domain="macro" data-letter="P" data-search="pullback risk radar 回撤风险雷达 an early warning on the odds of a sharp drop, built from seven kinds of market scare. it advises on size, not on what to own. 对急跌概率的早期预警，综合七类市场恐慌迹象，用于调整仓位大小，而非决定买什么。">
         <span class="gl-anchor" id="gl-letter-P" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Pullback Risk Radar</span><span class="l-zh">回撤风险雷达</span></span>
@@ -563,7 +563,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-fired-alerts-pill" data-glossary-row data-domain="macro" data-letter="F" data-search="fired alerts 已触发提醒 a count of live alerts that just changed state — a level shift, a crossing, a sign flip. alerts fire once, not continuously.">
+      <div class="gl-row" id="gl-fired-alerts-pill" data-glossary-row data-domain="macro" data-letter="F" data-search="fired alerts 已触发提醒 a count of live alerts that just changed state — a level shift, a crossing, a sign flip. alerts fire once, not continuously. 记录刚刚发生状态变化的提醒数量，如等级切换或方向翻转。提醒只在变化时触发一次。">
         <span class="gl-anchor" id="gl-letter-F" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Fired Alerts</span><span class="l-zh">已触发提醒</span></span>
@@ -574,7 +574,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-macro-backdrop-matrix" data-glossary-row data-domain="macro" data-letter="M" data-search="macro backdrop scorecard 宏观背景评分表 six separate readings, each scored 0 to 100, that together make up the market state score — trend, risk appetite, volatility, participation, liquidity, and stress.">
+      <div class="gl-row" id="gl-macro-backdrop-matrix" data-glossary-row data-domain="macro" data-letter="M" data-search="macro backdrop scorecard 宏观背景评分表 six separate readings, each scored 0 to 100, that together make up the market state score — trend, risk appetite, volatility, participation, liquidity, and stress. 构成市场状态总分的六项独立评分：趋势、风险偏好、波动、参与度、流动性与压力，各自 0 到 100 分。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Macro Backdrop Scorecard</span><span class="l-zh">宏观背景评分表</span></span>
           <a class="gl-src" href="macro.html"><span class="l-en">Macro dashboard</span><span class="l-zh">宏观仪表盘</span></a>
@@ -584,7 +584,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-multi-timeframe-tape-table" data-glossary-row data-domain="macro" data-letter="M" data-search="multi-timeframe trend table 多周期趋势表 the technical direction of the main us indexes across four time horizons, from daily to monthly, shown side by side.">
+      <div class="gl-row" id="gl-multi-timeframe-tape-table" data-glossary-row data-domain="macro" data-letter="M" data-search="multi-timeframe trend table 多周期趋势表 the technical direction of the main us indexes across four time horizons, from daily to monthly, shown side by side. 并列展示美股主要指数在日线到月线四个周期上的技术方向。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Multi-Timeframe Trend Table</span><span class="l-zh">多周期趋势表</span></span>
           <a class="gl-src" href="macro.html"><span class="l-en">Macro dashboard</span><span class="l-zh">宏观仪表盘</span></a>
@@ -595,7 +595,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-posture-dial" data-glossary-row data-domain="macro" data-letter="P" data-search="posture dial 仓位姿态盘 how aggressively to size positions under the current backdrop, from defensive to aggressive. it sizes risk, not which stocks to pick.">
+      <div class="gl-row" id="gl-posture-dial" data-glossary-row data-domain="macro" data-letter="P" data-search="posture dial 仓位姿态盘 how aggressively to size positions under the current backdrop, from defensive to aggressive. it sizes risk, not which stocks to pick. 说明当前环境下仓位应有多激进，从防御到进取。它决定仓位大小，而非选股。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Posture Dial</span><span class="l-zh">仓位姿态盘</span></span>
           <a class="gl-src" href="macro.html"><span class="l-en">Macro dashboard</span><span class="l-zh">宏观仪表盘</span></a>
@@ -605,7 +605,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-sector-heat-strip" data-glossary-row data-domain="macro" data-letter="S" data-search="sector heat strip 板块热力条 a quick snapshot of which market sectors are leading and which are lagging right now — context, not a buy signal.">
+      <div class="gl-row" id="gl-sector-heat-strip" data-glossary-row data-domain="macro" data-letter="S" data-search="sector heat strip 板块热力条 a quick snapshot of which market sectors are leading and which are lagging right now — context, not a buy signal. 快速展示当前哪些板块领涨、哪些落后——仅作参考，不是买入信号。">
         <span class="gl-anchor" id="gl-letter-S" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Sector Heat Strip</span><span class="l-zh">板块热力条</span></span>
@@ -616,7 +616,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-leadership-rotation" data-glossary-row data-domain="macro" data-letter="L" data-search="leadership &amp; rotation 领涨轮动 where sector leadership is shifting today, alongside a separate check on whether previously damaged hardware-related stocks have recovered.">
+      <div class="gl-row" id="gl-leadership-rotation" data-glossary-row data-domain="macro" data-letter="L" data-search="leadership &amp; rotation 领涨轮动 where sector leadership is shifting today, alongside a separate check on whether previously damaged hardware-related stocks have recovered. 展示当下领涨板块的变化，并单独追踪此前受损的硬件相关股票是否已修复。">
         <span class="gl-anchor" id="gl-letter-L" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Leadership &amp; Rotation</span><span class="l-zh">领涨轮动</span></span>
@@ -635,7 +635,7 @@ body.public-page{padding-top:0}
     <h2 class="gl-domain-h"><span><span class="l-en">US stocks</span><span class="l-zh">美股</span></span><span class="gl-domain-n" data-domain-count>10</span></h2>
     <dl class="gl-list">
 
-      <div class="gl-row" id="gl-regime-badge-us" data-glossary-row data-domain="us-stocks" data-letter="R" data-search="regime badge 周期徽章 the same growth-and-inflation backdrop shown on the macro dashboard, filtering this whole page. it shifts slowly and describes the economy, not today&#39;s tape.">
+      <div class="gl-row" id="gl-regime-badge-us" data-glossary-row data-domain="us-stocks" data-letter="R" data-search="regime badge 周期徽章 the same growth-and-inflation backdrop shown on the macro dashboard, filtering this whole page. it shifts slowly and describes the economy, not today&#39;s tape. 与宏观仪表盘相同的增长与通胀背景，用于筛选本页内容。变化缓慢，描述的是经济而非当日走势。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Regime Badge</span><span class="l-zh">周期徽章</span></span>
           <a class="gl-src" href="us_stocks.html"><span class="l-en">US stocks dashboard</span><span class="l-zh">美股仪表盘</span></a>
@@ -645,7 +645,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-posture-chip-us" data-glossary-row data-domain="us-stocks" data-letter="P" data-search="posture chip 姿态标签 a five-level dial for how aggressively to trade the current backdrop, from defensive to aggressive. it sizes risk, not stock choice.">
+      <div class="gl-row" id="gl-posture-chip-us" data-glossary-row data-domain="us-stocks" data-letter="P" data-search="posture chip 姿态标签 a five-level dial for how aggressively to trade the current backdrop, from defensive to aggressive. it sizes risk, not stock choice. 五档姿态标签，说明当前环境下交易应有多激进，从防御到进取，决定仓位而非选股。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Posture Chip</span><span class="l-zh">姿态标签</span></span>
           <a class="gl-src" href="us_stocks.html"><span class="l-en">US stocks dashboard</span><span class="l-zh">美股仪表盘</span></a>
@@ -655,7 +655,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-prophet-stock-signals-board" data-glossary-row data-domain="us-stocks" data-letter="S" data-search="stock signals board 选股信号榜 a shortlist of stocks whose price pattern has cleared a strict entry test, ranked by strength relative to their sector peers.">
+      <div class="gl-row" id="gl-prophet-stock-signals-board" data-glossary-row data-domain="us-stocks" data-letter="S" data-search="stock signals board 选股信号榜 a shortlist of stocks whose price pattern has cleared a strict entry test, ranked by strength relative to their sector peers. 一份经过严格入场检验的股票候选清单，按相对同行业的强弱排序。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Stock Signals Board</span><span class="l-zh">选股信号榜</span></span>
           <a class="gl-src" href="us_stocks.html"><span class="l-en">US stocks dashboard</span><span class="l-zh">美股仪表盘</span></a>
@@ -666,7 +666,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-alpha-chip" data-glossary-row data-domain="us-stocks" data-letter="R" data-search="relative strength rank 相对强度排名 how this stock&#39;s momentum compares to its sector peers after stripping out the broad market and sector moves. a better rank means stronger relative performance.">
+      <div class="gl-row" id="gl-alpha-chip" data-glossary-row data-domain="us-stocks" data-letter="R" data-search="relative strength rank 相对强度排名 how this stock&#39;s momentum compares to its sector peers after stripping out the broad market and sector moves. a better rank means stronger relative performance. 剔除大盘与行业整体走势后，该股动能相对同行的排名，排名越靠前表现越强。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Relative Strength Rank</span><span class="l-zh">相对强度排名</span></span>
           <a class="gl-src" href="us_stocks.html"><span class="l-en">US stocks dashboard</span><span class="l-zh">美股仪表盘</span></a>
@@ -677,7 +677,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-buy-readiness-score-us" data-glossary-row data-domain="us-stocks" data-letter="B" data-search="buy-readiness score 买入准备度评分 how ready a stock looks to be bought today, judged on the shape of the setup rather than on how good the company is.">
+      <div class="gl-row" id="gl-buy-readiness-score-us" data-glossary-row data-domain="us-stocks" data-letter="B" data-search="buy-readiness score 买入准备度评分 how ready a stock looks to be bought today, judged on the shape of the setup rather than on how good the company is. 0–100 分，评估某股票今日的买入准备度，看的是走势形态而非公司好坏。">
         <span class="gl-anchor" id="gl-letter-B" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Buy-Readiness Score</span><span class="l-zh">买入准备度评分</span></span>
@@ -689,7 +689,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-insider-buy-chip" data-glossary-row data-domain="us-stocks" data-letter="I" data-search="insider buying chip 内部人买入标签 company insiders recently bought more shares than they sold. it supports other signals but is not a standalone reason to buy.">
+      <div class="gl-row" id="gl-insider-buy-chip" data-glossary-row data-domain="us-stocks" data-letter="I" data-search="insider buying chip 内部人买入标签 company insiders recently bought more shares than they sold. it supports other signals but is not a standalone reason to buy. 公司内部人近期净买入自家股票。可作为其他信号的佐证，但不能单独作为买入理由。">
         <span class="gl-anchor" id="gl-letter-I" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Insider Buying Chip</span><span class="l-zh">内部人买入标签</span></span>
@@ -700,7 +700,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-entry-timing-dot-us" data-glossary-row data-domain="us-stocks" data-letter="E" data-search="entry timing dot 入场时机点 green means a defined entry is open today. yellow means the setup is valid but the price has run too far — wait for a dip.">
+      <div class="gl-row" id="gl-entry-timing-dot-us" data-glossary-row data-domain="us-stocks" data-letter="E" data-search="entry timing dot 入场时机点 green means a defined entry is open today. yellow means the setup is valid but the price has run too far — wait for a dip. 绿色表示今日存在明确入场点。黄色表示形态成立但价格已过度上涨，需等待回落。">
         <span class="gl-anchor" id="gl-letter-E" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Entry Timing Dot</span><span class="l-zh">入场时机点</span></span>
@@ -712,7 +712,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-sue-earnings-chip" data-glossary-row data-domain="us-stocks" data-letter="E" data-search="earnings surprise chip 财报超预期标签 how far a company&#39;s latest earnings beat analyst expectations. a fresh, larger beat has historically been followed by continued price drift in that direction.">
+      <div class="gl-row" id="gl-sue-earnings-chip" data-glossary-row data-domain="us-stocks" data-letter="E" data-search="earnings surprise chip 财报超预期标签 how far a company&#39;s latest earnings beat analyst expectations. a fresh, larger beat has historically been followed by continued price drift in that direction. 衡量最新财报超出分析师预期的幅度。近期较大幅度的超预期，历史上常伴随股价延续同向走势。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Earnings Surprise Chip</span><span class="l-zh">财报超预期标签</span></span>
           <a class="gl-src" href="us_stocks.html"><span class="l-en">US stocks dashboard</span><span class="l-zh">美股仪表盘</span></a>
@@ -722,7 +722,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-sector-act-now-board-us" data-glossary-row data-domain="us-stocks" data-letter="S" data-search="sector act-now table 板块即时行动表 a condensed table of only the stocks whose entry signal has actually triggered, sorted by tier and then by relative strength.">
+      <div class="gl-row" id="gl-sector-act-now-board-us" data-glossary-row data-domain="us-stocks" data-letter="S" data-search="sector act-now table 板块即时行动表 a condensed table of only the stocks whose entry signal has actually triggered, sorted by tier and then by relative strength. 仅列出已实际触发入场信号的股票，先按等级、再按相对强度排序的精简表格。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Sector Act-Now Table</span><span class="l-zh">板块即时行动表</span></span>
           <a class="gl-src" href="us_stocks.html"><span class="l-en">US stocks dashboard</span><span class="l-zh">美股仪表盘</span></a>
@@ -732,7 +732,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-factor-seasonality-chip" data-glossary-row data-domain="us-stocks" data-letter="S" data-search="seasonality chip 季节性标签 whether the current calendar month has historically been a headwind or tailwind for growth and momentum stocks. a weak, long-horizon bias only.">
+      <div class="gl-row" id="gl-factor-seasonality-chip" data-glossary-row data-domain="us-stocks" data-letter="S" data-search="seasonality chip 季节性标签 whether the current calendar month has historically been a headwind or tailwind for growth and momentum stocks. a weak, long-horizon bias only. 说明本月历史上对成长与动量股是逆风还是顺风，只是一个较弱的长期参考。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Seasonality Chip</span><span class="l-zh">季节性标签</span></span>
           <a class="gl-src" href="us_stocks.html"><span class="l-en">US stocks dashboard</span><span class="l-zh">美股仪表盘</span></a>
@@ -751,7 +751,7 @@ body.public-page{padding-top:0}
     <h2 class="gl-domain-h"><span><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="gl-domain-n" data-domain-count>10</span></h2>
     <dl class="gl-list">
 
-      <div class="gl-row" id="gl-market-state-score-china" data-glossary-row data-domain="china" data-letter="C" data-search="china market state score 中国市场状态分 a composite read of the a-share market&#39;s current posture — green for risk-on, yellow for mixed, red for risk-off. a present-state read, not a forecast.">
+      <div class="gl-row" id="gl-market-state-score-china" data-glossary-row data-domain="china" data-letter="C" data-search="china market state score 中国市场状态分 a composite read of the a-share market&#39;s current posture — green for risk-on, yellow for mixed, red for risk-off. a present-state read, not a forecast. 对 A 股当下状态的综合评分：绿色偏乐观，黄色中性，红色偏悲观。这是当下状态，而非预测。">
         <span class="gl-anchor" id="gl-letter-C" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">China Market State Score</span><span class="l-zh">中国市场状态分</span></span>
@@ -762,7 +762,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-regime-quadrant-pill-china" data-glossary-row data-domain="china" data-letter="C" data-search="china regime quadrant 中国周期象限 the growth-and-inflation backdrop the a-share market sits in, plus how early or late that backdrop is in its current run.">
+      <div class="gl-row" id="gl-regime-quadrant-pill-china" data-glossary-row data-domain="china" data-letter="C" data-search="china regime quadrant 中国周期象限 the growth-and-inflation backdrop the a-share market sits in, plus how early or late that backdrop is in its current run. A 股所处的增长与通胀背景，以及该背景处于早期还是后期阶段。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">China Regime Quadrant</span><span class="l-zh">中国周期象限</span></span>
           <a class="gl-src" href="china.html"><span class="l-en">China dashboard</span><span class="l-zh">中国仪表盘</span></a>
@@ -772,7 +772,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-path-chart-china" data-glossary-row data-domain="china" data-letter="R" data-search="recent trend chart 近期趋势图 whether the china market state score has been improving or deteriorating over the past two weeks. context only, not a single-day trigger.">
+      <div class="gl-row" id="gl-path-chart-china" data-glossary-row data-domain="china" data-letter="R" data-search="recent trend chart 近期趋势图 whether the china market state score has been improving or deteriorating over the past two weeks. context only, not a single-day trigger. 展示中国市场状态分过去两周是在改善还是恶化，仅作参考，不作为单日交易依据。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Recent Trend Chart</span><span class="l-zh">近期趋势图</span></span>
           <a class="gl-src" href="china.html"><span class="l-en">China dashboard</span><span class="l-zh">中国仪表盘</span></a>
@@ -782,7 +782,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-pullback-risk-radar-china" data-glossary-row data-domain="china" data-letter="C" data-search="china pullback risk radar 中国回撤风险雷达 the estimated probability of a sharp pullback in the next few weeks, built from six kinds of market scare. fires loud alerts early, by design.">
+      <div class="gl-row" id="gl-pullback-risk-radar-china" data-glossary-row data-domain="china" data-letter="C" data-search="china pullback risk radar 中国回撤风险雷达 the estimated probability of a sharp pullback in the next few weeks, built from six kinds of market scare. fires loud alerts early, by design. 估算未来几周内急跌的概率，综合六类市场恐慌信号，设计上会提前发出响亮警报。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">China Pullback Risk Radar</span><span class="l-zh">中国回撤风险雷达</span></span>
           <a class="gl-src" href="china.html"><span class="l-en">China dashboard</span><span class="l-zh">中国仪表盘</span></a>
@@ -792,7 +792,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-what-to-do-card-china" data-glossary-row data-domain="china" data-letter="W" data-search="what to do card 操作建议卡 the recommended trading posture for the current china backdrop — how aggressive or defensive to be with sizing. it does not name stocks.">
+      <div class="gl-row" id="gl-what-to-do-card-china" data-glossary-row data-domain="china" data-letter="W" data-search="what to do card 操作建议卡 the recommended trading posture for the current china backdrop — how aggressive or defensive to be with sizing. it does not name stocks. 针对当前中国市场环境的建议仓位姿态——应偏进取还是防御，不涉及具体选股。">
         <span class="gl-anchor" id="gl-letter-W" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">What To Do Card</span><span class="l-zh">操作建议卡</span></span>
@@ -803,7 +803,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-market-tiles-china" data-glossary-row data-domain="china" data-letter="M" data-search="market tiles 指数速览 quick price snapshots for the four major china and hong kong benchmarks. for daily orientation only — never use one day&#39;s move to override the bigger read.">
+      <div class="gl-row" id="gl-market-tiles-china" data-glossary-row data-domain="china" data-letter="M" data-search="market tiles 指数速览 quick price snapshots for the four major china and hong kong benchmarks. for daily orientation only — never use one day&#39;s move to override the bigger read. 四大中国及香港基准指数的每日价格速览，仅作当日参考，不应以单日涨跌否定大局判断。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Market Tiles</span><span class="l-zh">指数速览</span></span>
           <a class="gl-src" href="china.html"><span class="l-en">China dashboard</span><span class="l-zh">中国仪表盘</span></a>
@@ -813,7 +813,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-board-track-record-china" data-glossary-row data-domain="china" data-letter="B" data-search="board track record 榜单历史战绩 the share of logged picks on this board that have beaten the csi300 index so far, with a confidence range and the number of picks counted.">
+      <div class="gl-row" id="gl-board-track-record-china" data-glossary-row data-domain="china" data-letter="B" data-search="board track record 榜单历史战绩 the share of logged picks on this board that have beaten the csi300 index so far, with a confidence range and the number of picks counted. 该榜单已记录的选股中跑赢沪深300指数的比例，附带置信区间与统计样本数量。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Board Track Record</span><span class="l-zh">榜单历史战绩</span></span>
           <a class="gl-src" href="china.html"><span class="l-en">China dashboard</span><span class="l-zh">中国仪表盘</span></a>
@@ -823,7 +823,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-sector-rotation-act-now-china" data-glossary-row data-domain="china" data-letter="S" data-search="sector rotation board 板块轮动即时表 where to look and where to avoid in the a-share market right now, across four lanes from buy-now to reduce. a name can appear in two lanes.">
+      <div class="gl-row" id="gl-sector-rotation-act-now-china" data-glossary-row data-domain="china" data-letter="S" data-search="sector rotation board 板块轮动即时表 where to look and where to avoid in the a-share market right now, across four lanes from buy-now to reduce. a name can appear in two lanes. 展示当下 A 股应关注与应回避的板块，分四档从建议买入到建议减仓，同一标的可能同时出现在两档中。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Sector Rotation Board</span><span class="l-zh">板块轮动即时表</span></span>
           <a class="gl-src" href="china.html"><span class="l-en">China dashboard</span><span class="l-zh">中国仪表盘</span></a>
@@ -833,7 +833,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-sector-flow-velocity-china" data-glossary-row data-domain="china" data-letter="S" data-search="sector flow velocity 板块资金流速 how fast capital is moving into or out of each a-share sector, and whether that pace is speeding up or slowing down.">
+      <div class="gl-row" id="gl-sector-flow-velocity-china" data-glossary-row data-domain="china" data-letter="S" data-search="sector flow velocity 板块资金流速 how fast capital is moving into or out of each a-share sector, and whether that pace is speeding up or slowing down. 衡量资金流入或流出各 A 股板块的速度，以及该速度正在加快还是放缓。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Sector Flow Velocity</span><span class="l-zh">板块资金流速</span></span>
           <a class="gl-src" href="china.html"><span class="l-en">China dashboard</span><span class="l-zh">中国仪表盘</span></a>
@@ -843,7 +843,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-china-setup-score" data-glossary-row data-domain="china" data-letter="C" data-search="china setup score 中国建仓评分 how close an a-share name is to an actionable entry, blending timing, how washed-out it is, and sector tailwind. not a win-rate.">
+      <div class="gl-row" id="gl-china-setup-score" data-glossary-row data-domain="china" data-letter="C" data-search="china setup score 中国建仓评分 how close an a-share name is to an actionable entry, blending timing, how washed-out it is, and sector tailwind. not a win-rate. 评估某只 A 股距可操作入场点的远近，综合时机、超跌程度与板块顺风，不代表胜率。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">China Setup Score</span><span class="l-zh">中国建仓评分</span></span>
           <a class="gl-src" href="china.html"><span class="l-en">China dashboard</span><span class="l-zh">中国仪表盘</span></a>
@@ -861,7 +861,7 @@ body.public-page{padding-top:0}
     <h2 class="gl-domain-h"><span><span class="l-en">China stocks</span><span class="l-zh">中国个股</span></span><span class="gl-domain-n" data-domain-count>8</span></h2>
     <dl class="gl-list">
 
-      <div class="gl-row" id="gl-tier-cascade-cn" data-glossary-row data-domain="china-stocks" data-letter="E" data-search="entry tier cascade 入场等级序列 the confirmation tier for an a-share entry signal, from the freshest confirmed trigger (highest) to the earliest, weakest hint (lowest).">
+      <div class="gl-row" id="gl-tier-cascade-cn" data-glossary-row data-domain="china-stocks" data-letter="E" data-search="entry tier cascade 入场等级序列 the confirmation tier for an a-share entry signal, from the freshest confirmed trigger (highest) to the earliest, weakest hint (lowest). A 股入场信号的确认等级，从最新确认的触发信号（最高）到最早最弱的迹象（最低）。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Entry Tier Cascade</span><span class="l-zh">入场等级序列</span></span>
           <a class="gl-src" href="china_stocks.html"><span class="l-en">China stock screener</span><span class="l-zh">中国个股筛选</span></a>
@@ -872,7 +872,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-buy-readiness-score-cn" data-glossary-row data-domain="china-stocks" data-letter="C" data-search="china buy-readiness score 中国买入准备度评分 how close this a-share name is to an actionable buy, blending timing, how washed-out it is, distress, and sector tailwind. not a win-rate.">
+      <div class="gl-row" id="gl-buy-readiness-score-cn" data-glossary-row data-domain="china-stocks" data-letter="C" data-search="china buy-readiness score 中国买入准备度评分 how close this a-share name is to an actionable buy, blending timing, how washed-out it is, distress, and sector tailwind. not a win-rate. 评估某只 A 股距可操作买入点的远近，综合时机、超跌、风险折让与板块顺风，不代表胜率。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">China Buy-Readiness Score</span><span class="l-zh">中国买入准备度评分</span></span>
           <a class="gl-src" href="china_stocks.html"><span class="l-en">China stock screener</span><span class="l-zh">中国个股筛选</span></a>
@@ -882,7 +882,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-board-track-record-cn" data-glossary-row data-domain="china-stocks" data-letter="C" data-search="china board track record 中国榜单历史战绩 the share of this board&#39;s logged picks that have beaten the csi300 index so far, with a confidence range and sample size.">
+      <div class="gl-row" id="gl-board-track-record-cn" data-glossary-row data-domain="china-stocks" data-letter="C" data-search="china board track record 中国榜单历史战绩 the share of this board&#39;s logged picks that have beaten the csi300 index so far, with a confidence range and sample size. 该榜单已记录选股中跑赢沪深300指数的比例，附带置信区间与样本数量。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">China Board Track Record</span><span class="l-zh">中国榜单历史战绩</span></span>
           <a class="gl-src" href="china_stocks.html"><span class="l-en">China stock screener</span><span class="l-zh">中国个股筛选</span></a>
@@ -892,7 +892,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-washout-chip" data-glossary-row data-domain="china-stocks" data-letter="W" data-search="washout reclaim chip 超跌反弹标签 this stock recently fell sharply then reclaimed that drop — a pattern that historically precedes durable lows more often than chance. context, not a standalone signal.">
+      <div class="gl-row" id="gl-washout-chip" data-glossary-row data-domain="china-stocks" data-letter="W" data-search="washout reclaim chip 超跌反弹标签 this stock recently fell sharply then reclaimed that drop — a pattern that historically precedes durable lows more often than chance. context, not a standalone signal. 该股近期急跌后收复失地——历史上此形态较随机情形更常预示阶段性底部，仅作参考。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Washout Reclaim Chip</span><span class="l-zh">超跌反弹标签</span></span>
           <a class="gl-src" href="china_stocks.html"><span class="l-en">China stock screener</span><span class="l-zh">中国个股筛选</span></a>
@@ -902,7 +902,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-entry-timing-chips-cn" data-glossary-row data-domain="china-stocks" data-letter="E" data-search="entry timing chip 入场时机标签 buy now means the entry window is open today. wait for pullback means the signal is valid but the price has run ahead. hold means already in position.">
+      <div class="gl-row" id="gl-entry-timing-chips-cn" data-glossary-row data-domain="china-stocks" data-letter="E" data-search="entry timing chip 入场时机标签 buy now means the entry window is open today. wait for pullback means the signal is valid but the price has run ahead. hold means already in position. 买入表示今日入场窗口开放；等待回调表示信号有效但价格已过度上涨；持有表示已在场内。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Entry Timing Chip</span><span class="l-zh">入场时机标签</span></span>
           <a class="gl-src" href="china_stocks.html"><span class="l-en">China stock screener</span><span class="l-zh">中国个股筛选</span></a>
@@ -912,7 +912,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-stage-labels-cn" data-glossary-row data-domain="china-stocks" data-letter="E" data-search="entry stage label 入场阶段标签 entry means this name is at the cleanest point to buy. ran late means it appeared recently but has already moved a lot — the window has mostly passed.">
+      <div class="gl-row" id="gl-stage-labels-cn" data-glossary-row data-domain="china-stocks" data-letter="E" data-search="entry stage label 入场阶段标签 entry means this name is at the cleanest point to buy. ran late means it appeared recently but has already moved a lot — the window has mostly passed. 「入场」表示当前为最佳买点；「已迟」表示近期上榜但已大幅上涨，入场窗口已大半错过。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Entry Stage Label</span><span class="l-zh">入场阶段标签</span></span>
           <a class="gl-src" href="china_stocks.html"><span class="l-en">China stock screener</span><span class="l-zh">中国个股筛选</span></a>
@@ -922,7 +922,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-sector-turn-boost-chip" data-glossary-row data-domain="china-stocks" data-letter="S" data-search="sector turn chip 板块转折标签 this name&#39;s sector has just shown its first sign of turning up from a trough, adding a bonus tint in the screener. display context only.">
+      <div class="gl-row" id="gl-sector-turn-boost-chip" data-glossary-row data-domain="china-stocks" data-letter="S" data-search="sector turn chip 板块转折标签 this name&#39;s sector has just shown its first sign of turning up from a trough, adding a bonus tint in the screener. display context only. 该股所属板块刚出现见底回升的首个迹象，筛选表中会加以高亮，仅供参考。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Sector Turn Chip</span><span class="l-zh">板块转折标签</span></span>
           <a class="gl-src" href="china_stocks.html"><span class="l-en">China stock screener</span><span class="l-zh">中国个股筛选</span></a>
@@ -932,7 +932,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-coiled-cohort-chip" data-glossary-row data-domain="china-stocks" data-letter="C" data-search="coiled cohort chip 蓄势群组标签 this stock belongs to a group of similar names that have compressed tightly together after a washout — a group turning together often makes a stronger move.">
+      <div class="gl-row" id="gl-coiled-cohort-chip" data-glossary-row data-domain="china-stocks" data-letter="C" data-search="coiled cohort chip 蓄势群组标签 this stock belongs to a group of similar names that have compressed tightly together after a washout — a group turning together often makes a stronger move. 该股属于超跌后走势收敛的一组相似标的——若整组同步反转，往往力度更强。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Coiled Cohort Chip</span><span class="l-zh">蓄势群组标签</span></span>
           <a class="gl-src" href="china_stocks.html"><span class="l-en">China stock screener</span><span class="l-zh">中国个股筛选</span></a>
@@ -950,7 +950,7 @@ body.public-page{padding-top:0}
     <h2 class="gl-domain-h"><span><span class="l-en">Fund flows</span><span class="l-zh">基金流向</span></span><span class="gl-domain-n" data-domain-count>15</span></h2>
     <dl class="gl-list">
 
-      <div class="gl-row" id="gl-consensus-board" data-glossary-row data-domain="etfs" data-letter="C" data-search="consensus board 共识榜单 how many separately-managed funds bought or sold the same stock in the comparison window. a count is the hardest number here to game with one large fund.">
+      <div class="gl-row" id="gl-consensus-board" data-glossary-row data-domain="etfs" data-letter="C" data-search="consensus board 共识榜单 how many separately-managed funds bought or sold the same stock in the comparison window. a count is the hardest number here to game with one large fund. 统计有多少家独立基金在同一窗口内买入或卖出同一只股票，这一数字最难被单一大基金操纵。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Consensus Board</span><span class="l-zh">共识榜单</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -960,7 +960,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-net-conviction" data-glossary-row data-domain="etfs" data-letter="N" data-search="net conviction 净信心 how much of the tracked funds&#39; money moved into a name, after taking out the part that only moved because prices moved.">
+      <div class="gl-row" id="gl-net-conviction" data-glossary-row data-domain="etfs" data-letter="N" data-search="net conviction 净信心 how much of the tracked funds&#39; money moved into a name, after taking out the part that only moved because prices moved. 追踪基金真正投入某只股票的资金规模，已剔除仅因价格上涨而扩大的部分。">
         <span class="gl-anchor" id="gl-letter-N" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Net Conviction</span><span class="l-zh">净信心</span></span>
@@ -972,7 +972,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-per-fund-conviction" data-glossary-row data-domain="etfs" data-letter="P" data-search="per-fund conviction 单只基金信心度 the same real-buying measure as net conviction, but for one fund&#39;s decision on one stock — the building block the consensus board adds up.">
+      <div class="gl-row" id="gl-per-fund-conviction" data-glossary-row data-domain="etfs" data-letter="P" data-search="per-fund conviction 单只基金信心度 the same real-buying measure as net conviction, but for one fund&#39;s decision on one stock — the building block the consensus board adds up. 与净信心相同的真实买入衡量，但针对单只基金对单只股票的决定——是共识榜单加总的基础单元。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Per-Fund Conviction</span><span class="l-zh">单只基金信心度</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -982,7 +982,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-flow-vs-selection" data-glossary-row data-domain="etfs" data-letter="F" data-search="flow vs selection 资金流入与主动选股 two different reasons a fund&#39;s holding can grow: money arriving in the whole theme, or the manager actively favoring this one name over others.">
+      <div class="gl-row" id="gl-flow-vs-selection" data-glossary-row data-domain="etfs" data-letter="F" data-search="flow vs selection 资金流入与主动选股 two different reasons a fund&#39;s holding can grow: money arriving in the whole theme, or the manager actively favoring this one name over others. 基金持仓增加的两种不同原因：整体主题吸引资金流入，或经理主动看好该股胜过其他标的。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Flow vs Selection</span><span class="l-zh">资金流入与主动选股</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -992,7 +992,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-dollar-estimates" data-glossary-row data-domain="etfs" data-letter="D" data-search="dollar size estimate 美元规模估算 the size of a fund decision expressed in money rather than only in weight — the same move means very different things for a small and a large fund.">
+      <div class="gl-row" id="gl-dollar-estimates" data-glossary-row data-domain="etfs" data-letter="D" data-search="dollar size estimate 美元规模估算 the size of a fund decision expressed in money rather than only in weight — the same move means very different things for a small and a large fund. 以美元金额而非仅以权重表示基金决策的规模，因同样比例的变动对大小基金意义完全不同。">
         <span class="gl-anchor" id="gl-letter-D" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Dollar Size Estimate</span><span class="l-zh">美元规模估算</span></span>
@@ -1003,7 +1003,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-measurement-windows" data-glossary-row data-domain="etfs" data-letter="M" data-search="measurement window 观测窗口 the comparison spans a fixed number of fund filings, not a fixed number of days — since funds publish on different calendars, one window covers different real time spans.">
+      <div class="gl-row" id="gl-measurement-windows" data-glossary-row data-domain="etfs" data-letter="M" data-search="measurement window 观测窗口 the comparison spans a fixed number of fund filings, not a fixed number of days — since funds publish on different calendars, one window covers different real time spans. 对比窗口按固定的基金披露次数计算，而非固定天数，因基金披露频率不同，同一窗口对应的实际天数也不同。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Measurement Window</span><span class="l-zh">观测窗口</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1013,7 +1013,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-persistence-streak" data-glossary-row data-domain="etfs" data-letter="P" data-search="persistence streak 持续加仓天数 how many filings in a row one fund kept moving the same direction on a name, and whether that pace is speeding up or slowing down.">
+      <div class="gl-row" id="gl-persistence-streak" data-glossary-row data-domain="etfs" data-letter="P" data-search="persistence streak 持续加仓天数 how many filings in a row one fund kept moving the same direction on a name, and whether that pace is speeding up or slowing down. 统计某基金连续多少次披露都朝同一方向操作某股票，以及这一节奏是在加快还是放缓。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Persistence Streak</span><span class="l-zh">持续加仓天数</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1023,7 +1023,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-fresh-conviction" data-glossary-row data-domain="etfs" data-letter="F" data-search="fresh conviction 新建仓信心 a brand-new position a fund did not hold before — the highest-information kind of buy, since it cannot be explained by drift or rebalancing.">
+      <div class="gl-row" id="gl-fresh-conviction" data-glossary-row data-domain="etfs" data-letter="F" data-search="fresh conviction 新建仓信心 a brand-new position a fund did not hold before — the highest-information kind of buy, since it cannot be explained by drift or rebalancing. 基金此前完全未持有、如今新建立的仓位——信息量最高的买入类型，无法用漂移或再平衡解释。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Fresh Conviction</span><span class="l-zh">新建仓信心</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1034,7 +1034,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-stance-line" data-glossary-row data-domain="etfs" data-letter="S" data-search="stance 操作立场 a plain instruction for what to do about a row: watch, get ready, act, protect gains, or stand aside. filings are lagged, so the honest floor is watch, don&#39;t chase.">
+      <div class="gl-row" id="gl-stance-line" data-glossary-row data-domain="etfs" data-letter="S" data-search="stance 操作立场 a plain instruction for what to do about a row: watch, get ready, act, protect gains, or stand aside. filings are lagged, so the honest floor is watch, don&#39;t chase. 对该行数据给出的明确建议——观察、准备、行动、保护收益或按兵不动。因基金披露有延迟，最低建议通常是观察而非追高。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Stance</span><span class="l-zh">操作立场</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1044,7 +1044,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-hero-verdict-etfs" data-glossary-row data-domain="etfs" data-letter="H" data-search="hero verdict line 顶部结论句 one sentence summarizing which themes are drawing the most real fund buying right now, and whether the broader market backdrop supports or fights that buying.">
+      <div class="gl-row" id="gl-hero-verdict-etfs" data-glossary-row data-domain="etfs" data-letter="H" data-search="hero verdict line 顶部结论句 one sentence summarizing which themes are drawing the most real fund buying right now, and whether the broader market backdrop supports or fights that buying. 一句话总结当下哪些主题正获得基金真实买入，以及大盘背景是支持还是对抗这一买入。">
         <span class="gl-anchor" id="gl-letter-H" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Hero Verdict Line</span><span class="l-zh">顶部结论句</span></span>
@@ -1055,7 +1055,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-rotation-backdrop" data-glossary-row data-domain="etfs" data-letter="R" data-search="rotation backdrop 轮动背景 what the broader market has been rewarding lately, shown as context for the fund decisions above — it never re-ranks any name on the board.">
+      <div class="gl-row" id="gl-rotation-backdrop" data-glossary-row data-domain="etfs" data-letter="R" data-search="rotation backdrop 轮动背景 what the broader market has been rewarding lately, shown as context for the fund decisions above — it never re-ranks any name on the board. 展示近期大盘整体青睐的方向，仅作为上方基金决策的背景参考，不会改变榜单排序。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Rotation Backdrop</span><span class="l-zh">轮动背景</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1065,7 +1065,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-fund-coverage-table" data-glossary-row data-domain="etfs" data-letter="F" data-search="fund coverage table 基金覆盖情况表 how much history exists for each fund and how current its latest filing is, measured against the newest filing in the whole tracked group.">
+      <div class="gl-row" id="gl-fund-coverage-table" data-glossary-row data-domain="etfs" data-letter="F" data-search="fund coverage table 基金覆盖情况表 how much history exists for each fund and how current its latest filing is, measured against the newest filing in the whole tracked group. 展示每只基金已有多少历史数据，以及其最新披露相对于全体跟踪基金中最新一次披露有多滞后。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Fund Coverage Table</span><span class="l-zh">基金覆盖情况表</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1075,7 +1075,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-data-quality-guards" data-glossary-row data-domain="etfs" data-letter="D" data-search="data quality guards 数据质量护栏 automatic checks that catch stock splits, broken snapshots, and duplicate filings before they can be mistaken for real buying or selling.">
+      <div class="gl-row" id="gl-data-quality-guards" data-glossary-row data-domain="etfs" data-letter="D" data-search="data quality guards 数据质量护栏 automatic checks that catch stock splits, broken snapshots, and duplicate filings before they can be mistaken for real buying or selling. 自动检测股票拆分、异常快照与重复披露的机制，防止被误判为真实买卖行为。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Data Quality Guards</span><span class="l-zh">数据质量护栏</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1086,7 +1086,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-weight-trajectory-sparkline" data-glossary-row data-domain="etfs" data-letter="W" data-search="weight trajectory sparkline 持仓走势迷你图 a small line showing whether one fund&#39;s position in a stock has been growing, shrinking, or flat over recent filings.">
+      <div class="gl-row" id="gl-weight-trajectory-sparkline" data-glossary-row data-domain="etfs" data-letter="W" data-search="weight trajectory sparkline 持仓走势迷你图 a small line showing whether one fund&#39;s position in a stock has been growing, shrinking, or flat over recent filings. 小型走势图，展示某基金对某股票的持仓近期在增长、缩减还是持平。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Weight Trajectory Sparkline</span><span class="l-zh">持仓走势迷你图</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1096,7 +1096,7 @@ body.public-page{padding-top:0}
         </dd>
       </div>
 
-      <div class="gl-row" id="gl-forward-windows-etfs" data-glossary-row data-domain="etfs" data-letter="F" data-search="forward outcome ledger 后续表现记录 a running record of what the board&#39;s past picks actually did afterward, against the market, over several time windows — updated nightly, never used to rank today&#39;s board.">
+      <div class="gl-row" id="gl-forward-windows-etfs" data-glossary-row data-domain="etfs" data-letter="F" data-search="forward outcome ledger 后续表现记录 a running record of what the board&#39;s past picks actually did afterward, against the market, over several time windows — updated nightly, never used to rank today&#39;s board. 持续记录榜单过往选股在多个后续时间窗口的实际表现，每晚更新，但不用于排序当前榜单。">
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Forward Outcome Ledger</span><span class="l-zh">后续表现记录</span></span>
           <a class="gl-src" href="etfs.html"><span class="l-en">Fund flows dashboard</span><span class="l-zh">基金流向仪表盘</span></a>
@@ -1114,7 +1114,7 @@ body.public-page{padding-top:0}
     <h2 class="gl-domain-h"><span><span class="l-en">Signal quality</span><span class="l-zh">信号质量</span></span><span class="gl-domain-n" data-domain-count>1</span></h2>
     <dl class="gl-list">
 
-      <div class="gl-row" id="gl-overextended-reading" data-glossary-row data-domain="signals" data-letter="O" data-search="overextended reading 超延伸读数 a flag that a move has run far from its normal range. two versions of it exist and they often disagree.">
+      <div class="gl-row" id="gl-overextended-reading" data-glossary-row data-domain="signals" data-letter="O" data-search="overextended reading 超延伸读数 a flag that a move has run far from its normal range. two versions of it exist and they often disagree. 标记某走势已严重偏离正常区间的信号。该信号存在两个版本，两者常常意见不一。">
         <span class="gl-anchor" id="gl-letter-O" aria-hidden="true"></span>
         <dt class="gl-term">
           <span class="gl-term-name"><span class="l-en">Overextended Reading</span><span class="l-zh">超延伸读数</span></span>
@@ -1349,6 +1349,19 @@ body.public-page{padding-top:0}
     paint();
   });});
   query.addEventListener('input',paint);
+  letters.forEach(function(letter){
+    if(letter.tagName!=='A') return;
+    letter.addEventListener('click',function(ev){
+      var wanted=letter.getAttribute('data-letter'), target=null, i;
+      for(i=0;i<rows.length;i++){
+        if(!rows[i].hidden&&rows[i].getAttribute('data-letter')===wanted){target=rows[i];break;}
+      }
+      if(!target) return;
+      ev.preventDefault();
+      target.scrollIntoView({block:'start'});
+      if(window.history&&history.replaceState){history.replaceState(null,'','#'+target.id);}
+    });
+  });
   function paintLanguage(){
     var zh=document.documentElement.getAttribute('data-lang')==='zh';
     var ph=query.getAttribute(zh?'data-ph-zh':'data-ph-en');

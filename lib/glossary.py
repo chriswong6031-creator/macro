@@ -406,6 +406,7 @@ def validate_glossary(root: Path, terms: Iterable[GlossaryTerm] = GLOSSARY_TERMS
                 raise ValueError(f"glossary term {entry.id!r}: why_zh exceeds 40 characters")
 
         for field, text in (
+            ("name_en", entry.name_en), ("name_zh", entry.name_zh),
             ("answer_en", entry.answer_en), ("answer_zh", entry.answer_zh),
             ("why_en", entry.why_en or ""), ("why_zh", entry.why_zh or ""),
         ):
@@ -478,7 +479,7 @@ def glossary_view_model(root: Path, terms: Iterable[GlossaryTerm] = GLOSSARY_TER
                 "page_zh": t.page_zh,
                 "letter": letter,
                 "letter_anchor": is_first,
-                "search": f"{t.name_en.lower()} {t.name_zh} {t.answer_en.lower()}",
+                "search": f"{t.name_en.lower()} {t.name_zh} {t.answer_en.lower()} {t.answer_zh}",
             })
         domains_out.append({
             "id": domain.id,

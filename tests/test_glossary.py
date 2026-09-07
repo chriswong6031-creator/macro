@@ -64,11 +64,24 @@ def test_glance_answers_respect_the_word_and_character_budgets():
 
 def test_glance_text_carries_no_banned_vocabulary():
     for term in GLOSSARY_TERMS:
-        for text in (term.answer_en, term.answer_zh, term.why_en or "", term.why_zh or ""):
+        for text in (
+            term.name_en, term.name_zh,
+            term.answer_en, term.answer_zh, term.why_en or "", term.why_zh or "",
+        ):
             for pattern in BANNED_GLANCE_PATTERNS:
                 assert not pattern.search(text), f"{term.id}: banned pattern in {text!r}"
             for token in re.findall(r"[A-Za-z0-9_]+", text):
                 assert token not in BANNED_GLANCE_TOKENS, f"{term.id}: banned token {token!r}"
+
+
+def test_validate_glossary_rejects_a_banned_token_in_the_visible_term_name():
+    """review round 2, MINOR 1: validate_glossary only ran the banned-vocab
+    gate over answer_en/zh/why_en/zh — name_en/name_zh are rendered visible
+    text too (templates/glossary.html.j2) and were never checked."""
+    bad = replace(GLOSSARY_TERMS[0], name_en="RISK_OFF Signal")
+    terms = (bad,) + GLOSSARY_TERMS[1:]
+    with pytest.raises(ValueError):
+        validate_glossary(ROOT, terms)
 
 
 def test_validate_glossary_rejects_a_term_whose_source_line_does_not_match():
@@ -108,3 +121,13 @@ def test_letter_anchor_is_set_exactly_once_per_occupied_letter():
             if term["letter_anchor"]:
                 assert term["letter"] not in seen
                 seen.add(term["letter"])
+
+
+def test_search_index_gives_zh_readers_the_same_definition_reach_as_en_readers():
+    """review round 2, MINOR 2: `search` indexed name_en/name_zh/answer_en but
+    not answer_zh, so an EN reader could find a term by words in its
+    definition and a ZH reader could only find it by the headword itself."""
+    vm = glossary_view_model(ROOT)
+    for domain in vm["domains"]:
+        for term in domain["terms"]:
+            assert term["answer_zh"] in term["search"], term["id"]
