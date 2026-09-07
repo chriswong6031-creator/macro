@@ -724,6 +724,20 @@ jobs:
       # contract compilers adjacent.
       - name: K3-E Opportunity Evidence Vector contract and hostile-fixture kills
         run: python -m pytest tests/test_opportunity_evidence_vector_contract.py -q
+      # B-A-F10-4 estimator implication output contract (contracts/estimator_
+      # implication.v1.schema.json, engine/estimator_implication.py). Rides this
+      # same contract job for the same reason K2-B/K3-E do: a pure read-only
+      # composer over already-checked-out result artifacts (jsonschema +
+      # engine.seasonality.event_study + engine.trial_ledger, both stdlib/
+      # pandas/numpy — already on this job's install line above) that
+      # materializes no store and calls no owner writer. It was named by no
+      # `run:` step in any workflow at review time (2026-09-06 round-1 review,
+      # BLOCKER B1), so its promotion firewall (test_contract_rejects_
+      # promotion_fields et al.) was inert against a future drift — this line
+      # is that fix. Placed immediately after K3-E to keep the pointer-only,
+      # zero-authority contract compilers adjacent.
+      - name: B-A-F10-4 Estimator Implication output contract
+        run: python -m pytest tests/test_estimator_implication_contract.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),
