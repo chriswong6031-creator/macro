@@ -1569,6 +1569,7 @@ def _build_deep(blob: dict | None, per: dict, agg: dict, ticker: str,
     dialogs = [d for d in (
         _soft(_deep_stats, blob, performance, stats),
         _soft(_deep_financials, blob),
+        _soft(_deep_valuation_scenario, blob),
         _soft(_deep_technicals, blob, ts_row),
         _soft(_deep_earnings, blob),
         _soft(_deep_options, blob, per.get("gex_v1")),
@@ -2447,6 +2448,71 @@ def _build_financials(blob: dict | None) -> dict | None:
         "roe": fin.get("roe"),
         "roa": fin.get("roa"),
     }
+
+
+def _valuation_scenario_view(blob: dict | None) -> dict | None:
+    """Passthrough read of the pre-computed valuation_scenario.v1 blob written
+    by scripts/build_stock_library.py (numbers-only contract; no transform
+    happens here -- the producer already emits the exact view shape)."""
+    if not blob:
+        return None
+    return (blob.get("valuation_scenario") or {}).get("v1")
+
+
+_VS_SCENARIO_TITLES_ZH = {"cautious": "保守", "base": "基准", "upbeat": "乐观"}
+
+
+def _deep_valuation_scenario(blob: dict | None) -> dict | None:
+    vscn = (blob or {}).get("valuation_scenario", {}).get("v1") if blob else None
+    if not vscn:
+        return None
+    panels: list = []
+    rows = [
+        {"k_en": "Fiscal year", "k_zh": "财年", "v": str(vscn.get("fy")), "v_en": "", "v_zh": ""},
+        {"k_en": "Period end", "k_zh": "期末日期", "v": str(vscn.get("period_end")), "v_en": "", "v_zh": ""},
+        {"k_en": "Source", "k_zh": "来源", "v": "", "v_en": "SEC filings", "v_zh": "SEC申报文件"},
+        {"k_en": "Tier", "k_zh": "层级", "v": "", "v_en": "Research display only, not advice",
+         "v_zh": "仅供研究展示，非投资建议"},
+        # Review B-F07-1 MAJOR-2: was "diluted share count" -- the loader has no
+        # diluted share count column (only "eps_diluted", a per-share ratio, not
+        # a share count; see engine/valuation_scenario.py's module docstring), so
+        # the module deliberately divides by shares OUTSTANDING and labels that
+        # honestly (base kv row's "identity" field). This formula description
+        # must match what the panel actually does, not what a future producer
+        # change might someday supply.
+        # MINOR-4 (review round 3): "adj." was an abbreviation in user-facing
+        # dialog copy (same class as round-2 MINOR-3, which forced N/A -> No
+        # data); spelled out.
+        {"k_en": "Formula", "k_zh": "计算公式",
+         "v": "", "v_en": "adjusted net income x earnings multiple / share count (as reported)",
+         "v_zh": "调整后净利润 x 市盈率倍数 / 披露股数"},
+        {"k_en": "Net debt / cash", "k_zh": "净负债／净现金",
+         "v": "", "v_en": "Shown as a reported fact only — not applied to the per-share math "
+                          "(a P/E multiple already yields equity value)",
+         "v_zh": "仅作为披露事实展示，不参与每股计算（市盈率倍数本身已是股权价值）"},
+    ]
+    panels.append({"kind": "kv", "title_en": "Basis", "title_zh": "计算依据", "rows": rows})
+    for s in vscn.get("scenarios", []):
+        a = s.get("assumptions", {})
+        key = s.get("key", "")
+        srows = [
+            {"k_en": "Sales growth", "k_zh": "销售增长", "v": f"{a.get('sales_growth_pct')}%", "v_en": "", "v_zh": ""},
+            {"k_en": "Margin change", "k_zh": "利润率变化", "v": f"{a.get('margin_delta_pp')}pp", "v_en": "", "v_zh": ""},
+            {"k_en": "Earnings multiple", "k_zh": "市盈率倍数", "v": f"{a.get('earnings_multiple')}x", "v_en": "", "v_zh": ""},
+            {"k_en": "Per-share (computed)", "k_zh": "每股价值（计算值）",
+             "v": (f"${s['per_share']:.2f}" if s.get("computable")
+                   else ""),
+             "v_en": ("" if s.get("computable") else "Not computable"),
+             "v_zh": ("" if s.get("computable") else "无法计算")},
+        ]
+        panels.append({
+            "kind": "kv",
+            "title_en": key.title(),
+            "title_zh": _VS_SCENARIO_TITLES_ZH.get(key, ""),
+            "rows": srows,
+        })
+    return _mk_dialog(
+        "valuation_scenario", "How this was worked out", "计算方式说明", panels)
 
 
 def _build_valuation(blob: dict | None) -> list | None:
@@ -4349,6 +4415,7 @@ def build_page_context(
     performance = _build_performance(ticker, trailing_returns)
     financials = _build_financials(blob)
     valuation = _build_valuation(blob)
+    valuation_scenario = _valuation_scenario_view(blob)
     earnings = _build_earnings(blob)
     technicals = _build_technicals(ticker, blob, tech_screener)
     options = _build_options(blob, gex_v1, flow)
@@ -4427,6 +4494,7 @@ def build_page_context(
         "performance": performance,
         "financials": financials,
         "valuation": valuation,
+        "valuation_scenario": valuation_scenario,
         "earnings": earnings,
         "technicals": technicals,
         "options": options,

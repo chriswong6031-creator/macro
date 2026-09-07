@@ -1,0 +1,4 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/_valuation_scenario.html.j2
+manifest: mockups/evidence/valuation_scenario/manifest.json

@@ -90,3 +90,27 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+
+tests/test_valuation_scenario.py: >-
+  B-F07-1 (MO-PAID-022) valuation-scenario V1 pure module + panel, landed 2026-09-06.
+  No existing legacy job owns engine/valuation_scenario.py's subject yet; wiring a new
+  run: step into .github/ci/legacy-jobs.yml is itself a global CI invalidator
+  (full-suite trigger + ci-authority hit) and was judged out of scope for a
+  single-issuer V1 slice. CORRECTED 2026-09-06 (review round 2 MAJOR-1): an
+  earlier version of this row claimed the suite is also "run by any future job
+  that imports engine/valuation_scenario.py" via the five legacy-jobs.yml
+  entries this module's path was added to (flow-surface, biocatalyst-history,
+  biocatalyst-serving, unrun-picks-boards, unrun-government-revenue-grader).
+  That is false: every one of those five carries `if: ${{ false }}` -- they are
+  disabled legacy jobs kept only for the contract-delta closure/ownership
+  audit, not `run:` steps that execute anything. The path entries correctly
+  stop scripts/check_contract_delta.py from flagging this file as an orphaned
+  change; they do not run this suite, and no other job names it either
+  (`grep -rn test_valuation_scenario .github` returns nothing). The suite is
+  today run ONLY as part of this PR's own build verification (python -m pytest
+  tests/test_valuation_scenario.py -q) and by a developer running it directly
+  -- the same position tests/test_stock_fundamentals.py is already in
+  (config/unrun_test_baseline.json), which is the established norm for a new
+  engine subject's own suite in this repo. Owner: F07 valuation/scenario lane.
+  Delete this row and add the file to a `run:` step in the first genuinely
+  enabled job that imports engine/valuation_scenario.py in a production path.
