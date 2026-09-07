@@ -13,6 +13,19 @@ Usage: python -m scripts.build_stock_library
 """
 from __future__ import annotations
 
+try:
+    # Round-2 review MINOR-1: this was a bare, unguarded module-level import
+    # while every actual *use* below is wrapped in `except Exception` -- so an
+    # import-time failure in the debt-maturity module (or one of ITS imports)
+    # killed the entire stockdata build before a single ticker was processed,
+    # the exact opposite of the "additive; must not break the stockdata
+    # build" contract this file's own comments state. `_dm_load` is checked
+    # for None at the one call site below.
+    from scripts.build_debt_maturity import load_debt_maturity_facts as _dm_load
+except Exception:  # noqa: BLE001 -- additive panel; an import failure must never break the whole build
+    _dm_load = None
+
+
 import json
 import math
 import logging
@@ -4048,6 +4061,37 @@ def main() -> int:
                 rec["sector_pulse"] = _sp_row
         except Exception as _spe2:  # noqa: BLE001 — additive; must not break the stockdata build
             pass
+        # ---- debt maturity ladder (packet B-F09-3, bounded pure producer) ----------
+        # Top-level block in each stockdata JSON: engine.debt_maturity.v1.
+        # Identity is CIK-only via scripts/build_debt_maturity.py's committed
+        # ticker->CIK ledger + issuer_master fallback (GATE 0, fixed 2026-09-06).
+        # Three distinct null states (META-CEO ruling round 2, B2) -- an
+        # unresolved ticker and a resolved-but-never-fetched CIK are BOTH
+        # "not_loaded" (we simply do not know yet, never a positive claim);
+        # only a completed fetch cycle that positively found nothing earns
+        # "no_filings" (passed through as companyfacts=None so the engine's
+        # own status derivation is the single source of truth for that
+        # string). Never a network call here -- the cache is warmed off the
+        # render path by collectors/edgar_facts.py (B1 wiring).
+        try:
+            if _dm_load is None:
+                raise RuntimeError("scripts.build_debt_maturity import failed at module load")
+            _dm_cik, _dm_facts, _dm_state = _dm_load(ticker)
+            from engine.debt_maturity import extract_maturity_ladder as _dm_extract  # noqa: PLC0415
+            _dm_asof = _dt.date.today()
+            if _dm_state in ("unresolved", "not_loaded"):
+                rec["debt_maturity"] = {
+                    "schema": "debt_maturity.v1", "status": "not_loaded", "cik": _dm_cik,
+                    "buckets": [], "total_reported_usd": None, "total_display": None,
+                    "near_share_pct": None, "buckets_reported": 0, "buckets_total": 6,
+                    "as_of": _dm_asof.isoformat(),
+                }
+            elif _dm_state == "confirmed_no_filings":
+                rec["debt_maturity"] = _dm_extract(None, cik=_dm_cik, as_of=_dm_asof)
+            else:
+                rec["debt_maturity"] = _dm_extract(_dm_facts, cik=_dm_cik, as_of=_dm_asof)
+        except Exception:  # noqa: BLE001 -- additive; must not break the stockdata build
+            rec["debt_maturity"] = {"schema": "debt_maturity.v1", "status": "not_applicable"}
         # ---- confluence block (frozen Terminal contract, 2026-07-06) ---------------
         # Top-level block in each stockdata JSON consumed by the charting-app Terminal.
         # Shape: {tier, weight, sub, ticks, bars_to_cross, provisional, not_topped,

@@ -128,6 +128,21 @@ def _cache_path():
     return p
 
 
+# Distinguishes "SEC positively returned 404 -- this CIK has no companyfacts
+# document at all" from a plain None (every retry raised: unknown/transient
+# failure). Packet B-F09-3's debt-maturity cache wiring below needs this to
+# avoid confirming a false "no SEC filings" negative on a mere network blip;
+# every pre-existing caller of `_get_json` still only ever sees a falsy value
+# from either outcome (`is _CONFIRMED_ABSENT` is falsy too), so this is
+# backward compatible with the one existing call site.
+class _ConfirmedAbsent:
+    def __bool__(self) -> bool:
+        return False
+
+
+_CONFIRMED_ABSENT = _ConfirmedAbsent()
+
+
 def _get_json(url: str, retries: int = 3):
     import requests
     ua = config.load()["edgar"]["user_agent"]
@@ -135,7 +150,7 @@ def _get_json(url: str, retries: int = 3):
         try:
             r = requests.get(url, headers={"User-Agent": ua, "Accept-Encoding": "gzip, deflate"}, timeout=40)
             if r.status_code == 404:
-                return None
+                return _CONFIRMED_ABSENT
             r.raise_for_status()
             return r.json()
         except Exception as e:  # noqa: BLE001
@@ -144,6 +159,36 @@ def _get_json(url: str, retries: int = 3):
                 return None
             time.sleep(1.5 * (attempt + 1))
     return None
+
+
+def _dm_wire_cache(cik: int, data) -> None:
+    """Packet B-F09-3 (issuer debt-maturity ladder, META-CEO ruling round 2,
+    B1): warm engine/debt_maturity.py's bounded per-issuer cache from the SAME
+    companyfacts response this collector already fetches for every issuer the
+    stock library builds statements for -- no second SEC round trip, and never
+    called from the render path (this collector runs off-render; see
+    .github/workflows/debt-maturity-drip.yml).
+
+    ``data`` is whatever `_get_json` returned for this CIK's full companyfacts
+    document: a real dict (facts found), `_CONFIRMED_ABSENT` (SEC returned 404
+    -- this CIK genuinely has no companyfacts at all), or `None` (every retry
+    failed -- unknown/transient, must NOT be recorded as a confirmed negative).
+    Best-effort; never raises, never blocks the statements build.
+    """
+    try:
+        from scripts.build_debt_maturity import refresh_cache_for_cik  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return
+    try:
+        if data is _CONFIRMED_ABSENT:
+            refresh_cache_for_cik(f"{int(cik):010d}", full_companyfacts=None)
+        elif data:
+            refresh_cache_for_cik(f"{int(cik):010d}", full_companyfacts=data)
+        # else: data is None (unknown/transient failure) -- leave whatever
+        # cache already exists untouched; a cache miss stays "not loaded yet",
+        # never fabricated as "confirmed no filings".
+    except Exception:  # noqa: BLE001
+        log.debug("edgar_facts: debt-maturity cache warm failed for CIK%s", cik, exc_info=True)
 
 
 def _annual(entries: list, instant: bool = False) -> dict[int, tuple[float, str]]:
@@ -241,6 +286,7 @@ def _statements_for(cik: int) -> list[dict]:
     """Per-fiscal-year rows of the raw concepts for one filer (last KEEP_YEARS)."""
     data = _get_json(FACTS_URL.format(cik))
     time.sleep(0.12)                       # SEC fair-access pacing (<10 req/s)
+    _dm_wire_cache(cik, data)               # packet B-F09-3 debt-maturity cache warm (B1)
     if not data:
         return []
     usgaap = (data.get("facts") or {}).get("us-gaap") or {}

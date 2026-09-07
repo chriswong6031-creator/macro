@@ -1,0 +1,5 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/theme.css
+  - templates/_debt_maturity.html.j2
+manifest: mockups/evidence/debt_maturity/manifest.json
