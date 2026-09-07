@@ -1246,13 +1246,13 @@ entries:
   - id: BL-G099
     match:
       any_of:
-        - 'public.{0,30}admission.{0,30}scope'
+        - 'keyed.{0,30}webhook.{0,30}quota'
     reason: >
-      Public API v0 is admitted only self-scoped: user-scoped keys
-      until tenancy (0014) exists, shared download-quota meter (never a
-      second meter), no repo internals (`DNR:KILL-PUBLIC-INTERNALS`),
-      gates G1-
-    source: '`research/market_intelligence_productization/MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md`; `agentos/decisions/DEC-F12-PUBLIC-API-V0-ADMISSION-2026-09-06.md`; Meta-CEO B ruling r2 2026-09-06'
+      No keyed public API, webhook, or API key in v0; admission
+      requires G1-G4 (spec §Admission gate G1-G4) and a new DEC. Gates:
+      G1 contract acceptance, G2 tenancy scope owner (Terminal
+      migration `0014_ten
+    source: '`research/market_intelligence_productization/MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md`; `agentos/decisions/DEC-F12-PUBLIC-API-V0-ADMISSION-2026-09-06.md`; Meta-CEO B ruling r3 2026-09-07'
 
   - id: BL-G100
     match:

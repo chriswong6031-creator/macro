@@ -64,9 +64,6 @@ def test_ruling_doc_exists_and_answers_seven_questions():
         assert heading in text, f"missing section: {heading}"
     sections = _split_sections(text)
     for heading, body in sections.items():
-        if heading == "## Redistribution clause":
-            # (f) is a plain-word clause + exclusion table, not a Q&A section
-            continue
         assert "Answer:" in body, f"{heading} missing Answer:"
         assert "Rationale:" in body, f"{heading} missing Rationale:"
         assert "Rejected alternative:" in body, f"{heading} missing Rejected alternative:"

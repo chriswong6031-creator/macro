@@ -692,10 +692,10 @@ entries:
     section: 3
     section_name: estimator_laws
 
-  - topic: 'Public API v0 admission scope (packet B-F12-5, closes MO-PAID-055/084, MO-DELTA-036/037)'
-    key: LAW-F12-PUBLIC-API-V0-SCOPED
-    verdict: 'Public API v0 is admitted only self-scoped: user-scoped keys until tenancy (0014) exists, shared download-quota meter (never a second meter), no repo internals (`DNR:KILL-PUBLIC-INTERNALS`), gates G1-G4 as written in `MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md`'
-    source: '`research/market_intelligence_productization/MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md`; `agentos/decisions/DEC-F12-PUBLIC-API-V0-ADMISSION-2026-09-06.md`; Meta-CEO B ruling r2 2026-09-06'
+  - topic: 'Keyed webhook quota-metered public API v0 admission — any proposal for a keyed public API, an outbound webhook, an api_key, a second quota meter, or a keyed endpoint (packet B-F12-5, closes MO-PAID-055/084, MO-DELTA-036/037)'
+    key: LAW-F12-PUBLIC-API-V0-REFUSED
+    verdict: 'No keyed public API, webhook, or API key in v0; admission requires G1-G4 (spec §Admission gate G1-G4) and a new DEC. Gates: G1 contract acceptance, G2 tenancy scope owner (Terminal migration `0014_tenancy_foundation`, charting-app repo — macro''s own DDL ledger tops out at `0008`), G3 per-source redistribution rights, G4 named consumer. See `MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md` §Admission gate G1-G4 and `DEC:F12-PUBLIC-API-V0-ADMISSION-2026-09-06`'
+    source: '`research/market_intelligence_productization/MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md`; `agentos/decisions/DEC-F12-PUBLIC-API-V0-ADMISSION-2026-09-06.md`; Meta-CEO B ruling r3 2026-09-07 (withdraws r2 item 3''s ADMITTED_SCOPED_V0 — the frozen spec''s own REFUSED-IN-V0 text wins)'
     section: 3
     section_name: estimator_laws
 
