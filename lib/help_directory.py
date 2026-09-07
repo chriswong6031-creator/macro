@@ -537,10 +537,28 @@ _NOTE_READ_FAILED = ("We could not read your plan just now, so this went to the 
                      "\u6211\u4eec\u6682\u65f6\u8bfb\u4e0d\u5230\u4f60\u7684\u65b9\u6848\uff0c\u56e0\u6b64\u8fd9\u6761\u4fe1\u606f\u8fdb\u5165\u4e86\u666e\u901a\u961f\u5217\u3002\u5982\u679c\u4f60\u5df2\u4ed8\u8d39\uff0c\u8bf7\u56de\u590d\u6536\u636e\u90ae\u4ef6\uff0c\u6211\u4eec\u4f1a\u8f6c\u5230\u4f18\u5148\u961f\u5217\u3002")
 _NOTE_UNRECOGNISED = ("Your plan was not recognised, so this went to the general queue.",
                       "\u65e0\u6cd5\u8bc6\u522b\u4f60\u7684\u65b9\u6848\uff0c\u56e0\u6b64\u8fd9\u6761\u4fe1\u606f\u8fdb\u5165\u4e86\u666e\u901a\u961f\u5217\u3002")
+# Review finding B-F13-3 MAJOR-1: (tier=None, tier_known=True) used to mean only one
+# thing, "not signed in" -- but a signed-in user whose account read succeeds and simply
+# carries no plan value collapses onto the exact same inputs, and was told the false
+# sentence "you were not signed in". ``signed_in`` below disambiguates that fourth state.
+_NOTE_NO_PLAN = ("We could not find a plan on your account, so this went to the general "
+                 "queue. If you pay for a plan, reply to the receipt and we will move it.",
+                 "\u6211\u4eec\u5728\u4f60\u7684\u8d26\u6237\u4e0a\u672a\u627e\u5230\u65b9\u6848\uff0c"
+                 "\u56e0\u6b64\u8fd9\u6761\u4fe1\u606f\u8fdb\u5165\u4e86\u666e\u901a\u961f\u5217\u3002"
+                 "\u5982\u679c\u4f60\u5df2\u4ed8\u8d39\uff0c\u8bf7\u56de\u590d\u6536\u636e\u90ae\u4ef6\uff0c"
+                 "\u6211\u4eec\u4f1a\u8f6c\u5230\u4f18\u5148\u961f\u5217\u3002")
+_check_banned_vocabulary("support note (signed in, no plan on account)", *_NOTE_NO_PLAN)
 
 
-def route_for_tier(tier: str | None, *, tier_known: bool = True) -> dict[str, Any]:
-    """Pure. Always returns plan_id, queue, plan_read, promise_en/zh, note_en/zh."""
+def route_for_tier(tier: str | None, *, tier_known: bool = True,
+                    signed_in: bool = False) -> dict[str, Any]:
+    """Pure. Always returns plan_id, queue, plan_read, promise_en/zh, note_en/zh.
+
+    ``signed_in`` matters only when ``tier`` is ``None`` and ``tier_known`` is True: it
+    tells apart an anonymous submitter (signed_in=False, "you were not signed in") from a
+    signed-in user whose account has no readable plan value (signed_in=True, a distinct
+    plain sentence) -- see the MAJOR-1 note above ``_NOTE_NO_PLAN``.
+    """
     if tier is not None:
         plan_id = _TIER_TO_PLAN.get(tier)
         if plan_id is not None:
@@ -551,6 +569,8 @@ def route_for_tier(tier: str | None, *, tier_known: bool = True) -> dict[str, An
         note_en, note_zh = _NOTE_UNRECOGNISED
     elif not tier_known:
         note_en, note_zh = _NOTE_READ_FAILED
+    elif signed_in:
+        note_en, note_zh = _NOTE_NO_PLAN
     else:
         note_en, note_zh = _NOTE_SIGNED_OUT
 

@@ -589,7 +589,11 @@ def create_ticket(body: TicketRequest, request: Request,
     if not _EMAIL_RE.match(email):
         raise HTTPException(400, "a valid email address is required")
     tier, tier_known = _tier_for_state(user_id) if user_id else (None, True)
-    routing = route_for_tier(tier, tier_known=tier_known)
+    # signed_in=bool(user_id) disambiguates a signed-in account with no readable plan
+    # value from an anonymous submitter — otherwise both collapse onto the same
+    # (tier=None, tier_known=True) inputs and the signed-in user is told the false
+    # "you were not signed in" sentence (review finding B-F13-3 MAJOR-1).
+    routing = route_for_tier(tier, tier_known=tier_known, signed_in=bool(user_id))
 
     # ONE stamp per ticket: the response prints it on the page's success slip and the ack
     # email prints it in its own. Two clocks read a few hundred ms apart would show the

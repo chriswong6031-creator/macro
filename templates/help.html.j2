@@ -77,7 +77,9 @@ html[data-theme="light"] .help-card:hover,html[data-theme="light"] .help-card:fo
 /* ==== BEGIN packet B-F13-3 — answers · changelog · support by plan ==== */
 /* DARK TREATMENT (command center): no containers. Sections separate by luminance,
    and the hero's cyan instrument rail is extended into the changelog spine. */
-.help-count{color:var(--muted);font:600 var(--fs-label)/1 var(--font-mono);letter-spacing:.09em;font-variant-numeric:tabular-nums;padding-left:4px;white-space:nowrap}
+.help-count-wrap{display:flex;align-items:baseline;gap:5px;padding-left:4px;white-space:nowrap}
+.help-count{color:var(--muted);font:600 var(--fs-label)/1 var(--font-mono);letter-spacing:.09em;font-variant-numeric:tabular-nums}
+.help-count-label{color:var(--muted);font:600 11px/1.4 var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
 .help-sec{padding:34px 0 0}
 .help-sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:0 0 16px;padding:0 0 12px;border-bottom:1px solid var(--line)}
 .help-sec-head h2{margin:0;font:680 clamp(19px,2.4vw,26px)/1.15 var(--font-ui);letter-spacing:-.025em}
@@ -137,7 +139,7 @@ html[data-theme="light"] .help-support-cta{background:var(--panel);box-shadow:0 
 }
 @media (max-width:760px){
   .help-controls{grid-template-columns:1fr}
-  .help-count{padding-left:0}
+  .help-count-wrap{padding-left:0}
 }
 @media (max-width:600px){
   .help-sec{padding-top:26px}
@@ -175,7 +177,10 @@ html[data-theme="light"] .help-support-cta{background:var(--panel);box-shadow:0 
       <button class="help-filter" type="button" data-category="{{ category.id }}" aria-pressed="false">{{ t(category.label_en, category.label_zh) }}</button>
 {% endfor %}
     </div>
-    <span class="help-count" id="help-result-count" role="status" aria-live="polite">{{ (entries|length) + (answers|length) }}</span>
+    <span class="help-count-wrap" role="status" aria-live="polite">
+      <span class="help-count" id="help-result-count">{{ (entries|length) + (answers|length) }}</span>
+      <span class="help-count-label">{{ t('results', '条结果') }}</span>
+    </span>
   </section>
 
   <section class="help-sec" aria-labelledby="help-answers-h" data-answers-state="{{ answers_state }}">

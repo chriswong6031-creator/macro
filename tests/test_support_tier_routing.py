@@ -58,8 +58,26 @@ def test_signed_out_and_unrecognised_are_distinct_notes() -> None:
     signed_out = route_for_tier(None, tier_known=True)
     unreadable = route_for_tier(None, tier_known=False)
     unrecognised = route_for_tier("some-future-tier")
-    notes = {signed_out["note_en"], unreadable["note_en"], unrecognised["note_en"]}
-    assert len(notes) == 3
+    no_plan = route_for_tier(None, tier_known=True, signed_in=True)
+    notes = {signed_out["note_en"], unreadable["note_en"], unrecognised["note_en"], no_plan["note_en"]}
+    assert len(notes) == 4
+
+
+def test_signed_in_user_with_no_plan_is_never_told_they_were_signed_out() -> None:
+    """Review finding B-F13-3 MAJOR-1 (RED before the fix): an anonymous submitter and a
+    signed-in user whose account read succeeds but carries no plan value both call
+    ``route_for_tier(None, tier_known=True)`` — without ``signed_in`` to disambiguate,
+    the signed-in case silently reused the anonymous "you were not signed in" sentence,
+    which is a false statement about the user's own account state in both languages."""
+    anonymous = route_for_tier(None, tier_known=True, signed_in=False)
+    signed_in_no_plan = route_for_tier(None, tier_known=True, signed_in=True)
+    assert anonymous["note_en"] == "You were not signed in, so this went to the general queue."
+    assert signed_in_no_plan["note_en"] != anonymous["note_en"]
+    assert signed_in_no_plan["note_zh"] != anonymous["note_zh"]
+    assert "signed in" not in signed_in_no_plan["note_en"].lower()
+    assert signed_in_no_plan["note_en"] and signed_in_no_plan["note_zh"]
+    assert signed_in_no_plan["plan_id"] == "free"
+    assert signed_in_no_plan["plan_read"] is False
 
 
 def test_every_known_tier_label_maps_to_a_plan() -> None:
@@ -147,6 +165,24 @@ def test_receipt_carries_the_promise_when_the_plan_read_fails(wired, monkeypatch
     assert out["routing"]["plan"] == "free"
     assert out["routing"]["note_en"]
     assert "queue" not in out
+
+
+def test_signed_in_ticket_is_never_told_it_was_not_signed_in_when_plan_is_unreadable(wired, monkeypatch) -> None:
+    """Review finding B-F13-3 MAJOR-1 (RED before the fix): a signed-in user whose
+    ``billing.read_entitlement`` call SUCCEEDS but returns a dict with no usable
+    ``tier`` key (``.get("tier")`` -> None) reached ``route_for_tier(None,
+    tier_known=True)`` — the exact same inputs as an anonymous submitter — and the
+    JSON receipt (both note_en and note_zh) falsely told a signed-in person they
+    were not signed in."""
+    from app import billing
+
+    monkeypatch.setattr(support, "_resolve_user", lambda auth: {"id": UID, "email": "ada@example.com"})
+    monkeypatch.setattr(billing, "read_entitlement", lambda uid: {})  # no "tier" key at all
+    out = _post(wired, [])
+    assert out["routing"]["plan"] == "free"
+    assert out["routing"]["note_en"] != "You were not signed in, so this went to the general queue."
+    assert "signed in" not in out["routing"]["note_en"].lower()
+    assert out["routing"]["note_en"] and out["routing"]["note_zh"]
 
 
 def test_priority_ticket_labels_the_operator_mail(wired, monkeypatch) -> None:
