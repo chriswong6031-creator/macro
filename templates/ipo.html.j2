@@ -150,6 +150,78 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .dotbar{display:inline-flex;gap:4px;margin:10px 0 2px}
 .dotbar i{width:9px;height:9px;border-radius:50%;background:var(--grid);display:inline-block}
 .dotbar i.on{background:var(--green)}.dotbar i.warn{background:var(--amber)}
+
+/* ---------- credit issuance window (the bond side of the triad) ---------- */
+.tcard.cw{--tcc:var(--acc);display:flex;flex-direction:column}
+.tcard.cw.good{--tcc:var(--green)}.tcard.cw.warn{--tcc:var(--amber)}.tcard.cw.red{--tcc:var(--red)}
+/* MINOR-5 (review repair round 3): the two lanes sit in the same `.grid.cols-2`
+   row and already stretch to equal overall height, but the footer's POSITION
+   inside that shared height still tracked how tall .cw-change rendered above
+   it — a two-line change sentence on one lane pushed its stance chip below
+   the other lane's. Pin the footer row to the card bottom regardless. */
+.tcard.cw .tc-foot{margin-top:auto}
+
+/* DARK — an inset trough milled into the card; the marker carries a restrained bloom */
+.cw-rail{position:relative;height:10px;margin:14px 0 5px;background:var(--bg);
+  box-shadow:inset 0 1px 2px color-mix(in srgb,var(--ink) 26%,transparent)}
+/* MINOR-2 (review repair round 4): the band marks a FIXED zone of the rail —
+   0 to seg.rail.easy_pct (the tight/easy end of the 1y range) — the same
+   zone regardless of which state (open/neutral/shut) the card itself is
+   currently in. Painting it from --tcc (the card's own state colour) made a
+   state-invariant region carry state colour: on a "shut" (red) lane the
+   easy zone rendered red — reading as danger — and on an "open" (green)
+   lane it happened to render green. Fixed to a fixed semantic token
+   (--green, "the easy end of the range") so the band's colour never swings
+   with the card's current stance. --tcc stays correct on .cw-mark (today's
+   ACTUAL position, which should track the current stance colour) and
+   .cw-change (the state-scoped change-copy strip). */
+.cw-band{position:absolute;left:0;top:0;bottom:0;
+  background:color-mix(in srgb,var(--green) 22%,transparent)}
+.cw-mark{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink);
+  box-shadow:0 0 7px color-mix(in srgb,var(--tcc) 60%,transparent)}
+.cw-rail.is-null{background:var(--card);box-shadow:inset 0 0 0 1px var(--grid);opacity:.55}
+.cw-scale{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+
+.cw-inputs{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.cw-in{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12.5px;
+  padding-left:9px;border-left:3px solid var(--grid)}
+.cw-in.open{border-left-color:var(--green)}
+.cw-in.neutral{border-left-color:var(--amber)}
+.cw-in.shut{border-left-color:var(--red)}
+.cw-in-k{color:var(--ink);font-weight:700}
+.cw-in-d{color:var(--faint);font-size:11px;font-weight:600;white-space:nowrap}
+.cw-in-v{grid-column:1/-1;color:var(--muted);font-weight:600;line-height:1.4}
+
+.cw-change{margin-top:12px;padding:9px 11px;font-size:12.5px;line-height:1.45;color:var(--muted);
+  background:color-mix(in srgb,var(--tcc) 7%,var(--card));
+  border-left:3px solid color-mix(in srgb,var(--tcc) 55%,var(--grid))}
+.cw-change b{display:block;color:var(--ink);font-weight:700;font-size:11px;
+  letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
+.cw-null{margin-top:14px;max-width:74ch;line-height:1.5}
+
+/* LIGHT — research workspace: the trough becomes a ruled measure, the bloom becomes structure */
+html[data-theme="light"] .cw-rail{background:var(--card);box-shadow:none;
+  border:1px solid color-mix(in srgb,var(--ink) 16%,transparent)}
+html[data-theme="light"] .cw-band{background:color-mix(in srgb,var(--green) 18%,transparent);
+  border-right:1px solid color-mix(in srgb,var(--green) 45%,transparent)}
+html[data-theme="light"] .cw-mark{box-shadow:0 1px 2px color-mix(in srgb,var(--ink) 30%,transparent)}
+html[data-theme="light"] .cw-mark::after{content:'';position:absolute;left:-3px;top:-6px;
+  width:8px;height:5px;background:var(--ink);clip-path:polygon(50% 100%,0 0,100% 0)}
+html[data-theme="light"] .cw-rail::before,
+html[data-theme="light"] .cw-rail::after{content:'';position:absolute;top:-4px;bottom:-4px;width:1px;
+  background:color-mix(in srgb,var(--ink) 24%,transparent)}
+html[data-theme="light"] .cw-rail::before{left:0}
+html[data-theme="light"] .cw-rail::after{right:0}
+html[data-theme="light"] .cw-rail.is-null{opacity:.7;border-style:dashed}
+html[data-theme="light"] .cw-change{background:color-mix(in srgb,var(--tcc) 6%,var(--card))}
+
+@media(max-width:640px){
+  .cw-in{grid-template-columns:1fr}
+  .cw-in-d{grid-row:3}
+  .cw-scale{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){.tcard.cw{animation:none}}
 /* arc gauge (froth) */
 .arc{display:block;width:130px;height:70px;margin:6px auto 0}
 .arc path{fill:none;stroke-linecap:round}
@@ -350,6 +422,56 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       </div>
     </div>
   </div>
+
+  <!-- ============ CREDIT ISSUANCE WINDOW — the debt parallel to the triad ============ -->
+  <div class="sec" id="credit-window">{{ t('Is the window open for new bond deals?','新债发行窗口开着吗？') }}
+    <span class="sec-hint">{{ t('the debt side of the same question','同一问题的债券面') }}</span></div>
+  <div class="sec-sub">{{ t('Whether borrowers can sell new bonds right now, read from the market that prices them. Two lanes: high-yield (riskier borrowers) and investment-grade (safer borrowers). Context, never a buy signal, never scored.','当前借款人能否顺利发行新债，从为其定价的市场读出。分两条：高收益（较高风险发行人）与投资级（较稳健发行人）。仅为背景，非买入信号，且从不计分。') }}</div>
+
+  <div class="grid cols-2">
+    {% for seg in credit_window.segments %}
+    <div class="tcard cw {{ 'good' if seg.state=='open' else 'red' if seg.state=='shut' else 'warn' if seg.state=='neutral' else '' }}">
+      <div class="tc-eyebrow">{{ t(seg.label_en, seg.label_zh) }}{{ qtip(seg.tip_en, seg.tip_zh) }}</div>
+      <div class="tc-state">{{ t(seg.state_en, seg.state_zh) }}</div>
+      <div class="tc-sub">{{ t(seg.clause_en, seg.clause_zh) }}</div>
+
+      {# SIGNATURE — where today's spread sits inside its own past year. Decorative:
+         the same reading is printed as bilingual text in .cw-inputs below. #}
+      {% if seg.rail %}
+      <div class="cw-rail" aria-hidden="true">
+        <span class="cw-band" style="width:{{ seg.rail.easy_pct }}%"></span>
+        <span class="cw-mark" style="left:{{ seg.rail.pos_pct }}%"></span>
+      </div>
+      <div class="cw-scale"><span>{{ t('tight end of the past year','近一年最窄') }}</span><span>{{ t('wide end','最宽') }}</span></div>
+      {% else %}
+      <div class="cw-rail is-null" aria-hidden="true"></div>
+      <div class="cw-scale"><span>{{ t('range not evaluable','区间无法评估') }}</span><span></span></div>
+      {% endif %}
+
+      <ul class="cw-inputs">
+        {% for inp in seg.inputs %}
+        <li class="cw-in {{ inp.state }}">
+          <span class="cw-in-k">{{ t(inp.label_en, inp.label_zh) }}</span>
+          <span class="cw-in-d">{{ inp.as_of or t('no date','无日期') }}</span>
+          <span class="cw-in-v">{{ t(inp.read_en, inp.read_zh) }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <div class="cw-change"><b>{{ t('What would change this read','什么会改变这个读数') }}</b>
+        {{ t(seg.change_en, seg.change_zh) }}</div>
+
+      <div class="tc-foot">
+        <span class="stance {{ seg.stance_class }}">{{ t(seg.stance_en, seg.stance_zh) }}</span>
+        <span class="asof" style="font-size:11px">{{ seg.n_inputs }}/{{ seg.n_expected }} {{ t('inputs read','项输入可读') }}{% if seg.low_confidence %} · {{ t('partial read','部分读数') }}{% endif %}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ONE footnote for the section (doctrine Law 4: merge, never stack) — the calendar
+     null and the research-only ceiling in plain words. #}
+  <div class="empty cw-null">{{ t('No upcoming-deal calendar available — we have no feed of announced or planned bond deals, so this reads the conditions issuers face, not a list of deals. Research context only: no issuer is named, nothing here is scored, and nothing here feeds any allocation.','暂无新债发行日历 —— 我们没有已公告或计划发行的数据源，因此这里读取的是发行人面对的市场环境，而非交易清单。仅供研究参考：不点名任何发行人，不计分，也不进入任何配置。') }}</div>
 
   <!-- ============ LOCK-UP CLIFF — the most actionable leg ============ -->
   {% if lockup_timeline and lockup_timeline.markers %}

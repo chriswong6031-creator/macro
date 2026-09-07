@@ -1,0 +1,4 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/ipo.html.j2
+manifest: mockups/evidence/credit-window-f09-2/manifest.json
