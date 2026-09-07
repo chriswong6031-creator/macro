@@ -184,8 +184,18 @@ def _credit_window_vm(raw: dict) -> dict:
 
         change = seg.get("change")
         if change:
+            # MINOR-1 (review repair round 5): a change candidate IS present
+            # here — the engine found a real (input, to_state) flip — so an
+            # unmapped pair is a lexicon coverage gap, never a "data is
+            # missing" situation. Falling back to CW_CHANGE_NONE ("inputs
+            # missing") for a present-but-unmapped candidate would misreport
+            # working data as a data outage, exactly the failure BLOCKER 2
+            # fixed for the no-candidate case. Structural invariant: any
+            # present candidate falls back to this state's honest "stable"
+            # sentence, never the "missing" one.
             change_en, change_zh = CW_CHANGE.get(
-                (change["input"], change["to_state"]), CW_CHANGE_NONE)
+                (change["input"], change["to_state"]),
+                CW_CHANGE_STABLE.get(state, CW_CHANGE_NONE))
         elif state == "not_evaluable":
             # genuinely missing inputs — the "come back" framing is honest here.
             change_en, change_zh = CW_CHANGE_NONE

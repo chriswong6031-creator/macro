@@ -881,6 +881,53 @@ def test_credit_window_vm_rates_vol_neutral_entry_is_direction_agnostic():
 
 
 # --------------------------------------------------------------------------- #
+# MINOR-5 (review repair round 5) — a full render test, asserted against the
+# LITERAL expected sentence (not just equality with bi.CW_CHANGE[...], which
+# would pass even if the lexicon entry itself silently drifted): rates_vol
+# reaching "neutral" from the UP direction (rising volatility crossing down
+# into the middle band from "open") must render the one shared,
+# direction-agnostic EN/ZH sentence — never a direction-specific "easing"
+# framing that is only true for the down-direction crossing.
+# --------------------------------------------------------------------------- #
+def test_credit_window_vm_rates_vol_up_to_neutral_renders_literal_direction_agnostic_sentence():
+    change = {"input": "rates_vol", "to_state": "neutral", "threshold": 40.0,
+              "current": 20.0, "direction": "up", "segment_to": "neutral"}
+    raw = {"segments": [_seg("open", change=change)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert seg["change_en"] == (
+        "Rates volatility moving back toward the middle of the past year's "
+        "range would flip this to half open.")
+    assert seg["change_zh"] == "利率波动回到近一年区间的中段，读数会翻为半开。"
+
+
+# --------------------------------------------------------------------------- #
+# MINOR-1 (review repair round 5) — structural invariant: a PRESENT change
+# candidate (the engine found a real (input, to_state) flip) whose pair has
+# no CW_CHANGE lexicon entry must fall back to this state's honest "stable"
+# sentence (CW_CHANGE_STABLE), never the "inputs are missing" copy
+# (CW_CHANGE_NONE) — that fallback is reserved for a genuinely
+# not_evaluable segment. Pre-fix, an unmapped-but-present candidate silently
+# told users data was missing when it was not; the exhaustive coverage test
+# above (test_cw_change_lexicon_covers_every_pair_next_threshold_can_emit)
+# only pins today's REACHABLE pairs, so it cannot catch this — a future
+# engine change that emits one more pair before the lexicon is updated would
+# hit this exact fallback path again.
+# --------------------------------------------------------------------------- #
+def test_credit_window_vm_present_but_unmapped_change_candidate_falls_back_to_stable_not_missing():
+    change = {"input": "spread_range", "to_state": "unknown", "threshold": 50.0,
+              "current": 45.0, "direction": "up", "segment_to": "neutral"}
+    assert ("spread_range", "unknown") not in bi.CW_CHANGE  # precondition: genuinely unmapped
+    raw = {"segments": [_seg("neutral", change=change)], "as_of": "2026-09-01",
+           "calendar": {"available": False, "reason": "no_upcoming_deal_calendar_source"}}
+    vm = bi._credit_window_vm(raw)
+    seg = vm["segments"][0]
+    assert (seg["change_en"], seg["change_zh"]) == bi.CW_CHANGE_STABLE["neutral"]
+    assert (seg["change_en"], seg["change_zh"]) != bi.CW_CHANGE_NONE
+
+
+# --------------------------------------------------------------------------- #
 # MINOR-2 (review repair round 4) — `.cw-band` marks a FIXED zone of the rail
 # (0 to seg.rail.easy_pct, the tight/easy end of the 1y range) — the same
 # zone regardless of which state (open/neutral/shut) the card is currently
@@ -906,3 +953,23 @@ def test_cw_band_uses_fixed_green_token_not_the_state_colour():
     # current stance colour — this fix must not have swept that one too.
     mark_rule = re.search(r"\.cw-mark\{[^}]*\}", src)
     assert mark_rule and "var(--tcc)" in mark_rule.group(0)
+
+
+# --------------------------------------------------------------------------- #
+# MINOR-6 (review repair round 5) — the light-theme `.cw-band` tint was so
+# faint at 8% it was not legible as a band at 1440 (recaptured light
+# evidence at round 4 showed a hairline edge with no visible fill). Raised
+# into the 16-20% range while keeping the hairline `border-right` edge that
+# already marks the band's boundary.
+# --------------------------------------------------------------------------- #
+def test_light_cw_band_tint_is_raised_into_legible_range():
+    tpl_path = pathlib.Path(bi.__file__).resolve().parents[1] / "templates" / "ipo.html.j2"
+    src = tpl_path.read_text()
+    light_rule = re.search(r'html\[data-theme="light"\]\s*\.cw-band\{[^}]*\}', src)
+    assert light_rule
+    m = re.search(r"var\(--green\)\s+(\d+)%,transparent\)", light_rule.group(0))
+    assert m, "expected a color-mix(in srgb,var(--green) N%,transparent) fill"
+    pct = int(m.group(1))
+    assert 16 <= pct <= 20
+    # the hairline boundary edge must survive the tint raise, not be removed.
+    assert "border-right:1px solid" in light_rule.group(0)
