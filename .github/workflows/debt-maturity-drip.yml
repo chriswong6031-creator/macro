@@ -23,14 +23,29 @@ name: debt-maturity-drip
 # House law: heavy compute goes off the render path (see filing-forensics-sec.yml
 # for the identical off-render pattern applied to a different SEC source).
 #
+# HOST, round-2 review BLOCKER-2: this job MUST share the exact runner
+# workspace daily.yml's `engine` job checks out into, or its writes are
+# invisible to that job's "git add data/" sweep and are lost outright (a
+# fresh actions/checkout on any OTHER runner registration starts from a
+# clean tree). `macstudio-light` is a documented SEPARATE physical host from
+# `macstudio` (see close-pass.yml, heartbeat.yml, daily.yml's own `engine` job,
+# research-ingest.yml) with its own `_work` directory -- it can never carry
+# these writes forward no matter how the schedule is timed. `macstudio` is
+# the one runner label registered for both this job and `engine`
+# (edgar_flow_ops.yml already relies on the identical same-host mechanism for
+# the same statements.parquet artifact), so THIS job now runs there too.
+#
 # NIGHTLY-SOLE-ADVANCER LAW: this workflow writes ONLY to
 # data/edgar/statements.parquet and data/debt_maturity/cache/ on the runner.
 # It does NOT push to git -- the nightly ENGINE job's broad "git add data/"
 # sweep carries those writes on its next run, same as edgar_flow_ops.yml.
 on:
   schedule:
-    # 02:50 UTC -- after filing-forensics-sec (02:30, macstudio-light, 45m
-    # timeout) and hours before daily.yml's engine job (~05:00-06:30 UTC).
+    # 02:50 UTC -- after filing-forensics-sec (02:30, macstudio-light, a
+    # DIFFERENT host, so no queue contention) and well before daily.yml's
+    # `engine` job reaches its own EDGAR/companyfacts steps (~05:00-06:30
+    # UTC) on this SAME `macstudio` runner -- sequential, not concurrent, so
+    # this bounded 25m job never competes with the render-path job's budget.
     - cron: "50 2 * * *"
   workflow_dispatch:
     inputs:

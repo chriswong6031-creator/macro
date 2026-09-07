@@ -101,13 +101,69 @@ def _cache_dir() -> Path:
     return _cfg.data_dir() / "debt_maturity" / "cache"
 
 
+# Round-2 review MAJOR-2: `resolve_cik` is called once per ticker for the WHOLE
+# stock-library render-path universe (scripts/build_stock_library.py, itself
+# declared in render.yml's scope, where the render budget is law). Un-memoised,
+# every ticker re-read + re-`json.loads`'d the ~46KB ledger, and every ledger
+# MISS (ETFs/crypto/foreign listings -- exactly the tickers not in the ledger)
+# re-read the whole issuer_master parquet AND re-ran `.astype(str).str.upper()`
+# over its ticker column. Both are cached per resolved PATH (not globally) so a
+# test that monkeypatches `_cik_ledger_path`/`_issuer_master_path` to a fresh
+# tmp_path per call still gets its own isolated, uncached read -- the cache
+# only pays off across repeated calls that resolve to the SAME path, which is
+# exactly the real build-time case (one ledger file, one parquet, N tickers).
+_LEDGER_CACHE: dict[str, dict | None] = {}
+_ISSUER_MASTER_TICKER_CIK_CACHE: dict[str, dict[str, str]] = {}
+
+
+def _load_ledger_cached(ledger_path: Path) -> dict | None:
+    key = str(ledger_path)
+    if key not in _LEDGER_CACHE:
+        try:
+            ledger = json.loads(ledger_path.read_text())
+        except Exception:  # noqa: BLE001 -- a corrupt ledger falls through to the parquet
+            ledger = None
+        _LEDGER_CACHE[key] = ledger if isinstance(ledger, dict) else None
+    return _LEDGER_CACHE[key]
+
+
+def _load_issuer_master_ticker_cik_map_cached(im_path: Path) -> dict[str, str]:
+    """{TICKER: raw_cik_value} for every row with a usable ticker/cik pair, built
+    ONCE per distinct parquet path and reused across every ticker resolved
+    against it (was previously a full parquet read + column upper-cast PER
+    ticker)."""
+    key = str(im_path)
+    if key in _ISSUER_MASTER_TICKER_CIK_CACHE:
+        return _ISSUER_MASTER_TICKER_CIK_CACHE[key]
+    out: dict[str, str] = {}
+    try:
+        import pandas as pd  # noqa: PLC0415
+
+        issuer_master = pd.read_parquet(im_path)
+        ticker_col = next((c for c in ("ticker", "symbol") if c in issuer_master.columns), None)
+        if ticker_col is not None and "cik" not in issuer_master.columns:
+            ticker_col = None
+        if ticker_col is not None:
+            tickers = issuer_master[ticker_col].astype(str).str.upper()
+            ciks = issuer_master["cik"]
+            for tick, raw_cik in zip(tickers, ciks):
+                if tick and tick not in out and raw_cik is not None:
+                    out[tick] = raw_cik
+    except Exception:  # noqa: BLE001
+        out = {}
+    _ISSUER_MASTER_TICKER_CIK_CACHE[key] = out
+    return out
+
+
 def resolve_cik(ticker: str) -> str | None:
     """Resolve `ticker` -> canonical 10-digit CIK, or None if unresolvable.
 
     Tries the committed ticker->CIK ledger first (a flat ``{ticker: cik}`` or
     ``{ticker: {"cik": ...}}`` JSON map), then falls back to the
     issuer_master reference parquet's own ticker/cik columns. Never matches
-    on company name.
+    on company name. The ledger and the parquet's ticker->cik map are each
+    parsed once per distinct path and cached for the life of the process (see
+    `_load_ledger_cached` / `_load_issuer_master_ticker_cik_map_cached`).
     """
     ticker = (ticker or "").strip().upper()
     if not ticker:
@@ -115,10 +171,7 @@ def resolve_cik(ticker: str) -> str | None:
 
     ledger_path = _cik_ledger_path()
     if ledger_path.exists():
-        try:
-            ledger = json.loads(ledger_path.read_text())
-        except Exception:  # noqa: BLE001 -- a corrupt ledger falls through to the parquet
-            ledger = None
+        ledger = _load_ledger_cached(ledger_path)
         if isinstance(ledger, dict):
             entry = ledger.get(ticker)
             cik_val: Any = entry.get("cik") if isinstance(entry, dict) else entry
@@ -130,24 +183,13 @@ def resolve_cik(ticker: str) -> str | None:
 
     im_path = _issuer_master_path()
     if im_path.exists():
-        try:
-            import pandas as pd  # noqa: PLC0415
-
-            issuer_master = pd.read_parquet(im_path)
-        except Exception:  # noqa: BLE001
+        ticker_cik_map = _load_issuer_master_ticker_cik_map_cached(im_path)
+        raw_cik = ticker_cik_map.get(ticker)
+        if raw_cik is None:
             return None
-        ticker_col = next((c for c in ("ticker", "symbol") if c in issuer_master.columns), None)
-        if ticker_col is None or "cik" not in issuer_master.columns:
-            return None
-        rows = issuer_master[issuer_master[ticker_col].astype(str).str.upper() == ticker]
-        if rows.empty:
-            return None
-        raw_cik = rows.iloc[0].get("cik")
         # a float64 parquet column (e.g. 320193.0) must round-trip cleanly --
         # never string()-and-strip a float repr, which leaves a trailing ".0".
         try:
-            if raw_cik is None:
-                return None
             cik_int = int(float(raw_cik))
             return _canon(cik_int)
         except (TypeError, ValueError):

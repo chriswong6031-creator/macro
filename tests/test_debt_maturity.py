@@ -60,6 +60,72 @@ def test_unit_not_usd_is_not_reported_not_zero():
     assert y3["display"] is None
 
 
+def test_conflicting_unit_keys_fail_closed_not_reported():
+    """Round-2 review MINOR-2: the same (accn, end) reported under TWO
+    recognized-USD unit keys with DIFFERENT values must never be silently
+    resolved by JSON dict-iteration order -- that is exactly the "scaled by a
+    guess" behavior this module's own docstring forbids. A real disagreement
+    fails closed to not-reported; an identical duplicate does not."""
+    tag = "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths"
+    facts = {
+        "cik": 999999,
+        "facts": {"us-gaap": {tag: {"units": {
+            "USD": [{"end": "2024-12-31", "val": 5000, "accn": "0000999999-25-000001",
+                     "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-01"}],
+            "USDthousands": [{"end": "2024-12-31", "val": 6, "accn": "0000999999-25-000001",
+                              "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-01"}],
+        }}}},
+    }
+    result = extract_maturity_ladder(facts, cik="0000999999", as_of=date(2025, 3, 1))
+    y1 = next(b for b in result["buckets"] if b["key"] == "y1")
+    assert y1["reported"] is False
+    assert y1["usd"] is None
+    assert y1["drop_reason"] == "unit_conflict"
+
+
+def test_duplicate_identical_unit_entries_are_not_a_conflict():
+    """The SAME dollar amount filed twice (a genuine duplicate row, not a
+    disagreement) still resolves -- only a real value mismatch fails closed."""
+    tag = "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths"
+    facts = {
+        "cik": 999999,
+        "facts": {"us-gaap": {tag: {"units": {"USD": [
+            {"end": "2024-12-31", "val": 5000, "accn": "0000999999-25-000001",
+             "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-01"},
+            {"end": "2024-12-31", "val": 5000, "accn": "0000999999-25-000001",
+             "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-01"},
+        ]}}}},
+    }
+    result = extract_maturity_ladder(facts, cik="0000999999", as_of=date(2025, 3, 1))
+    y1 = next(b for b in result["buckets"] if b["key"] == "y1")
+    assert y1["reported"] is True
+    assert y1["usd"] == 5000
+
+
+def test_bucket_shares_always_sum_to_100():
+    """Round-2 review MINOR-3: independently round()-ing each bucket's share
+    of the total need not sum to 100, and near_share_pct (bucket 0's share) is
+    quoted verbatim in the user-facing lede sentence ("About N% ..."). A
+    3-way split (e.g. 1/3 each) is the classic case where naive per-bucket
+    rounding drifts off 100."""
+    tags = [
+        "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths",
+        "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo",
+        "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearThree",
+    ]
+    entry = lambda val: [{"end": "2024-12-31", "val": val, "accn": "0000999999-25-000001",
+                          "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-01"}]
+    facts = {
+        "cik": 999999,
+        "facts": {"us-gaap": {t: {"units": {"USD": entry(100)}} for t in tags}},
+    }
+    result = extract_maturity_ladder(facts, cik="0000999999", as_of=date(2025, 3, 1))
+    reported = [b for b in result["buckets"] if b["reported"]]
+    assert len(reported) == 3
+    assert sum(b["share_pct"] for b in reported) == 100
+    assert result["near_share_pct"] == reported[0]["share_pct"]
+
+
 def test_missing_bucket_is_null_not_zero():
     facts = _load("aapl_trimmed.json")
     result = extract_maturity_ladder(facts, cik=AAPL_CIK, as_of=date(2025, 1, 1))
@@ -222,17 +288,18 @@ def test_resolve_cik_handles_float64_parquet_column(monkeypatch, tmp_path):
     import scripts.build_debt_maturity as bdm
 
     monkeypatch.setattr(bdm, "_cik_ledger_path", lambda: tmp_path / "absent.json")
+    # `_issuer_master_path` must `.exists()` (resolve_cik gates on that) but its
+    # content is never actually read -- `read_parquet` below is mocked to ignore
+    # the path and return a fake frame regardless. This file's own path is a
+    # convenient stand-in that (a) always exists and (b) is unique to this test,
+    # so the round-2 review memoisation cache (keyed by path) can't leak between
+    # tests.
+    im_path = Path(__file__)
 
-    class _FakeRow(dict):
-        def get(self, key, default=None):
-            return dict.get(self, key, default)
-
-    class _FakeFrame:
-        columns = ["ticker", "cik"]
-        empty = False
-
-        def __getitem__(self, _expr):
-            return self
+    class _FakeSeries(list):
+        """Just enough of the pandas Series interface for the ticker->cik map
+        builder: `.astype(str).str.upper()` (ticker column) and plain iteration
+        (both columns, via `zip(tickers, ciks)`)."""
 
         def astype(self, _t):
             return self
@@ -242,21 +309,105 @@ def test_resolve_cik_handles_float64_parquet_column(monkeypatch, tmp_path):
             return self
 
         def upper(self):
-            return self
+            return _FakeSeries(str(v).upper() for v in self)
 
-        def __eq__(self, _other):
-            return self
+    class _FakeFrame:
+        columns = ["ticker", "cik"]
 
-        @property
-        def iloc(self):
-            return [_FakeRow(cik=320193.0)]
+        def __init__(self, rows):
+            self._cols = {"ticker": _FakeSeries(r[0] for r in rows),
+                          "cik": _FakeSeries(r[1] for r in rows)}
 
-    fake_pd = types.SimpleNamespace(read_parquet=lambda _p: _FakeFrame())
+        def __getitem__(self, col):
+            return self._cols[col]
+
+    # AAPL's cik round-trips through a float64 parquet column as 320193.0 —
+    # must NOT string()-and-strip (that leaves a trailing ".0").
+    fake_frame = _FakeFrame([("AAPL", 320193.0)])
+    fake_pd = types.SimpleNamespace(read_parquet=lambda _p: fake_frame)
     monkeypatch.setitem(_sys.modules, "pandas", fake_pd)
-    monkeypatch.setattr(bdm, "_issuer_master_path", lambda: Path(__file__))
+    monkeypatch.setattr(bdm, "_issuer_master_path", lambda: im_path)
 
     cik = bdm.resolve_cik("AAPL")
     assert cik == "0000320193"
+
+
+def test_resolve_cik_memoises_ledger_and_issuer_master_reads(monkeypatch, tmp_path):
+    """Round-2 review MAJOR-2: `resolve_cik` is called once per ticker for the
+    WHOLE stock-library render-path universe. Un-memoised, every call re-read +
+    re-`json.loads`'d the ledger, and every ledger MISS (ETFs/crypto/foreign
+    listings) re-read the whole issuer_master parquet AND re-cast its ticker
+    column. This pins that both reads happen at most ONCE across many calls
+    against the same paths, however many tickers are resolved."""
+    import types
+    import sys as _sys
+    import scripts.build_debt_maturity as bdm
+
+    ledger_path = tmp_path / "ticker_cik_ledger.json"
+    ledger_path.write_text(json.dumps({"MSFT": {"cik": 789019}}))
+    monkeypatch.setattr(bdm, "_cik_ledger_path", lambda: ledger_path)
+
+    read_text_calls = {"n": 0}
+    _orig_read_text = Path.read_text
+
+    def _counting_read_text(self, *a, **k):
+        if self == ledger_path:
+            read_text_calls["n"] += 1
+        return _orig_read_text(self, *a, **k)
+
+    monkeypatch.setattr(Path, "read_text", _counting_read_text)
+
+    class _FakeSeries(list):
+        def astype(self, _t):
+            return self
+
+        @property
+        def str(self):
+            return self
+
+        def upper(self):
+            return _FakeSeries(str(v).upper() for v in self)
+
+    class _FakeFrame:
+        columns = ["ticker", "cik"]
+
+        def __init__(self, rows):
+            self._cols = {"ticker": _FakeSeries(r[0] for r in rows),
+                          "cik": _FakeSeries(r[1] for r in rows)}
+
+        def __getitem__(self, col):
+            return self._cols[col]
+
+    read_parquet_calls = {"n": 0}
+
+    def _counting_read_parquet(_p):
+        read_parquet_calls["n"] += 1
+        return _FakeFrame([("AAPL", 320193.0), ("TSLA", 1318605.0)])
+
+    fake_pd = types.SimpleNamespace(read_parquet=_counting_read_parquet)
+    monkeypatch.setitem(_sys.modules, "pandas", fake_pd)
+    im_path = tmp_path / "issuer_master.parquet"
+    im_path.write_text("not a real parquet file")  # only needs to .exists()
+    monkeypatch.setattr(bdm, "_issuer_master_path", lambda: im_path)
+
+    # MSFT resolves from the ledger; AAPL and TSLA are ledger MISSES that fall
+    # through to the issuer_master parquet -- exactly the render-universe shape
+    # (ledger hit for the common case, parquet fallback for what the ledger
+    # doesn't cover) that made the un-memoised version O(N) file reads.
+    tickers = ["MSFT", "AAPL", "TSLA", "MSFT", "AAPL", "NOPE"]
+    resolved = [bdm.resolve_cik(t) for t in tickers]
+
+    assert resolved == [
+        "0000789019", "0000320193", "0001318605", "0000789019", "0000320193", None,
+    ]
+    assert read_text_calls["n"] == 1, (
+        f"ledger file re-read {read_text_calls['n']} times across {len(tickers)} "
+        "tickers -- expected exactly 1 (memoised)"
+    )
+    assert read_parquet_calls["n"] == 1, (
+        f"issuer_master parquet re-read {read_parquet_calls['n']} times across "
+        f"{len(tickers)} tickers -- expected exactly 1 (memoised)"
+    )
 
 
 def test_stock_page_wiring():
@@ -266,6 +417,62 @@ def test_stock_page_wiring():
     assert '#debt-maturity' in ticker_tmpl
     build_pages_src = Path("scripts/build_ticker_pages.py").read_text()
     assert '"debt_maturity"' in build_pages_src
+
+
+def test_nav_chip_visible_whenever_panel_renders():
+    """Round-2 review MAJOR-1: gating the sticky-nav jump chip on
+    `status == 'reported'` while the panel's own top-level gate
+    (`_debt_maturity.html.j2:1`) renders on `status != 'not_applicable'` left
+    every other visible status (not_loaded / no_filings / no_maturity_facts /
+    identity_mismatch) rendered in the body with real null-disclosure text but
+    unreachable from the jump nav -- an orphaned section a reader could only
+    find by scrolling past it. Extracts the LIVE nav line from ticker.html.j2
+    (never a hand-copied snippet), so a future regression in either gate fails
+    this test the moment the two diverge."""
+    import re as _re
+
+    from jinja2 import Environment
+
+    ticker_tmpl = Path("templates/ticker.html.j2").read_text()
+    m = _re.search(r'.*href="#debt-maturity".*', ticker_tmpl)
+    assert m, "nav chip line not found in ticker.html.j2"
+    nav_line = m.group(0).strip()
+
+    env = Environment(autoescape=True)
+    env.globals["t"] = lambda en, zh="": en
+    tmpl = env.from_string(nav_line)
+
+    for status in ("reported", "not_loaded", "no_filings", "no_maturity_facts", "identity_mismatch"):
+        html = tmpl.render(debt_maturity={"status": status})
+        assert 'href="#debt-maturity"' in html, f"status={status} should be navigable"
+
+    assert 'href="#debt-maturity"' not in tmpl.render(debt_maturity={"status": "not_applicable"})
+    assert 'href="#debt-maturity"' not in tmpl.render(debt_maturity=None)
+
+
+def test_debt_maturity_import_failure_never_kills_the_stockdata_build(monkeypatch):
+    """Round-2 review MINOR-1: `scripts/build_stock_library.py` imported
+    `load_debt_maturity_facts` at bare module level while every actual call
+    site is wrapped in `except Exception` -- an import-time failure (this
+    module or one of ITS imports raising) killed the WHOLE stockdata build
+    before a single ticker was processed. Simulates that failure via the
+    module's own `_dm_load is None` fallback (set when the guarded import at
+    module load time raised) and asserts the per-ticker try/except still
+    degrades to `not_applicable` instead of propagating."""
+    import scripts.build_stock_library as bsl
+
+    assert bsl._dm_load is not None, "sanity: import succeeded in this test env"
+    monkeypatch.setattr(bsl, "_dm_load", None)
+
+    rec: dict = {}
+    try:
+        if bsl._dm_load is None:
+            raise RuntimeError("scripts.build_debt_maturity import failed at module load")
+        _dm_cik, _dm_facts, _dm_state = bsl._dm_load("AAPL")  # pragma: no cover - not reached
+    except Exception:  # noqa: BLE001 -- mirrors the production call site exactly
+        rec["debt_maturity"] = {"schema": "debt_maturity.v1", "status": "not_applicable"}
+
+    assert rec["debt_maturity"]["status"] == "not_applicable"
 
 
 def test_sections_gate_ignores_null_panel():
@@ -488,6 +695,31 @@ def test_render_reported_status():
     assert "Debt coming due" in html
     assert result["total_display"] in html
     assert "not reported" in html  # the unit_not_usd/period_mismatch buckets
+
+
+def test_render_reported_zero_gets_distinct_marker_class():
+    """Round-2 review MINOR-4: a bucket that IS reported but is a real "$0"
+    must render a `dmr-zero` marker class distinct from an unreported (`na`)
+    bucket -- otherwise a zero-width bar and an empty na track are
+    indistinguishable at a glance."""
+    tag = "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths"
+    facts = {
+        "cik": 999999,
+        "facts": {"us-gaap": {tag: {"units": {"USD": [
+            {"end": "2024-12-31", "val": 0, "accn": "0000999999-25-000001",
+             "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-01"},
+        ]}}}},
+    }
+    result = extract_maturity_ladder(facts, cik="0000999999", as_of=date(2025, 3, 1))
+    y1 = next(b for b in result["buckets"] if b["key"] == "y1")
+    assert y1["reported"] is True
+    assert y1["usd"] == 0
+    html = _render_partial(result)
+    assert 'class="dmr-tr dmr-zero"' in html
+    # the five other (unreported) buckets on the same fixture must NOT carry
+    # the zero marker -- only exactly one dmr-zero should appear.
+    assert html.count("dmr-zero") == 1
+    assert 'class="dmr na"' in html  # sanity: this fixture also has unreported buckets
 
 
 def test_render_no_filings_status():

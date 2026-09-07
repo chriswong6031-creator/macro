@@ -13,7 +13,17 @@ Usage: python -m scripts.build_stock_library
 """
 from __future__ import annotations
 
-from scripts.build_debt_maturity import load_debt_maturity_facts as _dm_load
+try:
+    # Round-2 review MINOR-1: this was a bare, unguarded module-level import
+    # while every actual *use* below is wrapped in `except Exception` -- so an
+    # import-time failure in the debt-maturity module (or one of ITS imports)
+    # killed the entire stockdata build before a single ticker was processed,
+    # the exact opposite of the "additive; must not break the stockdata
+    # build" contract this file's own comments state. `_dm_load` is checked
+    # for None at the one call site below.
+    from scripts.build_debt_maturity import load_debt_maturity_facts as _dm_load
+except Exception:  # noqa: BLE001 -- additive panel; an import failure must never break the whole build
+    _dm_load = None
 
 
 import json
@@ -4064,6 +4074,8 @@ def main() -> int:
         # string). Never a network call here -- the cache is warmed off the
         # render path by collectors/edgar_facts.py (B1 wiring).
         try:
+            if _dm_load is None:
+                raise RuntimeError("scripts.build_debt_maturity import failed at module load")
             _dm_cik, _dm_facts, _dm_state = _dm_load(ticker)
             from engine.debt_maturity import extract_maturity_ladder as _dm_extract  # noqa: PLC0415
             _dm_asof = _dt.date.today()

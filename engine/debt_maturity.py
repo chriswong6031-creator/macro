@@ -206,15 +206,27 @@ def extract_maturity_ladder(
         # not recognize as USD-denominated is a deliberate not-reported (never
         # scaled by a guess) -- but a recognized scaled variant (thousands,
         # millions) is converted to actual dollars, never left as-is.
+        #
+        # Round-2 review MINOR-2: a single (accn, end) can legally carry the
+        # same tag under TWO recognized unit keys (e.g. "usd" AND
+        # "usdthousands"), or a duplicated entry. Collecting every candidate
+        # value first, rather than overwriting `found_usd` in the loop, lets a
+        # genuine conflict (two DISTINCT dollar amounts) fail closed instead of
+        # silently keeping whichever unit key JSON iteration visited last --
+        # exactly the "never scaled by a guess" discipline this function
+        # already applies to an unrecognized unit, now applied to a
+        # disagreement between two recognized ones too.
         found_any_unit = False
-        found_usd = None
+        found_candidates: list[float] = []
         for unit_key, entries in units.items():
             scale = _unit_scale(unit_key)
             for entry in entries or []:
                 if entry.get("accn") == win_accn and entry.get("end") == win_end and entry.get("form") in _ANNUAL_FORMS and entry.get("fp") == "FY":
                     found_any_unit = True
                     if scale is not None and entry.get("val") is not None:
-                        found_usd = entry.get("val") * scale
+                        found_candidates.append(entry.get("val") * scale)
+        distinct_candidates = {round(v, 2) for v in found_candidates}
+        found_usd = found_candidates[0] if len(distinct_candidates) == 1 else None
         if found_usd is not None:
             row["usd"] = found_usd
             row["reported"] = True
@@ -222,6 +234,8 @@ def extract_maturity_ladder(
             row["drop_reason"] = None
             total += found_usd
             n_reported += 1
+        elif len(distinct_candidates) > 1:
+            row["drop_reason"] = "unit_conflict"
         elif found_any_unit:
             row["drop_reason"] = "unit_not_usd"
         else:
@@ -234,9 +248,25 @@ def extract_maturity_ladder(
             row["drop_reason"] = "period_mismatch" if other_period_present else "absent"
         buckets.append(row)
 
-    for row in buckets:
-        if row["reported"] and total:
-            row["share_pct"] = round((row["usd"] / total) * 100)
+    # Round-2 review MINOR-3: independently `round()`-ing each bucket's share
+    # need not sum to 100, and `near_share_pct` (bucket 0's own share) is fed
+    # verbatim into the user-facing lede sentence ("About N% ..."). Largest-
+    # remainder (Hamilton) allocation: take each bucket's floor, then hand the
+    # leftover points (100 - sum-of-floors) to the buckets with the largest
+    # fractional remainder, so the reported buckets' shares always sum to
+    # exactly 100 -- the number a reader sees in plain-language prose is never
+    # provably wrong.
+    if total:
+        reported_idxs = [i for i, row in enumerate(buckets) if row["reported"]]
+        raw = {i: (buckets[i]["usd"] / total) * 100 for i in reported_idxs}
+        floors = {i: int(v) for i, v in raw.items()}
+        remainder = 100 - sum(floors.values())
+        order = sorted(reported_idxs, key=lambda i: (raw[i] - floors[i]), reverse=True)
+        shares = dict(floors)
+        for i in order[:max(remainder, 0)]:
+            shares[i] += 1
+        for i in reported_idxs:
+            buckets[i]["share_pct"] = shares[i]
 
     near_share_pct = buckets[0]["share_pct"] if buckets and buckets[0]["reported"] else None
     end_date = _parse_date(win_end)

@@ -870,7 +870,14 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     {% if earnings %}<a href="#earnings">{{ t('Earnings', '财报') }}</a>{% endif %}
     {% if valuation %}<a href="#valuation">{{ t('Valuation', '估值') }}</a>{% endif %}
     {% if financials %}<a href="#financials">{{ t('Financials', '财务') }}</a>{% endif %}
-    {% if debt_maturity and debt_maturity.status == 'reported' %}<a href="#debt-maturity">{{ t('Debt', '债务') }}</a>{% endif %}
+    {# Round-2 review MAJOR-1: this nav chip must gate on the SAME condition as
+       the partial's own top-level render gate (`_debt_maturity.html.j2:1`,
+       `status != 'not_applicable'`) — gating on `== 'reported'` here left every
+       other visible status (not_loaded / no_filings / no_maturity_facts /
+       identity_mismatch) rendered in the body with real null-disclosure text
+       but unreachable from the jump nav, an orphaned section a reader could
+       only find by scrolling past it. #}
+    {% if debt_maturity and debt_maturity.status != 'not_applicable' %}<a href="#debt-maturity">{{ t('Debt', '债务') }}</a>{% endif %}
     {% if options %}<a href="#options">{{ t('Options', '期权') }}</a>{% endif %}
     {% if ownership %}<a href="#ownership">{{ t('Holders', '持仓') }}</a>{% endif %}
     {% if news %}<a href="#news">{{ t('News', '新闻') }}</a>{% endif %}

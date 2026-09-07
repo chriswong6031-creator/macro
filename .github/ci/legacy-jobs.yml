@@ -7505,6 +7505,12 @@ jobs:
       # scripts/snapshot_shadow_book.rows_from_board for the shadow-book
       # snapshot (one percentile definition), so exclusive scope must name it.
       - "scripts/snapshot_shadow_book.py"
+      # Import-closure entry (B-F09-3, 2026-09-06): build_stock_library
+      # loads the debt-maturity ladder via
+      # scripts.build_debt_maturity.load_debt_maturity_facts, so exclusive
+      # scope must name this module too (engine/debt_maturity.py, its own
+      # dependency, is already declared above).
+      - "scripts/build_debt_maturity.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
       - "scripts/check_stretch_oracle_contract.py"
