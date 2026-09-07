@@ -90,3 +90,17 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+
+tests/test_f01_credit_wiring_trace.py: >-
+  Packet B-A-F01-2 (records-only): guard suite for the F01 credit/commodity
+  wiring trace (research/market_intelligence_productization/
+  F01_CREDIT_AND_COMMODITY_WIRING_TRACE_2026-09-06.md) and its DSC
+  (agentos/discoveries/DSC-F01-CREDIT-STRESS-REACHES-ONE-LABELLED-SURFACE-NO-DEDICATED-PAGE.md). It
+  regex-extracts every file:line anchor cited in the trace and asserts the
+  file exists and the line is in range, so it fails loudly if the credit
+  plane moves out from under the record. No engine/product code is touched
+  by this packet, so there is no signal-contract step that owns this
+  subject to wire it into without a global CI-authority invalidation
+  (.github/ci/legacy-jobs.yml is out of this packet's owned paths). Owner:
+  Meta-CEO B, lane F01. Delete this row and wire the file into the
+  research-resident F01/credit signal-contract step when one exists.
