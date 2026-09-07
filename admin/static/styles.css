@@ -6277,7 +6277,7 @@ button.obx-btn-reject:hover:not(:disabled) {
 .obe-findings.is-stale { opacity: .42; filter: saturate(.5); }
 .rqx-replaced { color: var(--faint); }
 
-/* ---- Intelligence OS (Eval OS T1 census + T4 output health) --------------
+/* ---- Intelligence OS (Eval OS T1/T4/T7/T8 evidence + output health) ------
    Deliberately thin: the page is built from the console's existing vocabulary
    (.nw-hero, .statpill, .ent-chip, .ent-table, .ent-search, .card), so what is
    added here is only the layout those pieces do not already carry — a labelled
@@ -6300,6 +6300,45 @@ button.obx-btn-reject:hover:not(:disabled) {
   text-transform: uppercase; color: var(--faint);
 }
 .ios-out-line code { word-break: break-all; }
+.ios-ceo-title { display: flex; align-items: baseline; gap: 8px; }
+.ios-ceo-bands {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;
+  margin-bottom: 14px;
+}
+.ios-evidence-band {
+  position: relative; min-width: 0; padding: 11px; text-align: left; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm);
+  cursor: pointer; transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.ios-evidence-band:hover { border-color: var(--accent); transform: translateY(-1px); }
+.ios-evidence-band.on { border-color: var(--accent-cyan); box-shadow: 0 0 0 2px rgba(56,224,212,.1); }
+.ios-band-order { position: absolute; top: 8px; right: 9px; color: var(--faint); font: 10px var(--mono); }
+.ios-band-name { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 650; }
+.ios-band-count { display: block; margin-top: 9px; font: 700 23px/1 var(--mono); }
+.ios-band-sample {
+  display: block; min-height: 2.7em; margin-top: 7px; color: var(--faint); font: 10px/1.35 var(--mono);
+  overflow: hidden; overflow-wrap: anywhere;
+}
+.ios-evidence-provider { margin-top: 4px; font: 10px var(--mono); }
+.ios-evidence-card { margin-bottom: 12px; }
+.ios-evidence-head { display: flex; align-items: center; gap: 8px; }
+.ios-evidence-head h3 { margin: 0; }
+.ios-evidence-head .spacer { margin-left: auto; }
+.ios-evidence-law { margin: 5px 0 10px; }
+.ios-evidence-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px 14px; }
+.ios-evidence-kv { min-width: 0; padding: 7px 0; border-top: 1px solid var(--grid); }
+.ios-evidence-kv > span {
+  display: block; margin-bottom: 3px; color: var(--faint); font-size: 10px;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.ios-evidence-kv code { display: block; color: var(--muted); font-size: 10.5px; white-space: normal; overflow-wrap: anywhere; }
 /* Only ever matches a row that carries the cross-link this page added — no
    pre-existing .nw-hero-row holds a .spacer. */
 .nw-hero-row .spacer, .ios-out-top .spacer { margin-left: auto; }
+
+@media (max-width: 980px) {
+  .ios-ceo-bands { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .ios-ceo-bands, .ios-evidence-grid { grid-template-columns: minmax(0, 1fr); }
+}

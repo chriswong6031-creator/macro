@@ -24,16 +24,15 @@ decisions:
 waves:
   - id: A1
     title: T7 per-engine evidence scorecard + T8 global CEO view
-    status: todo
+    status: in_progress
     next_action: >
-      Implement one derived read path and extend the existing Intelligence OS admin API/page.
-      Consume current T1 output_class, T4 health and owner-native/qledger evidence without
-      persisting a new score state. Prove real admin rendering including empty/null/degraded
-      states and independently review the final head before Sol acceptance.
+      Finish exact-head verification, independent review and authenticated production proof for
+      the derived Intelligence OS evidence view, without persisting a new score state.
 next_action: >
-  Commission A1 under the current protected Skillpack and current Macro main. The implementation
-  must remain a derived view over canonical evidence owners and must not wait for E1 to finish;
-  E1 accrual may be shown honestly as Accruing/insufficient evidence.
+  Continue A1 on the sticky ChatGPT Codex /root receiver binding established by START receipt
+  Slack C0BSBM78V1N / 1787971248.615479 reply 1787980283.141909. Complete the derived-view
+  implementation, exact-head CI, independent review and authenticated production proof; E1
+  accrual remains independent and must display honestly as Accruing/insufficient evidence.
 owns_paths:
   - admin/intelligence_os.py
   - tests/test_admin_intelligence_os.py
