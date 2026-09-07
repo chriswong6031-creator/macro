@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import importlib
 import re
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import pytest
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
+import engine.estimator_implication as eimp
 from engine.estimator_implication import (
     AUTHORITY_KEYS,
     ES_FAMILY,
@@ -109,13 +111,17 @@ def test_null_values_carry_a_plain_word_null_reason_in_both_languages():
 
 
 def test_synthetic_control_honest_n_is_populated_from_the_artifact():
-    # Regression for the false null_reason this replaced: the SC artifact DOES
-    # carry a distinct episode count (n_events) separate from the fitted count
-    # (n_fitted), so episode_n must not be left null under an untrue reason.
+    # sample_n is the fitted event-window observation count (n_fitted=303).
+    # episode_n is the monthly-cluster count backing the reported CLUSTERED
+    # t-stat (arm["n_months"]=52 in the pinned artifact) — the honest
+    # episode-level denominator for a clustered standard error, never the raw
+    # event count (n_events=361), which would overstate the clustering's
+    # effective precision. Neither field is left null under an untrue reason.
     payload = compose_synthetic_control_implication()
-    assert payload["honest_n"]["sample_n"] is not None
-    assert payload["honest_n"]["episode_n"] is not None
-    assert payload["honest_n"]["episode_n"] >= payload["honest_n"]["sample_n"]
+    assert payload["honest_n"]["sample_n"] == 303
+    assert payload["honest_n"]["episode_n"] == 52
+    assert "monthly cluster" in payload["honest_n"]["basis"]["en"]
+    assert payload["honest_n"]["basis"]["zh"].strip()
 
 
 def test_diagnostics_zh_detail_is_a_genuine_translation_not_a_pointer():
@@ -148,6 +154,7 @@ def test_payload_id_is_deterministic_and_content_bound():
         result_artifact_sha256=payload["provenance"]["result_artifact_sha256"],
         selection_id=payload["selection"]["selection_id"],
         family_id=payload["registered_family"]["family_id"],
+        producing_module_sha256=payload["provenance"]["producing_module_sha256"],
     )
     assert recomputed == payload["payload_id"]
 
@@ -158,8 +165,39 @@ def test_payload_id_is_deterministic_and_content_bound():
         result_artifact_sha256=payload["provenance"]["result_artifact_sha256"],
         selection_id="a-different-selection",
         family_id=payload["registered_family"]["family_id"],
+        producing_module_sha256=payload["provenance"]["producing_module_sha256"],
     )
     assert mutated != payload["payload_id"]
+
+
+def test_payload_id_is_bound_to_the_producing_module_digest():
+    # Regression: compute_payload_id used to omit producing_module_sha256, so
+    # editing engine/synthetic_control.py changed provenance while payload_id
+    # stayed identical — the "content-bound digest" claim held only for the
+    # artifact, never the producing module. Simulating a module edit (a
+    # different sha256, holding every other field fixed) must change the id.
+    payload = compose_synthetic_control_implication()
+    same_module = compute_payload_id(
+        composer_version=payload["composer_version"],
+        estimator_id=payload["estimator_id"],
+        result_artifact_path=payload["provenance"]["result_artifact_path"],
+        result_artifact_sha256=payload["provenance"]["result_artifact_sha256"],
+        selection_id=payload["selection"]["selection_id"],
+        family_id=payload["registered_family"]["family_id"],
+        producing_module_sha256=payload["provenance"]["producing_module_sha256"],
+    )
+    assert same_module == payload["payload_id"]
+
+    edited_module = compute_payload_id(
+        composer_version=payload["composer_version"],
+        estimator_id=payload["estimator_id"],
+        result_artifact_path=payload["provenance"]["result_artifact_path"],
+        result_artifact_sha256=payload["provenance"]["result_artifact_sha256"],
+        selection_id=payload["selection"]["selection_id"],
+        family_id=payload["registered_family"]["family_id"],
+        producing_module_sha256="0" * 64,
+    )
+    assert edited_module != payload["payload_id"]
 
 
 def test_authority_block_is_exactly_five_literal_false_keys():
@@ -182,13 +220,92 @@ def test_authority_block_is_exactly_five_literal_false_keys():
     }
 
 
+def test_null_reasons_must_be_named_by_the_exact_null_site_code():
+    # Regression: validate_payload used to accept ANY non-empty null_reasons
+    # array once at least one null existed anywhere, so a payload with four
+    # nulls and one unrelated reason validated. Each null site now needs its
+    # OWN entry named by its own code.
+    stub = _StubLedger(registered=[ES_FAMILY])
+    payload = compose_event_study_implication(ledger=stub)
+    validate_payload(payload)  # sanity: the real payload's codes already match
+
+    mismatched = copy.deepcopy(payload)
+    mismatched["null_reasons"][0]["code"] = "a_completely_unrelated_code"
+    with pytest.raises(ImplicationContractError, match="null_reasons entry"):
+        validate_payload(mismatched)
+
+
+def test_missing_gate_reason_gets_an_explicit_note_not_another_gates_prose():
+    # Regression m4: a missing PC1/PC3/F1 reason in gate_eval.reasons used to
+    # silently fall back to PC2's English prose while the ZH detail stayed
+    # correct — a wrong caption plus an EN/ZH parity break. It must now be an
+    # explicit "no reason recorded" note naming the actual missing gate.
+    import json as _json
+
+    root = REPO_ROOT
+    data = _json.loads((root / eimp.SC_RESULT_PATH).read_text(encoding="utf-8"))
+    del data["gate_eval"]["reasons"]["PC3"]
+
+    orig_load_json = eimp._load_json
+
+    def _patched(load_root, rel_path):
+        if rel_path == eimp.SC_RESULT_PATH:
+            return data
+        return orig_load_json(load_root, rel_path)
+
+    import unittest.mock as mock
+    with mock.patch.object(eimp, "_load_json", side_effect=_patched):
+        payload = compose_synthetic_control_implication()
+
+    pc3 = next(d for d in payload["diagnostics"] if d["code"] == "PC3_sc_not_noisier")
+    assert pc3["detail"]["en"] == "no PC3 reason recorded in gate_eval for this artifact"
+    assert pc3["detail"]["zh"] != pc3["detail"]["en"]
+    assert pc3["detail"]["zh"].strip()
+
+
+def test_es_artifact_digest_mismatch_degrades_to_a_typed_refusal_not_a_crash(monkeypatch):
+    # Regression m6: an ImplicationContractError (digest mismatch) or a
+    # missing ES artifact used to propagate out of build_estimator_implications
+    # and destroy the whole envelope, including the already-healthy SC
+    # payload. It must instead degrade to a typed refusal for the event-study
+    # estimator only.
+    # _verify_digest for the ES artifact runs BEFORE the family-registration
+    # check (see compose_event_study_implication), so the real default ledger
+    # (which registers SC's own family but not ES's) is enough here — the
+    # digest mismatch must fire first regardless of ES family registration.
+    monkeypatch.setattr(eimp, "ES_RESULT_SHA256", "0" * 64)
+    envelope = build_estimator_implications()
+
+    sc_payloads = [p for p in envelope["payloads"] if p["estimator_id"] == "engine.synthetic_control"]
+    assert len(sc_payloads) == 1, "a healthy SC payload must survive an ES artifact failure"
+
+    es_refusals = [r for r in envelope["refusals"] if r["estimator_id"] == "engine.seasonality.event_study"]
+    assert len(es_refusals) == 1
+    assert es_refusals[0]["refusal_code"] == "artifact_unavailable"
+    assert es_refusals[0]["detail"]["en"].strip()
+    assert es_refusals[0]["detail"]["zh"].strip()
+
+
 def test_composer_performs_no_writes_and_no_network():
     source = (REPO_ROOT / "engine" / "estimator_implication.py").read_text(encoding="utf-8")
     assert not re.search(r'open\([^)]*["\']w', source)
     assert not re.search(r'open\([^)]*["\']a', source)
     assert ".write_text(" not in source
-    for banned_import in ("import requests", "import urllib", "import httpx"):
+    assert ".write_bytes(" not in source
+    assert "os.write(" not in source
+    for banned_import in (
+        "import requests", "import urllib", "import httpx", "import socket",
+        "import http.client", "from http import client",
+        "from urllib.request import", "from urllib import request",
+    ):
         assert banned_import not in source
+    # Every bare ``.open(...)`` call must carry an explicit read-only mode
+    # ("rb"), an explicit text encoding (the stdlib default is "r"), or no
+    # arguments at all — never a bare variable that could carry a
+    # caller-supplied write mode, which the two checks above would miss.
+    for call_args in re.findall(r"\.open\(([^)]*)\)", source):
+        assert call_args == "" or '"rb"' in call_args or "'rb'" in call_args \
+            or "encoding=" in call_args, f"ambiguous .open() mode: {call_args!r}"
 
 
 def test_build_returns_a_typed_refusal_not_a_fabricated_payload():
@@ -207,38 +324,59 @@ def test_build_returns_a_typed_refusal_not_a_fabricated_payload():
     assert len(sc_payloads) == 1
 
 
-# The literal key set of #6830's mastermind.research_implication_card/v1
-# (engine/research_implication_card.py, PR #6830) — the drift alarm for the
-# two-payload risk named in the frozen spec. Update this set only alongside a
-# verified re-read of #6830's diff; do not "fix" a failure by relaxing it.
-_CARD_V1_KEYS = frozenset({
-    "schema", "card_id", "adapter_version", "quality", "null_reasons",
-    "limitations", "diagnostics", "uncertainty", "point_estimate",
-    "selected_result_id", "provenance",
-    "forecast_authority", "ranking_authority", "gating_authority",
-    "sizing_authority", "trading_authority",
-})
-
-_SHARED_SPELLING_KEYS = frozenset({
-    "quality", "null_reasons", "limitations", "diagnostics", "uncertainty",
-    "forecast_authority", "ranking_authority", "gating_authority",
-    "sizing_authority", "trading_authority",
-})
-
-
+# This is the drift alarm for the two-payload risk named in the frozen spec:
+# it must genuinely READ #6830's engine/research_implication_card.py (never a
+# same-file literal pinned by hand, which can drift silently and prove
+# nothing — that was M1 of the 2026-09-06 review round). #6830 (macro PR
+# #6830, branch claude/f10-x1-implication-cards-20260904) is not merged to
+# main yet, so the module does not exist here today; this test SKIPS with a
+# named reason until it lands, rather than fabricating a stand-in comparison.
+# TODO(#6830): once engine/research_implication_card.py merges to main, this
+# skip must stop firing — if it still skips after that merge, the import path
+# or module name below has drifted and needs fixing, not silencing.
 def test_payload_keys_are_a_profile_of_research_implication_card_v1():
-    payload = compose_synthetic_control_implication()
-    b_top_keys = set(payload.keys()) | set(payload["authority"].keys())
+    try:
+        ric = importlib.import_module("engine.research_implication_card")
+    except ImportError:
+        pytest.skip("A card module not on main yet (#6830)")
 
-    # B never uses a top-level/authority key name that A's card would recognize
-    # under a *different* meaning: every shared-spelling key must actually be
-    # shared, never silently renamed underneath the same word.
-    for key in _SHARED_SPELLING_KEYS:
-        assert key in _CARD_V1_KEYS, f"{key!r} drifted out of A's card vocabulary"
+    payload = compose_synthetic_control_implication()
+    b_top_keys = set(payload.keys())
+
+    # A's real top-level key set, read from the module itself (the same
+    # frozenset _require_keys(card, ..., "card") enforces there) — never a
+    # hand-copied literal.
+    card_top_keys = set(ric._CARD_KEYS)
+    card_authority_keys = set(ric.AUTHORITY_KEYS)
+
+    # Keys that are genuinely spelled the same at TOP LEVEL in both A and B.
+    # "authority"'s five sub-keys are asserted separately below, nested under
+    # "authority" in both — never unioned into this flat set, which is
+    # exactly the trick that let the old literal claim a flat placement A
+    # never uses.
+    shared_top_level_spelling_keys = frozenset({
+        "quality", "null_reasons", "limitations", "diagnostics", "uncertainty",
+    })
+    for key in shared_top_level_spelling_keys:
+        assert key in card_top_keys, f"{key!r} drifted out of A's card vocabulary"
         assert key in b_top_keys, f"{key!r} missing from B's payload"
 
-    # B's own id/version keys are deliberately renamed (see module docstring);
-    # assert the rename, not an accidental collision with A's spelling.
+    # The five authority keys are nested under "authority" in BOTH A and B —
+    # assert the real nesting, not a flat union that would paper over a drift.
+    assert "authority" in card_top_keys, '"authority" missing from A\'s card'
+    assert "authority" in b_top_keys, '"authority" missing from B\'s payload'
+    assert card_authority_keys == set(AUTHORITY_KEYS), \
+        "A's AUTHORITY_KEYS drifted from B's"
+    assert set(payload["authority"].keys()) == card_authority_keys
+
+    # B's own id/version/point-estimate keys are deliberately renamed (see
+    # module docstring); assert the rename against A's REAL spelling, never an
+    # accidental collision. A uses "outputs" and never "point_estimate"; B
+    # uses "point_estimate" and never "outputs".
     assert "payload_id" in b_top_keys and "card_id" not in b_top_keys
+    assert "card_id" in card_top_keys
     assert "composer_version" in b_top_keys and "adapter_version" not in b_top_keys
-    assert payload["schema"] != "mastermind.research_implication_card/v1"
+    assert "adapter_version" in card_top_keys
+    assert "point_estimate" in b_top_keys and "point_estimate" not in card_top_keys
+    assert "outputs" in card_top_keys and "outputs" not in b_top_keys
+    assert payload["schema"] != ric.CARD_SCHEMA

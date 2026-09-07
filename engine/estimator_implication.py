@@ -109,8 +109,10 @@ def load_contract(root: Path = REPO_ROOT) -> dict:
 
 def compute_payload_id(*, composer_version: str, estimator_id: str,
                         result_artifact_path: str, result_artifact_sha256: str,
-                        selection_id: str, family_id: str) -> str:
-    """Content-bound id: mutating the artifact or selection changes the digest."""
+                        selection_id: str, family_id: str,
+                        producing_module_sha256: str) -> str:
+    """Content-bound id: mutating the artifact, the selection, or the
+    producing module's own bytes changes the digest."""
     fields = {
         "composer_version": composer_version,
         "estimator_id": estimator_id,
@@ -118,6 +120,7 @@ def compute_payload_id(*, composer_version: str, estimator_id: str,
         "result_artifact_sha256": result_artifact_sha256,
         "selection_id": selection_id,
         "family_id": family_id,
+        "producing_module_sha256": producing_module_sha256,
     }
     blob = json.dumps(fields, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return "eimp_" + hashlib.sha256(blob.encode("utf-8")).hexdigest()
@@ -163,7 +166,6 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
     fam = data["families"]["sp_pure_adds"]
     arm = fam["arms"]["sc_nnls"]["real"]["0_5"]
     gates = data["gate_eval"]["gates"]
-    pc2_reason = data["gate_eval"]["reasons"].get("PC2", "PC2_estimators_unbiased failed")
 
     point_value = arm["mean"]
     point_estimate = {
@@ -218,11 +220,19 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
         ("PC3_sc_not_noisier", "SC placebo dispersion not noisier than incumbent", "合成对照安慰剂离散度未高于基准"),
         ("F1_falsifier_holds", "Falsifier window holds", "证伪窗口成立"),
     ]:
+        gate_prefix = code.split("_")[0]
+        en_reason = data["gate_eval"]["reasons"].get(gate_prefix)
+        if en_reason is None:
+            # No cross-gate fallback: substituting another gate's prose here
+            # (e.g. PC2's) would silently mislabel this diagnostic's caption
+            # and break EN/ZH parity, since zh_detail is always this code's own
+            # translation. An explicit missing-reason note is honest instead.
+            en_reason = f"no {gate_prefix} reason recorded in gate_eval for this artifact"
         diagnostics.append({
             "code": code,
             "label": {"en": label_en, "zh": label_zh},
             "passed": gates.get(code),
-            "detail": {"en": data["gate_eval"]["reasons"].get(code.split("_")[0], pc2_reason),
+            "detail": {"en": en_reason,
                        "zh": zh_detail[code]},
             "source": f"#/gate_eval/gates/{code}",
         })
@@ -239,6 +249,7 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
               "DIAGNOSTIC_FAILED。",
     }]
 
+    sc_module_sha256 = sha256_file(root / SC_MODULE_PATH)
     payload_id = compute_payload_id(
         composer_version=COMPOSER_VERSION,
         estimator_id="engine.synthetic_control",
@@ -246,6 +257,7 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
         result_artifact_sha256=SC_RESULT_SHA256,
         selection_id=SC_SELECTION,
         family_id=family_id,
+        producing_module_sha256=sc_module_sha256,
     )
 
     payload = {
@@ -268,18 +280,16 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
         "uncertainty": uncertainty,
         "honest_n": {
             "sample_n": int(fam["n_fitted"]),
-            "episode_n": int(fam["n_events"]),
+            "episode_n": int(arm["n_months"]),
             "basis": {"en": f"sample_n counts fitted event-window observations "
                             f"(n_fitted={fam['n_fitted']}, after dropping "
                             f"{fam['n_dropped_unfitted']} unfitted); episode_n counts "
-                            f"all proposed episodes before that drop "
-                            f"(n_events={fam['n_events']}, matching n_tickers="
-                            f"{fam['n_tickers']})",
+                            f"the monthly clusters used for the reported clustered "
+                            f"t-stat (n_months={arm['n_months']})",
                       "zh": f"sample_n 为已拟合事件窗口观测数（n_fitted="
                             f"{fam['n_fitted']}，已剔除 {fam['n_dropped_unfitted']} "
-                            f"个未能拟合的事件）；episode_n 为剔除前提出的全部事件数"
-                            f"（n_events={fam['n_events']}，与 n_tickers="
-                            f"{fam['n_tickers']} 相同）"},
+                            f"个未能拟合的事件）；episode_n 为所报告聚类 t 统计量所用的"
+                            f"月度聚类数（n_months={arm['n_months']}）"},
         },
         "diagnostics": diagnostics,
         "quality": "DIAGNOSTIC_FAILED",
@@ -287,7 +297,7 @@ def compose_synthetic_control_implication(root: Path = REPO_ROOT, *, ledger=None
         "limitations": limitations,
         "provenance": {
             "producing_module": SC_MODULE_PATH,
-            "producing_module_sha256": sha256_file(root / SC_MODULE_PATH),
+            "producing_module_sha256": sc_module_sha256,
             "result_artifact_path": SC_RESULT_PATH,
             "result_artifact_sha256": SC_RESULT_SHA256,
             "generator_path": None,
@@ -340,7 +350,11 @@ def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None,
     }
 
     null_reasons = [{
-        "code": "event_study_t_stat_not_recorded",
+        # Named by the exact code of the null site it explains (the
+        # uncertainty entry below), not a generic label — validate_payload
+        # enforces this 1:1 by code so a null cannot ride in on an unrelated
+        # reason.
+        "code": "hincl2_announce_caar_h20_t",
         "reason": {"en": "No t-statistic recorded for this horizon",
                    "zh": "该窗口未记录 t 统计量"},
         "detail": {"en": "The hincl2 event-study artifact records the DSR-selected "
@@ -384,6 +398,7 @@ def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None,
               "UnregisteredSearchFamily。",
     }]
 
+    es_module_sha256 = sha256_file(root / ES_MODULE_PATH)
     payload_id = compute_payload_id(
         composer_version=COMPOSER_VERSION,
         estimator_id="engine.seasonality.event_study",
@@ -391,6 +406,7 @@ def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None,
         result_artifact_sha256=ES_RESULT_SHA256,
         selection_id=ES_SELECTION,
         family_id=family_id,
+        producing_module_sha256=es_module_sha256,
     )
 
     return {
@@ -428,7 +444,7 @@ def compose_event_study_implication(root: Path = REPO_ROOT, *, ledger=None,
         "limitations": limitations,
         "provenance": {
             "producing_module": ES_MODULE_PATH,
-            "producing_module_sha256": sha256_file(root / ES_MODULE_PATH),
+            "producing_module_sha256": es_module_sha256,
             "result_artifact_path": ES_RESULT_PATH,
             "result_artifact_sha256": ES_RESULT_SHA256,
             "generator_path": None,
@@ -458,6 +474,7 @@ def validate_payload(payload: Mapping[str, Any]) -> dict:
         result_artifact_sha256=payload["provenance"]["result_artifact_sha256"],
         selection_id=payload["selection"]["selection_id"],
         family_id=payload["registered_family"]["family_id"],
+        producing_module_sha256=payload["provenance"]["producing_module_sha256"],
     )
     if recomputed != payload["payload_id"]:
         raise ImplicationContractError(
@@ -476,11 +493,14 @@ def validate_payload(payload: Mapping[str, Any]) -> dict:
         nullable_spots.append("honest_n.sample_n")
     if payload["honest_n"]["episode_n"] is None:
         nullable_spots.append("honest_n.episode_n")
-    # every null needs *a* matching null_reasons entry; we don't force 1:1 naming
-    # beyond requiring at least one code exists per null found.
-    if nullable_spots and not null_codes:
+    # Every null site needs its OWN matching null_reasons entry, named by that
+    # site's own code — not merely at-least-one code anywhere in the array.
+    # A payload with four nulls and one unrelated reason must not validate.
+    missing_reasons = [spot for spot in nullable_spots if spot not in null_codes]
+    if missing_reasons:
         raise ImplicationContractError(
-            f"nulls present ({nullable_spots}) with no null_reasons entries"
+            f"null value(s) {missing_reasons} have no null_reasons entry named "
+            "by their own code (each null site needs its own entry)"
         )
 
     expected_authority = {k: False for k in AUTHORITY_KEYS}
@@ -515,6 +535,21 @@ def build_estimator_implications(root: Path = REPO_ROOT, *, ledger=None) -> dict
                       "multiple-testing budget it spent is unrecorded.",
                 "zh": "本事件研究不发布含义："
                       "其搜索族未登记入试验账本。",
+            },
+            "source": ES_RESULT_PATH,
+        })
+    except (ImplicationContractError, FileNotFoundError) as exc:
+        # A digest mismatch or a missing result artifact must degrade to a
+        # typed refusal for THIS estimator only, never destroy the whole
+        # envelope — the synthetic-control payload above already succeeded
+        # and must still be published.
+        refusals.append({
+            "estimator_id": "engine.seasonality.event_study",
+            "refusal_code": "artifact_unavailable",
+            "detail": {
+                "en": "No implication is published for this event study: its result "
+                      f"artifact could not be read or verified ({exc}).",
+                "zh": "本事件研究不发布含义：其结果产物无法读取或校验。",
             },
             "source": ES_RESULT_PATH,
         })
