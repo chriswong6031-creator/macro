@@ -53,6 +53,54 @@ MARKETS = {
     },
 }
 
+OWNER_CASES = ("normal", "watch-only", "null-buy")
+
+MEMBERSHIP_OVERLAYS = {
+    "hk": {
+        "group": {
+            "kind": "sector",
+            "id": "FIXTURE-FINANCE",
+            "name": "Fixture finance",
+            "research_href": "sectors/FIXTURE-FINANCE.html",
+        },
+        "members": (
+            {"ticker": "2318.HK", "owner_lane": "ran"},
+            {"ticker": "2331.HK", "owner_lane": "watch"},
+        ),
+        "control": {
+            "selector": (
+                '[data-action-id="FIXTURE-FINANCE"] '
+                ".anv2-name.hk-v37-an-row"
+            ),
+            "remove_attributes": ["disabled"],
+            "set_attributes": {"data-hk-lead-id": "FIXTURE-FINANCE"},
+        },
+    },
+    "ca": {
+        "group": {
+            "kind": "sector",
+            "id": "FIXTURE-FINANCE",
+            "name": "Fixture finance",
+            "research_href": "sectors/FIXTURE-FINANCE.html",
+        },
+        "members": (
+            {"ticker": "PMZ-UN.TO", "owner_lane": "watch"},
+            {"ticker": "MTL.TO", "owner_lane": "watch"},
+        ),
+        "control": {
+            "selector": (
+                '[data-action-id="FIXTURE-FINANCE"] '
+                ".anv2-name.ca-v36-an-row"
+            ),
+            "remove_attributes": ["disabled"],
+            "set_attributes": {
+                "data-ca-lead-kind": "sector",
+                "data-ca-lead-id": "FIXTURE-FINANCE",
+            },
+        },
+    },
+}
+
 OWNER_LANES = {
     "hk": ("buy", "ripening", "ran", "vetoed", "watch"),
     "ca": ("buy", "watch"),
@@ -514,23 +562,39 @@ def canada_context(
 def owner_population(market: str, setups: dict[str, Any]) -> dict[str, Any]:
     board = setups.get("buy")
     watch = setups.get("watch")
-    if not isinstance(board, list) or not isinstance(watch, list):
-        raise ValueError(f"{market}: checked-in owner fixture is not list-backed")
     if market == "ca":
-        board_rows = board
+        board_rows = board if isinstance(board, list) else None
     else:
         lanes = (board, setups.get("ripening"), setups.get("ran"), setups.get("vetoed"))
-        if any(not isinstance(lane, list) for lane in lanes):
-            raise ValueError("hk: priority owner lanes are not all list-backed")
-        board_rows = [row for lane in lanes for row in lane]
-    board_ids = [str(row["ticker"]).strip().upper() for row in board_rows]
-    watch_ids = [str(row["ticker"]).strip().upper() for row in watch]
-    intersection = sorted(set(board_ids).intersection(watch_ids))
+        board_rows = (
+            [row for lane in lanes for row in lane]
+            if all(isinstance(lane, list) for lane in lanes)
+            else None
+        )
+    board_ids = (
+        [str(row["ticker"]).strip().upper() for row in board_rows]
+        if board_rows is not None
+        else None
+    )
+    watch_ids = (
+        [str(row["ticker"]).strip().upper() for row in watch]
+        if isinstance(watch, list)
+        else None
+    )
+    intersection = (
+        sorted(set(board_ids).intersection(watch_ids))
+        if board_ids is not None and watch_ids is not None
+        else None
+    )
     return {
-        "board": len(board_ids),
-        "watch": len(watch_ids),
+        "board": len(board_ids) if board_ids is not None else None,
+        "watch": len(watch_ids) if watch_ids is not None else None,
         "intersection": intersection,
-        "unique_total": len(set(board_ids).union(watch_ids)),
+        "unique_total": (
+            len(set(board_ids).union(watch_ids))
+            if board_ids is not None and watch_ids is not None
+            else None
+        ),
     }
 
 
@@ -538,39 +602,174 @@ def input_row(path: Path, role: str) -> dict[str, str]:
     return {"path": repo_path(path), "role": role, "sha256": sha256(path)}
 
 
+def canonical_receipt(payload: dict[str, Any]) -> dict[str, Any]:
+    """Bind an in-receipt transform to one documented canonical byte string."""
+    encoded = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return {
+        "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+        "bytes": len(encoded),
+        "sha256": hashlib.sha256(encoded).hexdigest(),
+        "payload": payload,
+    }
+
+
+def owner_case_setups(
+    source: dict[str, Any], owner_case: str
+) -> dict[str, Any]:
+    """Apply one closed, presentation-proof-only owner-input transform."""
+    if owner_case not in OWNER_CASES:
+        raise ValueError(f"unknown owner case: {owner_case}")
+    transformed = FixtureRow(source)
+    if owner_case == "watch-only":
+        transformed["buy"] = []
+    elif owner_case == "null-buy":
+        transformed["buy"] = None
+    return transformed
+
+
+def owner_lane_identities(
+    market: str, setups: dict[str, Any]
+) -> dict[str, list[str] | None]:
+    """Serialize only stable owner identity, including an explicit null lane."""
+    result: dict[str, list[str] | None] = {}
+    for lane in OWNER_LANES[market]:
+        rows = setups.get(lane)
+        result[lane] = (
+            [str(row["ticker"]).strip().upper() for row in rows]
+            if isinstance(rows, list)
+            else None
+        )
+    return result
+
+
+def case_transform_receipt(
+    market: str,
+    owner_case: str,
+    source: dict[str, Any],
+    transformed: dict[str, Any],
+) -> dict[str, Any]:
+    operation = {
+        "normal": "preserve frozen owner input",
+        "watch-only": "replace buy with an explicit empty list; preserve every independent owner lane",
+        "null-buy": "replace buy with JSON null; preserve every independent owner lane",
+    }[owner_case]
+    return canonical_receipt(
+        {
+            "schema": "mastermind.stock_dashboard_owner_case.v1",
+            "market": market,
+            "owner_case": owner_case,
+            "operation": operation,
+            "source_owner_identities": owner_lane_identities(market, source),
+            "rendered_owner_identities": owner_lane_identities(market, transformed),
+        }
+    )
+
+
+def membership_overlay_receipt(
+    market: str, source: dict[str, Any]
+) -> dict[str, Any]:
+    """Admit the finite known-group/zero-card diagnostic overlay by exact bytes."""
+    spec = MEMBERSHIP_OVERLAYS[market]
+    source_ids = owner_lane_identities(market, source)
+    for member in spec["members"]:
+        lane = member["owner_lane"]
+        if member["ticker"] not in (source_ids.get(lane) or []):
+            raise ValueError(
+                f"{market}: diagnostic member {member['ticker']} is not in {lane}"
+            )
+        if lane == "buy":
+            raise ValueError(f"{market}: diagnostic member must not be an actionable card")
+    payload = {
+        "schema": "mastermind.stock_dashboard_membership_overlay.v1",
+        "classification": "browser_contract_fixture_only",
+        "market": market,
+        "owner_case": "normal",
+        "group": spec["group"],
+        "members": list(spec["members"]),
+        "composer_rows": [
+            {"ticker": member["ticker"], "sector": spec["group"]["name"]}
+            for member in spec["members"]
+        ],
+        "control": spec["control"],
+        "card_population_mutation": "none",
+        "table_population_mutation": "none",
+        "delivery": (
+            "verifier-scoped JSON.parse overlay only when the call stack names the "
+            "exact entitled composer and the input bytes equal #stocktable-data; "
+            "the wrapper is removed after one consumption"
+        ),
+        "source_identity_requirement": (
+            "every member must remain in its original server-owned watch/stage "
+            "anchor and must not be an actionable card"
+        ),
+    }
+    return canonical_receipt(payload)
+
+
+def case_output_name(market: str, owner_case: str) -> str:
+    canonical = MARKETS[market]["output"]
+    if owner_case == "normal":
+        return canonical
+    stem = Path(canonical).stem
+    return f"{stem}.{owner_case}.html"
+
+
 def render_market(market: str, out_dir: Path) -> dict[str, Any]:
     from engine import i18n
 
     spec = MARKETS[market]
-    setups, owner_path = load_owner_fixture(market)
+    source_setups, owner_path = load_owner_fixture(market)
     actions, action_path = load_action_fixture(market)
+    loaded_templates: set[Path] = set()
+    owner_cases: dict[str, Any] = {}
+    for owner_case in OWNER_CASES:
+        setups = owner_case_setups(source_setups, owner_case)
+        loader = TrackingLoader(TEMPLATES)
+        env = Environment(loader=loader, autoescape=False)
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+        context = (
+            hk_context(setups, actions)
+            if market == "hk"
+            else canada_context(setups, actions)
+        )
+        html = env.get_template(spec["template"]).render(**context)
+        output_name = case_output_name(market, owner_case)
+        output = out_dir / output_name
+        output.write_text(html, encoding="utf-8")
+        loaded_templates.update(loader.loaded)
+        owner_cases[owner_case] = {
+            "route": f"/{spec['output']}",
+            "output": output_name,
+            "output_sha256": sha256(output),
+            "owner_population": owner_population(market, setups),
+            "input_transform": case_transform_receipt(
+                market, owner_case, source_setups, setups
+            ),
+        }
 
-    loader = TrackingLoader(TEMPLATES)
-    env = Environment(loader=loader, autoescape=False)
-    env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    context = (
-        hk_context(setups, actions)
-        if market == "hk"
-        else canada_context(setups, actions)
-    )
-    html = env.get_template(spec["template"]).render(**context)
-
-    output = out_dir / spec["output"]
-    output.write_text(html, encoding="utf-8")
     inputs = [
         input_row(Path(__file__), "recipe"),
         input_row(ROOT / "engine" / "i18n.py", "jinja_globals"),
         input_row(owner_path, "frozen_owner_fixture"),
         input_row(action_path, "frozen_action_fixture"),
     ]
-    inputs.extend(input_row(path, "jinja_template") for path in sorted(loader.loaded))
+    inputs.extend(
+        input_row(path, "jinja_template") for path in sorted(loaded_templates)
+    )
     inputs = sorted({row["path"]: row for row in inputs}.values(), key=lambda row: row["path"])
+    normal = owner_cases["normal"]
     return {
         "route": f"/{spec['output']}",
         "output": spec["output"],
-        "output_sha256": sha256(output),
-        "owner_population": owner_population(market, setups),
+        "output_sha256": normal["output_sha256"],
+        "owner_population": normal["owner_population"],
         "inputs": inputs,
+        "owner_cases": owner_cases,
+        "diagnostic_membership_overlay": membership_overlay_receipt(
+            market, source_setups
+        ),
     }
 
 

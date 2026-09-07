@@ -386,6 +386,9 @@
      leaves zero Top Picks but All Candidates DOES have matches, invite the
      reader to switch deliberately instead of doing it for them. */
   function emptyStateHtml() {
+    if (state.source === "top" && state.cards.length === 0) {
+      return bi("No Top Picks right now.", "当前暂无首选。");
+    }
     var item = itemForFilter();
     if (state.source === "top" && item && item.members) {
       var wouldAllShowMore = state.cards.some(function (card) { return item.members.has(ticker(card.getAttribute("data-ticker"))); });
@@ -401,7 +404,7 @@
       return bi("No current Prophet names in this group.", "该组别暂无 Prophet 候选。") +
         (item.href ? ' <a class="ca-v36-empty-go" href="' + esc(item.href) + '">' + bi("Open sector research ↗", "查看板块研究 ↗") + '</a>' : '');
     }
-    return bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。");
+    return bi("No actionable cards match this leadership filter; matching watch/stage names remain below.", "当前领先筛选下无可操作卡片；匹配的观察/阶段名单仍保留在下方。");
   }
   function boardPopulation() {
     var owner = qs("#ca-v36-card-grid");
@@ -444,11 +447,12 @@
       card.hidden = !show;
       if (show) shown++;
     });
-    var empty = qs("#ca-v36-grid-empty");
-    if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
+    var empty = qs("#ca-v36-grid-empty"), item = itemForFilter();
+    var emptyProjection = shown === 0 && (state.source === "top" || !!(item && item.members));
+    if (empty) { empty.hidden = !emptyProjection; if (emptyProjection) empty.innerHTML = emptyStateHtml(); }
     var board = boardPopulation(), result = qs("#ca-v36-result"), watch = watchPopulation(), unique = uniquePopulation();
     if (result) result.innerHTML = populationCopy(shown, board, watch, unique);
-    var pill = qs("#ca-v36-filter"), item = itemForFilter();
+    var pill = qs("#ca-v36-filter");
     if (pill) { pill.hidden = !item; pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi(item.kind === "theme" ? "Theme" : "Sector", item.kind === "theme" ? "主题" : "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
     markLeadership(); applyTableFilter();
   }

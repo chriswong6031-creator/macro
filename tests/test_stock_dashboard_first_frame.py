@@ -85,15 +85,20 @@ def _function_source(text: str, name: str) -> str:
 
 def _run_node_function(text: str, name: str, program: str) -> object:
     """Execute the real production function with tiny DOM-owner fixtures."""
+    return _run_node_functions(text, (name,), program)
+
+
+def _run_node_functions(
+    text: str, names: tuple[str, ...], program: str
+) -> object:
+    """Execute cooperating production functions with tiny DOM-owner fixtures."""
     node = shutil.which("node")
     assert node, "node is required for the stock-dashboard code gate"
+    prelude = ["let qs, qsa, state;"]
+    if "bi" not in names:
+        prelude.append("function bi(en, _zh) { return en; }")
     harness = "\n".join(
-        (
-            "let qs, qsa, state;",
-            "function bi(en, _zh) { return en; }",
-            _function_source(text, name),
-            program,
-        )
+        (*prelude, *(_function_source(text, name) for name in names), program)
     )
     run = subprocess.run(
         [node, "-e", harness],
@@ -272,6 +277,109 @@ def test_result_copy_requires_an_identity_proven_unique_population(
     assert "board + watch" not in population_copy
     assert "47 current names" not in text
     assert "17 current names" not in text
+
+
+@pytest.mark.parametrize(
+    ("market", "empty_selector", "board_function", "top_empty_copy"),
+    (
+        (
+            "hk",
+            "#hk-v37-grid-empty",
+            "ownerPopulation",
+            "No featured names right now.",
+        ),
+        (
+            "ca",
+            "#ca-v36-grid-empty",
+            "boardPopulation",
+            "No Top Picks right now.",
+        ),
+    ),
+)
+def test_loaded_zero_card_empty_copy_requires_an_active_projection(
+    market: str,
+    empty_selector: str,
+    board_function: str,
+    top_empty_copy: str,
+) -> None:
+    """Watch-only All is not a failed leadership filter or an empty estate."""
+    text = _read(MARKETS[market]["composer"])
+    observed = _run_node_functions(
+        text,
+        ("esc", "bi", "emptyStateHtml", "applyFilter"),
+        f"""
+function allowed() {{ return true; }}
+function ticker(value) {{ return value || ""; }}
+function {board_function}() {{ return 0; }}
+function watchPopulation() {{ return 8; }}
+function uniquePopulation() {{ return 8; }}
+function populationCopy() {{ return "0 actionable cards shown · 8 current names"; }}
+function markLeadership() {{}}
+function applyTableFilter() {{}}
+
+function run(source, membership) {{
+  var empty = {{hidden: true, innerHTML: "STATIC_OWNER_STATE"}};
+  qs = function (selector) {{
+    if (selector === {json.dumps(empty_selector)}) return empty;
+    return null;
+  }};
+  qsa = function () {{ return []; }};
+  state = {{cards: [], source: source, filter: membership === null ? null : {{id: "fixture"}}, featuredCount: 0}};
+  itemForFilter = function () {{
+    return membership === null ? null : {{members: new Set(new Array(membership).fill("WATCH")), href: ""}};
+  }};
+  applyFilter();
+  return {{source: source, membership: membership, hidden: empty.hidden, html: empty.innerHTML}};
+}}
+
+console.log(JSON.stringify([
+  run("all", null),
+  run("all", 1),
+  run("all", 0),
+  run("top", null)
+]));
+""",
+    )
+    assert observed == [
+        {
+            "source": "all",
+            "membership": None,
+            "hidden": True,
+            "html": "STATIC_OWNER_STATE",
+        },
+        {
+            "source": "all",
+            "membership": 1,
+            "hidden": False,
+            "html": (
+                '<span class="l-en">No actionable cards match this leadership '
+                'filter; matching watch/stage names remain below.</span>'
+                '<span class="l-zh">当前领先筛选下无可操作卡片；匹配的观察/阶段名单仍保留在下方。</span>'
+            ),
+        },
+        {
+            "source": "all",
+            "membership": 0,
+            "hidden": False,
+            "html": (
+                '<span class="l-en">No current Prophet names in this group.</span>'
+                '<span class="l-zh">该组别暂无 Prophet 候选。</span>'
+            ),
+        },
+        {
+            "source": "top",
+            "membership": None,
+            "hidden": False,
+            "html": (
+                f'<span class="l-en">{top_empty_copy}</span>'
+                + (
+                    '<span class="l-zh">当前暂无精选个股。</span>'
+                    if market == "hk"
+                    else '<span class="l-zh">当前暂无首选。</span>'
+                )
+            ),
+        },
+    ]
 
 
 def test_hk_stage_owner_count_is_fail_closed_and_preserves_numeric_zero() -> None:
@@ -1263,7 +1371,8 @@ def test_rendered_fixture_recipe_is_committed_self_binding_and_deterministic(
     )
     assert receipt["ambient_inputs"] == []
     for market, expected in (("hk", (39, 8, 47)), ("ca", (9, 8, 17))):
-        page = first / receipt["markets"][market]["output"]
+        market_receipt = receipt["markets"][market]
+        page = first / market_receipt["output"]
         assert _sha256(page) == receipt["markets"][market]["output_sha256"]
         soup = BeautifulSoup(page.read_text(encoding="utf-8"), "html.parser")
         assert len(soup.find_all("main")) == 1
@@ -1275,6 +1384,67 @@ def test_rendered_fixture_recipe_is_committed_self_binding_and_deterministic(
             "intersection": [],
             "unique_total": expected[2],
         }
+        expected_case_populations = {
+            "hk": {
+                "normal": {"board": 39, "watch": 8, "intersection": [], "unique_total": 47},
+                "watch-only": {"board": 36, "watch": 8, "intersection": [], "unique_total": 44},
+                "null-buy": {"board": None, "watch": 8, "intersection": None, "unique_total": None},
+            },
+            "ca": {
+                "normal": {"board": 9, "watch": 8, "intersection": [], "unique_total": 17},
+                "watch-only": {"board": 0, "watch": 8, "intersection": [], "unique_total": 8},
+                "null-buy": {"board": None, "watch": 8, "intersection": None, "unique_total": None},
+            },
+        }[market]
+        assert set(market_receipt["owner_cases"]) == {
+            "normal",
+            "watch-only",
+            "null-buy",
+        }
+        for owner_case, case in market_receipt["owner_cases"].items():
+            case_page = first / case["output"]
+            assert case["route"] == market_receipt["route"]
+            assert _sha256(case_page) == case["output_sha256"]
+            assert case["owner_population"] == expected_case_populations[owner_case]
+            transform = case["input_transform"]
+            canonical = json.dumps(
+                transform["payload"],
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            assert transform["bytes"] == len(canonical)
+            assert transform["sha256"] == hashlib.sha256(canonical).hexdigest()
+            assert transform["payload"]["owner_case"] == owner_case
+            rendered_buy = transform["payload"]["rendered_owner_identities"]["buy"]
+            if owner_case == "normal":
+                assert rendered_buy
+            elif owner_case == "watch-only":
+                assert rendered_buy == []
+            else:
+                assert rendered_buy is None
+
+        overlay = market_receipt["diagnostic_membership_overlay"]
+        canonical_overlay = json.dumps(
+            overlay["payload"],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        assert overlay["bytes"] == len(canonical_overlay)
+        assert overlay["sha256"] == hashlib.sha256(canonical_overlay).hexdigest()
+        assert overlay["payload"]["group"] == {
+            "kind": "sector",
+            "id": "FIXTURE-FINANCE",
+            "name": "Fixture finance",
+            "research_href": "sectors/FIXTURE-FINANCE.html",
+        }
+        assert all(
+            member["owner_lane"] != "buy"
+            for member in overlay["payload"]["members"]
+        )
+        assert overlay["payload"]["card_population_mutation"] == "none"
+        assert overlay["payload"]["table_population_mutation"] == "none"
         if market == "hk":
             all_count = soup.select_one(
                 '#hk-stage-filter [data-stagepick="all"] .pbf-n'
@@ -1340,6 +1510,66 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
         "production": "none",
     }
     assert browser["fixture_market"] == market
+    historical_hashes = {
+        "hk": "71427ce354ff3f40e2cc7a9e298c840453465fc3a7fcf285ea32b2a486c89a3a",
+        "ca": "caffaacaae9d50b4a31be2ee0b6e61fa1cb0463a7c797e8154886f69e7a03fbc",
+    }
+    historical = browser["historical_baseline"]
+    assert historical["schema"] == (
+        "mastermind.stock_dashboard_browser_historical_baseline.v1"
+    )
+    assert historical["candidate_head"] == (
+        "3fb76ea810a8e9ef6a05fe808bb6eaee87eb1f86"
+    )
+    assert historical["candidate_tree"] == (
+        "b4dd8fd9b29b4eb769239d35df2a7911e793c7ec"
+    )
+    assert historical["receipt"] == {
+        "path": f"mockups/evidence/prophet-p0b-zero-fouc/{receipt_name}",
+        "sha256": historical_hashes[market],
+        "recovery": (
+            "git show 3fb76ea810a8e9ef6a05fe808bb6eaee87eb1f86:"
+            f"mockups/evidence/prophet-p0b-zero-fouc/{receipt_name}"
+        ),
+    }
+    assert historical["result"] == {
+        "pass": True,
+        "state_cases": 7,
+        "expansion_cases": 8,
+        "fragment_cases": 6,
+        "desktop_sequence_cases": 11,
+        "total_cases": 32,
+        "bound_screenshots": 2,
+    }
+    expected_historical_screenshots = {
+        "hk": [
+            {
+                "state": "js-disabled",
+                "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-js-disabled-dark-390.png",
+                "sha256": "0c5c56d9783b8d4b4358b117124120a732bf5c7770ead9d9c1b7c370715440bb",
+            },
+            {
+                "state": "composer-failed",
+                "path": "mockups/evidence/prophet-p0b-zero-fouc/hk-composer-failed-light-390.png",
+                "sha256": "17f9d95a4765f569cc01c074a8a9cd60facdcadbb4fbcf223d345d8e47fdbee4",
+            },
+        ],
+        "ca": [
+            {
+                "state": "js-disabled",
+                "path": "mockups/evidence/prophet-p0b-zero-fouc/ca-js-disabled-dark-390.png",
+                "sha256": "17b369e5f17c29d558acc2306d754ea5a9eb33543c6fd47897eb048e7da0a9e2",
+            },
+            {
+                "state": "composer-failed",
+                "path": "mockups/evidence/prophet-p0b-zero-fouc/ca-composer-failed-light-390.png",
+                "sha256": "ed067c82a490126c908eb9f53202e90e36c15dd27c57c4d464760db3861afe33",
+            },
+        ],
+    }
+    assert historical["screenshots"] == expected_historical_screenshots[market]
+    for screenshot in historical["screenshots"]:
+        assert _sha256(ROOT / screenshot["path"]) == screenshot["sha256"]
     assert browser["verifier"] == {
         "path": "scripts/verify_stock_dashboard_mobile_layout.cjs",
         "sha256": _sha256(BROWSER_RECEIPT),
@@ -1363,6 +1593,20 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
     assert browser["loaded_assets"][f"site/{composer}"] == _sha256(
         ROOT / "site" / composer
     )
+    assert set(browser["rendered_owner_cases"]) == {
+        "normal",
+        "watch-only",
+        "null-buy",
+    }
+    for owner_case, case in browser["rendered_owner_cases"].items():
+        expected = fixture["markets"][market]["owner_cases"][owner_case]
+        assert case == {
+            "route": expected["route"],
+            "output": expected["output"],
+            "output_sha256": expected["output_sha256"],
+            "owner_population": expected["owner_population"],
+            "input_transform": expected["input_transform"],
+        }
     action_fixture = (
         "hk-action-fixture.json"
         if market == "hk"
@@ -1414,6 +1658,92 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
     }
     assert browser["pass"] is True
     assert all(row["pass"] and row["behavior"]["pass"] for row in browser["states"])
+    projection = browser["owner_projection_matrix"]
+    assert projection["contract"] == {
+        "markets_in_receipt": 1,
+        "languages": ["en", "zh"],
+        "themes": ["dark", "light"],
+        "viewport_widths": [390, 1440],
+        "owner_cases": ["normal", "watch-only", "null-buy"],
+        "primary_modes": ["loaded", "js-disabled"],
+        "degraded_control_owner_case": "watch-only",
+        "degraded_control_modes": ["composer-failed", "composer-pending"],
+        "browser_motion_preference": "reduce",
+        "screenshot_animation_policy": "disabled",
+        "screenshot_caret_policy": "hide",
+        "expected_primary_cases": 48,
+        "expected_degraded_control_cases": 16,
+        "expected_total_cases": 64,
+        "expected_loaded_watch_only_screenshots": 8,
+    }
+    assert projection["primary_passed"] == 48
+    assert projection["degraded_controls_passed"] == 16
+    assert projection["screenshot_count"] == 8
+    assert projection["pass"] is True
+    assert len(projection["cases"]) == 64
+    assert all(row["pass"] for row in projection["cases"])
+    assert len(projection["theme_art_direction_pairs"]) == 4
+    assert all(row["pass"] for row in projection["theme_art_direction_pairs"])
+
+    overlay = projection["membership_overlay"]
+    assert overlay == fixture["markets"][market]["diagnostic_membership_overlay"]
+    normal_loaded = [
+        row
+        for row in projection["cases"]
+        if row["proof_set"] == "primary"
+        and row["owner_case"] == "normal"
+        and row["mode"] == "loaded"
+    ]
+    assert len(normal_loaded) == 8
+    assert all(row["transition"]["attempted"] for row in normal_loaded)
+    assert all(row["transition"]["pass"] for row in normal_loaded)
+    assert all(row["transition"]["source_unchanged"] for row in normal_loaded)
+    assert all(row["transition"]["card_identity_unchanged"] for row in normal_loaded)
+    assert all(row["transition"]["table_identity_unchanged"] for row in normal_loaded)
+    assert all(row["transition"]["watch_identity_unchanged"] for row in normal_loaded)
+
+    no_interaction = [
+        row
+        for row in projection["cases"]
+        if row not in normal_loaded
+    ]
+    assert all(not row["transition"]["attempted"] for row in no_interaction)
+    watch_loaded = [
+        row
+        for row in projection["cases"]
+        if row["owner_case"] == "watch-only" and row["mode"] == "loaded"
+    ]
+    assert len(watch_loaded) == 8
+    for row in watch_loaded:
+        zero = row["owner_zero_projection"]
+        assert zero["pass"] is True
+        if market == "ca":
+            assert zero["exercised"] is True
+            assert zero["initial_source"] == "top"
+            assert zero["initial_top_empty"]["visible"] is True
+            assert zero["explicit_all"]["selected_source"] == "all"
+            assert zero["explicit_all"]["grid_empty"]["visible"] is False
+        else:
+            assert zero["exercised"] is False
+            assert zero["explicit_all"]["selected_source"] == "all"
+            assert zero["explicit_all"]["grid_empty"]["visible"] is False
+        screenshot = row["screenshot"]
+        expected_name = (
+            f"owner-empty-{market}-watch-only-{row['locale']}-"
+            f"{row['theme']}-{row['viewport']['width']}.png"
+        )
+        assert screenshot["filename"] == expected_name
+        assert screenshot["path"] == (
+            "mockups/evidence/prophet-p0b-zero-fouc/" + expected_name
+        )
+        assert screenshot["width"] == row["viewport"]["width"]
+        assert _sha256(ROOT / screenshot["path"]) == screenshot["sha256"]
+
+    null_cases = [
+        row for row in projection["cases"] if row["owner_case"] == "null-buy"
+    ]
+    assert len(null_cases) == 16
+    assert all(row["initial"]["source_owner_state"] == "unavailable" for row in null_cases)
     expected_initial_source = "all" if market == "hk" else "top"
     states = {row["state"]: row for row in browser["states"]}
     for row in states.values():
@@ -1652,20 +1982,12 @@ def test_committed_browser_receipts_are_self_binding_fixture_proof(
             for name in expected_quote_states
         } == expected_quote_states
         assert all(row["pass"] for row in quote_cases.values())
-    degraded = {
-        row["state"]: row["screenshot"]
-        for row in browser["states"]
-        if row["state"] in {"js-disabled", "composer-failed"}
-    }
-    assert set(degraded) == {"js-disabled", "composer-failed"}
-    for screenshot in degraded.values():
-        assert _sha256(ROOT / screenshot["path"]) == screenshot["sha256"]
+    assert all("screenshot" not in row for row in browser["states"])
 
 
-def test_visual_manifest_names_fixture_only_provenance() -> None:
-    """The 16-cell capture cannot be mistaken for a canonical or live build."""
+def test_visual_manifest_preserves_history_and_appends_bounded_repair() -> None:
+    """The 20/64 baseline stays immutable while the owner repair binds new proof."""
     fixture_path = EVIDENCE_DIR / "rendered-fixture.json"
-    fixture = json.loads(_read(fixture_path))
     manifest = json.loads(_read(EVIDENCE_DIR / "manifest.json"))
     smells = json.loads(_read(EVIDENCE_DIR / "ux-smells.json"))
     target = manifest["target"]
@@ -1675,14 +1997,17 @@ def test_visual_manifest_names_fixture_only_provenance() -> None:
     assert target["production_proof"] == "none"
     assert target["fixture_receipt"] == {
         "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
-        "sha256": _sha256(fixture_path),
+        "sha256": "c57f03741fb89e5abd9cc5e458a491e5a464b3d0028c5fb7f39301715874f741",
     }
-    assert {
-        route: row["sha256"]
-        for route, row in target["rendered_pages"].items()
-    } == {
-        spec["route"]: spec["output_sha256"]
-        for spec in fixture["markets"].values()
+    assert target["rendered_pages"] == {
+        "/canada_stocks.html": {
+            "output": "canada_stocks.html",
+            "sha256": "ca486595e978da3315ea32a0f03a578a28a54e199aa1a8b7d18e06f50c9c420f",
+        },
+        "/hk_stocks.html": {
+            "output": "hk_stocks.html",
+            "sha256": "689a64cd29e4e08c3d60f63b59fb1097bb900a0fe1167cfe82e62e6e3c5c26ea",
+        },
     }
     assert smells["target"] == target
     assert manifest["totals"] == {
@@ -1690,11 +2015,87 @@ def test_visual_manifest_names_fixture_only_provenance() -> None:
         "states_attempted": 16,
         "states_captured": 16,
     }
+    historical = manifest["historical_baseline"]
+    assert historical == {
+        "schema": "mastermind.prophet_p0b_historical_baseline.v1",
+        "candidate_head": "3fb76ea810a8e9ef6a05fe808bb6eaee87eb1f86",
+        "candidate_tree": "b4dd8fd9b29b4eb769239d35df2a7911e793c7ec",
+        "manifest_receipt": {
+            "path": "mockups/evidence/prophet-p0b-zero-fouc/manifest.json",
+            "sha256": "1a9c62c5726151a76945d69a22e56e6be9b2b91a988db2bc80ec3e7a9cb273a2",
+            "recovery": (
+                "git show 3fb76ea810a8e9ef6a05fe808bb6eaee87eb1f86:"
+                "mockups/evidence/prophet-p0b-zero-fouc/manifest.json"
+            ),
+        },
+        "results": {
+            "visual_manifest_screenshots": 16,
+            "degraded_browser_screenshots": 4,
+            "total_screenshots": 20,
+            "hk_browser_cases": 32,
+            "ca_browser_cases": 32,
+            "total_browser_cases": 64,
+            "pass": True,
+        },
+    }
     for page in manifest["pages"]:
         for state in page["states"]:
             screenshot = EVIDENCE_DIR / state["file"]
             assert screenshot.is_file()
             assert _sha256(screenshot) == state["sha256"]
+
+    extension = manifest["repair_extension"]
+    assert extension["schema"] == (
+        "mastermind.prophet_p0b_owner_empty_repair_extension.v1"
+    )
+    assert extension["operation"] == (
+        "prophet-cockpit-p0b-zero-fouc-20260904-sol-001"
+    )
+    assert extension["pass"] is True
+    assert extension["claims"] == {
+        "source_contract": "browser_fixture",
+        "browser_fixture": "reproducible",
+        "canonical_build": "unavailable",
+        "production": "none",
+    }
+    assert extension["fixture_receipt"] == {
+        "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
+        "sha256": _sha256(fixture_path),
+    }
+    browser_receipts = {
+        "hk": EVIDENCE_DIR / "mobile-layout.json",
+        "ca": EVIDENCE_DIR / "mobile-layout-canada.json",
+    }
+    for market, receipt_path in browser_receipts.items():
+        receipt = json.loads(_read(receipt_path))
+        binding = extension["browser_receipts"][market]
+        assert binding == {
+            "path": str(receipt_path.relative_to(ROOT)),
+            "sha256": _sha256(receipt_path),
+            "primary_cases": 48,
+            "degraded_control_cases": 16,
+            "screenshots": 8,
+            "pass": True,
+        }
+        assert receipt["owner_projection_matrix"]["pass"] is True
+    assert extension["totals"] == {
+        "markets": 2,
+        "owner_cases_per_market": 3,
+        "primary_cases": 96,
+        "degraded_control_cases": 32,
+        "total_cases": 128,
+        "screenshots": 16,
+    }
+    screenshots = extension["screenshots"]
+    assert len(screenshots) == 16
+    assert len({row["path"] for row in screenshots}) == 16
+    for row in screenshots:
+        screenshot = ROOT / row["path"]
+        assert re.fullmatch(
+            r"owner-empty-(hk|ca)-watch-only-(en|zh)-(dark|light)-(390|1440)\.png",
+            screenshot.name,
+        )
+        assert _sha256(screenshot) == row["sha256"]
 
 
 @pytest.mark.parametrize(

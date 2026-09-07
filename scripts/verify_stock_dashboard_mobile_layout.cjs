@@ -21,7 +21,8 @@ function usage(message) {
   process.stderr.write(
     "usage: verify_stock_dashboard_mobile_layout.cjs " +
       "--html FILE --site-dir DIR --fixture-receipt FILE --fixture-assets-dir DIR " +
-      "[--composer FILE] [--browser FILE] [--out FILE] [--screenshot-dir DIR]\n"
+      "[--composer FILE] [--browser FILE] [--out FILE] [--screenshot-dir DIR] " +
+      "[--historical-head SHA] [--historical-tree SHA]\n"
   );
   process.exit(2);
 }
@@ -60,12 +61,119 @@ function sha256File(filename) {
   return sha256Bytes(fs.readFileSync(filename));
 }
 
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) =>
+      `${JSON.stringify(key)}:${canonicalJson(value[key])}`
+    ).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function bindCanonicalReceipt(row, label) {
+  const canonicalization = "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline";
+  if (!row || row.canonicalization !== canonicalization ||
+      !Number.isInteger(row.bytes) || typeof row.sha256 !== "string" ||
+      !row.payload || typeof row.payload !== "object") {
+    usage(`fixture receipt carries a malformed ${label}`);
+  }
+  const bytes = Buffer.from(canonicalJson(row.payload), "utf8");
+  if (bytes.length !== row.bytes || sha256Bytes(bytes) !== row.sha256) {
+    usage(`fixture receipt ${label} canonical binding mismatch`);
+  }
+  return row;
+}
+
 function relativeRepoPath(repoRoot, filename) {
   const relative = path.relative(repoRoot, filename);
   if (!relative || relative.startsWith(".." + path.sep) || path.isAbsolute(relative)) {
     usage(`receipt input is outside the repository: ${filename}`);
   }
   return relative.split(path.sep).join("/");
+}
+
+function bindHistoricalReceipt(args, repoRoot) {
+  const head = args["historical-head"];
+  const tree = args["historical-tree"];
+  if (!head && !tree) return null;
+  if (!/^[0-9a-f]{40}$/.test(head || "")) {
+    usage("--historical-head must be an exact lowercase 40-character Git SHA");
+  }
+  if (!/^[0-9a-f]{40}$/.test(tree || "")) {
+    usage("--historical-tree must accompany --historical-head as an exact lowercase 40-character Git SHA");
+  }
+  if (!args.out) usage("--historical-head requires --out so the prior receipt can be bound before replacement");
+  const receiptFile = realFile(args.out, "existing --out historical receipt");
+  let receipt;
+  const bytes = fs.readFileSync(receiptFile);
+  try {
+    receipt = JSON.parse(bytes.toString("utf8"));
+  } catch (error) {
+    usage(`existing --out historical receipt is not valid JSON: ${error.message}`);
+  }
+  if (receipt.schema !== "mastermind.stock_dashboard_mobile_layout.v1" ||
+      receipt.proof_class !== "browser_fixture_proof_reproducible" ||
+      typeof receipt.pass !== "boolean") {
+    usage("existing --out is not a prior stock-dashboard browser receipt");
+  }
+  if (receipt.historical_baseline) {
+    const baseline = receipt.historical_baseline;
+    if (baseline.schema !== "mastermind.stock_dashboard_browser_historical_baseline.v1" ||
+        baseline.candidate_head !== head || baseline.candidate_tree !== tree ||
+        !baseline.receipt || baseline.receipt.path !== relativeRepoPath(repoRoot, receiptFile) ||
+        !Array.isArray(baseline.screenshots) || baseline.screenshots.length !== 2 ||
+        !/^[0-9a-f]{64}$/.test(baseline.receipt.sha256 || "")) {
+      usage("existing --out carries a conflicting historical baseline");
+    }
+    return baseline;
+  }
+  const states = Array.isArray(receipt.states) ? receipt.states.length : 0;
+  const expansion = Array.isArray(receipt.expansion_reachability && receipt.expansion_reachability.cases)
+    ? receipt.expansion_reachability.cases.length : 0;
+  const fragment = Array.isArray(receipt.fragment_navigation && receipt.fragment_navigation.cases)
+    ? receipt.fragment_navigation.cases.length : 0;
+  const desktop = Array.isArray(receipt.desktop && receipt.desktop.sequence)
+    ? receipt.desktop.sequence.length : 0;
+  const screenshots = Array.isArray(receipt.states)
+    ? receipt.states.filter((row) => row && row.screenshot).map((row) => ({
+      state: row.state,
+      path: row.screenshot.path,
+      sha256: row.screenshot.sha256,
+    })) : [];
+  for (const screenshot of screenshots) {
+    const filename = path.resolve(repoRoot, screenshot.path || "");
+    if (!filename.startsWith(repoRoot + path.sep) ||
+        !fs.existsSync(filename) || !fs.statSync(filename).isFile() ||
+        sha256File(filename) !== screenshot.sha256) {
+      usage(`historical screenshot binding is unavailable: ${screenshot.path || "missing path"}`);
+    }
+  }
+  return {
+    schema: "mastermind.stock_dashboard_browser_historical_baseline.v1",
+    candidate_head: head,
+    candidate_tree: tree,
+    receipt: {
+      path: relativeRepoPath(repoRoot, receiptFile),
+      sha256: sha256Bytes(bytes),
+      recovery: `git show ${head}:${relativeRepoPath(repoRoot, receiptFile)}`,
+    },
+    proof_class: receipt.proof_class,
+    claims: receipt.claims,
+    verifier: receipt.verifier,
+    browser: receipt.browser,
+    input_html: receipt.input_html,
+    screenshots,
+    result: {
+      pass: receipt.pass,
+      state_cases: states,
+      expansion_cases: expansion,
+      fragment_cases: fragment,
+      desktop_sequence_cases: desktop,
+      total_cases: states + expansion + fragment + desktop,
+      bound_screenshots: screenshots.length,
+    },
+  };
 }
 
 function bindFixtureReceipt(receiptFile, htmlFile, repoRoot) {
@@ -91,6 +199,48 @@ function bindFixtureReceipt(receiptFile, htmlFile, repoRoot) {
       typeof binding.output !== "string" || path.posix.basename(binding.route) !== binding.output) {
     usage(`fixture receipt carries an invalid ${market} route/output binding`);
   }
+  const expectedOwnerCases = ["normal", "watch-only", "null-buy"];
+  if (!binding.owner_cases ||
+      JSON.stringify(Object.keys(binding.owner_cases).sort()) !== JSON.stringify(expectedOwnerCases.slice().sort())) {
+    usage(`fixture receipt must carry the closed ${market} owner-case set`);
+  }
+  const ownerCases = {};
+  for (const ownerCase of expectedOwnerCases) {
+    const row = binding.owner_cases[ownerCase];
+    if (!row || row.route !== binding.route || typeof row.output !== "string" ||
+        path.basename(row.output) !== row.output || !row.output.endsWith(".html") ||
+        typeof row.output_sha256 !== "string" || !row.owner_population) {
+      usage(`fixture receipt carries a malformed ${market}/${ownerCase} owner case`);
+    }
+    const filename = path.resolve(path.dirname(htmlFile), row.output);
+    if (path.dirname(filename) !== path.dirname(htmlFile) ||
+        !fs.existsSync(filename) || !fs.statSync(filename).isFile()) {
+      usage(`rendered owner-case HTML is missing: ${row.output}`);
+    }
+    if (sha256File(filename) !== row.output_sha256) {
+      usage(`rendered owner-case HTML hash mismatch: ${row.output}`);
+    }
+    const transform = bindCanonicalReceipt(row.input_transform, `${market}/${ownerCase} input transform`);
+    if (transform.payload.schema !== "mastermind.stock_dashboard_owner_case.v1" ||
+        transform.payload.market !== market || transform.payload.owner_case !== ownerCase) {
+      usage(`fixture receipt carries the wrong ${market}/${ownerCase} transform identity`);
+    }
+    ownerCases[ownerCase] = {...row, filename};
+  }
+  if (ownerCases.normal.filename !== htmlFile ||
+      ownerCases.normal.output_sha256 !== htmlSha256) {
+    usage(`--html must bind the normal ${market} owner case`);
+  }
+  const membershipOverlay = bindCanonicalReceipt(
+    binding.diagnostic_membership_overlay,
+    `${market} diagnostic membership overlay`
+  );
+  if (membershipOverlay.payload.schema !== "mastermind.stock_dashboard_membership_overlay.v1" ||
+      membershipOverlay.payload.market !== market ||
+      membershipOverlay.payload.owner_case !== "normal" ||
+      membershipOverlay.payload.classification !== "browser_contract_fixture_only") {
+    usage(`fixture receipt carries the wrong ${market} membership-overlay identity`);
+  }
   const constructionInputs = {};
   for (const item of binding.inputs || []) {
     if (!item || typeof item.path !== "string" || typeof item.sha256 !== "string") {
@@ -114,6 +264,8 @@ function bindFixtureReceipt(receiptFile, htmlFile, repoRoot) {
     route: binding.route,
     output: binding.output,
     htmlSha256,
+    ownerCases,
+    membershipOverlay,
     receipt: {
       path: relativeRepoPath(repoRoot, receiptFile),
       sha256: sha256File(receiptFile),
@@ -300,6 +452,103 @@ async function installPageInit(context, market, locale, theme) {
     window.__wtaonStaticProbe = {captured: false, childListMutations: null};
     document.addEventListener("DOMContentLoaded", captureStaticGraph, {once: true});
   }, {prefix, version, locale, theme});
+}
+
+function staticAxisHtml(filename, locale, theme) {
+  if (!['en', 'zh'].includes(locale) || !['dark', 'light'].includes(theme)) {
+    usage(`invalid static language/theme axis: ${locale}/${theme}`);
+  }
+  const source = fs.readFileSync(filename, "utf8");
+  const marker = '<html lang="en">';
+  if (source.split(marker).length !== 2) {
+    usage(`static-axis HTML requires exactly one ${marker}: ${filename}`);
+  }
+  const replacement = `<html lang="${locale}" data-lang="${locale}" data-theme="${theme}">`;
+  const bytes = Buffer.from(source.replace(marker, replacement), "utf8");
+  return {
+    bytes,
+    receipt: {
+      classification: "browser_fixture_static_axis_only",
+      operation: `replace ${marker} with ${replacement}`,
+      source_sha256: sha256File(filename),
+      output_sha256: sha256Bytes(bytes),
+      output_bytes: bytes.length,
+    },
+  };
+}
+
+async function installDiagnosticMembershipOverlay(context, market, overlayBinding) {
+  const composerFlag = market === "hk" ? "__mmHKStockV36" : "__mmCanadaStockV36";
+  const composerFilename = MARKET_COMPOSERS[market];
+  const payload = overlayBinding.payload;
+  await context.addInitScript(({payload, composerFlag, composerFilename}) => {
+    const nativeParse = JSON.parse;
+    const probe = {
+      installed: false,
+      consumed: false,
+      restored: false,
+      error: null,
+      original_text: null,
+      control: null,
+      control_parent: null,
+      member_rows: payload.composer_rows,
+    };
+    window.__p0bMembershipOverlay = probe;
+
+    /* Return the admitted rows only to the exact entitled composer's parseRows
+       call. StockTable and every other JSON consumer receive the untouched
+       server bytes, so the diagnostic cannot widen the rendered table. */
+    JSON.parse = function (text, ...args) {
+      const parsed = nativeParse.call(JSON, text, ...args);
+      try {
+        const data = document.querySelector("#stocktable-data");
+        const stack = String(new Error().stack || "");
+        if (!probe.consumed && data && text === data.textContent &&
+            stack.includes(composerFilename) && parsed && Array.isArray(parsed.rows)) {
+          probe.original_text = data.textContent;
+          parsed.rows = parsed.rows.concat(payload.composer_rows);
+          probe.consumed = true;
+        }
+      } catch (error) {
+        probe.error = String(error && error.message || error);
+      }
+      return parsed;
+    };
+
+    function enableControl() {
+      const control = document.querySelector(payload.control.selector);
+      if (!control) {
+        probe.error = "diagnostic control missing";
+        return;
+      }
+      payload.control.remove_attributes.forEach((name) => control.removeAttribute(name));
+      Object.entries(payload.control.set_attributes).forEach(([name, value]) =>
+        control.setAttribute(name, value)
+      );
+      probe.control = control;
+      probe.control_parent = control.parentElement;
+      probe.installed = true;
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", enableControl, {once: true});
+    } else {
+      enableControl();
+    }
+
+    const restore = setInterval(() => {
+      if (!window[composerFlag] || !probe.consumed) return;
+      clearInterval(restore);
+      JSON.parse = nativeParse;
+      probe.restored = true;
+    }, 10);
+    setTimeout(() => {
+      if (!probe.restored) {
+        clearInterval(restore);
+        JSON.parse = nativeParse;
+        probe.error = probe.error || "composer did not consume overlay before timeout";
+      }
+    }, 5000);
+  }, {payload, composerFlag, composerFilename});
 }
 
 async function nodeIdentityProof(page, market) {
@@ -1242,11 +1491,509 @@ async function desktopBehavior(page, market) {
   };
 }
 
+async function ownerProjectionSnapshot(page, market, overlayPayload) {
+  const prefix = market === "hk" ? "hk" : "ca";
+  const version = market === "hk" ? "hk-v37" : "ca-v36";
+  return page.evaluate(({market, prefix, version, overlayPayload}) => {
+    const visible = (el) => {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      return style.display !== "none" && style.visibility !== "hidden" &&
+        el.getClientRects().length > 0;
+    };
+    const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
+    const hashTicker = (href) => {
+      const raw = String(href || "");
+      const index = raw.indexOf("#");
+      if (index < 0) return "";
+      try { return decodeURIComponent(raw.slice(index + 1)).trim().toUpperCase(); }
+      catch (_error) { return raw.slice(index + 1).trim().toUpperCase(); }
+    };
+    const root = document.querySelector(`#${version}`);
+    const prophet = document.querySelector(`#${version}-prophet`);
+    const owner = document.querySelector(
+      market === "hk" ? "#hk-owner-population-proof" : "#ca-v36-card-grid"
+    );
+    const host = document.querySelector(
+      market === "hk" ? "#standouts .nbgrid" : "#standouts .cards"
+    );
+    const cards = host ? Array.from(host.querySelectorAll(".pvcard")) : [];
+    const cardId = (card) => String(card.getAttribute("data-ticker") || "").trim().toUpperCase();
+    const empty = document.querySelector(`#${version}-grid-empty`);
+    const result = document.querySelector(`#${version}-result`);
+    const watchLinks = Array.from(document.querySelectorAll(
+      "#standouts .watch-strip .watch-grid a[href]"
+    ));
+    const sourceButtons = prophet
+      ? Array.from(prophet.querySelectorAll(`[data-${prefix}-source]`)) : [];
+    const selectedSources = sourceButtons.filter(
+      (button) => button.getAttribute("aria-selected") === "true"
+    );
+    const filter = document.querySelector(`#${version}-filter`);
+    const actionControl = overlayPayload
+      ? document.querySelector(overlayPayload.control.selector) : null;
+    const actionRow = actionControl && actionControl.closest("[data-action-id]");
+    const research = actionRow && actionRow.querySelector(".anv2-name-link[href]");
+    const overlayProbe = window.__p0bMembershipOverlay;
+    const stocktableData = document.querySelector("#stocktable-data");
+    const tableRows = Array.from(document.querySelectorAll("#stocktable-wrap tbody tr"));
+    const tableIds = tableRows.map((row) => {
+      const direct = row.getAttribute("data-ticker");
+      if (direct) return direct.trim().toUpperCase();
+      const link = row.querySelector("a.stf-tkr");
+      return clean(link && link.textContent).toUpperCase();
+    }).filter(Boolean);
+    const memberProof = overlayPayload ? overlayPayload.members.map((member) => {
+      const links = Array.from(document.querySelectorAll("#standouts a[href]"))
+        .filter((link) => hashTicker(link.getAttribute("href")) === member.ticker);
+      const cardMatch = cards.some((card) => cardId(card) === member.ticker);
+      const expectedOwnerAnchor = links.some((link) => member.owner_lane === "watch"
+        ? !!link.closest(".watch-grid")
+        : !!link.closest("[data-stage]"));
+      return {
+        ticker: member.ticker,
+        owner_lane: member.owner_lane,
+        anchor_count: links.length,
+        expected_owner_anchor: expectedOwnerAnchor,
+        actionable_card: cardMatch,
+        pass: links.length > 0 && expectedOwnerAnchor && !cardMatch,
+      };
+    }) : [];
+    const panelStyle = prophet ? getComputedStyle(prophet) : null;
+    const languageProbe = document.querySelector(`#${version}-result .l-${
+      document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"
+    }`);
+    return {
+      html: {
+        lang: document.documentElement.getAttribute("lang"),
+        data_lang: document.documentElement.getAttribute("data-lang") || "en",
+        data_theme: document.documentElement.getAttribute("data-theme") || "dark",
+        language_probe_visible: visible(languageProbe),
+      },
+      main_count: document.querySelectorAll("main").length,
+      enhanced: !!(root && root.getAttribute(`data-${prefix}-enhanced`) === "true"),
+      source_owner_state: prophet && prophet.getAttribute("data-source-owner-state"),
+      initial_source: prophet && prophet.getAttribute("data-initial-source"),
+      active_source: prophet && prophet.getAttribute("data-active-source"),
+      selected_source: selectedSources.length === 1
+        ? selectedSources[0].getAttribute(`data-${prefix}-source`) : null,
+      source_selection_count: selectedSources.length,
+      top_disabled: !!(sourceButtons.find(
+        (button) => button.getAttribute(`data-${prefix}-source`) === "top"
+      ) || {}).disabled,
+      owner_population: {
+        board: owner && owner.getAttribute(
+          market === "hk" ? "data-owner-board-population" : "data-owner-population"
+        ),
+        watch: owner && owner.getAttribute("data-owner-watch-population"),
+        unique_total: owner && owner.getAttribute("data-owner-unique-population"),
+      },
+      card_ids: cards.map(cardId),
+      visible_card_ids: cards.filter(visible).map(cardId),
+      table_ids: tableIds,
+      watch: watchLinks.map((link) => ({
+        ticker: hashTicker(link.getAttribute("href")),
+        href: link.getAttribute("href"),
+        visible: visible(link),
+      })),
+      grid_empty: {
+        hidden_attribute: !!(empty && empty.hidden),
+        visible: visible(empty),
+        copy: clean(empty && empty.innerText),
+      },
+      result_copy: clean(result && result.innerText),
+      static_owner_states: Array.from(document.querySelectorAll(
+        `#${version}-prophet .${version}-static-state, #${version}-prophet [data-prophet-owner-state]`
+      )).map((node) => ({copy: clean(node.innerText), visible: visible(node)})),
+      filter: {
+        visible: visible(filter),
+        copy: clean(filter && filter.innerText),
+      },
+      active_group_count: root
+        ? root.querySelectorAll(`[data-${prefix}-lead-id].is-active`).length : 0,
+      research_href: research && research.getAttribute("href"),
+      material: panelStyle ? {
+        background_color: panelStyle.backgroundColor,
+        border_color: panelStyle.borderColor,
+        box_shadow: panelStyle.boxShadow,
+      } : null,
+      overlay: overlayPayload ? {
+        installed: !!(overlayProbe && overlayProbe.installed),
+        restored: !!(overlayProbe && overlayProbe.restored),
+        error: overlayProbe && overlayProbe.error,
+        same_control: !!(overlayProbe && overlayProbe.control === actionControl),
+        same_control_parent: !!(
+          overlayProbe && actionControl && overlayProbe.control_parent === actionControl.parentElement
+        ),
+        source_json_restored: !!(
+          overlayProbe && stocktableData && stocktableData.textContent === overlayProbe.original_text
+        ),
+        member_proof: memberProof,
+      } : null,
+    };
+  }, {market, prefix, version, overlayPayload});
+}
+
+function ownerPopulationMatches(observed, expected) {
+  const value = (raw) => raw === null ? null
+    : /^\d+$/.test(String(raw)) ? Number(raw) : Number.NaN;
+  return value(observed.board) === expected.board &&
+    value(observed.watch) === expected.watch &&
+    value(observed.unique_total) === expected.unique_total;
+}
+
+async function ownerProjectionMatrix(
+  browser,
+  fixtureBinding,
+  installRoutes,
+  screenshotDir,
+  repoRoot
+) {
+  const market = fixtureBinding.market;
+  const prefix = market === "hk" ? "hk" : "ca";
+  const version = market === "hk" ? "hk-v37" : "ca-v36";
+  const locales = ["en", "zh"];
+  const themes = ["dark", "light"];
+  const widths = [390, 1440];
+  const primaryModes = ["loaded", "js-disabled"];
+  const controlModes = ["composer-failed", "composer-pending"];
+  const ownerCases = ["normal", "watch-only", "null-buy"];
+  const cases = [];
+
+  async function runCase(ownerCase, mode, locale, theme, width, proofSet) {
+    const javascriptEnabled = mode !== "js-disabled";
+    const composerMode = mode === "composer-failed" ? "failed"
+      : mode === "composer-pending" ? "pending" : "loaded";
+    const overlayBinding = ownerCase === "normal" && mode === "loaded"
+      ? fixtureBinding.membershipOverlay : null;
+    const context = await browser.newContext({
+      viewport: {width, height: width === 390 ? 844 : 900},
+      deviceScaleFactor: 1,
+      javaScriptEnabled: javascriptEnabled,
+      reducedMotion: "reduce",
+    });
+    if (javascriptEnabled) {
+      await installPageInit(context, market, locale, theme);
+      if (overlayBinding) {
+        await installDiagnosticMembershipOverlay(context, market, overlayBinding);
+      }
+    }
+    const staticAxes = javascriptEnabled ? null : {locale, theme};
+    await installRoutes(context, composerMode, ownerCase, staticAxes);
+    const page = await context.newPage();
+    const consoleExceptions = [];
+    page.on("pageerror", (error) => consoleExceptions.push(
+      String(error && (error.stack || error.message) || error)
+    ));
+    const row = {
+      proof_set: proofSet,
+      market,
+      owner_case: ownerCase,
+      mode,
+      locale,
+      theme,
+      viewport: {width, height: width === 390 ? 844 : 900},
+      javascript_enabled: javascriptEnabled,
+      composer: composerMode,
+      source_html: {
+        output: fixtureBinding.ownerCases[ownerCase].output,
+        sha256: fixtureBinding.ownerCases[ownerCase].output_sha256,
+      },
+      served_html_transform: staticAxes
+        ? staticAxisHtml(fixtureBinding.ownerCases[ownerCase].filename, locale, theme).receipt
+        : null,
+      membership_overlay_sha256: overlayBinding ? overlayBinding.sha256 : null,
+      transition: {attempted: false, reason: "not a loaded normal-owner case"},
+    };
+
+    try {
+      const pageUrl = new URL(fixtureBinding.route, "http://stock-dashboard.invalid");
+      await page.goto(pageUrl.href, {
+        waitUntil: composerMode === "pending" ? "commit" : "load",
+        timeout: 30000,
+      });
+      await page.waitForTimeout(composerMode === "pending" ? 500 : 750);
+      if (javascriptEnabled && composerMode !== "pending") {
+        await page.evaluate(({locale, theme}) => {
+          if (typeof window.setLang === "function") window.setLang(locale);
+          else document.documentElement.setAttribute("data-lang", locale);
+          if (typeof window.setTheme === "function") window.setTheme(theme);
+          else document.documentElement.setAttribute("data-theme", theme);
+        }, {locale, theme});
+        await page.waitForTimeout(composerMode === "loaded" ? 1400 : 50);
+      }
+      if (overlayBinding) {
+        await page.waitForFunction(() => {
+          const probe = window.__p0bMembershipOverlay;
+          return !!(probe && (probe.restored || probe.error));
+        }, null, {timeout: 5000});
+      }
+
+      row.initial = await ownerProjectionSnapshot(
+        page, market, overlayBinding && overlayBinding.payload
+      );
+      row.layout = await page.evaluate(`(${LAYOUT_SCRIPT})()`);
+      row.duplicate_ids = await page.evaluate(() => {
+        const counts = new Map();
+        document.querySelectorAll("[id]").forEach((node) =>
+          counts.set(node.id, (counts.get(node.id) || 0) + 1)
+        );
+        return Array.from(counts.entries()).filter(([, count]) => count > 1)
+          .map(([id, count]) => ({id, count}));
+      });
+
+      if (overlayBinding) {
+        row.transition = {attempted: true};
+        const sourceBefore = row.initial.selected_source;
+        const cardsBefore = row.initial.card_ids;
+        const watchBefore = row.initial.watch;
+        const tableBefore = row.initial.table_ids;
+        const diagnosticControl = page.locator(overlayBinding.payload.control.selector);
+        const activationMethod = width === 390 ? "keyboard-enter" : "pointer-click";
+        if (activationMethod === "keyboard-enter") {
+          /* The shared row-pop touch preview intentionally owns the first
+             physical tap on a coarse/mobile row. Native button keyboard
+             activation reaches the same delegated production handler. */
+          await diagnosticControl.focus();
+          await page.keyboard.press("Enter");
+        } else {
+          await diagnosticControl.click({timeout: 5000});
+        }
+        await page.waitForTimeout(50);
+        const selected = await ownerProjectionSnapshot(page, market, overlayBinding.payload);
+        await page.locator(`#${version}-filter`).click({timeout: 5000});
+        await page.waitForTimeout(50);
+        const cleared = await ownerProjectionSnapshot(page, market, overlayBinding.payload);
+        const selectedCopy = locale === "zh"
+          ? "当前领先筛选下无可操作卡片；匹配的观察/阶段名单仍保留在下方。"
+          : "No actionable cards match this leadership filter; matching watch/stage names remain below.";
+        row.transition = {
+          attempted: true,
+          activation_method: activationMethod,
+          selected,
+          cleared,
+          source_unchanged: selected.selected_source === sourceBefore &&
+            cleared.selected_source === sourceBefore,
+          card_identity_unchanged: JSON.stringify(selected.card_ids) === JSON.stringify(cardsBefore) &&
+            JSON.stringify(cleared.card_ids) === JSON.stringify(cardsBefore),
+          watch_identity_unchanged: JSON.stringify(selected.watch) === JSON.stringify(watchBefore) &&
+            JSON.stringify(cleared.watch) === JSON.stringify(watchBefore),
+          table_identity_unchanged: JSON.stringify(selected.table_ids) === JSON.stringify(tableBefore) &&
+            JSON.stringify(cleared.table_ids) === JSON.stringify(tableBefore),
+          pass: selected.visible_card_ids.length === 0 && selected.grid_empty.visible &&
+            selected.grid_empty.copy === selectedCopy && selected.filter.visible &&
+            selected.active_group_count >= 1 &&
+            selected.research_href === overlayBinding.payload.group.research_href &&
+            selected.overlay.installed && selected.overlay.restored && !selected.overlay.error &&
+            selected.overlay.same_control && selected.overlay.same_control_parent &&
+            selected.overlay.source_json_restored &&
+            selected.overlay.member_proof.every((proof) => proof.pass) &&
+            !cleared.grid_empty.visible && !cleared.filter.visible &&
+            cleared.visible_card_ids.length === row.initial.visible_card_ids.length &&
+            selected.selected_source === sourceBefore && cleared.selected_source === sourceBefore &&
+            JSON.stringify(selected.card_ids) === JSON.stringify(cardsBefore) &&
+            JSON.stringify(cleared.card_ids) === JSON.stringify(cardsBefore) &&
+            JSON.stringify(selected.watch) === JSON.stringify(watchBefore) &&
+            JSON.stringify(cleared.watch) === JSON.stringify(watchBefore) &&
+            JSON.stringify(selected.table_ids) === JSON.stringify(tableBefore) &&
+            JSON.stringify(cleared.table_ids) === JSON.stringify(tableBefore),
+        };
+      } else if (mode === "js-disabled") {
+        row.transition = {attempted: false, reason: "javascript disabled; no interaction claimed"};
+      } else if (composerMode !== "loaded") {
+        row.transition = {attempted: false, reason: `composer ${composerMode}; no interaction claimed`};
+      }
+
+      row.owner_zero_projection = {
+        exercised: false,
+        reason: "owner case is not loaded watch-only",
+      };
+      if (ownerCase === "watch-only" && mode === "loaded") {
+        if (row.initial.selected_source === "top") {
+          const expectedTopCopy = locale === "zh"
+            ? "当前暂无首选。" : "No Top Picks right now.";
+          await page.locator(`[data-${prefix}-source="all"]`).click({timeout: 5000});
+          await page.waitForTimeout(50);
+          const explicitAll = await ownerProjectionSnapshot(page, market, null);
+          row.owner_zero_projection = {
+            exercised: true,
+            initial_source: row.initial.selected_source,
+            initial_top_empty: row.initial.grid_empty,
+            explicit_all: explicitAll,
+            pass: row.initial.grid_empty.visible &&
+              row.initial.grid_empty.copy === expectedTopCopy &&
+              explicitAll.selected_source === "all" &&
+              explicitAll.visible_card_ids.length === 0 &&
+              explicitAll.grid_empty.hidden_attribute && !explicitAll.grid_empty.visible &&
+              explicitAll.watch.length === row.initial.watch.length &&
+              explicitAll.result_copy === row.initial.result_copy,
+          };
+        } else {
+          row.owner_zero_projection = {
+            exercised: false,
+            reason: "server owner already selected All",
+            explicit_all: row.initial,
+            pass: row.initial.selected_source === "all" &&
+              row.initial.grid_empty.hidden_attribute && !row.initial.grid_empty.visible,
+          };
+        }
+      }
+
+      if (ownerCase === "watch-only" && mode === "loaded") {
+        const screenshot = await page.screenshot({
+          fullPage: true,
+          animations: "disabled",
+          caret: "hide",
+        });
+        const filename = `owner-empty-${market}-watch-only-${locale}-${theme}-${width}.png`;
+        const binding = {
+          filename,
+          width: pngWidth(screenshot),
+          sha256: sha256Bytes(screenshot),
+        };
+        if (screenshotDir) {
+          const screenshotFile = path.resolve(screenshotDir, filename);
+          if (path.dirname(screenshotFile) !== screenshotDir) usage("invalid owner-empty screenshot path");
+          fs.writeFileSync(screenshotFile, screenshot);
+          binding.path = relativeRepoPath(repoRoot, screenshotFile);
+        }
+        row.screenshot = binding;
+      }
+
+      const expectedBinding = fixtureBinding.ownerCases[ownerCase];
+      const expectedPopulation = expectedBinding.owner_population;
+      const expectedWatch = expectedBinding.input_transform.payload
+        .rendered_owner_identities.watch || [];
+      const expectedCardCount = ownerCase === "normal"
+        ? expectedBinding.input_transform.payload.rendered_owner_identities.buy.length : 0;
+      const expectedOwnerState = ownerCase === "null-buy" ? "unavailable" : "available";
+      const expectedEnhanced = composerMode === "loaded" && javascriptEnabled;
+      const languageCopy = locale === "zh"
+        ? row.initial.result_copy.includes("显示")
+        : row.initial.result_copy.includes("actionable cards shown");
+      const emptyOwnerTruth = ownerCase === "null-buy"
+        ? (locale === "zh"
+          ? row.initial.result_copy.includes("阶段榜单暂不可用")
+          : row.initial.result_copy.includes("stage board unavailable"))
+        : (locale === "zh"
+          ? row.initial.result_copy.includes("当前共")
+          : row.initial.result_copy.includes("current names"));
+      const screenshotPass = ownerCase !== "watch-only" || mode !== "loaded" ||
+        (row.screenshot && row.screenshot.width === width &&
+          (!screenshotDir || !!row.screenshot.path));
+      const gridTruthPass = ownerCase === "watch-only" && mode === "loaded"
+        ? row.owner_zero_projection.pass
+        : row.initial.grid_empty.hidden_attribute && !row.initial.grid_empty.visible;
+      row.console_exceptions = consoleExceptions;
+      row.pass = row.initial.main_count === 1 &&
+        row.initial.html.data_lang === locale && row.initial.html.data_theme === theme &&
+        row.initial.html.language_probe_visible &&
+        row.initial.source_owner_state === expectedOwnerState &&
+        row.initial.source_selection_count === 1 &&
+        row.initial.card_ids.length === expectedCardCount &&
+        (ownerCase === "normal" ? row.initial.visible_card_ids.length > 0 : row.initial.visible_card_ids.length === 0) &&
+        gridTruthPass &&
+        ownerPopulationMatches(row.initial.owner_population, expectedPopulation) &&
+        JSON.stringify(row.initial.watch.map((item) => item.ticker)) === JSON.stringify(expectedWatch) &&
+        row.initial.watch.every((item) => item.visible && !!item.href) &&
+        row.initial.enhanced === expectedEnhanced && languageCopy && emptyOwnerTruth &&
+        (ownerCase === "null-buy" ? row.initial.top_disabled : true) &&
+        !row.layout.horizontal_overflow && row.layout.elements_wider_than_viewport === 0 &&
+        row.layout.client_width === width && row.duplicate_ids.length === 0 &&
+        consoleExceptions.length === 0 && screenshotPass &&
+        (!overlayBinding || row.transition.pass);
+    } catch (error) {
+      row.execution_error = String(error && (error.stack || error.message) || error);
+      row.console_exceptions = consoleExceptions;
+      row.pass = false;
+    } finally {
+      await context.close();
+    }
+    cases.push(row);
+  }
+
+  for (const locale of locales) {
+    for (const theme of themes) {
+      for (const width of widths) {
+        for (const ownerCase of ownerCases) {
+          for (const mode of primaryModes) {
+            await runCase(ownerCase, mode, locale, theme, width, "primary");
+          }
+        }
+        for (const mode of controlModes) {
+          await runCase("watch-only", mode, locale, theme, width, "degraded-control");
+        }
+      }
+    }
+  }
+
+  const watchScreenshots = cases.filter((row) =>
+    row.owner_case === "watch-only" && row.mode === "loaded" && row.screenshot
+  );
+  const themePairs = [];
+  for (const locale of locales) {
+    for (const width of widths) {
+      const dark = watchScreenshots.find((row) =>
+        row.locale === locale && row.theme === "dark" && row.viewport.width === width
+      );
+      const light = watchScreenshots.find((row) =>
+        row.locale === locale && row.theme === "light" && row.viewport.width === width
+      );
+      const darkMaterial = dark && dark.initial.material;
+      const lightMaterial = light && light.initial.material;
+      themePairs.push({
+        locale,
+        viewport_width: width,
+        dark: darkMaterial,
+        light: lightMaterial,
+        pass: !!(darkMaterial && lightMaterial) &&
+          JSON.stringify(darkMaterial) !== JSON.stringify(lightMaterial),
+      });
+    }
+  }
+  const primary = cases.filter((row) => row.proof_set === "primary");
+  const controls = cases.filter((row) => row.proof_set === "degraded-control");
+  return {
+    contract: {
+      markets_in_receipt: 1,
+      languages: locales,
+      themes,
+      viewport_widths: widths,
+      owner_cases: ownerCases,
+      primary_modes: primaryModes,
+      degraded_control_owner_case: "watch-only",
+      degraded_control_modes: controlModes,
+      browser_motion_preference: "reduce",
+      screenshot_animation_policy: "disabled",
+      screenshot_caret_policy: "hide",
+      expected_primary_cases: 48,
+      expected_degraded_control_cases: 16,
+      expected_total_cases: 64,
+      expected_loaded_watch_only_screenshots: 8,
+    },
+    membership_overlay: {
+      canonicalization: fixtureBinding.membershipOverlay.canonicalization,
+      bytes: fixtureBinding.membershipOverlay.bytes,
+      sha256: fixtureBinding.membershipOverlay.sha256,
+      payload: fixtureBinding.membershipOverlay.payload,
+    },
+    primary_passed: primary.filter((row) => row.pass).length,
+    degraded_controls_passed: controls.filter((row) => row.pass).length,
+    screenshot_count: watchScreenshots.length,
+    theme_art_direction_pairs: themePairs,
+    cases,
+    pass: primary.length === 48 && controls.length === 16 && cases.length === 64 &&
+      primary.every((row) => row.pass) && controls.every((row) => row.pass) &&
+      watchScreenshots.length === 8 && themePairs.every((row) => row.pass),
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const htmlFile = realFile(args.html, "--html");
   const siteDir = realDir(args["site-dir"], "--site-dir");
   const repoRoot = path.dirname(siteDir);
+  const historicalBaseline = bindHistoricalReceipt(args, repoRoot);
   const fixtureReceiptFile = realFile(args["fixture-receipt"], "--fixture-receipt");
   const fixtureAssetsDir = realDir(args["fixture-assets-dir"], "--fixture-assets-dir");
   const fixtureAssetsRoot = relativeRepoPath(repoRoot, fixtureAssetsDir);
@@ -1282,7 +2029,9 @@ async function main() {
   ];
   const rows = [];
 
-  async function installRoutes(context, composerMode) {
+  async function installRoutes(context, composerMode, ownerCase = "normal", staticAxes = null) {
+    const ownerBinding = fixtureBinding.ownerCases[ownerCase];
+    if (!ownerBinding) usage(`unknown rendered owner case: ${ownerCase}`);
     await context.route("**/*", async (route) => {
       const url = new URL(route.request().url());
       if (path.basename(url.pathname) === composer && composerMode === "failed") {
@@ -1299,9 +2048,9 @@ async function main() {
       const fixtureOverride = fixtureCandidate.startsWith(fixtureAssetsDir + path.sep) &&
         fs.existsSync(fixtureCandidate) && fs.statSync(fixtureCandidate).isFile();
       const candidate = url.pathname === fixtureBinding.route
-        ? htmlFile
+        ? ownerBinding.filename
         : fixtureOverride ? fixtureCandidate : path.resolve(siteDir, relative);
-      if (candidate !== htmlFile &&
+      if (candidate !== ownerBinding.filename &&
           !candidate.startsWith(siteDir + path.sep) &&
           !candidate.startsWith(fixtureAssetsDir + path.sep)) {
         await route.fulfill({status: 403, body: ""});
@@ -1311,8 +2060,10 @@ async function main() {
         await route.fulfill({status: 404, body: ""});
         return;
       }
-      const bytes = fs.readFileSync(candidate);
-      if (candidate !== htmlFile) loadedAssets.set(relativeRepoPath(repoRoot, candidate), sha256Bytes(bytes));
+      const bytes = candidate === ownerBinding.filename && staticAxes
+        ? staticAxisHtml(candidate, staticAxes.locale, staticAxes.theme).bytes
+        : fs.readFileSync(candidate);
+      if (candidate !== ownerBinding.filename) loadedAssets.set(relativeRepoPath(repoRoot, candidate), sha256Bytes(bytes));
       await route.fulfill({
         status: 200,
         body: bytes,
@@ -1359,19 +2110,6 @@ async function main() {
       });
       layout.console_exceptions = consoleExceptions;
       const screenshot = await page.screenshot({fullPage: true});
-      let screenshotBinding = null;
-      if (screenshotDir && ["js-disabled", "composer-failed"].includes(state.name)) {
-        const screenshotFile = path.resolve(
-          screenshotDir,
-          `${fixtureBinding.market}-${state.name}-${state.theme}-390.png`
-        );
-        if (path.dirname(screenshotFile) !== screenshotDir) usage("invalid screenshot output path");
-        fs.writeFileSync(screenshotFile, screenshot);
-        screenshotBinding = {
-          path: relativeRepoPath(repoRoot, screenshotFile),
-          sha256: sha256Bytes(screenshot),
-        };
-      }
       layout.screenshot_width = pngWidth(screenshot);
       layout.pass = !layout.horizontal_overflow &&
         layout.elements_wider_than_viewport === 0 && layout.screenshot_width === 390 &&
@@ -1389,7 +2127,6 @@ async function main() {
         theme: state.theme,
         javascript_enabled: state.javascriptEnabled !== false,
         composer: state.composerMode || "loaded",
-        ...(screenshotBinding ? {screenshot: screenshotBinding} : {}),
         behavior,
         ...layout,
       });
@@ -1421,6 +2158,14 @@ async function main() {
     await desktopPage.waitForTimeout(1500);
     var desktop = await desktopBehavior(desktopPage, fixtureBinding.market);
     await desktopContext.close();
+
+    var ownerProjection = await ownerProjectionMatrix(
+      browser,
+      fixtureBinding,
+      installRoutes,
+      screenshotDir,
+      repoRoot
+    );
   } finally {
     await browser.close();
   }
@@ -1445,21 +2190,35 @@ async function main() {
     fixture_receipt: fixtureBinding.receipt,
     fixture_assets_root: fixtureAssetsRoot,
     fixture_market: fixtureBinding.market,
+    ...(historicalBaseline ? {historical_baseline: historicalBaseline} : {}),
     input_html: {
       path: fixtureBinding.output,
       route: fixtureBinding.route,
       sha256: fixtureBinding.htmlSha256,
     },
+    rendered_owner_cases: Object.fromEntries(
+      Object.entries(fixtureBinding.ownerCases).map(([ownerCase, binding]) => [
+        ownerCase,
+        {
+          route: binding.route,
+          output: binding.output,
+          output_sha256: binding.output_sha256,
+          owner_population: binding.owner_population,
+          input_transform: binding.input_transform,
+        },
+      ])
+    ),
     construction_inputs: fixtureBinding.constructionInputs,
     loaded_assets: Object.fromEntries(Array.from(loadedAssets.entries()).sort()),
     viewport: {width: 390, height: 844, device_scale_factor: 1},
     desktop_viewport: {width: 1440, height: 900, device_scale_factor: 1},
-    acceptance: "390px layout; server-owned four-anchor degraded fallback without false tab semantics; composer upgrades the same nodes in place; one mobile action lane in loaded/disabled/failed/pending states; deterministic owner counts and controls; valid/invalid/direct/back/forward fragment reconciliation; 390/1440 x disabled/failed/pending/loaded native click+Enter+Space disclosure reachability with stable row nodes/payload and lane-local state; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; typed Canada quote states; zero duplicate ids and console exceptions",
+    acceptance: "390px layout; server-owned four-anchor degraded fallback without false tab semantics; composer upgrades the same nodes in place; one mobile action lane in loaded/disabled/failed/pending states; deterministic owner counts and controls; valid/invalid/direct/back/forward fragment reconciliation; 390/1440 x disabled/failed/pending/loaded native click+Enter+Space disclosure reachability with stable row nodes/payload and lane-local state; desktop <=3 rows/lane and action panel <=240px; one Prophet chrome/view owner; truthful first-frame source; Top/All x Grid/Table identity/order; persisted Table startup; group/clear/resize manifest identity; typed Canada quote states; closed normal/watch-only/null-buy owner projection matrix across EN/ZH x dark/light x 390/1440 x loaded/JS-disabled plus failed/pending watch-only controls; exact admitted known-group membership overlay; selected/clear card-only projection without source, card, table, watch, anchor, or research-route mutation; zero duplicate ids and console exceptions",
     expansion_reachability: expansionReachability,
     fragment_navigation: fragmentNavigation,
     desktop,
+    owner_projection_matrix: ownerProjection,
     pass: rows.every((row) => row.pass) && expansionReachability.pass &&
-      fragmentNavigation.pass && desktop.pass,
+      fragmentNavigation.pass && desktop.pass && ownerProjection.pass,
     states: rows,
   };
   const encoded = JSON.stringify(payload, null, 2) + "\n";

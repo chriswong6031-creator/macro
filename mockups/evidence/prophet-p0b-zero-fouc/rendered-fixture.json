@@ -7,6 +7,57 @@
   },
   "markets": {
     "ca": {
+      "diagnostic_membership_overlay": {
+        "bytes": 1088,
+        "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+        "payload": {
+          "card_population_mutation": "none",
+          "classification": "browser_contract_fixture_only",
+          "composer_rows": [
+            {
+              "sector": "Fixture finance",
+              "ticker": "PMZ-UN.TO"
+            },
+            {
+              "sector": "Fixture finance",
+              "ticker": "MTL.TO"
+            }
+          ],
+          "control": {
+            "remove_attributes": [
+              "disabled"
+            ],
+            "selector": "[data-action-id=\"FIXTURE-FINANCE\"] .anv2-name.ca-v36-an-row",
+            "set_attributes": {
+              "data-ca-lead-id": "FIXTURE-FINANCE",
+              "data-ca-lead-kind": "sector"
+            }
+          },
+          "delivery": "verifier-scoped JSON.parse overlay only when the call stack names the exact entitled composer and the input bytes equal #stocktable-data; the wrapper is removed after one consumption",
+          "group": {
+            "id": "FIXTURE-FINANCE",
+            "kind": "sector",
+            "name": "Fixture finance",
+            "research_href": "sectors/FIXTURE-FINANCE.html"
+          },
+          "market": "ca",
+          "members": [
+            {
+              "owner_lane": "watch",
+              "ticker": "PMZ-UN.TO"
+            },
+            {
+              "owner_lane": "watch",
+              "ticker": "MTL.TO"
+            }
+          ],
+          "owner_case": "normal",
+          "schema": "mastermind.stock_dashboard_membership_overlay.v1",
+          "source_identity_requirement": "every member must remain in its original server-owned watch/stage anchor and must not be an actionable card",
+          "table_population_mutation": "none"
+        },
+        "sha256": "954b75b0f91a1b8912df9360301694530c9aeff706e211a2001e460bc1af59c2"
+      },
       "inputs": [
         {
           "path": "engine/i18n.py",
@@ -26,7 +77,7 @@
         {
           "path": "scripts/render_stock_dashboard_fixture.py",
           "role": "recipe",
-          "sha256": "317db6c9dd4832f20057ae9f22ee58ecfd969b72be41fa0f11f1c46bddfcf3f6"
+          "sha256": "8f46fc24b9582ee85bc8e612b907f7cf23d02ed151cf3d15f0607a766fe10332"
         },
         {
           "path": "templates/_cmd_hero.css.j2",
@@ -101,6 +152,192 @@
       ],
       "output": "canada_stocks.html",
       "output_sha256": "ca486595e978da3315ea32a0f03a578a28a54e199aa1a8b7d18e06f50c9c420f",
+      "owner_cases": {
+        "normal": {
+          "input_transform": {
+            "bytes": 545,
+            "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+            "payload": {
+              "market": "ca",
+              "operation": "preserve frozen owner input",
+              "owner_case": "normal",
+              "rendered_owner_identities": {
+                "buy": [
+                  "SU.TO",
+                  "SOBO.TO",
+                  "NWC.TO",
+                  "QSR.TO",
+                  "RCH.TO",
+                  "CSH-UN.TO",
+                  "TPZ.TO",
+                  "TVK.TO",
+                  "TOU.TO"
+                ],
+                "watch": [
+                  "PMZ-UN.TO",
+                  "MTL.TO",
+                  "QBR-B.TO",
+                  "BB.TO",
+                  "GWO.TO",
+                  "EIF.TO",
+                  "EXE.TO",
+                  "ARE.TO"
+                ]
+              },
+              "schema": "mastermind.stock_dashboard_owner_case.v1",
+              "source_owner_identities": {
+                "buy": [
+                  "SU.TO",
+                  "SOBO.TO",
+                  "NWC.TO",
+                  "QSR.TO",
+                  "RCH.TO",
+                  "CSH-UN.TO",
+                  "TPZ.TO",
+                  "TVK.TO",
+                  "TOU.TO"
+                ],
+                "watch": [
+                  "PMZ-UN.TO",
+                  "MTL.TO",
+                  "QBR-B.TO",
+                  "BB.TO",
+                  "GWO.TO",
+                  "EIF.TO",
+                  "EXE.TO",
+                  "ARE.TO"
+                ]
+              }
+            },
+            "sha256": "561e2696a225b71fa1b1dd2e443e506daf20a55813986519cc650f7abaff6747"
+          },
+          "output": "canada_stocks.html",
+          "output_sha256": "ca486595e978da3315ea32a0f03a578a28a54e199aa1a8b7d18e06f50c9c420f",
+          "owner_population": {
+            "board": 9,
+            "intersection": [],
+            "unique_total": 17,
+            "watch": 8
+          },
+          "route": "/canada_stocks.html"
+        },
+        "null-buy": {
+          "input_transform": {
+            "bytes": 504,
+            "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+            "payload": {
+              "market": "ca",
+              "operation": "replace buy with JSON null; preserve every independent owner lane",
+              "owner_case": "null-buy",
+              "rendered_owner_identities": {
+                "buy": null,
+                "watch": [
+                  "PMZ-UN.TO",
+                  "MTL.TO",
+                  "QBR-B.TO",
+                  "BB.TO",
+                  "GWO.TO",
+                  "EIF.TO",
+                  "EXE.TO",
+                  "ARE.TO"
+                ]
+              },
+              "schema": "mastermind.stock_dashboard_owner_case.v1",
+              "source_owner_identities": {
+                "buy": [
+                  "SU.TO",
+                  "SOBO.TO",
+                  "NWC.TO",
+                  "QSR.TO",
+                  "RCH.TO",
+                  "CSH-UN.TO",
+                  "TPZ.TO",
+                  "TVK.TO",
+                  "TOU.TO"
+                ],
+                "watch": [
+                  "PMZ-UN.TO",
+                  "MTL.TO",
+                  "QBR-B.TO",
+                  "BB.TO",
+                  "GWO.TO",
+                  "EIF.TO",
+                  "EXE.TO",
+                  "ARE.TO"
+                ]
+              }
+            },
+            "sha256": "15f0d1d2753fa912c5911ff8c4371db69f596c0e2a0661275960a18c6f9b8f2b"
+          },
+          "output": "canada_stocks.null-buy.html",
+          "output_sha256": "21cf5c85a763be74d7674bb8c9f132131ec77bdfb3fa56cdfcffed4f21c0ecc4",
+          "owner_population": {
+            "board": null,
+            "intersection": null,
+            "unique_total": null,
+            "watch": 8
+          },
+          "route": "/canada_stocks.html"
+        },
+        "watch-only": {
+          "input_transform": {
+            "bytes": 517,
+            "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+            "payload": {
+              "market": "ca",
+              "operation": "replace buy with an explicit empty list; preserve every independent owner lane",
+              "owner_case": "watch-only",
+              "rendered_owner_identities": {
+                "buy": [],
+                "watch": [
+                  "PMZ-UN.TO",
+                  "MTL.TO",
+                  "QBR-B.TO",
+                  "BB.TO",
+                  "GWO.TO",
+                  "EIF.TO",
+                  "EXE.TO",
+                  "ARE.TO"
+                ]
+              },
+              "schema": "mastermind.stock_dashboard_owner_case.v1",
+              "source_owner_identities": {
+                "buy": [
+                  "SU.TO",
+                  "SOBO.TO",
+                  "NWC.TO",
+                  "QSR.TO",
+                  "RCH.TO",
+                  "CSH-UN.TO",
+                  "TPZ.TO",
+                  "TVK.TO",
+                  "TOU.TO"
+                ],
+                "watch": [
+                  "PMZ-UN.TO",
+                  "MTL.TO",
+                  "QBR-B.TO",
+                  "BB.TO",
+                  "GWO.TO",
+                  "EIF.TO",
+                  "EXE.TO",
+                  "ARE.TO"
+                ]
+              }
+            },
+            "sha256": "4f91a49be717ebde1e9f5683353438f9de7443d7f96751d826dc87b0589e5873"
+          },
+          "output": "canada_stocks.watch-only.html",
+          "output_sha256": "f0bddf47e5b65d70bb6c398c86fad8dd8f979298c074ec6ff97efba500b690ce",
+          "owner_population": {
+            "board": 0,
+            "intersection": [],
+            "unique_total": 8,
+            "watch": 8
+          },
+          "route": "/canada_stocks.html"
+        }
+      },
       "owner_population": {
         "board": 9,
         "intersection": [],
@@ -110,6 +347,56 @@
       "route": "/canada_stocks.html"
     },
     "hk": {
+      "diagnostic_membership_overlay": {
+        "bytes": 1055,
+        "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+        "payload": {
+          "card_population_mutation": "none",
+          "classification": "browser_contract_fixture_only",
+          "composer_rows": [
+            {
+              "sector": "Fixture finance",
+              "ticker": "2318.HK"
+            },
+            {
+              "sector": "Fixture finance",
+              "ticker": "2331.HK"
+            }
+          ],
+          "control": {
+            "remove_attributes": [
+              "disabled"
+            ],
+            "selector": "[data-action-id=\"FIXTURE-FINANCE\"] .anv2-name.hk-v37-an-row",
+            "set_attributes": {
+              "data-hk-lead-id": "FIXTURE-FINANCE"
+            }
+          },
+          "delivery": "verifier-scoped JSON.parse overlay only when the call stack names the exact entitled composer and the input bytes equal #stocktable-data; the wrapper is removed after one consumption",
+          "group": {
+            "id": "FIXTURE-FINANCE",
+            "kind": "sector",
+            "name": "Fixture finance",
+            "research_href": "sectors/FIXTURE-FINANCE.html"
+          },
+          "market": "hk",
+          "members": [
+            {
+              "owner_lane": "ran",
+              "ticker": "2318.HK"
+            },
+            {
+              "owner_lane": "watch",
+              "ticker": "2331.HK"
+            }
+          ],
+          "owner_case": "normal",
+          "schema": "mastermind.stock_dashboard_membership_overlay.v1",
+          "source_identity_requirement": "every member must remain in its original server-owned watch/stage anchor and must not be an actionable card",
+          "table_population_mutation": "none"
+        },
+        "sha256": "02e97d57dbcf5ec628e6969a855f4c518b6cac368fce5c758e3e15a8bfcd769c"
+      },
       "inputs": [
         {
           "path": "engine/i18n.py",
@@ -129,7 +416,7 @@
         {
           "path": "scripts/render_stock_dashboard_fixture.py",
           "role": "recipe",
-          "sha256": "317db6c9dd4832f20057ae9f22ee58ecfd969b72be41fa0f11f1c46bddfcf3f6"
+          "sha256": "8f46fc24b9582ee85bc8e612b907f7cf23d02ed151cf3d15f0607a766fe10332"
         },
         {
           "path": "templates/_aibrief_body.html.j2",
@@ -214,6 +501,420 @@
       ],
       "output": "hk_stocks.html",
       "output_sha256": "689a64cd29e4e08c3d60f63b59fb1097bb900a0fe1167cfe82e62e6e3c5c26ea",
+      "owner_cases": {
+        "normal": {
+          "input_transform": {
+            "bytes": 1229,
+            "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+            "payload": {
+              "market": "hk",
+              "operation": "preserve frozen owner input",
+              "owner_case": "normal",
+              "rendered_owner_identities": {
+                "buy": [
+                  "0966.HK",
+                  "9926.HK",
+                  "2057.HK"
+                ],
+                "ran": [
+                  "2318.HK",
+                  "1810.HK",
+                  "2020.HK",
+                  "2628.HK",
+                  "6098.HK",
+                  "0778.HK",
+                  "3800.HK",
+                  "0017.HK",
+                  "1799.HK",
+                  "2015.HK",
+                  "0998.HK",
+                  "1898.HK"
+                ],
+                "ripening": [
+                  "6060.HK",
+                  "1766.HK",
+                  "0285.HK",
+                  "1177.HK",
+                  "2688.HK",
+                  "1088.HK",
+                  "0027.HK",
+                  "0388.HK",
+                  "1066.HK",
+                  "1928.HK",
+                  "2196.HK",
+                  "9633.HK"
+                ],
+                "vetoed": [
+                  "0639.HK",
+                  "2899.HK",
+                  "0322.HK",
+                  "0772.HK",
+                  "1208.HK",
+                  "1038.HK",
+                  "2007.HK",
+                  "6862.HK",
+                  "1359.HK",
+                  "0016.HK",
+                  "0934.HK",
+                  "9698.HK"
+                ],
+                "watch": [
+                  "2331.HK",
+                  "1299.HK",
+                  "1336.HK",
+                  "3618.HK",
+                  "0392.HK",
+                  "1209.HK",
+                  "1057.HK",
+                  "2378.HK"
+                ]
+              },
+              "schema": "mastermind.stock_dashboard_owner_case.v1",
+              "source_owner_identities": {
+                "buy": [
+                  "0966.HK",
+                  "9926.HK",
+                  "2057.HK"
+                ],
+                "ran": [
+                  "2318.HK",
+                  "1810.HK",
+                  "2020.HK",
+                  "2628.HK",
+                  "6098.HK",
+                  "0778.HK",
+                  "3800.HK",
+                  "0017.HK",
+                  "1799.HK",
+                  "2015.HK",
+                  "0998.HK",
+                  "1898.HK"
+                ],
+                "ripening": [
+                  "6060.HK",
+                  "1766.HK",
+                  "0285.HK",
+                  "1177.HK",
+                  "2688.HK",
+                  "1088.HK",
+                  "0027.HK",
+                  "0388.HK",
+                  "1066.HK",
+                  "1928.HK",
+                  "2196.HK",
+                  "9633.HK"
+                ],
+                "vetoed": [
+                  "0639.HK",
+                  "2899.HK",
+                  "0322.HK",
+                  "0772.HK",
+                  "1208.HK",
+                  "1038.HK",
+                  "2007.HK",
+                  "6862.HK",
+                  "1359.HK",
+                  "0016.HK",
+                  "0934.HK",
+                  "9698.HK"
+                ],
+                "watch": [
+                  "2331.HK",
+                  "1299.HK",
+                  "1336.HK",
+                  "3618.HK",
+                  "0392.HK",
+                  "1209.HK",
+                  "1057.HK",
+                  "2378.HK"
+                ]
+              }
+            },
+            "sha256": "bc7ae67276a8a7c677af1ab1f69a8c08e6304a3a9b904285abd2454f5356c0e7"
+          },
+          "output": "hk_stocks.html",
+          "output_sha256": "689a64cd29e4e08c3d60f63b59fb1097bb900a0fe1167cfe82e62e6e3c5c26ea",
+          "owner_population": {
+            "board": 39,
+            "intersection": [],
+            "unique_total": 47,
+            "watch": 8
+          },
+          "route": "/hk_stocks.html"
+        },
+        "null-buy": {
+          "input_transform": {
+            "bytes": 1242,
+            "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+            "payload": {
+              "market": "hk",
+              "operation": "replace buy with JSON null; preserve every independent owner lane",
+              "owner_case": "null-buy",
+              "rendered_owner_identities": {
+                "buy": null,
+                "ran": [
+                  "2318.HK",
+                  "1810.HK",
+                  "2020.HK",
+                  "2628.HK",
+                  "6098.HK",
+                  "0778.HK",
+                  "3800.HK",
+                  "0017.HK",
+                  "1799.HK",
+                  "2015.HK",
+                  "0998.HK",
+                  "1898.HK"
+                ],
+                "ripening": [
+                  "6060.HK",
+                  "1766.HK",
+                  "0285.HK",
+                  "1177.HK",
+                  "2688.HK",
+                  "1088.HK",
+                  "0027.HK",
+                  "0388.HK",
+                  "1066.HK",
+                  "1928.HK",
+                  "2196.HK",
+                  "9633.HK"
+                ],
+                "vetoed": [
+                  "0639.HK",
+                  "2899.HK",
+                  "0322.HK",
+                  "0772.HK",
+                  "1208.HK",
+                  "1038.HK",
+                  "2007.HK",
+                  "6862.HK",
+                  "1359.HK",
+                  "0016.HK",
+                  "0934.HK",
+                  "9698.HK"
+                ],
+                "watch": [
+                  "2331.HK",
+                  "1299.HK",
+                  "1336.HK",
+                  "3618.HK",
+                  "0392.HK",
+                  "1209.HK",
+                  "1057.HK",
+                  "2378.HK"
+                ]
+              },
+              "schema": "mastermind.stock_dashboard_owner_case.v1",
+              "source_owner_identities": {
+                "buy": [
+                  "0966.HK",
+                  "9926.HK",
+                  "2057.HK"
+                ],
+                "ran": [
+                  "2318.HK",
+                  "1810.HK",
+                  "2020.HK",
+                  "2628.HK",
+                  "6098.HK",
+                  "0778.HK",
+                  "3800.HK",
+                  "0017.HK",
+                  "1799.HK",
+                  "2015.HK",
+                  "0998.HK",
+                  "1898.HK"
+                ],
+                "ripening": [
+                  "6060.HK",
+                  "1766.HK",
+                  "0285.HK",
+                  "1177.HK",
+                  "2688.HK",
+                  "1088.HK",
+                  "0027.HK",
+                  "0388.HK",
+                  "1066.HK",
+                  "1928.HK",
+                  "2196.HK",
+                  "9633.HK"
+                ],
+                "vetoed": [
+                  "0639.HK",
+                  "2899.HK",
+                  "0322.HK",
+                  "0772.HK",
+                  "1208.HK",
+                  "1038.HK",
+                  "2007.HK",
+                  "6862.HK",
+                  "1359.HK",
+                  "0016.HK",
+                  "0934.HK",
+                  "9698.HK"
+                ],
+                "watch": [
+                  "2331.HK",
+                  "1299.HK",
+                  "1336.HK",
+                  "3618.HK",
+                  "0392.HK",
+                  "1209.HK",
+                  "1057.HK",
+                  "2378.HK"
+                ]
+              }
+            },
+            "sha256": "7f3de426f8a9f756fa155df0fc0dfe5685ed3280579dbbd25817c22f5ed441b9"
+          },
+          "output": "hk_stocks.null-buy.html",
+          "output_sha256": "23a472c48d681108071107e606a9f75bba3e2c5c6fce21d1f6b6b112e553de84",
+          "owner_population": {
+            "board": null,
+            "intersection": null,
+            "unique_total": null,
+            "watch": 8
+          },
+          "route": "/hk_stocks.html"
+        },
+        "watch-only": {
+          "input_transform": {
+            "bytes": 1255,
+            "canonicalization": "utf-8 JSON; sort_keys=true; separators=(',', ':'); no trailing newline",
+            "payload": {
+              "market": "hk",
+              "operation": "replace buy with an explicit empty list; preserve every independent owner lane",
+              "owner_case": "watch-only",
+              "rendered_owner_identities": {
+                "buy": [],
+                "ran": [
+                  "2318.HK",
+                  "1810.HK",
+                  "2020.HK",
+                  "2628.HK",
+                  "6098.HK",
+                  "0778.HK",
+                  "3800.HK",
+                  "0017.HK",
+                  "1799.HK",
+                  "2015.HK",
+                  "0998.HK",
+                  "1898.HK"
+                ],
+                "ripening": [
+                  "6060.HK",
+                  "1766.HK",
+                  "0285.HK",
+                  "1177.HK",
+                  "2688.HK",
+                  "1088.HK",
+                  "0027.HK",
+                  "0388.HK",
+                  "1066.HK",
+                  "1928.HK",
+                  "2196.HK",
+                  "9633.HK"
+                ],
+                "vetoed": [
+                  "0639.HK",
+                  "2899.HK",
+                  "0322.HK",
+                  "0772.HK",
+                  "1208.HK",
+                  "1038.HK",
+                  "2007.HK",
+                  "6862.HK",
+                  "1359.HK",
+                  "0016.HK",
+                  "0934.HK",
+                  "9698.HK"
+                ],
+                "watch": [
+                  "2331.HK",
+                  "1299.HK",
+                  "1336.HK",
+                  "3618.HK",
+                  "0392.HK",
+                  "1209.HK",
+                  "1057.HK",
+                  "2378.HK"
+                ]
+              },
+              "schema": "mastermind.stock_dashboard_owner_case.v1",
+              "source_owner_identities": {
+                "buy": [
+                  "0966.HK",
+                  "9926.HK",
+                  "2057.HK"
+                ],
+                "ran": [
+                  "2318.HK",
+                  "1810.HK",
+                  "2020.HK",
+                  "2628.HK",
+                  "6098.HK",
+                  "0778.HK",
+                  "3800.HK",
+                  "0017.HK",
+                  "1799.HK",
+                  "2015.HK",
+                  "0998.HK",
+                  "1898.HK"
+                ],
+                "ripening": [
+                  "6060.HK",
+                  "1766.HK",
+                  "0285.HK",
+                  "1177.HK",
+                  "2688.HK",
+                  "1088.HK",
+                  "0027.HK",
+                  "0388.HK",
+                  "1066.HK",
+                  "1928.HK",
+                  "2196.HK",
+                  "9633.HK"
+                ],
+                "vetoed": [
+                  "0639.HK",
+                  "2899.HK",
+                  "0322.HK",
+                  "0772.HK",
+                  "1208.HK",
+                  "1038.HK",
+                  "2007.HK",
+                  "6862.HK",
+                  "1359.HK",
+                  "0016.HK",
+                  "0934.HK",
+                  "9698.HK"
+                ],
+                "watch": [
+                  "2331.HK",
+                  "1299.HK",
+                  "1336.HK",
+                  "3618.HK",
+                  "0392.HK",
+                  "1209.HK",
+                  "1057.HK",
+                  "2378.HK"
+                ]
+              }
+            },
+            "sha256": "5229a4fca6654bf6be5c88f015225586f11104cd49c1ab1726c52a35c8dc1ecf"
+          },
+          "output": "hk_stocks.watch-only.html",
+          "output_sha256": "8d29c5edd11440b840e933d36752bb8ecf9def76067a940d58a3df65fcb2bd69",
+          "owner_population": {
+            "board": 36,
+            "intersection": [],
+            "unique_total": 44,
+            "watch": 8
+          },
+          "route": "/hk_stocks.html"
+        }
+      },
       "owner_population": {
         "board": 39,
         "intersection": [],

@@ -416,7 +416,7 @@
       return bi("No current Prophet names in this group.", "该组别暂无 Prophet 候选。") +
         (item.href ? ' <a class="hk-v37-empty-go" href="' + esc(item.href) + '">' + bi("Open sector research ↗", "查看板块研究 ↗") + '</a>' : '');
     }
-    return bi("No names match this leadership filter.", "当前领先筛选下暂无匹配个股。");
+    return bi("No actionable cards match this leadership filter; matching watch/stage names remain below.", "当前领先筛选下无可操作卡片；匹配的观察/阶段名单仍保留在下方。");
   }
   function ownerPopulation() {
     var owner = qs("#hk-owner-population-proof");
@@ -462,12 +462,13 @@
       card.hidden = !show;
       if (show) shown++;
     });
-    var empty = qs("#hk-v37-grid-empty");
-    if (empty) { empty.hidden = shown !== 0; if (shown === 0) empty.innerHTML = emptyStateHtml(); }
+    var empty = qs("#hk-v37-grid-empty"), item = itemForFilter();
+    var emptyProjection = shown === 0 && (state.source === "top" || !!(item && item.members));
+    if (empty) { empty.hidden = !emptyProjection; if (emptyProjection) empty.innerHTML = emptyStateHtml(); }
     var total = ownerPopulation();
     var result = qs("#hk-v37-result"), watch = watchPopulation(), unique = uniquePopulation();
     if (result) result.innerHTML = populationCopy(shown, total, watch, unique);
-    var pill = qs("#hk-v37-filter"), item = itemForFilter();
+    var pill = qs("#hk-v37-filter");
     if (pill) { pill.hidden = !item; pill.classList.toggle("is-on", !!item); pill.innerHTML = item ? bi("Sector", "板块") + ': ' + bi(item.name.en, item.name.zh) + ' ×' : ""; }
     markLeadership(); applyTableFilter();
   }
