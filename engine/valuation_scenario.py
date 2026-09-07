@@ -17,7 +17,10 @@ fact (informational), never applied inside the scenario math, matching the
 plain-language assumption text shown on every card ("valued at N x
 earnings" never mentions a debt bridge).
 
-net_margin_base = net_income / revenue for the SAME fiscal row.
+net_margin_base = net_income / revenue for the SAME fiscal row, floored at 1%:
+a smaller reported margin is treated as an unusable base (missing), never as
+a denominator, because margin_delta_pp/net_margin_base blows up for a
+thin-margin issuer (review round 2 MINOR-2).
 
 net_debt = debt_lt + debt_cur - cash, computed ONLY when all three legs are
 reported (None otherwise). This is deliberately stricter than the shared
@@ -133,9 +136,18 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
         ),
     }
 
+    # MINOR-2 (review round 2): a margin base near zero is a reported number
+    # but not a usable denominator -- margin_delta_pp/net_margin_base blows up
+    # for a thin-margin issuer (e.g. 0.1% margin makes the Cautious factor
+    # 1 + (-1.5/0.1) = -14, printing a negative per-share as a computed
+    # value). Below this floor the margin base is treated the same as an
+    # unreported one: it gates computability rather than producing a number.
+    _MARGIN_BASE_FLOOR = 0.01  # 1% -- well under AAPL-scale margins (~24%)
     net_margin_base = None
     if net_income is not None and revenue not in (None, 0):
-        net_margin_base = net_income / revenue
+        candidate = net_income / revenue
+        if abs(candidate) >= _MARGIN_BASE_FLOOR:
+            net_margin_base = candidate
 
     scenarios = []
     any_computable = False

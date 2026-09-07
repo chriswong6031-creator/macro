@@ -24,7 +24,7 @@
     }
   },
   "excluded": [],
-  "generated_at": "2026-09-06T09:00:00Z",
+  "generated_at": "2026-09-07T00:36:12Z",
   "honesty": {
     "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
     "authority": "this tool measures and screenshots; it scores, ranks, and judges nothing",
@@ -35,22 +35,22 @@
     {
       "console_errors": [
         {
-          "source_url": "http://127.0.0.1:62471/account.js?v=20260814-sf-inter-font-upgrade",
+          "source_url": "http://127.0.0.1:56039/account.js?v=20260814-sf-inter-font-upgrade",
           "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
         },
         {
-          "source_url": "http://127.0.0.1:62471/terminal_overlay.js",
+          "source_url": "http://127.0.0.1:56039/terminal_overlay.js",
           "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
         }
       ],
       "failed_responses": [
         {
           "status": 404,
-          "url": "http://127.0.0.1:62471/account.js?v=20260814-sf-inter-font-upgrade"
+          "url": "http://127.0.0.1:56039/account.js?v=20260814-sf-inter-font-upgrade"
         },
         {
           "status": 404,
-          "url": "http://127.0.0.1:62471/terminal_overlay.js"
+          "url": "http://127.0.0.1:56039/terminal_overlay.js"
         }
       ],
       "gaps": [
@@ -106,7 +106,261 @@
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 1138,
+            "document_height_px": 1295,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 1,
+        "document_height_px": 900,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 0,
+          "h2": 1,
+          "h3": 0,
+          "h4": 0,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "dark",
+          "viewport": "desktop"
+        },
+        "panel_count": 4,
+        "payload_bytes_total": 417194,
+        "raw_slug_hit_count": 0,
+        "raw_slug_hits": [],
+        "request_count": 9,
+        "screenshot_completion": 1.0,
+        "section_count": 0,
+        "source_present": true,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 193
+      },
+      "page_id": "stocks_AAPL.html",
+      "registry_route": "/stocks/AAPL.html",
+      "route": "/stocks/AAPL.html",
+      "route_kind": "explicit_override",
+      "states": [
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 265622,
+          "captured": true,
+          "file": "a3c0150b29b453c8.png",
+          "force_state": null,
+          "height": 900,
+          "locale": "en",
+          "sha256": "a3c0150b29b453c870d6e1105bffc41a4d1af45caea5dc7da7bb52dfa2d85ec5",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 260179,
+          "captured": true,
+          "file": "188b3da69d73d47d.png",
+          "force_state": null,
+          "height": 900,
+          "locale": "en",
+          "sha256": "188b3da69d73d47dab7e3c0646a42ee64c37604a5692669480f596fdd73f89ff",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 276857,
+          "captured": true,
+          "file": "c6867cc5eec66cc5.png",
+          "force_state": null,
+          "height": 900,
+          "locale": "zh",
+          "sha256": "c6867cc5eec66cc50efd50a0c21c4fe15d772c2e190b4d239dc369ce6482c108",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 269684,
+          "captured": true,
+          "file": "d40770699a87efdd.png",
+          "force_state": null,
+          "height": 900,
+          "locale": "zh",
+          "sha256": "d40770699a87efdd4debf356256f5d1441930cc62b652995600fa2c8dacdb7c0",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 163081,
+          "captured": true,
+          "file": "57e6845f72b7cc88.png",
+          "force_state": null,
+          "height": 1295,
+          "locale": "en",
+          "sha256": "57e6845f72b7cc883ecddedb8f43a7146a0b5afc41fa97af386bf22f355b8df1",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 175207,
+          "captured": true,
+          "file": "3fcf456f6a1f5d5a.png",
+          "force_state": null,
+          "height": 1295,
+          "locale": "en",
+          "sha256": "3fcf456f6a1f5d5ae1246012314712d0cc6679e6dd4dc26cf22bebbaa8b7cced",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 175820,
+          "captured": true,
+          "file": "d783204acd20a99c.png",
+          "force_state": null,
+          "height": 1348,
+          "locale": "zh",
+          "sha256": "d783204acd20a99ca43763e8013ea1c143292fe2f50f4c94da197f4ae441122d",
+          "theme": "dark",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 186794,
+          "captured": true,
+          "file": "0df7cd6a1c20105d.png",
+          "force_state": null,
+          "height": 1348,
+          "locale": "zh",
+          "sha256": "0df7cd6a1c20105df6293366c23976254b5a7fdecbff1435ec0cbd74acea1e8b",
+          "theme": "light",
+          "viewport": "mobile",
+          "viewport_height": 844,
+          "viewport_width": 390,
+          "width": 390
+        }
+      ]
+    },
+    {
+      "console_errors": [
+        {
+          "source_url": "http://127.0.0.1:56039/account.js?v=20260814-sf-inter-font-upgrade",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "source_url": "http://127.0.0.1:56039/terminal_overlay.js",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        }
+      ],
+      "failed_responses": [
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:56039/account.js?v=20260814-sf-inter-font-upgrade"
+        },
+        {
+          "status": 404,
+          "url": "http://127.0.0.1:56039/terminal_overlay.js"
+        }
+      ],
+      "gaps": [
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "free"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "essential"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "pro"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "loading"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "empty"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "stale"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "error"
+        }
+      ],
+      "metrics": {
+        "asof_present": false,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 900,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          },
+          "mobile": {
+            "document_height_px": 1231,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
@@ -141,261 +395,7 @@
         "source_present": true,
         "todo_placeholder_hit_count": 0,
         "todo_placeholder_hits": [],
-        "visible_word_count": 133
-      },
-      "page_id": "stocks_AAPL.html",
-      "registry_route": "/stocks/AAPL.html",
-      "route": "/stocks/AAPL.html",
-      "route_kind": "explicit_override",
-      "states": [
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "dark",
-          "bytes": 257620,
-          "captured": true,
-          "file": "1181cce0f53fa5e7.png",
-          "force_state": null,
-          "height": 900,
-          "locale": "en",
-          "sha256": "1181cce0f53fa5e724a7aa68d818078df88165e4d4264d56de90a9b22b8287b9",
-          "theme": "dark",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "light",
-          "bytes": 242134,
-          "captured": true,
-          "file": "3b883ce90eb82cb6.png",
-          "force_state": null,
-          "height": 900,
-          "locale": "en",
-          "sha256": "3b883ce90eb82cb6783d4d8bba8932ebb14892d514bb4f8e6ea2c3f04b1365bd",
-          "theme": "light",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "dark",
-          "bytes": 257839,
-          "captured": true,
-          "file": "55b38b7f43f9f757.png",
-          "force_state": null,
-          "height": 900,
-          "locale": "zh",
-          "sha256": "55b38b7f43f9f757e09824fe1a8966b2636f67d5569d573736919979d16762f6",
-          "theme": "dark",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "light",
-          "bytes": 242884,
-          "captured": true,
-          "file": "cce28189d33c2b50.png",
-          "force_state": null,
-          "height": 900,
-          "locale": "zh",
-          "sha256": "cce28189d33c2b5093f73dc98d2d2d23db97579be10a49fb42d6c33c3a139b9e",
-          "theme": "light",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "dark",
-          "bytes": 137481,
-          "captured": true,
-          "file": "8b18afd9728ac402.png",
-          "force_state": null,
-          "height": 1138,
-          "locale": "en",
-          "sha256": "8b18afd9728ac4021aae4c7c9f5426ca2f2f756c9a1584ea3defd4b75d44b864",
-          "theme": "dark",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "light",
-          "bytes": 150171,
-          "captured": true,
-          "file": "9a83663d9930d9d9.png",
-          "force_state": null,
-          "height": 1138,
-          "locale": "en",
-          "sha256": "9a83663d9930d9d9ee19e4dfeb9d79d360a71aed65c2f305a915764a0d578dd1",
-          "theme": "light",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "dark",
-          "bytes": 138341,
-          "captured": true,
-          "file": "554d439285048bea.png",
-          "force_state": null,
-          "height": 1165,
-          "locale": "zh",
-          "sha256": "554d439285048bea76ff9c2955c35730f661d264864e1429ee5551ea0e7caade",
-          "theme": "dark",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "light",
-          "bytes": 150871,
-          "captured": true,
-          "file": "c99c92bb2ca2d580.png",
-          "force_state": null,
-          "height": 1165,
-          "locale": "zh",
-          "sha256": "c99c92bb2ca2d5807f25a64165b4b1a3d96e1aa3b310dacad5d44968f00b60eb",
-          "theme": "light",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        }
-      ]
-    },
-    {
-      "console_errors": [
-        {
-          "source_url": "http://127.0.0.1:62471/account.js?v=20260814-sf-inter-font-upgrade",
-          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
-        },
-        {
-          "source_url": "http://127.0.0.1:62471/terminal_overlay.js",
-          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
-        }
-      ],
-      "failed_responses": [
-        {
-          "status": 404,
-          "url": "http://127.0.0.1:62471/account.js?v=20260814-sf-inter-font-upgrade"
-        },
-        {
-          "status": 404,
-          "url": "http://127.0.0.1:62471/terminal_overlay.js"
-        }
-      ],
-      "gaps": [
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "free"
-        },
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "essential"
-        },
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "pro"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "loading"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "empty"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "stale"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "error"
-        }
-      ],
-      "metrics": {
-        "asof_present": false,
-        "by_viewport": {
-          "desktop": {
-            "document_height_px": 900,
-            "elements_wider_than_viewport": 0,
-            "horizontal_overflow": false
-          },
-          "mobile": {
-            "document_height_px": 1159,
-            "elements_wider_than_viewport": 0,
-            "horizontal_overflow": false
-          }
-        },
-        "console_error_count": 1,
-        "document_height_px": 900,
-        "duplicate_heading_texts": [],
-        "elements_wider_than_viewport": 0,
-        "heading_counts": {
-          "h1": 0,
-          "h2": 1,
-          "h3": 0,
-          "h4": 0,
-          "h5": 0,
-          "h6": 0
-        },
-        "horizontal_overflow": false,
-        "long_paragraph_count": 0,
-        "measured_in": {
-          "access": "anonymous",
-          "locale": "en",
-          "theme": "dark",
-          "viewport": "desktop"
-        },
-        "panel_count": 4,
-        "payload_bytes_total": 63984,
-        "raw_slug_hit_count": 0,
-        "raw_slug_hits": [],
-        "request_count": 9,
-        "screenshot_completion": 1.0,
-        "section_count": 0,
-        "source_present": true,
-        "todo_placeholder_hit_count": 0,
-        "todo_placeholder_hits": [],
-        "visible_word_count": 146
+        "visible_word_count": 189
       },
       "page_id": "stocks-null_AAPL.html",
       "registry_route": "/stocks-null/AAPL.html",
@@ -406,13 +406,13 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 255038,
+          "bytes": 266601,
           "captured": true,
-          "file": "736d3b00f79a2eff.png",
+          "file": "d44281af693295f7.png",
           "force_state": null,
           "height": 900,
           "locale": "en",
-          "sha256": "736d3b00f79a2effc4b49d98f6e8c67bc04c4551757a629ee286da224fcf838b",
+          "sha256": "d44281af693295f7afb05eed2acdadc32a902b29c507441ff1169174ca81bfc1",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -423,13 +423,13 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 240420,
+          "bytes": 256154,
           "captured": true,
-          "file": "3eb616dbaf399071.png",
+          "file": "d567b37e978a8631.png",
           "force_state": null,
           "height": 900,
           "locale": "en",
-          "sha256": "3eb616dbaf3990716dbc5d7073b5f97bbb2af52050192a1bfa6375163da7c369",
+          "sha256": "d567b37e978a86316fc6f12288403e95d440545cd41f9f4479736a60483e6e18",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -440,13 +440,13 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 259251,
+          "bytes": 277121,
           "captured": true,
-          "file": "446435cab1ba9f51.png",
+          "file": "10c980f81e184682.png",
           "force_state": null,
           "height": 900,
           "locale": "zh",
-          "sha256": "446435cab1ba9f51e45e3b7186d35f84e6a654baa2a4545888c15e90c3c7e350",
+          "sha256": "10c980f81e184682f0f8f738a625f7144472f77bfaa2380ed38fe0dd22de6f0c",
           "theme": "dark",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -457,13 +457,13 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 243833,
+          "bytes": 265118,
           "captured": true,
-          "file": "748cc4beee1a3146.png",
+          "file": "d4916522de615f4b.png",
           "force_state": null,
           "height": 900,
           "locale": "zh",
-          "sha256": "748cc4beee1a3146568714b12a6b8c22dbc513e73aa5c587f250971cb7384b82",
+          "sha256": "d4916522de615f4b539d818117727fce077e8066be1ae74b0a6c53664d3074be",
           "theme": "light",
           "viewport": "desktop",
           "viewport_height": 900,
@@ -474,13 +474,13 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "dark",
-          "bytes": 136884,
+          "bytes": 154980,
           "captured": true,
-          "file": "e57d9affe2201313.png",
+          "file": "56b56f00fd081d4b.png",
           "force_state": null,
-          "height": 1159,
+          "height": 1231,
           "locale": "en",
-          "sha256": "e57d9affe2201313d4eb2eebcd7ff5a672465723b31ddfcbe309305ee3accebf",
+          "sha256": "56b56f00fd081d4b7e6b6cb089a281f5ae3b9a0256bbc59fa09fcaa787ebe43d",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -491,13 +491,13 @@
           "access": "anonymous",
           "applied_locale": "en",
           "applied_theme": "light",
-          "bytes": 150231,
+          "bytes": 168051,
           "captured": true,
-          "file": "c8e581a60192909b.png",
+          "file": "b8f6fdc3e65c6b6d.png",
           "force_state": null,
-          "height": 1159,
+          "height": 1231,
           "locale": "en",
-          "sha256": "c8e581a60192909bcffee5637f704a9a36eb476c2140dd55c4edca2d178998db",
+          "sha256": "b8f6fdc3e65c6b6d7f0548a7e2f2a9f2df6e2a9969d4b65d98888e45b2095c4c",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -508,13 +508,13 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "dark",
-          "bytes": 138829,
+          "bytes": 162586,
           "captured": true,
-          "file": "282a51ccc2cfcdbd.png",
+          "file": "f80052d87d2d4be7.png",
           "force_state": null,
-          "height": 1132,
+          "height": 1195,
           "locale": "zh",
-          "sha256": "282a51ccc2cfcdbd34b39d0e14e47fc32cf5d6c5b0fa54f9c6808ac393f4d539",
+          "sha256": "f80052d87d2d4be77b14d60d302da072cb3180f7083ba0db52f78e5c21287bb6",
           "theme": "dark",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -525,13 +525,13 @@
           "access": "anonymous",
           "applied_locale": "zh",
           "applied_theme": "light",
-          "bytes": 152795,
+          "bytes": 176076,
           "captured": true,
-          "file": "ebcfba197be8d294.png",
+          "file": "7ecbab569af6e18e.png",
           "force_state": null,
-          "height": 1132,
+          "height": 1195,
           "locale": "zh",
-          "sha256": "ebcfba197be8d294a273e8bc86bc92bfa851178f33fa38bf63ccf9d002b9a03c",
+          "sha256": "7ecbab569af6e18e0be798acba6a9807f5439aad05bbc1199a79b854222b9102",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,

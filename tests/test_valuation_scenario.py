@@ -98,6 +98,32 @@ def test_negative_or_zero_earnings_is_not_a_value():
         assert s["per_share"] is None
 
 
+def test_tiny_margin_base_is_not_computable():
+    """MINOR-2 (review round 2): net_margin_base = net_income / revenue with no
+    floor lets a thin-margin issuer's margin_delta_pp swamp the base margin --
+    e.g. margin ~=0.1% makes the Cautious factor 1 + (-1.5/0.1) = -14, printing
+    a negative dollar per-share as a computed value. A margin base this small
+    is not a usable denominator, so it must gate computability (same as a
+    missing net_margin_base) rather than silently produce a nonsense number."""
+    revenue = 1.0e11
+    tiny_ni = revenue * 0.001  # 0.1% margin -- reported, but unusable as a base
+    blob = vs.compute(_rows(ni=tiny_ni, revenue=revenue))
+    for s in blob["scenarios"]:
+        assert s["computable"] is False
+        assert s["per_share"] is None
+        assert "net_margin_base" in s["missing"]
+    assert blob["base"]["net_income"]["value"] == tiny_ni
+    assert blob["base"]["net_income"]["reported"] is True
+
+    # A normal margin (AAPL-scale, ~24%) stays fully computable -- the floor
+    # must not touch any realistic issuer.
+    normal = vs.compute(_rows())
+    for s in normal["scenarios"]:
+        assert s["computable"] is True
+        assert s["per_share"] is not None
+        assert s["per_share"] > 0
+
+
 def test_fixture_keys_are_real_statement_columns():
     """Review B-F07-1 BLOCKER B1: engine/valuation_scenario.py previously read
     latest.get("net_income"), a key that does not exist anywhere in the real

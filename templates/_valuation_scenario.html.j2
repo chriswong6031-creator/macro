@@ -2,7 +2,15 @@
     Tier-3 panel: one question -- "what could this be worth per share if
     these stated things were true?" Included from templates/ticker.html.j2
     between #valuation and #financials. Governed CSS lives in this partial's
-    own <style> block -- never authored as a runtime JS stylesheet. -#}
+    own <style> block -- never authored as a runtime JS stylesheet.
+
+    MINOR-1 (review round 2): the <style> block used to sit outside this
+    {% raw %}{% if valuation_scenario %}{% endraw %}, so every ticker page in
+    the estate shipped it even though only AAPL (the only ticker in
+    _VS_TICKERS) ever renders the panel. Both the CSS and the markup are now
+    gated by the same condition -- a ticker without a valuation_scenario blob
+    emits nothing from this partial at all. -#}
+{% if valuation_scenario %}
 <style>
 .vs-lede{margin:2px 0 16px;font-size:13px;line-height:1.55;color:var(--muted);max-width:62ch;}
 .vs-ruler{position:relative;height:64px;margin:6px 4px 30px;}
@@ -57,7 +65,6 @@
   .vs-base .v6{text-align:left;}
 }
 </style>
-{% if valuation_scenario %}
 {% set vscn = valuation_scenario %}
 {% set vs_by_key = {} %}
 {% for s in vscn.scenarios %}{% set _ = vs_by_key.update({s.key: s}) %}{% endfor %}
@@ -99,7 +106,7 @@
           the price rule too) rendered as one unlabeled blob, not three
           printed nulls. -#}
       <div class="vs-mark m-gap" style="left:{{ gap_positions[s.key] }}%" tabindex="0" aria-label="Can't be computed without {{ s.missing_plain[0].en if s.missing_plain else 'a reported input' }}"></div>
-      <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ gap_positions[s.key] }}%">{{ names[s.key] }}<b>{{ t('N/A','—') }}</b></div>
+      <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ gap_positions[s.key] }}%">{{ names[s.key] }}<b>{{ t('No data','无数据') }}</b></div>
       {% endif %}
     {% endfor %}
     {% if vs_price_val is not none %}
@@ -124,9 +131,9 @@
         <div class="vv vv-null">{{ t("Can't be computed without " ~ (s.missing_plain[0].en if s.missing_plain else 'a reported input'), '缺少' ~ (s.missing_plain[0].zh if s.missing_plain else '一项披露数据') ~ '，无法计算') }}</div>
         {% endif %}
         <div class="va">
-          {% if key == 'cautious' %}{{ t('Sales fall 2% a year, margins narrow, valued at 14× earnings.', '销售每年下滑2%，利润率收窄，按14倍市盈率估值。') }}
-          {% elif key == 'base' %}{{ t('Sales grow 3% a year, margins hold, valued at 18× earnings.', '销售每年增长3%，利润率不变，按18倍市盈率估值。') }}
-          {% else %}{{ t('Sales grow 7% a year, margins widen, valued at 22× earnings.', '销售每年增长7%，利润率扩大，按22倍市盈率估值。') }}{% endif %}
+          {% if key == 'cautious' %}{{ t('Sales fall 2% next year, margins narrow, valued at 14× the resulting earnings.', '销售明年下滑2%，利润率收窄，按14倍计算后的净利润估值。') }}
+          {% elif key == 'base' %}{{ t('Sales grow 3% next year, margins hold, valued at 18× the resulting earnings.', '销售明年增长3%，利润率不变，按18倍计算后的净利润估值。') }}
+          {% else %}{{ t('Sales grow 7% next year, margins widen, valued at 22× the resulting earnings.', '销售明年增长7%，利润率扩大，按22倍计算后的净利润估值。') }}{% endif %}
         </div>
         {#- BLOCKER B1a (review B-F07-1): a compound sentence lets a reader
             see the story but not which single input moved the number. Name
