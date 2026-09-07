@@ -3508,6 +3508,49 @@ _SS_GATES: dict[str, dict[str, str]] = {
         "clear_en": "The owner identity batch runs again on the next scheduled cycle.",
         "clear_zh": "来源身份批处理将在下一次计划周期重新运行。",
     },
+    # Chairman plain-language law (2026-09-06), macro#6920 round-3 review
+    # MAJOR-1: `engine/security_state.py` emits eight distinct refusal codes
+    # on its compile path (`identity_proof.refusals`); the two above were the
+    # only ones with house copy, so the other six fell through to
+    # `_ss_prettify(code)` — English words in the ZH slot, the exact
+    # violation this table exists to prevent. These six close that set (the
+    # code-coverage test below asserts nothing is left to prettify).
+    "SECURITY_SUPERSEDED": {
+        "en": "This security's reference record has been superseded",
+        "zh": "该证券的参考记录已被替代",
+        "clear_en": "The reference record for this security is active again, with no successor on file.",
+        "clear_zh": "该证券的参考记录已恢复为有效状态，且无替代记录。",
+    },
+    "ISSUER_GROUP_AMBIGUOUS": {
+        "en": "The issuer's security group did not resolve to one exact match",
+        "zh": "发行人的证券分组未能解析为唯一匹配",
+        "clear_en": "The issuer's reference record narrows to exactly one active match.",
+        "clear_zh": "发行人的参考记录收敛为唯一有效匹配。",
+    },
+    "LISTING_KEY_INCOHERENT": {
+        "en": "The listing key does not resolve back to this exact security",
+        "zh": "上市代码无法解析回该证券本身",
+        "clear_en": "The listing key round-trips back to this exact security again.",
+        "clear_zh": "上市代码可再次完整解析回该证券本身。",
+    },
+    "IDENTITY_CORRECTED": {
+        "en": "This identity was corrected after an earlier read",
+        "zh": "该身份信息在此前的读数之后被更正过",
+        "clear_en": "No pending correction record remains open for this identity.",
+        "clear_zh": "该身份已无待处理的更正记录。",
+    },
+    "SUBJECT_NATIVE_PARITY_FAILED": {
+        "en": "The source's own identity fields do not match this security",
+        "zh": "来源自身的身份字段与该证券不一致",
+        "clear_en": "The source's own identity fields agree with this security again.",
+        "clear_zh": "来源自身的身份字段与该证券重新一致。",
+    },
+    "IDENTITY_BRIDGE_DISAGREEMENT": {
+        "en": "Sources disagree on this security's identity",
+        "zh": "各来源对该证券的身份存在分歧",
+        "clear_en": "Every source agrees on this identity again.",
+        "clear_zh": "各来源对该身份重新达成一致。",
+    },
 }
 
 # Chairman plain-language law (2026-09-06), macro#6920 round-3 MAJOR #2:

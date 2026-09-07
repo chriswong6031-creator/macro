@@ -734,6 +734,91 @@ def test_view_model_renders_the_msft_state_with_plain_words() -> None:
     assert '<span class="l-zh">' in section_html
 
 
+def test_dfoot_c_chip_scoping_is_structural_not_a_grep_count() -> None:
+    """The `.dfoot .c{margin-left:6px;...}` CSS rule (round-3 MAJOR #1 fix)
+    applies to every `.c`-classed descendant of every `.dfoot` element on the
+    page. A prior PR body argued this could not regress any other `.dfoot`
+    usage by grepping `class="dfoot"` line counts in the `.j2` source and
+    eyeballing which lines also mentioned `class="c"` — a text coincidence
+    on the SOURCE template, not a structural check of what actually renders
+    (round-3 review MINOR-3). A `.dfoot` spanning several lines, or a `.c`
+    element nested inside conditional Jinja branches, would not show up in a
+    single-line grep at all.
+
+    This test instead parses the ACTUALLY RENDERED HTML with a real HTML
+    parser (BeautifulSoup) and asks, for every `.dfoot` element, whether it
+    has a `.c`-classed descendant — the exact question the CSS selector
+    answers in a browser — for two renders that between them exercise every
+    `.dfoot` line in the template, including both new `.c`-chip lines
+    (identity refusals and identity disclosures).
+    """
+    import jinja2
+    from bs4 import BeautifulSoup
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(REPO / "templates")),
+        undefined=jinja2.ChainableUndefined,
+    )
+    tmpl = env.get_template("ticker.html.j2")
+
+    # golden MSFT: identity.disclosures present (dfoot line ~1933), identity
+    # PROVEN so identity.refusals is empty (dfoot line ~1932 does not render
+    # at all — proving the `{% if %}` guard, not merely the CSS selector).
+    fixture = REPO / "tests" / "fixtures" / "security_state" / "golden_msft_expected_output.json"
+    msft_state = json.loads(fixture.read_text(encoding="utf-8"))
+    msft_view = build_security_state({"security_state": msft_state})
+    assert msft_view is not None
+
+    # A BLOCKED shell with both refusals and disclosures present renders the
+    # remaining `.c`-chip dfoot line (~1932) too.
+    blocked_contract = _contract(identity_proof={
+        "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
+        "legs": [], "equalities": [],
+        "refusals": ["COMPILER_FAILURE"],
+        "disclosures": ["CIK_LEG_OWNER_BACKED_CURRENT_ONLY: some technical description"],
+    })
+    blocked_view = build_security_state({"security_state": blocked_contract})
+    assert blocked_view is not None
+
+    for label, view, expect_refusals_dfoot in (
+        ("msft (disclosures only, no refusals)", msft_view, False),
+        ("blocked shell (refusals + disclosures)", blocked_view, True),
+    ):
+        html = tmpl.render(security_state=view, ticker="MSFT", name="Microsoft Corp.")
+        soup = BeautifulSoup(html, "html.parser")
+        dfoots = soup.find_all(class_="dfoot")
+        assert len(dfoots) >= 8, f"{label}: expected at least 8 static+dynamic .dfoot blocks, found {len(dfoots)}"
+
+        carrying_ids = {id(d) for d in dfoots if d.find(class_="c") is not None}
+        carrying = [d for d in dfoots if id(d) in carrying_ids]
+
+        found_refusals_dfoot = any("Held back" in d.get_text() or "暂不呈现" in d.get_text() for d in carrying)
+        found_disclosures_dfoot = any(
+            d.find(class_="ss-id") is not None
+            and "Held back" not in d.get_text() and "暂不呈现" not in d.get_text()
+            for d in carrying
+        )
+        assert found_refusals_dfoot == expect_refusals_dfoot, (
+            f"{label}: refusals .dfoot .c-chip presence = {found_refusals_dfoot}, expected {expect_refusals_dfoot}"
+        )
+        assert found_disclosures_dfoot, f"{label}: disclosures .dfoot .c-chip not found"
+        # Structural scoping proof: every OTHER rendered .dfoot element (not
+        # the refusals/disclosures lines just identified) carries NO
+        # element with class "c" at all — so `.dfoot .c` cannot style them.
+        expected_carrying_count = (1 if expect_refusals_dfoot else 0) + 1  # + disclosures
+        assert len(carrying) == expected_carrying_count, (
+            f"{label}: {len(carrying)} .dfoot blocks carry a .c descendant, "
+            f"expected exactly {expected_carrying_count}: "
+            f"{[d.get_text(' ', strip=True)[:60] for d in carrying]!r}"
+        )
+        for d in dfoots:
+            if id(d) not in carrying_ids:
+                assert d.find(class_="c") is None, (
+                    f"{label}: an unaccounted .dfoot block unexpectedly carries a .c descendant: "
+                    f"{d.get_text(' ', strip=True)[:80]!r}"
+                )
+
+
 def test_compiler_failure_gate_renders_a_plain_bilingual_sentence() -> None:
     """A ``COMPILER_FAILURE`` failed-gate must render a real, DISTINCT EN/ZH
     sentence — never the raw enum code duplicated into both language slots
@@ -903,6 +988,69 @@ def test_identity_disclosure_renders_a_plain_bilingual_sentence_not_the_raw_code
         )
         stripped = re.sub(r'<span class="c ss-id">.*?</span>', "", line_html)
         assert code not in stripped, f"{code}: raw code leaked outside the ss-id chip: {stripped!r}"
+
+
+def test_every_compile_path_refusal_code_has_house_copy_with_no_prettify_fallback() -> None:
+    """`engine/security_state.py` emits eight distinct refusal codes on its
+    compile path (`identity_proof.refusals`, both `compile_security_state`'s
+    R1..R8 gates and `compile_security_state_failure`'s M1/M2 shells). Every
+    one of them must have a `_SS_GATES` house-copy entry carrying a REAL,
+    distinct EN/ZH sentence. The code set is extracted from the engine
+    source by regex, not hand-copied, so this test cannot go stale silently
+    if a new refusal code is added there without a matching entry here
+    (macro#6920 round-3 review MAJOR-1).
+
+    Before this fix, only two of the eight codes (`COMPILER_FAILURE`,
+    `IDENTITY_UNRESOLVED`) had a `_SS_GATES` entry; the other six
+    (`SECURITY_SUPERSEDED`, `ISSUER_GROUP_AMBIGUOUS`,
+    `LISTING_KEY_INCOHERENT`, `IDENTITY_CORRECTED`,
+    `SUBJECT_NATIVE_PARITY_FAILED`, `IDENTITY_BRIDGE_DISAGREEMENT`) fell
+    through to `_ss_prettify(code)` for BOTH slots — the same English words
+    duplicated into the field the page treats as Chinese.
+    """
+    from scripts.build_ticker_pages import _SS_GATES, _ss_prettify
+
+    engine_src = (REPO / "engine" / "security_state.py").read_text()
+    codes = set(re.findall(r'refusals\.append\("([A-Z][A-Z0-9_]*)"\)', engine_src))
+    codes |= set(re.findall(r'"refusals":\s*\["([A-Z][A-Z0-9_]*)"\]', engine_src))
+    assert codes == {
+        "SECURITY_SUPERSEDED", "IDENTITY_UNRESOLVED", "ISSUER_GROUP_AMBIGUOUS",
+        "LISTING_KEY_INCOHERENT", "IDENTITY_CORRECTED", "SUBJECT_NATIVE_PARITY_FAILED",
+        "IDENTITY_BRIDGE_DISAGREEMENT", "COMPILER_FAILURE",
+    }, (
+        f"engine/security_state.py's emitted refusal-code set changed: {sorted(codes)} — "
+        "this test's extraction regex and its house-copy coverage below must be updated together"
+    )
+
+    for code in sorted(codes):
+        assert code in _SS_GATES, f"{code}: no _SS_GATES house-copy entry — falls through to _ss_prettify"
+        entry = _SS_GATES[code]
+        assert entry.get("en") and entry.get("zh"), f"{code}: house-copy entry has an empty slot: {entry!r}"
+        assert entry["en"] != entry["zh"], (
+            f"{code}: ZH slot is not real Chinese (duplicates the EN fallback): {entry!r}"
+        )
+        assert re.search(r"[一-鿿]", entry["zh"]), f"{code}: zh is not Chinese: {entry['zh']!r}"
+        pretty = _ss_prettify(code)
+        assert entry["en"] != pretty, (
+            f"{code}: house copy is just the bare prettification of the code, not a real sentence"
+        )
+
+        # Exercise the real production mapping site
+        # (`(_SS_GATES.get(code) or {}).get("en") or _ss_prettify(code)`) end
+        # to end for every code, not just the dict — a present, non-empty
+        # `_SS_GATES` entry makes the `_ss_prettify` branch unreachable for
+        # this code, and this proves it by observing the actual output.
+        contract = _contract(identity_proof={
+            "state": "BLOCKED_IDENTITY_BRIDGE", "method": "owner_backed_chain.v1",
+            "legs": [], "equalities": [], "refusals": [code], "disclosures": [],
+        })
+        view = build_security_state({"security_state": contract})
+        assert view is not None
+        refusal = next(r for r in view["identity"]["refusals"] if r["code"] == code)
+        assert refusal["en"] == entry["en"] and refusal["zh"] == entry["zh"], (
+            f"{code}: rendered refusal does not match its _SS_GATES house copy: {refusal!r}"
+        )
+        assert refusal["en"] != pretty, f"{code}: rendered refusal fell back to the bare prettification"
 
 
 def _prettify_words(code: str) -> str:

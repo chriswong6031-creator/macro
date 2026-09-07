@@ -1,0 +1,5 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/ticker.html.j2
+  - scripts/build_ticker_pages.py
+manifest: mockups/evidence/security_state/manifest.json
