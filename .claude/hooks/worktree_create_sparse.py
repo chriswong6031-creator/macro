@@ -66,10 +66,12 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 HOOK = "WorktreeCreate"
@@ -221,16 +223,231 @@ def load_profile(repo_root: Path) -> dict:
         return {"enabled": True, "exclude_dirs": list(FALLBACK_EXCLUDE_DIRS)}
 
 
+
+# Kept in step with scripts.worktree_sparse.STALE_LOCK_MIN_AGE_S —
+# tests/test_worktree_sparse.py pins the two constants together so they can
+# never drift apart. See that module's constant for the full rationale
+# (census 2026-09-06: 97/267 session worktrees found FULL instead of sparse,
+# root-caused to a lock refusal that got swallowed upstream).
+STALE_LOCK_MIN_AGE_S = 600
+
+
+def _lock_candidates(dest: Path) -> list[Path]:
+    """``index.lock`` and ``info/sparse-checkout.lock`` for ``dest``'s own
+    (freshly created, `--no-checkout`) git-dir — never the shared common
+    `.git`, which this hook never locks for a sparse-checkout operation."""
+    try:
+        git_dir = Path(git(dest, "rev-parse", "--path-format=absolute", "--git-dir"))
+    except RuntimeError:
+        return []
+    return [git_dir / "index.lock", git_dir / "info" / "sparse-checkout.lock"]
+
+
+def _run_lsof(args: list[str]) -> str | None:
+    """Best-effort ``lsof`` call; None when it could not be trusted at all
+    (missing binary, hung, or any other surprise). Exit 1 (no matches) is a
+    trustworthy empty answer, not a failure — duplicated from
+    scripts/worktree_sparse.py deliberately: this hook must not depend on the
+    repo's import surface being intact (see ``load_profile`` above)."""
+    try:
+        out = subprocess.run(
+            ["lsof", *args], capture_output=True, text=True, timeout=10, check=False,
+        )
+    except Exception:  # noqa: BLE001
+        return None
+    if out.returncode not in (0, 1):
+        return None
+    return out.stdout
+
+
+def _parse_lsof_pn(text: str) -> list[tuple[int, list[str]]]:
+    records: list[tuple[int, list[str]]] = []
+    current_paths: list[str] | None = None
+    for line in text.splitlines():
+        if not line:
+            continue
+        tag, value = line[0], line[1:]
+        if tag == "p":
+            try:
+                pid = int(value)
+            except ValueError:
+                current_paths = None
+                continue
+            current_paths = []
+            records.append((pid, current_paths))
+        elif tag == "n" and current_paths is not None:
+            current_paths.append(value)
+    return records
+
+
+def _live_pids_holding(worktree_root: Path, git_dir: Path) -> set[int] | None:
+    """PIDs with ``worktree_root`` as cwd or any open file under ``git_dir``.
+
+    None when the probe itself could not be trusted (no lsof on this
+    platform, or every call failed) — the caller must then fail closed and
+    treat the lock as possibly live, never as proof nothing holds it.
+    """
+    if platform.system() != "Darwin":
+        return None  # this host is macOS; no Linux /proc fallback needed here
+    pids: set[int] = set()
+    probed = False
+    cwd_out = _run_lsof(["-a", "-d", "cwd", "-F", "pn", "+D", str(worktree_root)])
+    if cwd_out is not None:
+        probed = True
+        pids.update(pid for pid, _paths in _parse_lsof_pn(cwd_out))
+    file_out = _run_lsof(["-F", "pn", "+D", str(git_dir)])
+    if file_out is not None:
+        probed = True
+        pids.update(pid for pid, _paths in _parse_lsof_pn(file_out))
+    return pids if probed else None
+
+
+def _clear_stale_locks(dest: Path) -> tuple[list[str], list[Path]]:
+    """Remove any lock in ``dest``'s git-dir that is both older than
+    ``STALE_LOCK_MIN_AGE_S`` and confirmed to have no live process holding
+    it, printing a bare line-starting ``::warning`` for each (to stderr —
+    this hook's stdout contract carries only the created worktree path).
+
+    Returns ``(removed_paths, still_locked)`` — ``still_locked`` is non-empty
+    when a lock is young, live, or its liveness could not be confirmed at
+    all; the caller refuses in that case rather than silently proceeding.
+    """
+    candidates = _lock_candidates(dest)
+    locks = [lock for lock in candidates if lock.exists()]
+    removed: list[str] = []
+    still_locked: list[Path] = []
+    if not locks:
+        return removed, still_locked
+    git_dir = candidates[0].parent if candidates else None
+    now = time.time()
+    for lock in locks:
+        try:
+            age_s = max(0.0, now - lock.stat().st_mtime)
+        except OSError:
+            still_locked.append(lock)
+            continue
+        if age_s < STALE_LOCK_MIN_AGE_S:
+            still_locked.append(lock)
+            continue
+        pids = _live_pids_holding(dest, git_dir) if git_dir is not None else None
+        if pids is None or pids:
+            still_locked.append(lock)
+            continue
+        try:
+            lock.unlink()
+        except OSError:
+            still_locked.append(lock)
+            continue
+        removed.append(str(lock))
+        print(
+            f"::warning title=worktree-sparse-stale-lock-removed::{lock} is "
+            f"{age_s / 60:.0f}m old (>= {STALE_LOCK_MIN_AGE_S}s) with no live "
+            f"process holding {dest} or its git-dir — removed as stale before "
+            f"running `git sparse-checkout`",
+            file=sys.stderr, flush=True,
+        )
+    return removed, still_locked
+
+
+def _verify_sparse_postcondition(dest: Path, include: list[str], excludes: list[str]) -> str | None:
+    """Same check as scripts.worktree_sparse.verify_sparse_postcondition,
+    duplicated for the same import-independence reason as ``load_profile``:
+    `git sparse-checkout list` must equal ``include`` exactly, and every
+    excluded directory must be an empty husk on disk, never partially
+    materialized content a killed operation left behind."""
+    try:
+        listed = [
+            ln.strip() for ln in git(dest, "sparse-checkout", "list").splitlines() if ln.strip()
+        ]
+    except RuntimeError as exc:
+        return f"`git sparse-checkout list` failed: {exc}"
+    if set(listed) != set(include):
+        return f"sparse-checkout list mismatch — expected {sorted(include)}, got {sorted(listed)}"
+    for name in excludes:
+        path = dest / name
+        try:
+            if not path.exists():
+                continue
+            entries = list(path.iterdir())
+        except OSError:
+            continue
+        if entries:
+            return (
+                f"{name} is excluded but not a husk on disk "
+                f"({len(entries)} entries present)"
+            )
+    return None
+
+
 def apply_sparse(dest: Path, repo_root: Path, base: str, exclude: set[str]) -> None:
-    """Select every tracked top-level dir except ``exclude``, then populate."""
+    """Select every tracked top-level dir except ``exclude``, then populate.
+
+    Refuses up front on a lock in ``dest``'s git-dir that is not confirmed
+    stale (see ``_clear_stale_locks``), and verifies afterward that the
+    working tree actually ended up in the requested state (see
+    ``_verify_sparse_postcondition``) — both raise ``RuntimeError``, which
+    ``main`` already turns into a removed worktree plus a loud hook failure.
+    """
     tracked = [ln for ln in git(repo_root, "ls-tree", "-d", "--name-only", base).splitlines() if ln]
     include = [d for d in tracked if d not in exclude]
     if not include:
         raise RuntimeError("no sparse-checkout directories were selected")
+    _removed, still_locked = _clear_stale_locks(dest)
+    if still_locked:
+        named = ", ".join(str(p) for p in still_locked)
+        raise RuntimeError(
+            f"refusing to run `git sparse-checkout` — {named} exists and is "
+            f"either held by a live process or younger than "
+            f"{STALE_LOCK_MIN_AGE_S}s"
+        )
     git(dest, "sparse-checkout", "init", "--cone")
     git(dest, "sparse-checkout", "set", "--cone", "--", *include)
     omitted = sorted(set(tracked) & exclude)
     log(f"sparse profile: omitting {', '.join(omitted) if omitted else '(nothing)'}")
+    problem = _verify_sparse_postcondition(dest, include, omitted)
+    if problem:
+        raise RuntimeError(f"sparse postcondition failed: {problem}")
+
+
+def _warn_if_reused_worktree_looks_full(dest: Path, repo_root: Path) -> None:
+    """Best-effort, NON-BLOCKING: loudly flag a reused worktree that looks
+    FULL when the configured profile says it should be sparse.
+
+    A prior failed mint attempt could have left ``dest`` registered but never
+    sparsified (or a lock could have blocked a repair attempt at the same
+    destination). The documented idempotency contract says whichever hook
+    wiring runs second must not fail the spawn on reuse, so this only warns —
+    it never raises and never blocks — but a silent reuse is exactly the
+    "harness reported the worktree as created" failure mode this packet
+    exists to stop, so it must not stay silent either.
+    """
+    try:
+        profile = load_profile(repo_root)
+        if not profile.get("enabled", True):
+            return
+        exclude = set(profile.get("exclude_dirs") or ())
+        if not exclude:
+            return
+        full = []
+        for name in sorted(exclude):
+            path = dest / name
+            try:
+                if path.is_dir() and any(path.iterdir()):
+                    full.append(name)
+            except OSError:
+                continue
+        if full:
+            print(
+                f"::warning title=worktree-sparse-reuse-full::{dest} was "
+                f"reused but {', '.join(full)} is materialized on disk even "
+                f"though the profile excludes it — this worktree may be a "
+                f"FULL checkout instead of sparse; run `python3 scripts/"
+                f"worktree_sparse.py status` in it to confirm and `sparse` "
+                f"to re-narrow it",
+                file=sys.stderr, flush=True,
+            )
+    except Exception:  # noqa: BLE001 — this check must never break a reuse
+        pass
 
 
 def main() -> int:
@@ -268,6 +485,7 @@ def main() -> int:
         # A sibling wiring (the legacy zsh hook) may have created it already.
         if is_registered_worktree(repo_root, dest):
             log(f"destination already a registered worktree; reusing {dest}")
+            _warn_if_reused_worktree_looks_full(dest, repo_root)
             print(dest)
             return 0
         return fail(f"destination already exists and is not a worktree: {dest}")

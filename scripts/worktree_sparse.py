@@ -49,6 +49,7 @@ not in it is omitted. The emptiness heuristic is only the non-cone fallback.
 
 Usage:
     python3 scripts/worktree_sparse.py status        # what is / is not materialized
+    python3 scripts/worktree_sparse.py status --json # machine-readable, for fleet census
     python3 scripts/worktree_sparse.py auto          # new linked worktree: apply profile
     python3 scripts/worktree_sparse.py full          # opt IN to a full checkout
     python3 scripts/worktree_sparse.py sparse        # re-apply the configured profile
@@ -60,6 +61,7 @@ Exit codes: 0 = success · 1 = failure (not a git worktree, git error, bad dir).
 from __future__ import annotations
 
 import json
+import platform
 import shutil
 import subprocess
 import sys
@@ -111,6 +113,21 @@ ADD_TIMEOUT_S = 300
 # that ignores SIGTERM outright — dies promptly rather than hanging the
 # caller indefinitely.
 TERM_GRACE_S = 10
+
+# Minimum age, in seconds, before an `index.lock`/`sparse-checkout.lock` found
+# in a worktree's git-dir may be treated as STALE and removed automatically.
+# Census 2026-09-06 (agentos/discoveries/DSC-SPARSE-MINT-FAILS-SILENTLY-ON-
+# STALE-LOCKS.md): 97 of 267 `.claude/worktrees/` session trees were FULL
+# (~6.5 GiB) instead of sparse (~0.4 GiB) because `refuse_if_locked` refused
+# on a lock left behind by a killed sibling process — measured ages 600 to
+# 3,500 minutes, no live holder — and that refusal was swallowed upstream: the
+# harness reported the worktree as created and the session proceeded on a
+# full tree. Ten minutes is comfortably above `TERM_GRACE_S` plus any
+# reasonable `git sparse-checkout` runtime for a single directory, so a lock
+# genuinely still in use by an in-flight operation is never this old; a lock
+# this old with no live process attached is orphaned, not busy. Never touch a
+# lock whose holder is still alive, regardless of age — see `lock_is_stale`.
+STALE_LOCK_MIN_AGE_S = 600
 
 # Fallback when config/sparse_worktree.json is unreadable. Kept in step with that
 # file by tests/test_sparse_worktree_profile.py so the two can never drift.
@@ -202,40 +219,229 @@ def _lock_age_desc(lock: Path) -> str:
         age_s = max(0.0, time.time() - lock.stat().st_mtime)
     except OSError:
         return "unknown age"
+    return _lock_age_desc_from_seconds(age_s)
+
+
+def _lock_age_desc_from_seconds(age_s: float | None) -> str:
+    if age_s is None:
+        return "unknown age"
     if age_s < 60:
         return f"{age_s:.0f}s old"
     return f"{age_s / 60:.0f}m old"
 
 
+def _run_lsof(args: list[str]) -> str | None:
+    """Run ``lsof`` with ``args``; return stdout, or None when the call could
+    not be trusted at all (missing binary, hung, or any other surprise).
+
+    ``lsof`` exits 1 when it simply found no matching processes — that is a
+    trustworthy (empty) answer, not a failure, so only other exit codes and
+    outright exceptions map to None.
+    """
+    try:
+        out = subprocess.run(
+            ["lsof", *args], capture_output=True, text=True, timeout=10, check=False,
+        )
+    except Exception:  # noqa: BLE001 — lsof missing/hung/anything else
+        return None
+    if out.returncode not in (0, 1):
+        return None
+    return out.stdout
+
+
+def _parse_lsof_pn(text: str) -> list[dict]:
+    """Parse ``lsof -F pn`` field output into ``[{"pid": int, "paths": [...]}, ...]``."""
+    records: list[dict] = []
+    current: dict | None = None
+    for line in text.splitlines():
+        if not line:
+            continue
+        tag, value = line[0], line[1:]
+        if tag == "p":
+            try:
+                current = {"pid": int(value), "paths": []}
+            except ValueError:
+                current = None
+            else:
+                records.append(current)
+        elif tag == "n" and current is not None:
+            current["paths"].append(value)
+    return records
+
+
+def gather_live_processes(worktree_root: Path, git_dir: Path | None) -> list[dict] | None:
+    """Best-effort snapshot of live processes holding ``worktree_root`` (as
+    cwd) or ``git_dir`` (as any open file), for ``lock_is_stale`` to consume.
+
+    Returns ``[{"pid": int, "cwd": str|None, "open_files": [str, ...]}, ...]``.
+    Returns ``None`` when the probe itself could not be trusted — no platform
+    support, or every underlying call failed — so a caller must then fail
+    closed (never conclude "nothing is alive" from an unconfirmed probe).
+
+    macOS: ``lsof -a -d cwd -F pn +D <worktree_root>`` (processes whose cwd is
+    under the worktree) plus ``lsof -F pn +D <git_dir>`` (any open file under
+    the git-dir, which also covers a live git process still touching the lock
+    itself). Linux: ``/proc/*/cwd`` symlinks, same worktree_root scope.
+    """
+    system = platform.system()
+    if system == "Darwin":
+        by_pid: dict[int, dict] = {}
+        probed = False
+        cwd_out = _run_lsof(["-a", "-d", "cwd", "-F", "pn", "+D", str(worktree_root)])
+        if cwd_out is not None:
+            probed = True
+            for rec in _parse_lsof_pn(cwd_out):
+                entry = by_pid.setdefault(
+                    rec["pid"], {"pid": rec["pid"], "cwd": None, "open_files": []},
+                )
+                if rec["paths"]:
+                    entry["cwd"] = rec["paths"][0]
+        if git_dir is not None:
+            file_out = _run_lsof(["-F", "pn", "+D", str(git_dir)])
+            if file_out is not None:
+                probed = True
+                for rec in _parse_lsof_pn(file_out):
+                    entry = by_pid.setdefault(
+                        rec["pid"], {"pid": rec["pid"], "cwd": None, "open_files": []},
+                    )
+                    entry["open_files"].extend(rec["paths"])
+        return list(by_pid.values()) if probed else None
+    if system == "Linux":
+        proc_dir = Path("/proc")
+        if not proc_dir.is_dir():
+            return None
+        try:
+            target = worktree_root.resolve()
+        except OSError:
+            target = worktree_root
+        try:
+            entries = list(proc_dir.iterdir())
+        except OSError:
+            return None
+        records: list[dict] = []
+        for entry in entries:
+            if not entry.name.isdigit():
+                continue
+            try:
+                link = (entry / "cwd").resolve()
+            except OSError:
+                continue
+            if link == target or target in link.parents:
+                records.append({"pid": int(entry.name), "cwd": str(link), "open_files": []})
+        return records
+    return None  # unsupported platform: fail closed, never claim "nothing alive"
+
+
+def lock_is_stale(
+    path: Path, now: float, procs: list[dict] | None, *, min_age_s: float = STALE_LOCK_MIN_AGE_S,
+) -> bool:
+    """Pure predicate: is the lock file ``path`` safe to remove automatically?
+
+    Stale requires BOTH: the lock's mtime age is at least ``min_age_s``, AND
+    ``procs`` — the live-process records scoped to this lock's worktree/git-dir
+    (see ``gather_live_processes``) — is an empty list. ``procs=None`` means
+    the real probe could not be trusted at all and is ALWAYS treated as "may
+    still be alive" (never stale) — a failed probe must fail closed, never be
+    read as proof nothing holds the lock. ``procs`` is a plain list of dicts
+    so a test can inject synthetic processes with no real system calls.
+    """
+    if procs is None:
+        return False
+    try:
+        age = now - path.stat().st_mtime
+    except OSError:
+        return False
+    if age < min_age_s:
+        return False
+    return len(procs) == 0
+
+
+def _clear_stale_locks(root: Path = ROOT) -> tuple[list[dict], list[Path]]:
+    """Remove any ``index.lock``/``info/sparse-checkout.lock`` in this
+    worktree's git-dir that ``lock_is_stale`` confirms is stale, printing a
+    line-starting ``::warning`` naming the lock, its age, and the tree for
+    each one removed.
+
+    Returns ``(removed, still_locked)``:
+      * ``removed`` — ``[{"path": str, "age_s": float | None}, ...]`` for
+        locks actually deleted.
+      * ``still_locked`` — lock ``Path``s that exist and are NOT confirmed
+        stale (live holder, unconfirmed probe, or the removal itself failed)
+        — callers refuse while this is non-empty.
+    """
+    candidates = [index_lock_path(root), sparse_checkout_lock_path(root)]
+    locks = [lock for lock in candidates if lock is not None and lock.exists()]
+    removed: list[dict] = []
+    still_locked: list[Path] = []
+    if not locks:
+        return removed, still_locked
+    git_dir_raw = _git(root, "rev-parse", "--path-format=absolute", "--git-dir")
+    git_dir = Path(git_dir_raw) if git_dir_raw else None
+    now = time.time()
+    for lock in locks:
+        try:
+            age_s: float | None = max(0.0, now - lock.stat().st_mtime)
+        except OSError:
+            age_s = None
+        # Skip the (real, subprocess-shelling) live-process probe entirely for
+        # a lock that is not old enough to qualify regardless — the common
+        # case (a lock created moments ago by the very operation about to
+        # run) never needs to shell out to `lsof`/`/proc`.
+        if age_s is None or age_s < STALE_LOCK_MIN_AGE_S:
+            still_locked.append(lock)
+            continue
+        procs = gather_live_processes(root, git_dir)
+        if lock_is_stale(lock, now, procs):
+            try:
+                lock.unlink()
+            except OSError:
+                still_locked.append(lock)
+                continue
+            removed.append({"path": str(lock), "age_s": age_s})
+            print(
+                f"::warning title=worktree-sparse-stale-lock-removed::{lock} "
+                f"is {_lock_age_desc_from_seconds(age_s)} (>= "
+                f"{STALE_LOCK_MIN_AGE_S}s) with no live process holding {root} "
+                f"or its git-dir as cwd or an open file — removed as stale "
+                f"before running `git sparse-checkout`",
+                flush=True,
+            )
+        else:
+            still_locked.append(lock)
+    return removed, still_locked
+
+
 def refuse_if_locked(root: Path = ROOT) -> bool:
-    """Print a loud, actionable refusal and return True when a stale/live
-    ``index.lock`` OR ``info/sparse-checkout.lock`` already sits in this
-    checkout's git-dir.
+    """Print a loud, actionable refusal and return True when a live (or
+    unconfirmed-stale) ``index.lock`` OR ``info/sparse-checkout.lock`` sits in
+    this checkout's git-dir, after first reclaiming any lock ``lock_is_stale``
+    confirms is safe to remove (see ``_clear_stale_locks``).
 
     ``git sparse-checkout`` acquires ``info/sparse-checkout.lock`` before
     ``index.lock``, and the same SIGKILL that leaves one can leave the other
-    — either alone or both — so both are checked, and every lock found is
+    — either alone or both — so both are checked, and every remaining lock is
     named (with its age) in the refusal.
 
-    Never deletes a lock: another process may legitimately hold it. This is
-    the up-front half of the fix — it stops a NEW sparse-checkout operation
+    Never deletes a lock a live process might hold, and never deletes a lock
+    younger than ``STALE_LOCK_MIN_AGE_S`` regardless of process state — this
+    is the up-front half of the fix — it stops a NEW sparse-checkout operation
     from running into a lock a previous failed attempt (or a genuinely
     concurrent git process) left behind, instead of proceeding into the same
     partial-write corruption.
     """
-    candidates = [index_lock_path(root), sparse_checkout_lock_path(root)]
-    locks = [lock for lock in candidates if lock is not None and lock.exists()]
-    if not locks:
+    _removed, still_locked = _clear_stale_locks(root)
+    if not still_locked:
         return False
-    named = ", ".join(f"{lock} ({_lock_age_desc(lock)})" for lock in locks)
-    remove_cmds = "; ".join(f"rm '{lock}'" for lock in locks)
+    named = ", ".join(f"{lock} ({_lock_age_desc(lock)})" for lock in still_locked)
+    remove_cmds = "; ".join(f"rm '{lock}'" for lock in still_locked)
     print(
         f"::error title=worktree-sparse-locked::{named} exists — refusing "
-        f"to run `git sparse-checkout`. Check for a live git process using "
-        f"this worktree (e.g. `ps aux | grep '[g]it.*{root.name}'`); if none is "
-        f"running, a previous `worktree_sparse.py` operation was likely killed "
-        f"(a slow or timed-out materialization) and left this lock stale. Only "
-        f"remove it once you've confirmed nothing else holds it: {remove_cmds}",
+        f"to run `git sparse-checkout`. Either a live process still holds it, "
+        f"or it is younger than {STALE_LOCK_MIN_AGE_S}s and could not yet be "
+        f"confirmed stale. Check for a live git process using this worktree "
+        f"(e.g. `ps aux | grep '[g]it.*{root.name}'`); if none is running and "
+        f"the lock is simply young, wait and retry. Only remove it by hand "
+        f"once you've confirmed nothing else holds it: {remove_cmds}",
         flush=True,
     )
     return True
@@ -536,6 +742,46 @@ def _drop_husks(root: Path, dirs: list[str]) -> list[str]:
     return dropped
 
 
+def verify_sparse_postcondition(
+    root: Path, include: list[str], excludes: list[str],
+) -> str | None:
+    """Return an error message when the on-disk sparse state does not match
+    what was just requested, else ``None``.
+
+    A `git sparse-checkout` command exiting 0 is not, by itself, proof the
+    working tree ended up in the requested state — a race with another
+    process or a partial write the exit code did not surface can leave it
+    inconsistent. Two things are checked: (1) `git sparse-checkout list`
+    (the authoritative cone-mode include set) equals ``include`` exactly, and
+    (2) every directory in ``excludes`` is either absent or an empty husk on
+    disk — never holding real materialized content. Callers that get a
+    non-None result here must treat the operation as FAILED (loud, non-zero
+    exit) rather than reporting the success message they were about to print.
+    """
+    listed = set(_cone_included(root))
+    expected = set(include)
+    if listed != expected:
+        return (
+            f"`git sparse-checkout list` mismatch after apply — expected "
+            f"{sorted(expected)}, got {sorted(listed)}"
+        )
+    for name in excludes:
+        path = root / name
+        try:
+            if not path.exists():
+                continue
+            entries = list(path.iterdir())
+        except OSError:
+            continue
+        if entries:
+            return (
+                f"{name} is excluded by the profile but not a husk on disk "
+                f"({len(entries)} entr{'y' if len(entries) == 1 else 'ies'} "
+                f"present) — a prior operation may have partially materialized it"
+            )
+    return None
+
+
 def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> int:
     """(Re-)apply the sparse profile to an existing worktree.
 
@@ -567,6 +813,13 @@ def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> i
         print("worktree-sparse: `git sparse-checkout set` failed", file=sys.stderr)
         return 1
     _drop_husks(root, sorted(excludes))
+    problem = verify_sparse_postcondition(root, include, sorted(excludes))
+    if problem:
+        print(
+            f"::error title=worktree-sparse-postcondition-failed::{problem}",
+            flush=True,
+        )
+        return 1
     print(f"worktree-sparse: profile applied — omitting {', '.join(sorted(excludes))}")
     return 0
 
@@ -907,6 +1160,15 @@ def add_dirs(names: list[str], root: Path = ROOT, timeout: float = ADD_TIMEOUT_S
         repaired, skipped, unreadable = verify_and_repair(root, names, protected)
         _report_repair_outcome(repaired, skipped, unreadable)
         return 1
+    still_missing = [n for n in names if not _has_content(root / n)]
+    if still_missing:
+        print(
+            f"::error title=worktree-sparse-add-postcondition-failed::`git "
+            f"sparse-checkout add -- {' '.join(names)}` exited 0 but "
+            f"{', '.join(still_missing)} is still empty on disk in {root}",
+            flush=True,
+        )
+        return 1
     print(f"worktree-sparse: materialized {', '.join(names)}")
     return 0
 
@@ -995,9 +1257,46 @@ def status(root: Path = ROOT) -> int:
     return 0
 
 
+def _full_bytes_estimate(root: Path, missing: list[str]) -> int:
+    """Sum of committed byte sizes under every dir in ``missing`` — an
+    estimate of how many bytes `full` would materialize (equivalently, how
+    many bytes staying sparse is currently saving). ``0`` for a directory
+    whose committed sizes could not be read, rather than raising — this is a
+    census estimate, not a correctness gate."""
+    total = 0
+    for name in missing:
+        sizes = _committed_sizes(root, name)
+        if sizes:
+            total += sum(sizes.values())
+    return total
+
+
+def status_json(root: Path = ROOT) -> dict:
+    """Machine-readable status for fleet census scripts.
+
+    As a side effect (the same self-heal `refuse_if_locked` performs), any
+    stale lock found in this worktree's git-dir is removed and reported in
+    ``stale_locks_removed`` — a census sweep over many worktrees is exactly
+    the moment to reclaim locks a killed sibling process left behind, rather
+    than requiring a separate mutating pass. A live/young lock is left alone
+    and simply not reported here (it does not block a read-only status).
+    """
+    missing = missing_dirs(root)
+    removed, _still_locked = _clear_stale_locks(root)
+    return {
+        "sparse": bool(missing),
+        "missing_dirs": missing,
+        "stale_locks_removed": [r["path"] for r in removed],
+        "full_bytes_estimate": _full_bytes_estimate(root, missing),
+    }
+
+
 def main(argv: list[str]) -> int:
     cmd = argv[0] if argv else "status"
     if cmd == "status":
+        if "--json" in argv[1:]:
+            print(json.dumps(status_json()))
+            return 0
         return status()
     if cmd == "auto":
         return auto_profile()
