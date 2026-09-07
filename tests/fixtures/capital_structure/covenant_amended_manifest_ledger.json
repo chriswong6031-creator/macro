@@ -1,0 +1,68 @@
+{
+  "schema": "capital_structure.source_manifest/v1",
+  "manifest_id": "sm-covenant-crsr-ex101-amend-20221209",
+  "source_system": "sec_edgar",
+  "source_id": "src-sm-covenant-crsr-ex101-amend-20221209",
+  "issuer": {
+    "issuer_id": "issuer-crsr-corsair-gaming",
+    "cik": "1743759",
+    "ticker": "CRSR",
+    "aliases": [
+      "Corsair Gaming, Inc."
+    ]
+  },
+  "filing": {
+    "accession": "0001564590-22-039197",
+    "form": "8-K/A",
+    "filing_date": "2022-12-09",
+    "accepted_at": "2022-12-09T16:30:00Z",
+    "file_number": null
+  },
+  "document": {
+    "canonical_url": "https://www.sec.gov/Archives/edgar/data/1743759/000156459022039197/crsr-ex101_6.htm",
+    "document_name": "crsr-ex101_6.htm",
+    "document_type": "EX-10.1",
+    "document_role": "exhibit",
+    "sequence": "1",
+    "media_type": "text/html",
+    "byte_length": 1250,
+    "document_version": 1,
+    "content_sha256": "27d52de506cc5a3b68dfea02c6b04cbd0c2125598dd78e36d0bb69b00e89ae6e",
+    "parent_manifest_id": null,
+    "root_locator": "sha256:27d52de506cc5a3b68dfea02c6b04cbd0c2125598dd78e36d0bb69b00e89ae6e"
+  },
+  "retrieval": {
+    "retrieved_at": "2022-12-09T16:30:00Z",
+    "first_seen_at": "2022-12-09T16:30:00Z",
+    "transport_status": "retrieved"
+  },
+  "storage": {
+    "backend": "r2",
+    "store_id": "r2_research",
+    "object_key": "capital_structure/sec/sha256/27/27d52de506cc5a3b68dfea02c6b04cbd0c2125598dd78e36d0bb69b00e89ae6e",
+    "content_addressed": true,
+    "retention_state": "retained"
+  },
+  "rights": {
+    "redistribution_class": "public_source_link",
+    "attribution_required": true,
+    "license_note": null
+  },
+  "privacy": {
+    "classification": "public",
+    "contains_personal_data": false
+  },
+  "parser": {
+    "eligibility": "eligible",
+    "corruption_state": "clean",
+    "parser_version": "capital-structure-covenant-terms/1.0.0"
+  },
+  "spans": [
+    {
+      "span_id": "sp-sm-covenant-crsr-ex101-amend-20221209-1",
+      "locator_type": "document",
+      "locator": "complete_submission",
+      "text_sha256": "27d52de506cc5a3b68dfea02c6b04cbd0c2125598dd78e36d0bb69b00e89ae6e"
+    }
+  ]
+}

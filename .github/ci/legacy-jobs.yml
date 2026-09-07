@@ -2853,6 +2853,15 @@ jobs:
       # reports every file inside one step, and adds no job to a manifest at the
       # narrow-diff ceiling.  No dependency widened: probed at RUN time it loads
       # pandas/numpy/pyarrow/pyyaml/requests, all already on the install line above.
+      #
+      # Same backfill, packet B-F09-5 (review round 2): tests/test_covenant_terms.py and
+      # tests/test_compile_capital_structure_covenant_terms.py were named by no `run:`
+      # step in any workflow either -- the covenant-terms producer, its compile script,
+      # and its daily.yml wiring would have shipped with zero CI owner, exactly the
+      # #1052/#1253 pattern this file already warns about. Joins the same step for the
+      # same reason: no new dependency (jsonschema/pandas already installed above), and
+      # appended last so an upstream capital-structure regression is still the first
+      # failure a reader sees.
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
         # FOUR nightly-wiring suites ride HERE on purpose, and they only mean
         # anything together — each states one side of the same 2026-08-06 split:
@@ -2914,7 +2923,9 @@ jobs:
           tests/test_capital_structure_evidence_identity.py
           tests/test_capital_structure_closed_bundle.py
           tests/test_nwqs_c_dilution.py
-          tests/test_compile_capital_structure_registration_lifecycles.py -q
+          tests/test_compile_capital_structure_registration_lifecycles.py
+          tests/test_covenant_terms.py
+          tests/test_compile_capital_structure_covenant_terms.py -q
 
   stock-seasonality:
     if: ${{ false }}

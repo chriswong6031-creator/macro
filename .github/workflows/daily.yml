@@ -1202,6 +1202,29 @@ jobs:
           R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
           R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
         run: python -m scripts.compile_capital_structure_document_terms
+      - name: compile capital-structure covenant terms (B-F09-5, source-first slice)
+        # main() never propagates an exception: on ANY producer error it writes a
+        # typed covenant_extraction:{state:failed, reason} marker (read by the
+        # health gate immediately below) and exits 0 -- a producer bug may never
+        # fail the fail-closed health gate itself (F13 alarm-bus law).
+        # continue-on-error is a belt-and-suspenders second layer for the one
+        # failure mode main()'s own try/except cannot catch: a module-import-time
+        # exception (e.g. a broken `from engine... import`) that happens before
+        # main() ever runs, which would otherwise still fail this step and, with
+        # no continue-on-error, the whole job before the health gate step below
+        # -- round-3 review Major 3.
+        continue-on-error: true
+        env:
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_CAPITAL_STRUCTURE_ENDPOINT: ${{ secrets.R2_CAPITAL_STRUCTURE_ENDPOINT }}
+          R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID: ${{ secrets.R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID }}
+          R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY: ${{ secrets.R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY }}
+          R2_CAPITAL_STRUCTURE_BUCKET: ${{ secrets.R2_CAPITAL_STRUCTURE_BUCKET }}
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: python -m scripts.compile_capital_structure_covenant_terms
       - name: gate capital-structure ingestion health (fail closed)
         id: cs_health
         # After both compilers and before projection so the public artifact can

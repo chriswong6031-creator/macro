@@ -758,6 +758,7 @@ def build_health_record(
     compiler_generated_at: str | None,
     queue_receipt: Mapping[str, Any] | None = None,
     horizon: Mapping[str, Any] | None = None,
+    covenant_coverage: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     after = dict(ingestion_run.get("source_high_watermark_after") or {})
     counters = dict(ingestion_run.get("counters") or {})
@@ -806,6 +807,8 @@ def build_health_record(
     }
     if horizon is not None:
         record["horizon"] = dict(horizon)
+    if covenant_coverage is not None:
+        record["covenant_extraction"] = dict(covenant_coverage)
     return record
 
 
@@ -892,6 +895,11 @@ def evaluate_health(root: Path, *, generated_at: str | None = None) -> dict[str,
     compiled_events = (telemetry.get("counts") or {}).get("event_versions")
     if compiled_events is not None:
         compiled_events = int(compiled_events)
+    covenant_path = root / COVENANT_OBSERVATION_FILENAME
+    covenant_failure = _load_json(root / COVENANT_EXTRACTION_FAILURE_FILENAME)
+    covenant_coverage = covenant_extraction_coverage(
+        rows(covenant_path), manifests, failure=covenant_failure,
+    )
     record = build_health_record(
         generated_at=now,
         ingestion_run=ingestion_run,
@@ -900,6 +908,7 @@ def evaluate_health(root: Path, *, generated_at: str | None = None) -> dict[str,
         compiler_generated_at=telemetry.get("as_of"),
         queue_receipt=queue_receipt,
         horizon=horizon,
+        covenant_coverage=covenant_coverage,
     )
     _validate_health(record)
     return record
@@ -939,3 +948,77 @@ def write_health(record: Mapping[str, Any], path: Path) -> None:
 
 def health_exit_code(record: Mapping[str, Any]) -> int:
     return 1 if record.get("verdict") == "fail" else 0
+
+
+# --- Packet B-F09-5: covenant-extraction coverage (context only) ---------
+#
+# Pure, disk-free census of the covenant producer's coverage. D2 extension
+# landed: contracts/capital_structure_ingestion_health.schema.json now carries
+# an optional (not required), additionalProperties:false "covenant_extraction"
+# block, and evaluate_health() wires this census into the emitted health
+# record as that top-level block (never inside `counters`).
+
+COVENANT_OBSERVATION_FILENAME = "covenant_term_observations.parquet"
+
+# Written by scripts/compile_capital_structure_covenant_terms.py's main() ONLY
+# when the producer raised (any exception, source_ledger read errors included)
+# -- so a producer bug is a typed, visible "covenant_extraction: failed" block
+# in the health artifact instead of crashing the daily.yml job before the
+# fail-closed health-gate step even runs (F13 alarm-bus law: a producer bug
+# may never fail the OTHER gate; covenant_extraction itself stays non-gating
+# either way -- see health_exit_code(), which never reads this block).
+COVENANT_EXTRACTION_FAILURE_FILENAME = "covenant_extraction_failure.json"
+
+_COVENANT_EXHIBIT_TYPES = frozenset({"EX-10.1", "EX-10.2", "EX-10.3", "EX-10.4", "EX-10.5"})
+
+
+def covenant_extraction_coverage(
+    observations,
+    manifests,
+    *,
+    failure: Mapping[str, Any] | None = None,
+):
+    """Covered/eligible census for the covenant producer. Context only —
+    never a gate. Wired into evaluate_health()'s emitted health record as
+    the top-level "covenant_extraction" block (see note above). `state` is
+    "uncovered" when there are zero observations: a printed null, never a
+    hidden zero. `state` is "failed" (with a `reason`) instead, taking
+    priority over any stale/partial observations on disk, when the producer
+    itself raised on its last run (see COVENANT_EXTRACTION_FAILURE_FILENAME)
+    -- "uncovered" means "nothing to extract yet", never "the producer
+    crashed"; conflating the two shapes would hide a real bug."""
+    eligible = [
+        m for m in manifests
+        if (m.get("document") or {}).get("document_role") == "exhibit"
+        and (m.get("document") or {}).get("document_type") in _COVENANT_EXHIBIT_TYPES
+    ]
+    if failure is not None:
+        return {
+            "eligible_exhibits": len(eligible),
+            "covered_manifests": 0,
+            "observations": 0,
+            "issuers_covered": 0,
+            "unavailable_terms": 0,
+            "state": "failed",
+            "reason": str(failure.get("reason") or "unknown_producer_error")[:500],
+        }
+    # Observations arrive here as FLAT parquet rows (see
+    # scripts/compile_capital_structure_covenant_terms.py's
+    # COVENANT_OBSERVATION_COLUMNS): "source_manifest_id" and "issuer_id" are
+    # top-level string columns and "state" is the disposition STRING itself —
+    # never the nested library-shaped {"document": {...}, "state": {...}}
+    # object. Reading nested keys here crashed on the first real row
+    # (Blocker 1) and silently hid a zero even when it did not crash.
+    covered_manifest_ids = {
+        o.get("source_manifest_id") for o in observations if o.get("source_manifest_id")
+    }
+    issuers_covered = {o.get("issuer_id") for o in observations if o.get("issuer_id")}
+    unavailable_terms = sum(1 for o in observations if o.get("state") == "unavailable")
+    return {
+        "eligible_exhibits": len(eligible),
+        "covered_manifests": len(covered_manifest_ids),
+        "observations": len(observations),
+        "issuers_covered": len(issuers_covered),
+        "unavailable_terms": unavailable_terms,
+        "state": "covered" if len(observations) > 0 else "uncovered",
+    }
