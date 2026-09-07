@@ -692,6 +692,13 @@ entries:
     section: 3
     section_name: estimator_laws
 
+  - topic: 'Keyed webhook quota-metered public API v0 admission — any proposal for a keyed public API, an outbound webhook, an api_key, a second quota meter, or a keyed endpoint (packet B-F12-5, closes MO-PAID-055/084, MO-DELTA-036/037)'
+    key: LAW-F12-PUBLIC-API-V0-REFUSED
+    verdict: 'No keyed public API, webhook, or API key in v0; admission requires G1-G4 (spec §Admission gate G1-G4) and a new DEC. Gates: G1 contract acceptance, G2 tenancy scope owner (Terminal migration `0014_tenancy_foundation`, charting-app repo — macro''s own DDL ledger tops out at `0008`), G3 per-source redistribution rights, G4 named consumer. See `MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md` §Admission gate G1-G4 and `DEC:F12-PUBLIC-API-V0-ADMISSION-2026-09-06`'
+    source: '`research/market_intelligence_productization/MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md`; `agentos/decisions/DEC-F12-PUBLIC-API-V0-ADMISSION-2026-09-06.md`; Meta-CEO B ruling r3 2026-09-07 (withdraws r2 item 3''s ADMITTED_SCOPED_V0 — the frozen spec''s own REFUSED-IN-V0 text wins)'
+    section: 3
+    section_name: estimator_laws
+
   - topic: 'PSS-RH1 exact SR3 label as an adverse synchronized relief-rally hazard'
     key: HOLD-PSS-RH1-RELIEF-HAZARD
     verdict: 'PROSPECTIVE-ONLY ACCRUAL — lawful use of the SR3 mechanism inversion, but historical SR3 rows count as zero and the 2026-07-24 boundary is absolute. Frozen 799-name membership; one exact configuration; 63-session maturity; no interim effect reads; sole formal read only after ≥500 matured primary paths / ≥250 names / ≥12 action months spanning ≥365d / ≥30 informative strata. No entry, rank, size, gate, alert, user-display, or auto-promotion authority. Even full qualification opens only a separately preregistered intervention review. Do not backfill, retime, tune, expose per-ticker state, or combine historical outcomes with prospective confirmation.'

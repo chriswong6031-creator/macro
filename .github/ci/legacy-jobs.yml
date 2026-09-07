@@ -5220,10 +5220,14 @@ jobs:
       - scripts/ci_semantic_proof.py
       - scripts/check_self_mod_fence.py
       - scripts/worktree_gc.py
+      - agentos/decisions/DEC-F12-PUBLIC-API-V0-ADMISSION-2026-09-06.md
+      - research/market_intelligence_productization/MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv
+      - research/market_intelligence_productization/MARKET_ONTOLOGY_F12_PUBLIC_API_ADMISSION_2026-09-06.md
       - tests/test_agent_worktree_roots.py
       - tests/test_agentos_compile.py
       - tests/test_agentos_schema.py
       - tests/test_agentos_status.py
+      - tests/test_market_ontology_f12_public_api_admission.py
       - tests/test_self_mod_fence.py
       - tests/test_ci_authority.py
       - tests/test_ci_semantic_proof.py
@@ -5346,7 +5350,8 @@ jobs:
           # out would otherwise pass as a skip. This line cannot skip.
           python3 scripts/agentos.py validate
           python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py \
-            tests/test_agentos_compile.py -q
+            tests/test_agentos_compile.py \
+            tests/test_market_ontology_f12_public_api_admission.py -q
 
   capability-broker:
     if: ${{ false }}
