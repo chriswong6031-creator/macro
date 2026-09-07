@@ -175,3 +175,26 @@ def test_dnr_key_cited_in_colon_form():
     for mention in re.findall(r"\bDNR\b[^\n]{0,40}", TEXT):
         assert "DNR:" in mention or mention.strip() == "DNR"
     assert "row 54" not in TEXT
+
+
+def test_f00c_dependency_claim_cites_row_key_and_quotes_it():
+    # Review gap: the blocking-dependency line must name the CSV row by its key
+    # (MO-DELTA-007), not merely a line number, and quote the row's own words
+    # rather than paraphrasing them.
+    assert "row key `MO-DELTA-007`" in TEXT
+    assert (
+        "next_bounded_child` field, quoted verbatim: "
+        '"DEFER — dependency the Thesis-object vertical '
+        '(user claim authoring surface) before Eval OS can score it"'
+        in TEXT
+    )
+    csv_path = ROOT / "research" / "market_intelligence_productization" / \
+        "MARKET_ONTOLOGY_F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv"
+    assert csv_path.exists()
+    csv_text = csv_path.read_text(encoding="utf-8")
+    assert "MO-DELTA-007" in csv_text
+    assert (
+        "DEFER — dependency the Thesis-object vertical (user claim authoring "
+        "surface) before Eval OS can score it"
+        in csv_text
+    ), "quoted next_bounded_child text must match the live CSV row verbatim"

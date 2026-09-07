@@ -115,6 +115,6 @@ Banned in the glance tier: `Brier`, `hit-rate`, any `%`, any p-value, any study 
 
 ## §8 Dependencies, and what this packet does NOT do
 
-- Blocking dependency (from `…F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv:126`): the Thesis-object vertical / user-claim authoring surface. Until it exists there is no producer, no store, and no number.
+- Blocking dependency — row key `MO-DELTA-007` (`…F00C_GRANULAR_CLOSURE_LEDGER_2026-09-02.csv:126`), `next_bounded_child` field, quoted verbatim: "DEFER — dependency the Thesis-object vertical (user claim authoring surface) before Eval OS can score it". Until it exists there is no producer, no store, and no number.
 - Explicitly out of scope here: any engine module, any template, any Supabase table, any nav row, any `site/` artifact.
 - Row state after this packet: MO-DELTA-007 stays `PROJECTION_ONLY` / `learning_only`; the packet closes the **contract** question for the personal ledger and permanently kills the cross-user ranking/leaderboard capability (§4). The non-ranking team-accuracy rollup capability is explicitly DEFERRED, not killed here (§4) — a separate adjudication owns that question.
