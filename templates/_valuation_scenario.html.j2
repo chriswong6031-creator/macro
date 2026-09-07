@@ -31,7 +31,14 @@
 .vs-ruler .vs-price-lbl{position:absolute;top:-14px;transform:translateX(-50%);font-size:9.5px;
   font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap;}
 [data-theme="light"] .vs-ruler .vs-track{background:transparent;border:none;border-bottom:1px solid var(--line);}
-[data-theme="light"] .vs-ruler .vs-mark{border-radius:var(--r-ctl,2px);background:transparent;border:1.5px solid var(--muted);}
+{#- MINOR-3 (review round 3): the light track is a 1px border-bottom on a
+    box whose own top:28px/height:6px puts that hairline at y=34, but the
+    dark-theme mark position (top:16px/height:12px, y 16-28) was left
+    unchanged for light -- the marks floated ~6px above the hairline instead
+    of sitting centred on it. Recentre the light marks (and their hover
+    state) on y=34 instead of copying dark's y=22 centre. -#}
+[data-theme="light"] .vs-ruler .vs-mark{top:28px;border-radius:var(--r-ctl,2px);background:transparent;border:1.5px solid var(--muted);}
+[data-theme="light"] .vs-ruler .vs-mark:hover,[data-theme="light"] .vs-ruler .vs-mark:focus-visible{top:27px;}
 [data-theme="light"] .vs-ruler .vs-mark.m-base{background:var(--link);
   border:1px solid color-mix(in srgb,var(--link) 55%,var(--panel));box-shadow:0 2px 6px -3px color-mix(in srgb,var(--text) 28%,transparent);}
 [data-theme="light"] .vs-ruler .vs-mark.m-upbeat{background:color-mix(in srgb,var(--link) 50%,var(--panel));border-color:var(--text);}
@@ -58,6 +65,14 @@
 .vs-base .v6{font-weight:650;text-align:right;font-variant-numeric:tabular-nums;}
 .vs-base .v6.v6-null{font-weight:500;color:var(--muted);font-variant-numeric:normal;}
 .vs-base .v6 em{display:block;font-style:normal;font-size:10px;font-weight:500;color:var(--muted);margin-top:2px;}
+{#- MINOR-1 (review round 3): this class had no rule at all, so it inherited
+    body-size/--text colour -- the largest, highest-contrast text in the
+    panel, louder than the 12.5px --muted data rows above it. Quieter than
+    those rows and visually separated as its own disclosure line, matching
+    the house footnote weight (templates/ticker.html.j2 .mod-ft) rather than
+    reading as the panel's conclusion. -#}
+.vs-thirdparty-null{margin-top:12px;padding-top:10px;border-top:1px solid var(--hair);
+  font-size:11px;line-height:1.5;color:var(--muted);}
 
 @media(max-width:720px){.vs-cards{grid-template-columns:1fr;}}
 @media(max-width:390px){
@@ -68,14 +83,29 @@
 {% set vscn = valuation_scenario %}
 {% set vs_by_key = {} %}
 {% for s in vscn.scenarios %}{% set _ = vs_by_key.update({s.key: s}) %}{% endfor %}
+{#- Belt-and-braces (review B-F07-1 round 3 MAJOR-1 gate ruling): a
+    non-positive per_share must never be plotted or printed as a value, even
+    though the engine's own gate should already make it unreachable -- treat
+    "computable" as necessary but not sufficient here too. This condition
+    (s.computable and s.per_share is not none and s.per_share > 0) is
+    repeated at every render site below rather than centralised in a Jinja
+    macro, because a macro call in a boolean {% if %}/loop-filter position
+    returns its rendered string output, not a real boolean. -#}
 {% set vs_marks = [] %}
-{% for s in vscn.scenarios if s.computable %}{% set _ = vs_marks.append(s.per_share) %}{% endfor %}
+{% for s in vscn.scenarios if s.computable and s.per_share is not none and s.per_share > 0 %}{% set _ = vs_marks.append(s.per_share) %}{% endfor %}
 {% set vs_price_val = (vscn.price.value if vscn.price else none) %}
 {% if vs_price_val is not none %}{% set _ = vs_marks.append(vs_price_val) %}{% endif %}
 {% set vs_lo = (vs_marks | min) * 0.9 if vs_marks else 0 %}
 {% set vs_hi = (vs_marks | max) * 1.1 if vs_marks else 1 %}
 {% set vs_span = (vs_hi - vs_lo) if (vs_hi - vs_lo) > 0 else 1 %}
 {% macro vs_pct(v) %}{{ (((v - vs_lo) / vs_span) * 100) | round(1) }}{% endmacro %}
+{#- Round-3 gate ruling plain-word null: a scenario gated by margin_too_thin
+    gets its own honest sentence naming the scenario, never the generic
+    "Can't be computed without <slug>" phrasing (that phrasing fits a missing
+    reported input, not a reported-but-too-thin margin). -#}
+{% set vs_key_zh = {'cautious': '保守', 'base': '基准', 'upbeat': '乐观'} %}
+{% macro vs_null_en(s) %}{% if 'margin_too_thin' in s.missing %}Margins are too thin to run the {{ s.key }} case{% else %}Can't be computed without {{ s.missing_plain[0].en if s.missing_plain else 'a reported input' }}{% endif %}{% endmacro %}
+{% macro vs_null_zh(s) %}{% if 'margin_too_thin' in s.missing %}利润率过低，无法计算{{ vs_key_zh[s.key] }}情景{% else %}缺少{{ s.missing_plain[0].zh if s.missing_plain else '一项披露数据' }}，无法计算{% endif %}{% endmacro %}
 <section class="mod rv" id="valuation-scenario" data-valuation-scenario="v1">
   <div class="mod-hd">
     <h2>{{ t('What could it be worth?', '可能值多少？') }}</h2>
@@ -96,7 +126,7 @@
     {% set gap_positions = {'cautious': 20, 'base': 50, 'upbeat': 80} %}
     {% for s in vscn.scenarios %}
       {% set names = {'cautious': (t('Cautious','保守')), 'base': (t('Base','基准')), 'upbeat': (t('Upbeat','乐观'))} %}
-      {% if s.computable %}
+      {% if s.computable and s.per_share is not none and s.per_share > 0 %}
       <div class="vs-mark m-{{ s.key }}" style="left:{{ vs_pct(s.per_share) }}%" tabindex="0"></div>
       <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ vs_pct(s.per_share) }}%">{{ names[s.key] }}<b>${{ '%.0f'|format(s.per_share) }}</b></div>
       {% else %}
@@ -105,7 +135,7 @@
           mark on one dead-centre pixel (and, when nothing is computable, atop
           the price rule too) rendered as one unlabeled blob, not three
           printed nulls. -#}
-      <div class="vs-mark m-gap" style="left:{{ gap_positions[s.key] }}%" tabindex="0" aria-label="Can't be computed without {{ s.missing_plain[0].en if s.missing_plain else 'a reported input' }}"></div>
+      <div class="vs-mark m-gap" style="left:{{ gap_positions[s.key] }}%" tabindex="0" aria-label="{{ vs_null_en(s) }}"></div>
       <div class="vs-lbl {{ 'below' if loop.index0 is odd else '' }}" style="left:{{ gap_positions[s.key] }}%">{{ names[s.key] }}<b>{{ t('No data','无数据') }}</b></div>
       {% endif %}
     {% endfor %}
@@ -125,10 +155,10 @@
       {% set s = vs_by_key[key] %}
       <div class="vs-card">
         <div class="vk">{{ label }}</div>
-        {% if s.computable %}
+        {% if s.computable and s.per_share is not none and s.per_share > 0 %}
         <div class="vv num">${{ '%.2f'|format(s.per_share) }}</div>
         {% else %}
-        <div class="vv vv-null">{{ t("Can't be computed without " ~ (s.missing_plain[0].en if s.missing_plain else 'a reported input'), '缺少' ~ (s.missing_plain[0].zh if s.missing_plain else '一项披露数据') ~ '，无法计算') }}</div>
+        <div class="vv vv-null">{{ t(vs_null_en(s), vs_null_zh(s)) }}</div>
         {% endif %}
         <div class="va">
           {% if key == 'cautious' %}{{ t('Sales fall 2% next year, margins narrow, valued at 14× the resulting earnings.', '销售明年下滑2%，利润率收窄，按14倍计算后的净利润估值。') }}
@@ -139,13 +169,17 @@
             see the story but not which single input moved the number. Name
             each changed assumption vs base explicitly and show the per-share
             bridge from the base case to this case. -#}
-        {% if key != 'base' and s.computable and vs_by_key['base'].computable %}
+        {% if key != 'base' and s.computable and s.per_share is not none and s.per_share > 0
+              and vs_by_key['base'].computable and vs_by_key['base'].per_share is not none and vs_by_key['base'].per_share > 0 %}
         {% set b0 = vs_by_key['base'] %}
         {% set dg = s.assumptions.sales_growth_pct - b0.assumptions.sales_growth_pct %}
         {% set dm = s.assumptions.margin_delta_pp - b0.assumptions.margin_delta_pp %}
         {% set dx = s.assumptions.earnings_multiple - b0.assumptions.earnings_multiple %}
         {% set dpct = (((s.per_share - b0.per_share) / b0.per_share) * 100) | round(1) %}
-        <div class="va vs-bridge">{{ t('Vs base: growth ' ~ ('%+d'|format(dg)) ~ 'pp, margin ' ~ ('%+.1f'|format(dm)) ~ 'pp, multiple ' ~ ('%+d'|format(dx)) ~ 'x -- $' ~ ('%.2f'|format(b0.per_share)) ~ ' to $' ~ ('%.2f'|format(s.per_share)) ~ ' (' ~ ('%+.1f'|format(dpct)) ~ '%).', '相对基准：增速' ~ ('%+d'|format(dg)) ~ '个百分点，利润率' ~ ('%+.1f'|format(dm)) ~ '个百分点，倍数' ~ ('%+d'|format(dx)) ~ '倍 -- $' ~ ('%.2f'|format(b0.per_share)) ~ ' 变为 $' ~ ('%.2f'|format(s.per_share)) ~ '（' ~ ('%+.1f'|format(dpct)) ~ '%）。') }}</div>
+        {#- MINOR-2 (review round 3): a literal ASCII "--" here was a
+            typography defect and an EN/ZH parity break (the ZH string
+            already used a proper "——"). Both now use a real dash. -#}
+        <div class="va vs-bridge">{{ t('Vs base: growth ' ~ ('%+d'|format(dg)) ~ 'pp, margin ' ~ ('%+.1f'|format(dm)) ~ 'pp, multiple ' ~ ('%+d'|format(dx)) ~ 'x — $' ~ ('%.2f'|format(b0.per_share)) ~ ' to $' ~ ('%.2f'|format(s.per_share)) ~ ' (' ~ ('%+.1f'|format(dpct)) ~ '%).', '相对基准：增速' ~ ('%+d'|format(dg)) ~ '个百分点，利润率' ~ ('%+.1f'|format(dm)) ~ '个百分点，倍数' ~ ('%+d'|format(dx)) ~ '倍——$' ~ ('%.2f'|format(b0.per_share)) ~ ' 变为 $' ~ ('%.2f'|format(s.per_share)) ~ '（' ~ ('%+.1f'|format(dpct)) ~ '%）。') }}</div>
         {% endif %}
       </div>
     {% endfor %}
@@ -165,7 +199,7 @@
       {% if b.net_debt.reported %}<span class="v6 num">{% if b.net_debt.sign == 'net_cash' %}{{ t('Net cash','净现金') }} ${{ '%.1f'|format((-b.net_debt.value) / 1e9) }}B{% else %}{{ t('Net debt','净负债') }} ${{ '%.1f'|format(b.net_debt.value / 1e9) }}B{% endif %}</span>{% else %}<span class="v6 v6-null">{{ t('not reported','未披露') }}</span>{% endif %}</div>
   </div>
 
-  <div class="vs-thirdparty-null" data-vs-thirdparty-null="1">{{ t("This app does not license Wall Street's outside stock-picking research, so that layer is left empty here -- shown honestly as missing, not filled in with a guess.", '本应用未购买华尔街第三方研究机构的选股研究授权，因此这一层留空——如实标注为缺失，而不是用猜测填补。') }}</div>
+  <div class="vs-thirdparty-null" data-vs-thirdparty-null="1">{{ t("This app does not license Wall Street's outside stock-picking research, so that layer is left empty here — shown honestly as missing, not filled in with a guess.", '本应用未购买华尔街第三方研究机构的选股研究授权，因此这一层留空——如实标注为缺失，而不是用猜测填补。') }}</div>
   <div class="mod-ft">{{ t('Research display only — not advice.', '仅供研究展示，非投资建议。') }}</div>
 </section>
 {% endif %}

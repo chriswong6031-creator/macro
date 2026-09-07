@@ -17,10 +17,27 @@ fact (informational), never applied inside the scenario math, matching the
 plain-language assumption text shown on every card ("valued at N x
 earnings" never mentions a debt bridge).
 
-net_margin_base = net_income / revenue for the SAME fiscal row, floored at 1%:
-a smaller reported margin is treated as an unusable base (missing), never as
-a denominator, because margin_delta_pp/net_margin_base blows up for a
-thin-margin issuer (review round 2 MINOR-2).
+net_margin_base = net_income / revenue for the SAME fiscal row. Two separate
+guards apply to it (review round 3 MAJOR-1 corrected the first version of
+this, which only had the second guard and left a live defect at 1.0-1.5%
+margins):
+
+  1. A 1% floor is an additional sanity floor, NOT the computability gate: a
+     margin base below 1% in magnitude is treated as an unusable base
+     (missing), never as a denominator, because margin_delta_pp/net_margin_base
+     blows up for a thin-margin issuer (review round 2 MINOR-2).
+  2. The real gate is PER SCENARIO: a scenario is computable only when its own
+     adjusted-income factor is strictly positive, i.e.
+     net_margin_base + margin_delta_pp/100 > 0 for THAT scenario. A margin
+     base can clear the 1% floor above and still be too thin for a specific
+     scenario's own delta -- e.g. a 1.2% margin base clears the floor, but
+     Cautious's -1.5pp delta still drives 0.012 + (-1.5/100) = -0.003 <= 0, so
+     Cautious alone is gated out (reason "margin_too_thin") while Base and
+     Upbeat, whose deltas do not push the factor non-positive, still render.
+     Round 2's fix gated only on the 1% floor (guard 1), which left every
+     margin in [1.0%, 1.5%) still producing a negative per_share for
+     Cautious -- caught by review round 3 running the module directly at
+     margin=1.2%.
 
 net_debt = debt_lt + debt_cur - cash, computed ONLY when all three legs are
 reported (None otherwise). This is deliberately stricter than the shared
@@ -59,6 +76,7 @@ MISSING_LABELS = {
     "net_income": ("reported net income", "披露的净利润"),
     "revenue": ("reported revenue", "披露的营业收入"),
     "net_margin_base": ("a usable margin base", "可计算的利润率基数"),
+    "margin_too_thin": ("a margin base wide enough for this case", "利润率基数不足以支撑该情景"),
     "net_debt": ("reported net cash or debt", "披露的净现金或净负债"),
     "share_count": ("a reported share count", "披露的股数"),
     "positive reported earnings": ("positive reported earnings", "为正数的披露净利润"),
@@ -136,12 +154,10 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
         ),
     }
 
-    # MINOR-2 (review round 2): a margin base near zero is a reported number
-    # but not a usable denominator -- margin_delta_pp/net_margin_base blows up
-    # for a thin-margin issuer (e.g. 0.1% margin makes the Cautious factor
-    # 1 + (-1.5/0.1) = -14, printing a negative per-share as a computed
-    # value). Below this floor the margin base is treated the same as an
-    # unreported one: it gates computability rather than producing a number.
+    # Guard 1 (review round 2 MINOR-2): a margin base near zero is a reported
+    # number but not a usable denominator at all -- additional sanity floor,
+    # NOT the computability gate (see module docstring). Below this floor the
+    # margin base is treated the same as an unreported one for every scenario.
     _MARGIN_BASE_FLOOR = 0.01  # 1% -- well under AAPL-scale margins (~24%)
     net_margin_base = None
     if net_income is not None and revenue not in (None, 0):
@@ -166,6 +182,16 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
         if net_income is not None and net_income <= 0:
             missing.append("positive reported earnings")
 
+        # Guard 2 -- the real gate (review round 3 MAJOR-1): a scenario is
+        # computable only when its OWN adjusted-income factor is strictly
+        # positive, i.e. net_margin_base + margin_delta_pp/100 > 0 for THIS
+        # scenario. Evaluated per scenario, never globally, so a margin base
+        # that clears guard 1 above but is still too thin for one scenario's
+        # own delta (e.g. 1.2% margin, Cautious's -1.5pp) gates only that
+        # scenario -- the others still render.
+        if net_margin_base is not None and (net_margin_base + (m_pp / 100.0)) <= 0:
+            missing.append("margin_too_thin")
+
         seen: set = set()
         missing = [m for m in missing if not (m in seen or seen.add(m))]
 
@@ -173,8 +199,18 @@ def compute(rows: list[dict], price: float | None = None, asof: str | None = Non
         per_share = None
         if computable:
             adj_income = net_income * (1 + g / 100.0) * (1 + (m_pp / 100.0) / net_margin_base)
-            per_share = round((adj_income * mult) / shares, 2)
-            any_computable = True
+            computed = round((adj_income * mult) / shares, 2)
+            # Belt-and-braces (review round 3): the gate above should make a
+            # non-positive per_share unreachable, but never surface one as a
+            # computed value regardless -- fall back to the same
+            # margin_too_thin null instead of a computed non-positive number.
+            if computed > 0:
+                per_share = computed
+                any_computable = True
+            else:
+                computable = False
+                if "margin_too_thin" not in missing:
+                    missing.append("margin_too_thin")
 
         missing_plain = [
             {"en": MISSING_LABELS.get(m, (m, m))[0], "zh": MISSING_LABELS.get(m, (m, m))[1]}

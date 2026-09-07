@@ -2480,11 +2480,14 @@ def _deep_valuation_scenario(blob: dict | None) -> dict | None:
         # honestly (base kv row's "identity" field). This formula description
         # must match what the panel actually does, not what a future producer
         # change might someday supply.
+        # MINOR-4 (review round 3): "adj." was an abbreviation in user-facing
+        # dialog copy (same class as round-2 MINOR-3, which forced N/A -> No
+        # data); spelled out.
         {"k_en": "Formula", "k_zh": "计算公式",
-         "v": "", "v_en": "adj. net income x earnings multiple / share count (as reported)",
+         "v": "", "v_en": "adjusted net income x earnings multiple / share count (as reported)",
          "v_zh": "调整后净利润 x 市盈率倍数 / 披露股数"},
         {"k_en": "Net debt / cash", "k_zh": "净负债／净现金",
-         "v": "", "v_en": "Shown as a reported fact only -- not applied to the per-share math "
+         "v": "", "v_en": "Shown as a reported fact only — not applied to the per-share math "
                           "(a P/E multiple already yields equity value)",
          "v_zh": "仅作为披露事实展示，不参与每股计算（市盈率倍数本身已是股权价值）"},
     ]

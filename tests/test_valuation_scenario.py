@@ -124,6 +124,54 @@ def test_tiny_margin_base_is_not_computable():
         assert s["per_share"] > 0
 
 
+def test_margin_1_2_percent_gates_cautious_only():
+    """MAJOR-1 (review round 3): round 2's MINOR-2 fix floored net_margin_base
+    at 1%, but that floor alone left every margin in [1.0%, 1.5%) still
+    producing a NEGATIVE per_share for Cautious -- e.g. at margin=1.2%
+    (0.012), Cautious's factor is 1 + (-1.5/100)/0.012 = 1 + (-0.015/0.012),
+    which is still negative, so `computable=True` with `per_share=-4.12` on
+    the pre-fix module (confirmed by running it directly). The real gate is
+    PER SCENARIO: computable only when net_margin_base + margin_delta_pp/100
+    is strictly positive for THAT scenario. At margin=1.2%:
+      cautious (m_pp=-1.5): 0.012 + (-0.015) = -0.003 <= 0 -> NOT computable
+      base     (m_pp=0.0):  0.012 + 0.0      =  0.012 >  0 -> computable
+      upbeat   (m_pp=+1.5): 0.012 + 0.015    =  0.027 >  0 -> computable
+    Other scenarios must still render even though Cautious is gated -- this
+    is a per-scenario gate, not a global one."""
+    revenue = 1.0e11
+    ni_1_2_pct = revenue * 0.012
+    blob = vs.compute(_rows(ni=ni_1_2_pct, revenue=revenue), ticker="TEST")
+    by_key = {s["key"]: s for s in blob["scenarios"]}
+
+    cautious = by_key["cautious"]
+    assert cautious["computable"] is False
+    assert cautious["per_share"] is None
+    assert "margin_too_thin" in cautious["missing"]
+    # And NOT gated by the (different, global) net_margin_base-missing
+    # reason -- the margin base itself is available at this magnitude, it is
+    # only too thin for Cautious's own delta.
+    assert "net_margin_base" not in cautious["missing"]
+
+    for key in ("base", "upbeat"):
+        s = by_key[key]
+        assert s["computable"] is True, (key, s)
+        assert s["per_share"] is not None
+        assert s["per_share"] > 0
+        assert "margin_too_thin" not in s["missing"]
+
+    # Belt-and-braces: the rendered HTML contains no bare "$-" (a negative
+    # dollar figure) anywhere -- the non-computable Cautious card must never
+    # leak a computed negative value.
+    import jinja2
+
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(ROOT / "templates")))
+    env.globals["t"] = lambda en, zh: en
+    tmpl = env.from_string("{% include '_valuation_scenario.html.j2' %}")
+    html = tmpl.render(valuation_scenario=blob, deep_ids=[])
+    assert "$-" not in html
+    assert "Margins are too thin to run the cautious case" in html
+
+
 def test_fixture_keys_are_real_statement_columns():
     """Review B-F07-1 BLOCKER B1: engine/valuation_scenario.py previously read
     latest.get("net_income"), a key that does not exist anywhere in the real
