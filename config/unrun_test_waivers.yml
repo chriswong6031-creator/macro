@@ -90,3 +90,15 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+
+tests/test_market_ontology_f06_scope.py: >-
+  Packet B-F06-2 (records-only): pins the F06 scope-freeze doc (the no-ranker
+  ceiling for MO-DELTA-002 and the 8-panel display-only B1B cockpit map for
+  MO-PAID-021) against
+  research/market_intelligence_productization/MARKET_ONTOLOGY_F06_SCREENER_AND_COCKPIT_SCOPE_2026-09-06.md.
+  Not wired into .github/ci/legacy-jobs.yml because that file is a global CI
+  invalidator (full 194-job suite, a ci-authority hit) and this suite only reads
+  one static research/market_intelligence_productization markdown file — no
+  engine or signal-contract path. Owner: Meta-CEO B, lane F06. Adopted by a
+  market-ontology-records CI job when one is commissioned (Meta-CEO B,
+  B-PLAT-5); delete this row then.
