@@ -90,3 +90,11 @@ tests/test_pr_linkage_hostile_regressions.py: >-
   MAS-28 report-only W1 hostile-regression suite. Owner WS:AGENT-OS / MAS-28. W0
   forbids adding an enforcement or workflow runner for this analyzer. Delete when a
   separately authorized lawful nonblocking runner names this suite, or the suite is deleted.
+
+tests/test_market_ontology_f13_accuracy_ledger_spec.py: >-
+  Records-only spec-freeze suite for packet B-F13-4 (MO-DELTA-007 personal accuracy
+  ledger spec, F13-OPS-LEARNING). Wiring it into a legacy-jobs.yml signal-contract step
+  is a global CI invalidator (full 194-job suite) and a ci-authority hit for a suite
+  that only reads one markdown file. Owner: Meta-CEO B, lane F13. Adopted by the
+  market-ontology-records CI job when it is commissioned (Meta-CEO B, B-PLAT-5);
+  delete this row then.

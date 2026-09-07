@@ -150,6 +150,7 @@ F02 owner-resolution memo (006/034 carry explicit owner-unresolved flags).
 
 ## Program-level items surfaced upward (updated by the same ruling)
 
+- **MO-DELTA-007 contract question — CLOSED** by `MARKET_ONTOLOGY_F13_PERSONAL_ACCURACY_LEDGER_SPEC_2026-09-06.md` (packet B-F13-4): freezes the personal accuracy ledger's data contract, scoring, honest-N rule, and use ceiling. The capability itself stays blocked on the F11 Thesis-object vertical named above (row `next_bounded_child`); row state unchanged at `PROJECTION_ONLY` / `learning_only`.
 - **MO-PAID-020 — RULED**: the row belongs to WS:MARKET-OS/F06; Stock Identity/Data OS
   are owner DEPENDENCIES, not child write authority. A single bounded renderer/CIK-access
   repair may be admitted only after a fresh collision census and remains
