@@ -822,3 +822,152 @@ def test_naive_now_from_temporal_utc_still_raises_through_build():
             receipts={"x": [{"readable": True, "last_attempted": FRESH}]},
             now=datetime(2026, 9, 4, 12, 0, 0),
         )
+
+
+# ---------------------------------------------------------------------------
+# ROUND-6 repair (2026-09-06 independent review, MAJOR-1): the round-5 stale_series
+# join had no recovery path. `collectors/base.py`'s `_write_stale_series` merges by
+# (group, series) and never prunes a recovered series — `detect_stale_series` only
+# ever RETURNS still-frozen rows, so a series that recovers simply stops being
+# written and its row (with its now-stale `detected_at`) sits unpruned forever. RED
+# before this repair: one frozen-tail detection in group `fred` forced
+# `market_reference` to `stale` on EVERY subsequent run, even once the series
+# recovered and every run read `status=ok` with a fresh success clock.
+# ---------------------------------------------------------------------------
+
+def test_round6_stale_series_recency_gate_lets_a_recovered_series_read_healthy(tmp_path):
+    """The motivating exemplar: a stale_series row detected long ago (OLD, ~34 days
+    before NOW — far past the recency window) whose series has since recovered (fresh
+    status=ok/checked_at) must no longer force `stale` — the row's silence since OLD is
+    evidence of recovery, since a STILL-frozen series would have been re-detected (and
+    its detected_at refreshed) on every one of the nightly runs since."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[{
+            "group": "fred", "series": "CPIAUCSL", "last_obs": "2025-11-01",
+            "cadence_days": 30, "age_days": 308, "detected_at": OLD,
+        }],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"], now=NOW)["fred"]
+    assert fact.get("state") is None, (
+        "an un-refreshed stale_series row older than the recency window must stop "
+        "forcing stale once the series has had time to recover"
+    )
+    assert "state_detail" not in fact
+
+    cap = _lane_cap("market_reference_repro", "fred")
+    view = CH.resolve_capability_health(
+        capabilities=[cap], receipts={"market_reference_repro": [fact]}, now=NOW,
+    )
+    rec = view["capabilities"][0]
+    assert rec["state"] == CH.STATE_HEALTHY, (
+        "a recovered series must be able to read healthy again, not be poisoned "
+        "forever by one historical detection"
+    )
+
+
+def test_round6_stale_series_recency_gate_still_forces_stale_when_recently_detected(tmp_path):
+    """The recency gate discounts only a row that has gone SILENT — a row detected
+    recently (the series is STILL being re-flagged run after run) must keep forcing
+    stale even though `now` is now supplied to the join. This is the round-5 behavior,
+    unchanged for the still-frozen case."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[{
+            "group": "fred", "series": "CPIAUCSL", "last_obs": "2025-11-01",
+            "cadence_days": 30, "age_days": 308, "detected_at": FRESH,
+        }],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"], now=NOW)["fred"]
+    assert fact.get("state") == CH.STATE_STALE
+    assert "CPIAUCSL" in fact.get("state_detail", "")
+    assert "308" in fact.get("state_detail", "")
+
+
+def test_round6_stale_series_recency_gate_treats_missing_detected_at_as_fresh_fail_safe(tmp_path):
+    """Fail-safe AMBIGUOUS, not fail-open: a row with no `detected_at` at all (or an
+    unparseable one) must still force stale when `now` is supplied — only a row that
+    POSITIVELY proves its own staleness may ever be discounted, matching the existing
+    round-5 precedent that messy detail fields never cause a silent drop."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[{"group": "fred", "series": "CPIAUCSL", "age_days": 308}],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"], now=NOW)["fred"]
+    assert fact.get("state") == CH.STATE_STALE, (
+        "a row with no detected_at must be treated as fresh (ambiguous, not proven "
+        "stale) and still force the state"
+    )
+
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[{
+            "group": "fred", "series": "CPIAUCSL", "age_days": 308,
+            "detected_at": "not-a-timestamp",
+        }],
+    )
+    fact2 = BUILD.nightly_lane_facts(tmp_path, ["fred"], now=NOW)["fred"]
+    assert fact2.get("state") == CH.STATE_STALE, (
+        "an unparseable detected_at must likewise be treated as fresh, not dropped"
+    )
+
+
+def test_round6_stale_series_recency_gate_is_opt_in_via_now_backward_compatible(tmp_path):
+    """Every pre-existing call site in this suite calls `nightly_lane_facts` without a
+    `now` — production's own entry point (`gather_receipts`) always supplies one, but a
+    caller that omits it must keep the prior fail-closed behavior (any matching row
+    forces stale regardless of age) rather than silently changing meaning underneath
+    an untouched call site."""
+    _write_run_status(
+        tmp_path,
+        {"fred": {"status": "ok", "checked_at": FRESH, "last_date": "2028-01-01"}},
+        stale_series=[{
+            "group": "fred", "series": "CPIAUCSL", "last_obs": "2025-11-01",
+            "cadence_days": 30, "age_days": 308, "detected_at": OLD,
+        }],
+    )
+    fact = BUILD.nightly_lane_facts(tmp_path, ["fred"])["fred"]  # no now= supplied
+    assert fact.get("state") == CH.STATE_STALE, (
+        "omitting now= must preserve the prior behavior: an OLD detected_at still "
+        "forces stale when no clock is supplied to gate on"
+    )
+
+
+# ---------------------------------------------------------------------------
+# ROUND-6 repair (2026-09-06 independent review, MAJOR-2): the binding ruling's
+# acceptance item — "every user-facing label/next-action in
+# config/capability_health.yml is plain words EN/ZH" — verified directly against the
+# SHIPPED registry, not a hand-built fixture. RED before this repair:
+# prophet_us.next_action_hint named nightly-liveness.yml/site/prophet/index.json/
+# scripts/prophet_rescue.py verbatim; stock_dossiers.label_en carried the raw slug
+# "(R2 stockdata)" and its next_action_hint named could_not_look/mag7-regime-site/
+# stock-personality-block/publish_r2; chronicle.next_action_hint named daily.yml/
+# scripts/build_chronicle.py/"rc != 0" verbatim.
+# ---------------------------------------------------------------------------
+
+_PLAIN_LANGUAGE_FORBIDDEN_SUBSTRINGS = (
+    ".py", ".yml", ".jsonl", "site/", "data/run_status", "scripts/",
+    "could_not_look", "DARK", "PARTIAL", "rc != 0", "R2 stockdata",
+    "mag7-regime-site", "stock-personality-block", "publish_r2",
+    "nightly-liveness", "prophet_rescue", "source_asof",
+    "collect/engine", "build_foresight", "build_chronicle",
+)
+
+
+def test_round6_shipped_registry_user_facing_strings_are_plain_language():
+    doc = yaml.safe_load(
+        (REPO / "config" / "capability_health.yml").read_text(encoding="utf-8")
+    )
+    caps = doc["capabilities"]
+    assert caps, "expected at least one capability in the shipped registry"
+    for cap in caps:
+        for field in ("label_en", "label_zh", "next_action_hint", "next_action_hint_zh"):
+            text = cap.get(field) or ""
+            for bad in _PLAIN_LANGUAGE_FORBIDDEN_SUBSTRINGS:
+                assert bad not in text, (
+                    f"{cap['id']}.{field} contains raw internal text {bad!r}: {text!r}"
+                )

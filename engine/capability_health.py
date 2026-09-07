@@ -89,6 +89,15 @@ THE JOIN PATTERN, EXTENDED FROM output_health.py
   series — the ABSENCE of a matching row, combined with a healthy ``status``, is what
   actually composes to "healthy": the owning collector's own staleness detector found
   nothing wrong on EITHER axis it knows how to check, not a silent skip of the data axis.
+  This composition law depends on the ADAPTER never handing this module a row that is
+  itself stale evidence — the writer (``collectors/base.py``) merges by (group, series)
+  and never prunes a recovered series, so without a recovery path a single historical
+  detection would compose to "stale" forever even after the series recovers. Repair
+  round-6 (2026-09-06, MAJOR-1) closes that gap entirely in the adapter:
+  ``scripts/build_capability_health.py``'s ``nightly_lane_facts`` discounts a matching
+  row once its own ``detected_at`` has aged past a recency window, so "absence of a
+  matching row" now includes "the only matching row is itself stale" — this module still
+  never re-derives anything, it only ever folds what the adapter hands it.
 * Dependency propagation is an UPPER BOUND, never an exact re-derivation and never a
   failover: a capability whose declared ``depends_on`` entry is not healthy is capped at
   ``degraded`` (never silently healed back to ``healthy`` by a fallback receipt, and

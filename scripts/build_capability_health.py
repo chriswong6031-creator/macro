@@ -96,6 +96,25 @@ RECEIPT SOURCES, PER TYPE
     ``series``/``age_days``/``last_obs`` fields still forces the stale state — the JOIN
     (the group match) is what matters, and a row with messy detail fields must never
     silently read as though it had never matched at all.
+
+    ROUND-6 REPAIR (this repair, MAJOR-1, independent review): round-5's join above had
+    no recovery path. ``_write_stale_series`` merges by ``(group, series)`` and never
+    PRUNES an entry — ``detect_stale_series`` only ever returns still-frozen rows, so a
+    series that recovers simply stops being written, and its stale row (with its now-
+    stale ``detected_at``) sits in ``run_status.json`` unpruned. Measured consequence:
+    one frozen-tail detection in group ``fred`` would previously force
+    ``market_reference`` to ``stale`` on every subsequent run FOREVER, even once the
+    series recovers and every run reads ``status=ok`` with a fresh success clock — the
+    "absence of a matching row IS healthy" composition law two paragraphs up was true
+    only for a group that had never yet tripped the detector. :func:`nightly_lane_facts`
+    now accepts an optional ``now`` and, when supplied (as :func:`gather_receipts` always
+    does), discounts a matching row via :func:`_stale_series_is_fresh` before joining it:
+    a row whose ``detected_at`` has not been refreshed within
+    ``_STALE_SERIES_RECENCY_HOURS`` no longer forces stale, because on this nightly
+    cadence a STILL-frozen series would have been re-detected (and its ``detected_at``
+    refreshed) again by now. The direction stays fail-closed: an ambiguous (missing or
+    unparseable) ``detected_at`` is still treated as fresh, so only a row that positively
+    demonstrates its own staleness is ever discounted.
 ``provider_rung`` / ``sentinel_probe``
     Declared in the closed receipt-source vocabulary and accepted by registry
     validation, but NOT wired to a live fetch in this V1 build: none of the seed cohort's
@@ -131,7 +150,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -311,6 +330,52 @@ def _stale_series_index(doc: Any) -> dict[str, list[dict[str, Any]]]:
     return index
 
 
+#: ROUND-6 repair (this repair, MAJOR-1): how long a ``stale_series`` row's own
+#: ``detected_at`` may age before the join below stops trusting it as CURRENT evidence.
+#: ``collectors/base.py``'s ``_write_stale_series`` merges by ``(group, series)`` and
+#: never prunes an entry once the series recovers — ``detect_stale_series`` only ever
+#: RETURNS still-frozen rows, so a recovered series simply stops appearing in the
+#: writer's input and its old row (and old ``detected_at``) is left behind forever. On
+#: the nightly cadence this build runs on, a series that is STILL frozen gets its row
+#: re-detected and its ``detected_at`` refreshed every single run; a series that has
+#: recovered gets no such refresh. Two missed/skipped nightly runs (48h) is a generous
+#: allowance before a row's silence is trusted as "the series recovered" rather than
+#: "still frozen, just not re-checked yet" — well past the daily cadence, short of the
+#: weeks/months a real sticky-stale row (measured: 308 days) sits unpruned.
+_STALE_SERIES_RECENCY_HOURS = 48
+
+
+def _stale_series_is_fresh(row: Mapping[str, Any], *, now: datetime) -> bool:
+    """Has *row* been re-detected recently enough to still count as live evidence?
+
+    ROUND-6 repair (MAJOR-1): without this gate, ONE frozen-tail detection poisons a
+    group's ``market_reference`` verdict to ``stale`` FOREVER, even after the series
+    recovers and every subsequent run reads ``status=ok`` with a fresh success clock —
+    ``_write_stale_series`` (collectors/base.py) never prunes a recovered series, it only
+    ever updates ``detected_at`` on a row that is detected AGAIN. A row whose
+    ``detected_at`` has aged past :data:`_STALE_SERIES_RECENCY_HOURS` therefore means the
+    series has not been re-flagged in that long — on this nightly cadence, evidence the
+    series recovered, not that it is still frozen.
+
+    A missing or unparseable ``detected_at`` is fail-safe AMBIGUOUS, not fail-open: it is
+    treated as fresh (still forces stale), matching the existing precedent (round-5, item
+    1) that a matching row with messy detail fields still forces the state rather than
+    being silently dropped — only a row that POSITIVELY proves its own staleness may be
+    discounted.
+    """
+    detected_at = row.get("detected_at")
+    if not isinstance(detected_at, str) or not detected_at:
+        return True
+    try:
+        parsed = datetime.fromisoformat(detected_at)
+    except ValueError:
+        return True
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    age_hours = (now - parsed).total_seconds() / 3600.0
+    return age_hours <= _STALE_SERIES_RECENCY_HOURS
+
+
 def _stale_series_detail(ref: str, rows: list[dict[str, Any]]) -> str:
     """One evidence-detail string naming every ``stale_series`` row joined onto *ref*.
 
@@ -336,8 +401,19 @@ def _stale_series_detail(ref: str, rows: list[dict[str, Any]]) -> str:
     return f"frozen-tail (stale_series) for {ref}: " + ", ".join(parts)
 
 
-def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[str, Any]]:
+def nightly_lane_facts(
+    receipts_root: Path, refs: list[str], *, now: datetime | None = None,
+) -> dict[str, dict[str, Any]]:
     """One fact per requested ``nightly_lane`` ref, from ``data/run_status.json``.
+
+    ``now`` (ROUND-6 repair, MAJOR-1): when supplied, gates the ``stale_series`` join
+    below by :func:`_stale_series_is_fresh` so a recovered series can stop forcing
+    ``stale`` once its row has aged out (see that function's docstring and
+    ``_STALE_SERIES_RECENCY_HOURS``). ``None`` (the default, kept for every pre-existing
+    caller that never supplied a clock — this adapter's own production entry point,
+    :func:`gather_receipts`, always passes one) skips the recency gate entirely and
+    preserves the prior fail-closed behavior: any matching row forces stale regardless
+    of age.
 
     See the module docstring's status-mapping table (repair findings C1/I5): ``ok`` is
     the only status that ever supplies ``last_successful``; ``failed``/``dead`` supply
@@ -460,6 +536,8 @@ def nightly_lane_facts(receipts_root: Path, refs: list[str]) -> dict[str, dict[s
         # `status` alone cannot tell apart from a genuinely frozen sibling series.
         if status in (_STATUS_OK, _STATUS_STALE):
             stale_rows = stale_index.get(ref)
+            if stale_rows and now is not None:
+                stale_rows = [r for r in stale_rows if _stale_series_is_fresh(r, now=now)]
             if stale_rows:
                 fact["state"] = STATE_STALE
                 fact["state_detail"] = _stale_series_detail(ref, stale_rows)
@@ -490,7 +568,7 @@ def gather_receipts(
                 lane_refs.append(ref)
 
     oh_facts = output_health_facts(root, oh_refs, now=now)
-    lane_facts = nightly_lane_facts(receipts_root, lane_refs)
+    lane_facts = nightly_lane_facts(receipts_root, lane_refs, now=now)
 
     receipts: dict[str, list[dict[str, Any] | None]] = {}
     for cap in capabilities:
