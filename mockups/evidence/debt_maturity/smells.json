@@ -1,6 +1,6 @@
 {
   "disclaimer": "Heuristics identify review targets; they do not determine that a page is bad.",
-  "generated_at": "2026-09-06T00:00:00Z",
+  "generated_at": "2026-09-07T01:00:28Z",
   "metric_notes": {
     "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
@@ -19,18 +19,18 @@
         "asof_present": true,
         "by_viewport": {
           "desktop": {
-            "document_height_px": 5299,
+            "document_height_px": 5251,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           },
           "mobile": {
-            "document_height_px": 8350,
+            "document_height_px": 8301,
             "elements_wider_than_viewport": 0,
             "horizontal_overflow": false
           }
         },
         "console_error_count": 2,
-        "document_height_px": 5299,
+        "document_height_px": 5251,
         "duplicate_heading_texts": [],
         "elements_wider_than_viewport": 0,
         "heading_counts": {
@@ -46,11 +46,11 @@
         "measured_in": {
           "access": "anonymous",
           "locale": "en",
-          "theme": "light",
+          "theme": "dark",
           "viewport": "desktop"
         },
         "panel_count": 5,
-        "payload_bytes_total": 159709,
+        "payload_bytes_total": 386570,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 21,
@@ -61,8 +61,8 @@
         "todo_placeholder_hits": [],
         "visible_word_count": 819
       },
-      "page_id": "stocks__dmev_reported.html",
-      "route": "/stocks/_dmev_reported.html"
+      "page_id": "stocks___DM_EV_reported.html",
+      "route": "/stocks/__DM_EV_reported.html"
     },
     {
       "metrics": {
@@ -96,11 +96,11 @@
         "measured_in": {
           "access": "anonymous",
           "locale": "en",
-          "theme": "light",
+          "theme": "dark",
           "viewport": "desktop"
         },
         "panel_count": 5,
-        "payload_bytes_total": 661776,
+        "payload_bytes_total": 512105,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 21,
@@ -111,8 +111,8 @@
         "todo_placeholder_hits": [],
         "visible_word_count": 769
       },
-      "page_id": "stocks__dmev_not_loaded.html",
-      "route": "/stocks/_dmev_not_loaded.html"
+      "page_id": "stocks___DM_EV_not_loaded.html",
+      "route": "/stocks/__DM_EV_not_loaded.html"
     },
     {
       "metrics": {
@@ -146,11 +146,11 @@
         "measured_in": {
           "access": "anonymous",
           "locale": "en",
-          "theme": "light",
+          "theme": "dark",
           "viewport": "desktop"
         },
         "panel_count": 5,
-        "payload_bytes_total": 11104,
+        "payload_bytes_total": 575068,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 21,
@@ -161,8 +161,8 @@
         "todo_placeholder_hits": [],
         "visible_word_count": 771
       },
-      "page_id": "stocks__dmev_no_filings.html",
-      "route": "/stocks/_dmev_no_filings.html"
+      "page_id": "stocks___DM_EV_no_filings.html",
+      "route": "/stocks/__DM_EV_no_filings.html"
     },
     {
       "metrics": {
@@ -196,11 +196,11 @@
         "measured_in": {
           "access": "anonymous",
           "locale": "en",
-          "theme": "light",
+          "theme": "dark",
           "viewport": "desktop"
         },
         "panel_count": 5,
-        "payload_bytes_total": 143514,
+        "payload_bytes_total": 501134,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
         "request_count": 21,
@@ -211,8 +211,8 @@
         "todo_placeholder_hits": [],
         "visible_word_count": 777
       },
-      "page_id": "stocks__dmev_identity_mismatch.html",
-      "route": "/stocks/_dmev_identity_mismatch.html"
+      "page_id": "stocks___DM_EV_identity_mismatch.html",
+      "route": "/stocks/__DM_EV_identity_mismatch.html"
     }
   ],
   "schema": "mastermind.ux_smell_report.v1",
@@ -220,7 +220,7 @@
     "base_url": null,
     "kind": "site_dir",
     "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mo-fix-6921",
-    "resolved_sha_or_none": "b0fcb6425b9449d7a5e052385b17161630725fad",
+    "resolved_sha_or_none": "7f1fce867c9355f151d954b5af4d167bc7d92e24",
     "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/mo-fix-6921 (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
     "site_dir": "/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/mo-fix-6921/site"
   },
