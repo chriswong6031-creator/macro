@@ -494,12 +494,17 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                                             "deliver_after": decision.deliver_after.isoformat()})
             if ok:
                 deferred_n += 1
+            else:
+                degraded_n += 1  # review round 5 MAJOR: a swallowed PATCH must still
+                                 # count somewhere, or the run receipt reads clean.
             continue
 
         if decision.action == "suppress":
             ok = _patch_outbox(row["id"], {"status": "suppressed", "last_error": decision.reason})
             if ok:
                 suppressed_n += 1
+            else:
+                degraded_n += 1
             continue
 
         # action == send
@@ -523,10 +528,18 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
             # key read back is the SAME one just attempted (same fire_event_id+attempt)
             # -- never the bare attempt=0 key -- so a retry's own claim is what gets
             # resolved, not the original attempt's.
+            # select= is limited to columns this branch actually reads (`status`,
+            # `created_at` for `delivered_at`) -- review round 5 MINOR-1: `detail`
+            # was carried in the select with no read of it anywhere below, needless
+            # exposure to a PostgREST 400 if that column shape ever changes. Both
+            # `created_at` and `detail` are evidenced in
+            # research/SUPPORT_EMAIL_ESTATE_MASTERPLAN_BY_FABLE.md's `email_log` DDL
+            # (`created_at timestamptz not null default now()`), so this is a
+            # narrowing for exposure, not a schema-risk fix.
             idem_key = _alert_idem_key(str(fire_event_id), attempt=attempt_n)
             log_read = typed_get(
                 f"email_log?idem_key=eq.{urllib.parse.quote(idem_key, safe='')}"
-                "&select=status,created_at,detail")
+                "&select=status,created_at")
             log_row = (log_read.rows or [None])[0] if log_read.state == READ_OK else None
             log_status = log_row.get("status") if log_row else None
             if log_status == "sent":
@@ -537,6 +550,8 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                                                 "last_error": None})
                 if ok:
                     duplicate_n += 1
+                else:
+                    degraded_n += 1
             elif log_status == "failed":
                 # Review round 3 BLOCKER: this idem_key is now TERMINAL -- the real
                 # mailer never revisits a claimed key's terminal status, so retrying
@@ -551,12 +566,16 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                 if ok:
                     duplicate_n += 1
                     failed_n += 1
+                else:
+                    degraded_n += 1
             elif log_status == "suppressed":
                 ok = _patch_outbox(row["id"], {"status": "suppressed",
                                                 "last_error": "prior send suppressed"})
                 if ok:
                     duplicate_n += 1
                     suppressed_n += 1
+                else:
+                    degraded_n += 1
             elif log_status is not None:
                 # 'queued' / 'skipped_no_smtp' (or any other readable, non-terminal
                 # mailer status): NOT a failure and NOT a success, so it must not be
@@ -571,6 +590,8 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                                                 "last_error": f"prior send {log_status}"})
                 if ok:
                     duplicate_n += 1
+                    degraded_n += 1
+                else:
                     degraded_n += 1
             else:
                 # Unreadable (READ_UNAVAILABLE) or a zero-row read that contradicts the
@@ -593,19 +614,31 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                 fired_n += 1
                 if fired_at:
                     fired_ats.append(str(fired_at))
+            else:
+                # Review round 5 MAJOR: send_fn actually sent the mail, but the
+                # persisting PATCH failed -- if nothing is counted here the run
+                # receipt reads outcome='success' with fired_n=0 (a false clean),
+                # even though a real send happened with no durable record of it.
+                # degraded_n makes derive_outcome report 'partial', matching every
+                # other swallowed-PATCH path in this loop.
+                degraded_n += 1
         elif status in ("skipped_no_smtp", "queued"):
             # Not a failure -- a config/transient gap (mail-off, or a marketing-only
             # ledger race that should never reach this transactional class in
             # practice). Leave the row 'pending' so the next tick tries again, rather
             # than burning a retry attempt or mirroring a non-alert_outbox status
             # (review round 3 MINOR-2; mirrors the duplicate-branch treatment above).
-            ok = _patch_outbox(row["id"], {"status": "pending", "last_error": status})
-            if ok:
-                degraded_n += 1
+            _patch_outbox(row["id"], {"status": "pending", "last_error": status})
+            # Persisted or not, this decision is not-a-failure/not-a-success either
+            # way -- degraded_n counts it unconditionally (no false-clean risk here,
+            # unlike the ok-gated branches above/below).
+            degraded_n += 1
         elif status == "suppressed":
             ok = _patch_outbox(row["id"], {"status": "suppressed", "last_error": status})
             if ok:
                 suppressed_n += 1
+            else:
+                degraded_n += 1
         else:
             # "failed", or any status outside app.mailer.STATUSES -- fail-closed as a
             # real send failure: attempts increments (bounded by the retry cap above).
@@ -614,6 +647,8 @@ def drain(*, send_fn: Callable[..., str] | None, now_utc: datetime | None = None
                                             "last_error": error_cls or status})
             if ok:
                 failed_n += 1
+            else:
+                degraded_n += 1
 
     outcome = derive_outcome(read_state=outbox_read.state, evaluated_n=evaluated_n,
                              unevaluable_n=unevaluable_n, failed_n=failed_n, degraded_n=degraded_n)

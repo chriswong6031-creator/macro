@@ -425,7 +425,14 @@ def test_counters_never_increment_when_the_persisting_patch_fails(monkeypatch):
     """Review round 3 MINOR-3: a swallowed PATCH must not inflate the run receipt --
     the old code incremented fired_n/failed_n/etc. before attempting the write, so a
     repeat tick over a row whose PATCH keeps failing would count a 'sent'/'failed'
-    that never actually persisted."""
+    that never actually persisted.
+
+    Review round 5 MAJOR: incrementing nothing is not enough on its own -- with
+    every counter at zero, ``derive_outcome`` sees no failed/unevaluable/degraded
+    signal and reports ``outcome='success'`` even though ``send_fn`` really sent
+    the email and nothing about it was ever durably recorded (a false-clean run
+    receipt). This pins that a swallowed PATCH is counted under ``degraded_n`` and
+    surfaces as ``outcome='partial'``, never ``'success'``."""
     row = _row()
     fake = FakeTables(outbox=[row])
     _patch(monkeypatch, fake, users={"u1": OPTED_IN_USER})
@@ -439,6 +446,7 @@ def test_counters_never_increment_when_the_persisting_patch_fails(monkeypatch):
     result = drain.drain(send_fn=lambda **kw: "sent", now_utc=_now(), limit=10)
     assert fake.outbox[0]["status"] == "pending"  # never actually written
     assert result.fired_n == 0
+    assert result.outcome == "partial"  # never 'success' -- a swallowed PATCH is not a clean run
 
 
 def test_patch_outbox_url_quotes_the_row_id(monkeypatch):

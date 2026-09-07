@@ -1133,9 +1133,10 @@ def send_alert(*, fire_event_id: str, to_email: str, payload: dict,
         unsubscribe_url="",
         follow=False,
     )
-    try:
-        return send(template=ALERT_TEMPLATE, cls=ALERT_CLS, to_email=to_email,
-                    subject=c["subject"], html=html, text=text,
-                    idem_key=alert_idem_key(fire_event_id, attempt=attempt), user_id=user_id)
-    except DuplicateKey:
-        return "duplicate"
+    # review round 5 MINOR-3: no try/except DuplicateKey here -- send() already
+    # catches DuplicateKey internally (see send()'s own step 1) and returns the
+    # string 'duplicate' directly; it never raises DuplicateKey to its caller. The
+    # previous except clause was unreachable and encoded a false contract belief.
+    return send(template=ALERT_TEMPLATE, cls=ALERT_CLS, to_email=to_email,
+               subject=c["subject"], html=html, text=text,
+               idem_key=alert_idem_key(fire_event_id, attempt=attempt), user_id=user_id)
