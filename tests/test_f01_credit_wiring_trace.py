@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TRACE = ROOT / "research/market_intelligence_productization/F01_CREDIT_AND_COMMODITY_WIRING_TRACE_2026-09-06.md"
-DSC = ROOT / "agentos/discoveries/DSC-F01-CREDIT-PLANE-IS-SINGLE-ISSUER-ONLY.md"
+DSC = ROOT / "agentos/discoveries/DSC-F01-CREDIT-STRESS-REACHES-ONE-LABELLED-SURFACE-NO-DEDICATED-PAGE.md"
 
 # Deliberately excludes data/ and site/: those trees are omitted in sparse
 # worktrees per the sparse-worktree law, so asserting on them would fail in

@@ -72,9 +72,25 @@ What **is** single-issuer is the ORCL **watch chip** only: templates/bonds.html.
 `{% if cc_vm.watch.orcl and cc_vm.watch.orcl.g_spread_bp is not none %}` → engine/credit_momentum.py:948
 `_build_orcl_watch` → scripts/build_bonds.py:1005-1025.
 
+**A fourth credit-labelled surface — missed by §1's producer table — also already ships.**
+§1's market_drivers.py row is accurate for that module alone (its own `credit_stress` family
+reaches no credit-labelled template), but a *different* module renders a *different*,
+explicitly credit-labelled leg: templates/dashboard.html.j2:14029 —
+`'E4_credit_stress':       {'en':'Credit stress','zh':'信用压力'},` — and its bilingual scare-tip
+blurb at templates/dashboard.html.j2:102 (`'信用压力——高收益利差（OAS）快速走阔、垃圾债跑输国债…'`).
+The leg is driven by engine/rates_inflation_command.py:557-575 (`# E4 — credit_stress (weight 1)`,
+`hy_oas_z = _safe_get(tx, "breakeven_decomp", "costate", "hy_oas_z")`, `"key": "E4_credit_stress"`),
+built by `build_board()` and rendered onto the rates/inflation command page via
+scripts/build_rates_command.py:128. So the credit_stress *axis*, taken across all its producing
+modules, is not entirely dark — it reaches exactly one credit-labelled consumer surface today.
+
 MO-DELTA-008's `missing` cell is wrong as written. The corrected gap is: no *dedicated* HY/IG
 credit page exists — the aggregate gauges live as one card inside bonds.html, not as their own
-page — and the market_drivers `credit_stress` family (§1) reaches no credit-labelled surface at all.
+page. **Revised plane-level conclusion:** the credit_stress axis reaches exactly one
+credit-labelled consumer surface (E4 on the rates/inflation command) and no dedicated credit
+page — not, as originally stated here, "no credit-labelled surface at all". market_drivers.py's
+own `credit_stress` family (§1) still reaches no credit-labelled template under its own name;
+that half of the original claim stands. The plane-wide half does not.
 
 ## §5 In-flight reconciliation — PR #6904 (mandatory)
 
@@ -84,7 +100,8 @@ to the IPO leg", files include `engine/credit_window.py`, `tests/test_credit_win
 `scripts/build_ipo.py`, `templates/ipo.html.j2`. `engine/credit_window.py` **does not exist on main**
 at the time of this pass (verified absent in the working checkout).
 
-(a) On merge the credit plane gains a **fourth** module.
+(a) On merge the credit plane gains a **fifth** module (§4 already names a fourth,
+engine/rates_inflation_command.py, that exists on main today).
 (b) Its HY/IG issuance-window read surfaces on **ipo.html**, not on a credit page — so a future
 "dedicated HY/IG page" child must not duplicate it.
 (c) This trace's module table is dated and will need one line added when #6904 merges.
@@ -94,11 +111,13 @@ This section is why the record does not ship stale.
 ## §6 The bounded build child now scopable
 
 MO-DELTA-008 and MO-DELTA-013 are now scopable as ONE surface question, not two build orders:
-given that aggregate HY/IG gauges already ship on bonds.html (§0) and that #6904 puts an HY/IG
-issuance-window read on ipo.html (§5), the open question is whether a dedicated credit page is
-warranted at all, or whether the credit axis belongs in F00's unified dashboard. That surface
-allocation is the Chairman's F00 unified-dashboard lane, owned by Meta-CEO A. This packet hands
-the surface decision to A and scopes nothing.
+given that aggregate HY/IG gauges already ship on bonds.html (§4), that #6904 puts an HY/IG
+issuance-window read on ipo.html (§5), and that a credit-stress chip (E4) already renders on
+F00's unified dashboard/rates-command surface (§4), the open question is whether a *dedicated*
+credit page is warranted at all, or whether the credit axis is already adequately served by the
+unified dashboard's existing E4 chip. That surface allocation is the Chairman's F00
+unified-dashboard lane, owned by Meta-CEO A — handed to A with the E4 chip's existence disclosed,
+not omitted. This packet scopes nothing.
 
 **MO-DELTA-008 and MO-DELTA-013 are NOT closed by this packet. Their acceptance tests (an aggregate HY/IG panel; a dedicated HY/IG dashboard page) are undischarged. Status: read pass done, build child now scopable.**
 

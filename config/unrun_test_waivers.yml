@@ -95,7 +95,7 @@ tests/test_f01_credit_wiring_trace.py: >-
   Packet B-A-F01-2 (records-only): guard suite for the F01 credit/commodity
   wiring trace (research/market_intelligence_productization/
   F01_CREDIT_AND_COMMODITY_WIRING_TRACE_2026-09-06.md) and its DSC
-  (agentos/discoveries/DSC-F01-CREDIT-PLANE-IS-SINGLE-ISSUER-ONLY.md). It
+  (agentos/discoveries/DSC-F01-CREDIT-STRESS-REACHES-ONE-LABELLED-SURFACE-NO-DEDICATED-PAGE.md). It
   regex-extracts every file:line anchor cited in the trace and asserts the
   file exists and the line is in range, so it fails loudly if the credit
   plane moves out from under the record. No engine/product code is touched
