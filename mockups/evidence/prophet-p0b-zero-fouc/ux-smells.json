@@ -1,0 +1,150 @@
+{
+  "disclaimer": "Heuristics identify review targets; they do not determine that a page is bad.",
+  "generated_at": "2026-09-06T14:18:49Z",
+  "metric_notes": {
+    "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
+    "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
+    "duplicate_heading_texts": "case-folded visible heading text seen more than once; a repeated section label across tabs is a legitimate duplicate",
+    "panel_count": "class-name heuristic over the configured selector list; both over- and under-counts are expected",
+    "payload_bytes_total": "sum of response body sizes reported by the driver for the reference state; excludes bodies the driver could not size",
+    "raw_slug_hits": "visible text matching 3+ segment snake_case; legitimate identifiers (file names, API keys quoted on purpose) match too",
+    "screenshot_completion": "captured states / attempted states for this page; states the registry excludes are not attempted and are recorded as gaps",
+    "section_count": "direct <section> children of <body> plus direct element children of <main>; an approximation of 'how many blocks is this page'",
+    "source_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
+    "visible_word_count": "whitespace-split innerText of <body>; Chinese text is not word-segmented, so a zh capture undercounts relative to en"
+  },
+  "pages": [
+    {
+      "metrics": {
+        "asof_present": true,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 3978,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          },
+          "mobile": {
+            "document_height_px": 6071,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 0,
+        "document_height_px": 3978,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 1,
+          "h2": 6,
+          "h3": 0,
+          "h4": 0,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "dark",
+          "viewport": "desktop"
+        },
+        "panel_count": 9,
+        "payload_bytes_total": 98029,
+        "raw_slug_hit_count": 1,
+        "raw_slug_hits": [
+          "hk_prophet_v2"
+        ],
+        "request_count": 29,
+        "screenshot_completion": 1.0,
+        "section_count": 1,
+        "source_present": false,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 980
+      },
+      "page_id": "macro:hk_stocks",
+      "route": "/hk_stocks.html"
+    },
+    {
+      "metrics": {
+        "asof_present": true,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 3357,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          },
+          "mobile": {
+            "document_height_px": 4317,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 0,
+        "document_height_px": 3357,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 1,
+          "h2": 4,
+          "h3": 0,
+          "h4": 0,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "dark",
+          "viewport": "desktop"
+        },
+        "panel_count": 9,
+        "payload_bytes_total": 592976,
+        "raw_slug_hit_count": 0,
+        "raw_slug_hits": [],
+        "request_count": 29,
+        "screenshot_completion": 1.0,
+        "section_count": 7,
+        "source_present": false,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 533
+      },
+      "page_id": "macro:canada_stocks",
+      "route": "/canada_stocks.html"
+    }
+  ],
+  "schema": "mastermind.ux_smell_report.v1",
+  "target": {
+    "base_url": null,
+    "canonical_build_proof": "unavailable",
+    "fixture_receipt": {
+      "path": "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json",
+      "sha256": "c57f03741fb89e5abd9cc5e458a491e5a464b3d0028c5fb7f39301715874f741"
+    },
+    "kind": "rendered_fixture",
+    "production_proof": "none",
+    "proof_class": "browser_fixture_proof_reproducible",
+    "rendered_pages": {
+      "/canada_stocks.html": {
+        "output": "canada_stocks.html",
+        "sha256": "ca486595e978da3315ea32a0f03a578a28a54e199aa1a8b7d18e06f50c9c420f"
+      },
+      "/hk_stocks.html": {
+        "output": "hk_stocks.html",
+        "sha256": "689a64cd29e4e08c3d60f63b59fb1097bb900a0fe1167cfe82e62e6e3c5c26ea"
+      }
+    },
+    "resolved_gitdir_or_none": null,
+    "resolved_sha_or_none": null,
+    "resolved_sha_source": "candidate bytes are bound by the rendered-fixture receipt; this is not a canonical builder or production-origin claim",
+    "site_dir": null
+  },
+  "tool": {
+    "module_ref": "scripts/capture_page_evidence.py",
+    "version": "1.2.0"
+  }
+}

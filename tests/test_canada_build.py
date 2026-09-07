@@ -125,7 +125,7 @@ def test_canada_stocks_template_renders():
     # stocks mode = the new TSX Stock Dashboard: standout cards + show-more, no regime hero
     html = _env().get_template("canada.html.j2").render(**_vm(), mode="stocks")
     assert "TSX Stock Dashboard" in html
-    assert "Prophet Stock Signals" in html              # Prophet rebrand header (PR-R2 Amendment 1)
+    assert html.count("<h2>Prophet</h2>") == 1          # one canonical Prophet title
     assert "TSX ripe list" in html                      # ripe-list contract still present after rebrand
     assert "TD Bank" in html                            # the standout setup renders here
     # Branch B: composite 0-100 chip SUPPRESSED, rank pill + accruing screen badge present
@@ -141,7 +141,8 @@ def test_canada_stocks_template_renders():
     assert "动量筛选仍在检验中" in html                  # zh twin — disclosure is bilingual
     assert "momentum screen · unproven" not in html    # never per-card again (Law 4)
     assert 'class="nb-cscore' not in html               # composite score chip is gone
-    assert 'data-showmore-rows=' in html                # the progressive reveal is wired (#888 row-capped)
+    assert 'data-showmore-rows=' not in html            # no generic shared show-more owner
+    assert 'class="anv2-lst lst-collapse lst-cap3 is-collapsed"' in html
     assert "Commodity / CAD" not in html                # overlay hero is macro-only
     assert "Housing & household-debt" not in html       # housing is macro-only
     # ── W6 UX overhaul (§7): consolidated desk-header + accruing track-record panel +
@@ -319,11 +320,15 @@ def test_w8g_ca_stage_mapping():
 
 
 def test_w8g_ca_view_toggle_present():
-    """stocks mode must include the grid/table view toggle and mount point."""
+    """stocks mode has one canonical grid/table owner and mount point."""
     html = _env().get_template("canada.html.j2").render(**_w8g_vm(), mode="stocks")
-    assert 'id="st-view-toggle"' in html, "view toggle missing"
-    assert 'id="st-btn-grid"' in html
-    assert 'id="st-btn-table"' in html
+    assert html.count("data-prophet-view-control") == 1, "canonical view control missing"
+    assert 'id="st-view-toggle"' not in html
+    assert 'id="st-btn-grid"' not in html
+    assert 'id="st-btn-table"' not in html
+    assert html.count('<button type="button" data-ca-view=') == 2
+    assert "StockTable._setView('grid')" in html
+    assert "StockTable._setView('table')" in html
     assert 'id="stocktable-wrap"' in html, "table mount point missing"
     assert 'id="st-count-chips"' in html, "count chips missing"
     assert 'class="nb-grid-section"' in html, "nb-grid-section wrapper missing"

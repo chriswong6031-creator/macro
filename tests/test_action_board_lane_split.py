@@ -139,19 +139,24 @@ def _china_block() -> str:
 
 
 def _canada_block() -> str:
-    # The mode-gate {% if %}/{% endif %} pair stays OUTSIDE the slice so the
-    # extracted block is balanced Jinja.
+    # Include the normalized action-owner declarations that feed the board.  The
+    # former marker began at the HTML comment inside the owner-valid branch, so
+    # the slice silently dropped _ca_buy/_ca_pull/_ca_bot/_ca_red when P0B moved
+    # those declarations ahead of the branch.
     src = (ROOT / "templates" / "canada.html.j2").read_text()
-    start = src.index("<!-- ===== Act-Now v2 — four-lane board")
-    end = src.index("\n{% endif %}\n\n{% if mode != 'stocks' %}", start)
+    start = src.index("{% set _ca_actions = actions if (actions is defined and actions is mapping) else {} %}")
+    end = src.index("\n{% if mode != 'stocks' %}", start)
     return src[start:end]
 
 
 def _hk_board_block() -> str:
     """Extract the self-contained four-lane grid (outside the HK leadership banner)."""
     src = (ROOT / "templates" / "hk.html.j2").read_text()
-    start = src.index("{% set _hk_buy = actions.get('buy_now', []) %}")
-    end = src.index("\n  </div>\n  {% endif %}\n  {% endif %}", start)
+    start = src.index(
+        '<section class="hk-v37-panel hk-v37-owner-panel span12" id="hk-v37-actnow">'
+    )
+    closing = "\n  </section>"
+    end = src.index(closing, start) + len(closing)
     return src[start:end]
 
 
@@ -200,7 +205,7 @@ def test_china_dlg_sector_missing_lane_safe():
 
 def test_canada_template_uses_china_four_lane_ui():
     html = _env(_canada_block()).get_template("blk").render(
-        actions=_full_actions(), latest={"date": "2026-07-30"}
+        actions=_full_actions(), latest={"date": "2026-07-30"}, mode="stocks"
     )
     assert "In Favour" in html and "看好" in html
     assert "anv2-lane--pull" in html
@@ -211,9 +216,10 @@ def test_canada_template_uses_china_four_lane_ui():
 def test_canada_template_missing_key_safe():
     a = _full_actions(); del a["on_the_run"]
     html = _env(_canada_block()).get_template("blk").render(
-        actions=a, latest={"date": "2026-07-30"}
+        actions=a, latest={"date": "2026-07-30"}, mode="stocks"
     )
-    assert "AAA" in html
+    assert "Action owner unavailable" in html
+    assert "AAA" not in html
 
 
 def test_hk_template_uses_china_four_lane_ui_and_keeps_hover_rows():
@@ -225,7 +231,7 @@ def test_hk_template_uses_china_four_lane_ui_and_keeps_hover_rows():
     for cls in ("anv2-lane--buy", "anv2-lane--pull", "anv2-lane--bot", "anv2-lane--red"):
         assert cls in html
     assert "In Favour" in html and "看好" in html
-    assert 'class="anv2-row" data-rpop' in html
+    assert 'class="anv2-row hk-v37-an-row-w" data-action-id="AAA" data-rpop' in html
     assert "RRR" in html
 
 
@@ -237,7 +243,8 @@ def test_hk_template_missing_key_safe():
         sectors_by_ticker={},
         latest={"date": "2026-07-30"},
     )
-    assert "AAA" in html
+    assert "Action owner unavailable" in html
+    assert "AAA" not in html
 
 
 def test_hk_static_legacy_grid_cannot_override_hidden():

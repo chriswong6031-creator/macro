@@ -2262,11 +2262,16 @@ jobs:
       # pair pins (visibility declarations, stance/lane inks, light-presence
       # fence, token cleanliness via scripts.check_design_system.scan_text —
       # repo-import only, no new deps), full checkout has site/. No new job.
+      # tests/test_stock_dashboard_first_frame_data.py (P0B zero-FOUC) pins
+      # the checked-in generated HK/Canada populations and duplicate-id truth.
+      # Its source-only contract is intentionally split into the dedicated
+      # gate:code job below; generated site/** truth stays gate:data here.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
           tests/test_canada_build.py tests/test_canada_canonical_board.py
           tests/test_canada_v36_composer.py
+          tests/test_stock_dashboard_first_frame_data.py
           tests/test_stock_dashboard_css.py
           tests/test_hk_v37_composer.py
           tests/test_commodity_signals.py
@@ -2427,6 +2432,61 @@ jobs:
       # (tests/test_statement_tape.py) is inside the sweep, one step above.
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+
+  stock-dashboard-first-frame:
+    if: ${{ false }}
+    gate: code
+    scope: exclusive
+    # P0B repair: engine-render-guards is a nightly gate:data lane and therefore
+    # cannot prove the hermetic zero-FOUC contract before a PR merges. Keep the
+    # generated-page population receipt there, while this small source-only job
+    # follows the prophet-lab split precedent and runs in the actual PR code gate.
+    paths:
+      - "templates/hk.html.j2"
+      - "templates/canada.html.j2"
+      - "templates/stock-dashboard.css"
+      - "templates/dashboard-icons.js"
+      - "engine/__init__.py"
+      - "engine/i18n.py"
+      # Selector-visible provenance labels only: the frozen recipe validates
+      # these path names but never opens the moving bytes. Current-source
+      # identity truth remains in the separate gate:data suite below.
+      - "site/factordata/canada_standouts.json"
+      - "site/factordata/hk_standouts.json"
+      - "site/hk-stock-v36.js"
+      - "site/canada-stock-v36.js"
+      - "site/stock-dashboard.css"
+      - "site/dashboard-icons.js"
+      - "scripts/render_stock_dashboard_fixture.py"
+      - "scripts/verify_stock_dashboard_mobile_layout.cjs"
+      - "mockups/evidence/prophet-p0b-zero-fouc/manifest.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/canada-owner-fixture.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-owner-fixture.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/canada-action-fixture.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/hk-action-fixture.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/canadabasketdata/baskets.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/canadabasketdata/sector_pulse_canada.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/overlay.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/live/quotes.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/inputs/browser-data/marketdata/rotation_events_hk.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/rendered-fixture.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/mobile-layout.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/mobile-layout-canada.json"
+      - "mockups/evidence/prophet-p0b-zero-fouc/hk-js-disabled-dark-390.png"
+      - "mockups/evidence/prophet-p0b-zero-fouc/hk-composer-failed-light-390.png"
+      - "mockups/evidence/prophet-p0b-zero-fouc/ca-js-disabled-dark-390.png"
+      - "mockups/evidence/prophet-p0b-zero-fouc/ca-composer-failed-light-390.png"
+      - "tests/test_stock_dashboard_first_frame.py"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install beautifulsoup4 jinja2 pytest
+      - name: stock dashboard first-frame source contract
+        run: python -m pytest tests/test_stock_dashboard_first_frame.py -q
 
   prophet-lab:
     if: ${{ false }}
@@ -11951,6 +12011,11 @@ jobs:
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode
         run: python -m pytest tests/test_w5b_edge_chips.py -q
+      # P0B exact-source correction (2026-09-06): 14 builder/template cases are
+      # hermetic and belong in the PR code gate.  The one generated-page case
+      # remains in unrun-intl-collectors, which continues to run all 15 in data.
+      - name: HK/Canada action-board source and template contract
+        run: python -m pytest tests/test_action_board_lane_split.py -q -k 'not test_hk_static_legacy_grid_cannot_override_hidden'
       # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): the China
       # Special Situations desk's four truth contracts, shipped by #5975 and
       # extended by #5996, were named by no run: step in any workflow. Engine and

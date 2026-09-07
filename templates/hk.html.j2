@@ -21,7 +21,7 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 {% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
-{% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
+{% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css"><link id="mx-stockdash-css" rel="stylesheet" href="stock-dashboard.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
 <link rel="stylesheet" href="illus.css">
 <style>
@@ -1558,6 +1558,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
 
 {% include "_site_nav.html.j2" %}
 
+{% if mode == 'stocks' %}<main class="hk-v37 mx-stockdash mx-stockdash--hk" id="hk-v37">{% endif %}
 <div class="grid">
 
   {# FRESHNESS SENTINEL BANNER — shown at page top in BOTH modes when HK data is stale
@@ -3121,6 +3122,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   {% set _namp = (M.amplifiers|length) if M and M.amplifiers else 0 %}
   {% set _ncush = (M.cushions|length) if M and M.cushions else 0 %}
   {% set _nmid = (_nall - _namp - _ncush) if _nall else 0 %}
+  <header class="hk-v37-head span12" id="hk-v37-head">
   <div class="panel span12" id="stocks-header">
     <div class="deskhero">
       <div>
@@ -3195,10 +3197,26 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
       </div>
     </div>
   </div>
+  </header>
   {# 1D VELOCITY DESK moved to AFTER Prophet (IA revamp 2026-07-22) — see #hk-velocity-desk below. #}
 
   <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
-  {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
+  <section class="hk-v37-panel hk-v37-owner-panel span12" id="hk-v37-actnow">
+  {% set _hk_actions = actions if (actions is defined and actions is mapping) else {} %}
+  {% set _hk_action_owner_valid = actions is defined and actions is mapping
+    and _hk_actions.get('buy_now') is sequence and _hk_actions.get('buy_now') is not string and _hk_actions.get('buy_now') is not mapping
+    and _hk_actions.get('buy_soon') is sequence and _hk_actions.get('buy_soon') is not string and _hk_actions.get('buy_soon') is not mapping
+    and _hk_actions.get('on_the_run') is sequence and _hk_actions.get('on_the_run') is not string and _hk_actions.get('on_the_run') is not mapping
+    and _hk_actions.get('take_profits') is sequence and _hk_actions.get('take_profits') is not string and _hk_actions.get('take_profits') is not mapping
+    and _hk_actions.get('hold') is sequence and _hk_actions.get('hold') is not string and _hk_actions.get('hold') is not mapping
+    and _hk_actions.get('avoid') is sequence and _hk_actions.get('avoid') is not string and _hk_actions.get('avoid') is not mapping %}
+  {% set _hk_buy = _hk_actions.get('buy_now', []) if _hk_action_owner_valid else [] %}
+  {% set _hk_pull = (_hk_actions.get('on_the_run', []) + _hk_actions.get('hold', [])) if _hk_action_owner_valid else [] %}
+  {% set _hk_bot = _hk_actions.get('buy_soon', []) if _hk_action_owner_valid else [] %}
+  {% set _hk_red = (_hk_actions.get('take_profits', []) + _hk_actions.get('avoid', [])) if _hk_action_owner_valid else [] %}
+  {% set _hk_action_has_rows = _hk_action_owner_valid and (_hk_buy or _hk_pull or _hk_bot or _hk_red) %}
+  {% set _hk_action_default = 'buy' if _hk_buy else ('near' if _hk_pull else ('wait' if _hk_bot else ('avoid' if _hk_red else 'buy'))) %}
+  {% if _hk_action_owner_valid %}
   <style>
   /* ---- HKRV-W3: leadership banner + turn chip ---- */
   .hkrv-banner { margin: 0 0 10px; padding: 13px 16px; border-radius: 10px;
@@ -3258,7 +3276,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   .row-pop-mark .ic-svg { width: 17px; height: 17px; display: block; }
   </style>
 {{ lens.lens_css() }}
-  <div class="panel span12 anv2-board" id="act-now">
+  <div class="panel span12 anv2-board" id="act-now" data-action-owner-state="{{ 'available' if _hk_action_has_rows else 'empty' }}">
     {{ dc.dc_css() }}
     <div class="anv2-hd">
       <h2>{{ t('What to Act On Now', '现在行动') }}
@@ -3372,14 +3390,29 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
     </div>
     {%- endif -%}
     {# ===== END HKRV-W3 banner ===== #}
-    {% set _hk_buy = actions.get('buy_now', []) %}
-    {% set _hk_pull = actions.get('on_the_run', []) + actions.get('hold', []) %}
-    {% set _hk_bot = actions.get('buy_soon', []) %}
-    {% set _hk_red = actions.get('take_profits', []) + actions.get('avoid', []) %}
-    <div class="anv2-grid">
+    {% if not _hk_action_has_rows %}<p class="anv2-empty hk-v37-an-all-empty">{{ t('No sector actions are open on this board.', '本期榜单暂无板块行动。') }}</p>{% endif %}
+    <div class="hk-v37-an-body" id="hk-v37-an-body">
+    <div class="hk-v37-an-seg">
+      <a href="#anv2-buy" data-hk-an-lane="buy"{% if _hk_action_default == 'buy' %} data-hk-an-default="true"{% endif %}><span class="hk-v37-an-seg-t">{{ t('Buy Now', '立即买入') }}</span><b>{{ _hk_buy|length }}</b></a>
+      <a href="#anv2-pull" data-hk-an-lane="near"{% if _hk_action_default == 'near' %} data-hk-an-default="true"{% endif %}><span class="hk-v37-an-seg-t">{{ t('In Favour', '看好') }}</span><b>{{ _hk_pull|length }}</b></a>
+      <a href="#anv2-bot" data-hk-an-lane="wait"{% if _hk_action_default == 'wait' %} data-hk-an-default="true"{% endif %}><span class="hk-v37-an-seg-t">{{ t('Bottoming Watch', '洗盘观察') }}</span><b>{{ _hk_bot|length }}</b></a>
+      <a href="#anv2-red" data-hk-an-lane="avoid"{% if _hk_action_default == 'avoid' %} data-hk-an-default="true"{% endif %}><span class="hk-v37-an-seg-t">{{ t('Reduce / Avoid', '减仓 / 回避') }}</span><b>{{ _hk_red|length }}</b></a>
+    </div>
+    <div class="anv2-grid hk-v37-an-lanes">
       {%- macro _hk_anrow(it, lane) -%}
       {%- set _hk_sc = (sectors_by_ticker.get(it.ticker) if sectors_by_ticker is defined else none) -%}
-      <div class="anv2-row" data-rpop>
+      {%- set _hk_member_rows = setups.get('buy') if setups is defined and setups is mapping else none -%}
+      {%- set _hk_member_rows_known = _hk_member_rows is sequence and _hk_member_rows is not string and _hk_member_rows is not mapping -%}
+      {%- set _hk_members = namespace(known=false, count=0) -%}
+      {%- if _hk_member_rows_known -%}
+        {%- for _hk_candidate in _hk_member_rows if _hk_candidate is mapping -%}
+          {%- if _hk_candidate.get('sector') == it.name -%}
+            {%- set _hk_members.known = true -%}
+            {%- set _hk_members.count = _hk_members.count + 1 -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
+      <div class="anv2-row hk-v37-an-row-w" data-action-id="{{ it.ticker|trim|upper }}" data-rpop>
         {#- Hover decision card — the SAME component the US board uses
             (templates/_decision_card.html.j2). HK's act-now board is sector-only,
             so this is the sector variant: setup read, cycle metrics, one stance. -#}
@@ -3435,9 +3468,9 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
           'foot': ('Click row for the full sector view','点击查看完整板块详情'),
           'foot_b': (it.ticker ~ ' ↗',),
         }) }}
-        </span>
         <div class="anv2-row-top">
-          <a class="anv2-name anv2-name-link" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}<span class="anv2-go" aria-hidden="true">↗</span></a>
+          <button class="anv2-name hk-v37-an-row" type="button"{% if _hk_members.known %} data-hk-lead-id="{{ it.ticker|trim|upper }}"{% else %} disabled{% endif %}>{{ td(it.name) }}{% if _hk_members.known %}<span class="hk-v37-an-n">{{ _hk_members.count }} · {{ t('Prophet', '候选') }}</span>{% endif %}</button>
+          <a class="anv2-name-link hk-v37-an-go" href="sectors/{{ it.ticker }}.html" aria-label="{{ it.name }} sector research">↗</a>
         </div>
         <div class="anv2-chips">
           {% if lane == 'buy' %}
@@ -3459,17 +3492,22 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
       </div>
       {%- endmacro -%}
       {%- macro _hk_anlane(lane, cls, title_en, title_zh, sub_en, sub_zh, items, lane_id) -%}
-      <div class="anv2-lane anv2-lane--{{ cls }}" id="{{ lane_id }}">
-        <div class="anv2-lane-hd">
-          <div class="anv2-lane-title"><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span><span class="anv2-lane-count">({{ items|length }})</span></div>
-          <div class="anv2-lane-sub"><span class="l-en">{{ sub_en }}</span><span class="l-zh">{{ sub_zh }}</span></div>
+      {% set _hk_tone = 'near' if lane == 'pull' else ('wait' if lane == 'bot' else ('avoid' if lane == 'red' else 'buy')) %}
+      <div class="anv2-lane anv2-lane--{{ cls }} hk-v37-an-lane{{ ' is-current' if _hk_action_default == _hk_tone else '' }}" id="{{ lane_id }}" data-action-lane-body="{{ _hk_tone }}" data-hk-an-lane-body="{{ _hk_tone }}">
+        <div class="anv2-lane-hd hk-v37-an-hd {{ _hk_tone }}">
+          <span><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span></span><b>{{ items|length }}</b>
         </div>
-        <div class="anv2-lane-body lst-wrap">
-          <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-            {% for it in items %}{{ _hk_anrow(it, lane) }}{% endfor %}
+        <div class="anv2-lane-body hk-v37-an-lane-body">
+          <div class="anv2-lst hk-v37-an-list">
+            {% for it in items[:3] %}{{ _hk_anrow(it, lane) }}{% endfor %}
+            {% if items|length > 3 %}
+            <details class="hk-v37-an-disclosure" data-hk-an-disclosure>
+              <summary class="hk-v37-an-more" data-hk-an-view="{{ _hk_tone }}"><span class="lm-show">{{ t('View all', '查看全部') }} {{ items|length }}</span><span class="lm-hide">{{ t('Show fewer', '收起') }}</span></summary>
+              {% for it in items[3:] %}{{ _hk_anrow(it, lane) }}{% endfor %}
+            </details>
+            {% endif %}
             {% if not items %}<div class="anv2-empty">{{ t('No sectors in this lane today.', '今天此栏暂无板块。') }}</div>{% endif %}
           </div>
-          {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
         </div>
       </div>
       {%- endmacro -%}
@@ -3478,11 +3516,127 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
       {{ _hk_anlane('bot', 'bot', 'Bottoming Watch', '洗盘观察', 'Setting up near a cycle low — watch only', '接近周期低点 — 仅观察', _hk_bot, 'anv2-bot') }}
       {{ _hk_anlane('red', 'red', 'Reduce / Avoid', '减仓 / 回避', 'Trend weakening — take profits or stay away', '趋势转弱 — 止盈或回避', _hk_red, 'anv2-red') }}
     </div>
+    </div>
   </div>
+  {% else %}
+  <div class="panel span12 anv2-board hk-v37-empty hk-v37-static-state" id="act-now" data-action-owner-state="unavailable">{{ t('Action owner unavailable.', '行动数据暂不可用。') }}</div>
   {% endif %}
+  </section>
   {% endif %}
 
+  {# Resolve the complete stage-board owner before the Prophet header paints.
+     The same validated identities drive first-frame source selection, result
+     copy, the grid, and (through stocktable-data below) the table. #}
+  {%- set _hk_setups = setups if (setups is defined and setups is mapping) else {} -%}
+  {%- set _hk_buy_source = _hk_setups.get('buy') -%}
+  {%- set _hk_buy_known = _hk_buy_source is sequence and _hk_buy_source is not string and _hk_buy_source is not mapping -%}
+  {%- set _hkb = _hk_buy_source if _hk_buy_known else [] -%}
+  {%- set _hk_def = _hk_setups.get('board_definition') or _hk_setups.get('rank_by') -%}
+  {%- set _hsg = namespace(any=(_hk_def or '').startswith('hk_prophet_v')) -%}
+  {%- set _hk_ran_source = _hk_setups.get('ran') if _hsg.any else [] -%}
+  {%- set _hk_ran_known = _hk_ran_source is sequence and _hk_ran_source is not string and _hk_ran_source is not mapping -%}
+  {%- set _hk_ran = _hk_ran_source if _hk_ran_known else [] -%}
+  {%- set _hk_rip_source = _hk_setups.get('ripening') if _hsg.any else [] -%}
+  {%- set _hk_rip_known = _hk_rip_source is sequence and _hk_rip_source is not string and _hk_rip_source is not mapping -%}
+  {%- set _hk_rip = _hk_rip_source if _hk_rip_known else [] -%}
+  {%- set _hk_rip_ready  = (_hk_rip | selectattr('zone', 'equalto', 'READY')  | list) if _hk_rip else [] -%}
+  {%- set _hk_rip_basing = (_hk_rip | selectattr('zone', 'equalto', 'BASING') | list) if _hk_rip else [] -%}
+  {%- set _hk_ldrs = (_hk_setups.get('leaders') or []) if _hsg.any else [] -%}
+  {%- set _hk_veto_source = _hk_setups.get('vetoed') if _hsg.any else [] -%}
+  {%- set _hk_veto_known = _hk_veto_source is sequence and _hk_veto_source is not string and _hk_veto_source is not mapping -%}
+  {%- set _hk_veto = _hk_veto_source if _hk_veto_known else [] -%}
+  {%- set _hk_watch_owner = _hk_setups.get('watch') -%}
+  {%- set _hk_watch_known = _hk_watch_owner is sequence and _hk_watch_owner is not string and _hk_watch_owner is not mapping -%}
+  {# A sequence is only the outer type. Validate every buy row before that raw
+     owner crosses selection, JSON, or card-rendering seams. #}
+  {%- set _hk_buy_owner = namespace(valid=_hk_buy_known, ids=[]) -%}
+  {%- if _hk_buy_known -%}
+    {%- for _hk_row in _hkb -%}
+      {%- set _hk_raw_ticker = _hk_row.get('ticker') if _hk_row is mapping else none -%}
+      {%- set _hk_ticker = (_hk_raw_ticker|trim|upper) if _hk_raw_ticker is string else '' -%}
+      {%- if not _hk_ticker or _hk_ticker in _hk_buy_owner.ids -%}
+        {%- set _hk_buy_owner.valid = false -%}
+      {%- else -%}
+        {%- set _ = _hk_buy_owner.ids.append(_hk_ticker) -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+  {%- set _hkb = _hkb if _hk_buy_owner.valid else [] -%}
+  {%- set _hk_owner = namespace(board_ids=[], watch_ids=[], board_valid=(_hk_buy_owner.valid and _hk_ran_known and _hk_rip_known and _hk_veto_known), watch_valid=_hk_watch_known, intersection=[]) -%}
+  {%- for _hk_lane in [_hkb, _hk_rip, _hk_ran, _hk_veto] -%}
+    {%- if _hk_lane is not sequence or _hk_lane is string or _hk_lane is mapping -%}
+      {%- set _hk_owner.board_valid = false -%}
+    {%- else -%}
+      {%- for _hk_row in _hk_lane -%}
+        {%- set _hk_raw_ticker = _hk_row.get('ticker') if _hk_row is mapping else none -%}
+        {%- set _hk_ticker = (_hk_raw_ticker|trim|upper) if _hk_raw_ticker is string else '' -%}
+        {%- if not _hk_ticker or _hk_ticker in _hk_owner.board_ids -%}
+          {%- set _hk_owner.board_valid = false -%}
+        {%- else -%}
+          {%- set _ = _hk_owner.board_ids.append(_hk_ticker) -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if _hk_watch_known -%}
+    {%- for _hk_row in _hk_watch_owner -%}
+      {%- set _hk_raw_ticker = _hk_row.get('ticker') if _hk_row is mapping else none -%}
+      {%- set _hk_ticker = (_hk_raw_ticker|trim|upper) if _hk_raw_ticker is string else '' -%}
+      {%- if not _hk_ticker or _hk_ticker in _hk_owner.watch_ids -%}
+        {%- set _hk_owner.watch_valid = false -%}
+      {%- else -%}
+        {%- set _ = _hk_owner.watch_ids.append(_hk_ticker) -%}
+        {%- if _hk_ticker in _hk_owner.board_ids -%}
+          {%- set _ = _hk_owner.intersection.append(_hk_ticker) -%}
+        {%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+  {%- set _hk_union_known = _hk_owner.board_valid and _hk_owner.watch_valid and not _hk_owner.intersection -%}
+  {%- set _hk_unique_n = (_hk_owner.board_ids + _hk_owner.watch_ids)|length if _hk_union_known else none -%}
+  {%- set _hk_selection = namespace(top_count=0) -%}
+  {%- if _hk_owner.board_valid -%}
+    {%- for _hk_row in _hkb -%}
+      {%- if _hk_row.get('featured') -%}{%- set _hk_selection.top_count = _hk_selection.top_count + 1 -%}{%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+  {%- set _hk_source_owner_valid = _hk_owner.board_valid -%}
+  {%- set _hk_initial_source = 'top' if (_hk_source_owner_valid and _hk_selection.top_count > 0) else 'all' -%}
+  {%- set _hk_initial_shown_n = _hk_selection.top_count if _hk_initial_source == 'top' else _hkb|length -%}
+
   <!-- ===================== PROPHET — HK stock signals (relative-strength cards) ===================== -->
+  {% if mode == 'stocks' %}
+  <section class="hk-v37-panel span12" id="hk-v37-prophet" data-initial-source="{{ _hk_initial_source }}" data-active-source="{{ _hk_initial_source }}" data-initial-top-count="{{ _hk_selection.top_count }}" data-source-owner-state="{{ 'available' if _hk_source_owner_valid else 'unavailable' }}">
+    <div class="hk-v37-sec-hd">
+      <h2>Prophet</h2>
+      <span class="hk-v37-result" id="hk-v37-result">
+        {% if _hk_union_known %}
+        {{ t(_hk_initial_shown_n ~ ' actionable cards shown · ' ~ _hk_unique_n ~ ' current names (' ~ _hk_owner.board_ids|length ~ ' stage board + ' ~ _hk_owner.watch_ids|length ~ ' watch)', '显示 ' ~ _hk_initial_shown_n ~ ' 张可操作卡片 · 当前共 ' ~ _hk_unique_n ~ ' 只（阶段榜单 ' ~ _hk_owner.board_ids|length ~ ' + 观察 ' ~ _hk_owner.watch_ids|length ~ '）') }}
+        {% elif _hk_owner.board_valid and _hk_owner.watch_valid %}
+        {{ t(_hk_initial_shown_n ~ ' actionable cards shown · ' ~ _hk_owner.board_ids|length ~ ' stage-board names · ' ~ _hk_owner.watch_ids|length ~ ' watch names · unique total unavailable', '显示 ' ~ _hk_initial_shown_n ~ ' 张可操作卡片 · 阶段榜单 ' ~ _hk_owner.board_ids|length ~ ' 只 · 观察 ' ~ _hk_owner.watch_ids|length ~ ' 只 · 去重总数暂不可用') }}
+        {% elif _hk_owner.board_valid %}
+        {{ t(_hk_initial_shown_n ~ ' actionable cards shown · ' ~ _hk_owner.board_ids|length ~ ' stage-board names · watch unavailable', '显示 ' ~ _hk_initial_shown_n ~ ' 张可操作卡片 · 阶段榜单 ' ~ _hk_owner.board_ids|length ~ ' 只 · 观察名单暂不可用') }}
+        {% elif _hk_owner.watch_valid %}
+        {{ t(_hk_initial_shown_n ~ ' actionable cards shown · stage board unavailable · ' ~ _hk_owner.watch_ids|length ~ ' watch names', '显示 ' ~ _hk_initial_shown_n ~ ' 张可操作卡片 · 阶段榜单暂不可用 · 观察 ' ~ _hk_owner.watch_ids|length ~ ' 只') }}
+        {% else %}
+        {{ t(_hk_initial_shown_n ~ ' actionable cards shown · stage board unavailable · watch unavailable', '显示 ' ~ _hk_initial_shown_n ~ ' 张可操作卡片 · 阶段榜单暂不可用 · 观察名单暂不可用') }}
+        {% endif %}
+      </span>
+      <span class="hk-v37-sec-spacer"></span>
+      <div class="hk-v37-controls">
+        <button class="hk-v37-filter" id="hk-v37-filter" type="button" hidden></button>
+        <span class="hk-v37-seg" role="group" aria-label="Candidate population">
+          <button type="button" data-hk-source="top" aria-selected="{{ 'true' if _hk_initial_source == 'top' else 'false' }}"{% if not _hk_source_owner_valid %} disabled aria-disabled="true"{% endif %}>{{ t('Top Picks', '首选') }}</button>
+          <button type="button" data-hk-source="all" aria-selected="{{ 'true' if _hk_initial_source == 'all' else 'false' }}">{{ t('All Candidates', '全部候选') }}</button>
+        </span>
+        <span class="hk-v37-seg" role="group" aria-label="View" data-prophet-view-control>
+          <button type="button" data-hk-view="grid" aria-selected="true" onclick="if(window.StockTable&amp;&amp;StockTable._setView)StockTable._setView('grid')">{{ t('Grid', '卡片') }}</button>
+          <button type="button" data-hk-view="table" aria-selected="false" aria-disabled="true" disabled onclick="if(window.StockTable&amp;&amp;StockTable._setView)StockTable._setView('table')">{{ t('Table', '表格') }}</button>
+        </span>
+      </div>
+    </div>
+    <div class="hk-v37-card-grid" id="hk-v37-card-grid">
+  {% endif %}
   {# THE PANEL GATE IS ALSO ARTIFACT-LEVEL on the v1 path. `setups.buy` alone put the
      whole board — filter, leaders, ran, vetoed, laggards, footnote — behind a lane
      that is allowed to be EMPTY, so a v1 night on which the cascade admits nobody
@@ -3494,12 +3648,13 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
      stamp moved, this test stopped matching, and the whole layer went dark on a board
      that was emitting every field it needed. Match the family prefix so future era
      bumps are ledger events, not render outages. #}
-  {% if mode == 'stocks' and setups and (setups.buy
-        or (setups.get('board_definition') or '').startswith('hk_prophet_v')
-        or (setups.get('rank_by') or '').startswith('hk_prophet_v')) %}
+  {% if mode == 'stocks' and _hk_setups and (_hkb or _hsg.any) %}
+  {% if _hk_buy_owner.valid %}
   {# ── W8-G: JSON data block — feeds StockTable.init(); one row per buy name in system order ── #}
   {% set _hk_st_rows = [] %}
-  {% for _hn in setups.buy %}
+  {# Cross this legacy serialization seam through the validated owner.  Raw
+     setups.buy used to throw on null and iterate malformed strings/mappings. #}
+  {% for _hn in _hkb %}
     {% set _hk_conv = _hn.get('conviction') or {} %}
     {% set _hk_sb = _hn.get('southbound') or {} %}
     {% set _hk_ah = _hn.get('ah_value') or {} %}
@@ -3524,15 +3679,17 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
       'group':        _hn.get('group') or 'setting_up',
       'align_tier':   _hn.get('align_tier') or '',
       'washout_2w':   true if _hn.get('washout_2w') else false,
+      '_top':         true if _hn.get('featured') else false,
     } %}
     {% set _ = _hk_st_rows.append(_hk_row) %}
   {% endfor %}
   <script type="application/json" id="stocktable-data">
   {
     "rows": {{ _hk_st_rows | tojson }},
-    "as_of": {{ (setups.as_of or '') | tojson }}
+    "as_of": {{ (_hk_setups.get('as_of') or '') | tojson }}
   }
   </script>
+  {% endif %}
   {# ═══ HK BOARD RESURRECTION — priority display layer (hk_prophet_v1, 2026-08-02) ═══
      research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 G1/G4/G9.
 
@@ -3550,18 +3707,6 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
      nothing to say. The board stamps its own definition; that is what we read.
      `rank_by` is the same string under the older key, kept as the fallback so an
      artifact written between the two stamps still lights the layer. #}
-  {%- set _hkb = setups.buy or [] -%}
-  {%- set _hk_def = setups.get('board_definition') or setups.get('rank_by') -%}
-  {%- set _hsg = namespace(any=(_hk_def or '').startswith('hk_prophet_v')) -%}
-  {%- set _hk_ran = (setups.get('ran') or []) if _hsg.any else [] -%}
-  {# Ripening shelf (CN W8-R1 port, 2026-08-07): non-eligible names whose weekly
-     setups are live. Fail-soft — pre-shelf artifacts carry no `ripening` key and
-     render exactly as before. #}
-  {%- set _hk_rip = (setups.get('ripening') or []) if _hsg.any else [] -%}
-  {%- set _hk_rip_ready  = (_hk_rip | selectattr('zone', 'equalto', 'READY')  | list) if _hk_rip else [] -%}
-  {%- set _hk_rip_basing = (_hk_rip | selectattr('zone', 'equalto', 'BASING') | list) if _hk_rip else [] -%}
-  {%- set _hk_ldrs = (setups.get('leaders') or []) if _hsg.any else [] -%}
-  {%- set _hk_veto = (setups.get('vetoed') or []) if _hsg.any else [] -%}
   {# ── STANCE, PRINTED ONCE ──────────────────────────────────────────────────
        Every display-lane row now carries the engine's own `stance`/`stance_zh`.
        Printed per row it would be a constant repeated 12–15 times, which Law 4
@@ -3740,15 +3885,11 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   {%- endif -%}{%- endfor -%}
   {%- set _hk_xu_allfeat = (_hk_xu_c.feat > 0 and _hk_xu_c.feat_unknown == _hk_xu_c.feat) -%}
   <div class="panel span12" id="standouts">
-    <h2>{{ t('Prophet — HK stock signals', 'Prophet — 港股信号') }}
-      <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
-      {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, " ~ _hk_ext_en ~ ", capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、" ~ _hk_ext_zh ~ "，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
-      {# W8-G: grid/table view toggle #}
-      <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
-        <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
-        <button id="st-btn-table" aria-selected="false" onclick="StockTable._setView('table')">☰ <span class="l-en">Table</span><span class="l-zh">表格</span></button>
-      </span>
-    </h2>
+    <span id="hk-owner-population-proof" hidden{% if _hk_owner.board_valid %} data-owner-board-population="{{ _hk_owner.board_ids|length }}"{% endif %}{% if _hk_owner.watch_valid %} data-owner-watch-population="{{ _hk_owner.watch_ids|length }}"{% endif %}{% if _hk_union_known %} data-owner-unique-population="{{ _hk_unique_n }}"{% endif %}></span>
+    <div class="prophet-owner-context" data-prophet-owner-context>
+      <span>{{ t('HK stock signals', '港股信号') }} · {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
+      <span data-prophet-help>{% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, " ~ _hk_ext_en ~ ", capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、" ~ _hk_ext_zh ~ "，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}</span>
+    </div>
     {#- ── THE BOARD'S ONE VINTAGE STAMP (HK twin of the US/CN #stocks-header fix,
         2026-09-01). Removing the per-card `date` chip above (a board-wide constant
         masquerading as a per-name vintage — see the fence at the pv_card call)
@@ -3756,9 +3897,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
         already state it once at page level. "Data through <as_of>" is the whole
         answer to "how fresh is this board", stated once, in plain words
         (DESIGN_DOCTRINE Law 4: one as-of stamp per panel). -#}
-    {% if setups and setups.get('as_of') %}
-    <p class="note" style="margin:0 0 2px;text-transform:none;color:var(--muted)"><span class="l-en">Data through</span><span class="l-zh">数据截至</span> <strong>{{ setups.as_of }}</strong></p>
-    {% endif %}
+    <p class="note" data-prophet-vintage style="margin:0 0 2px;text-transform:none;color:var(--muted)"><span class="l-en">{{ 'Data through' if _hk_setups.get('as_of') else 'Board vintage unavailable' }}</span><span class="l-zh">{{ '数据截至' if _hk_setups.get('as_of') else '榜单日期暂不可用' }}</span>{% if _hk_setups.get('as_of') %} <strong>{{ _hk_setups.get('as_of') }}</strong>{% endif %}</p>
     {# THE ONE board-note (§7.2). Board mechanics only — the "screen, not a buy list" caveat
        lives once in the desk manifest above + the per-card tier badge. #}
     <p class="note" style="margin:0 0 2px;text-transform:none">{% if _hsg.any %}{{ t('Live entries first, then setups forming, then names that already ran or are blocked. Rank is a screen, not a promise.', '先看入场窗口已打开的，再看形态形成中的，最后是已启动或受阻的。排名是筛选，不是承诺。') }}{% else %}{{ t('Only names with a fresh entry signal make this board. Entry-open group first, then setting-up. Rank is a screen, not a promise.', '仅收录出现新入场信号的个股。入场开启组优先，蓄势中次之。排名是筛选，不是承诺。') }}{% endif %}</p>
@@ -3792,7 +3931,7 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
     </div>
     <span class="pbf-live" id="hk-stage-status" aria-live="polite"></span>
     {% endif %}
-    <div class="nbgrid" data-showmore-rows="3">
+    <div class="nbgrid">
     {% for n in (_render_list.items if _hsg.any else _hkb) %}
       {% if n.get('_heading') %}
       {# stage-bucket heading — the board's primary structure on the priority path.
@@ -4524,9 +4663,39 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
   })();
   </script>
   {% endif %}
+  {% elif mode == 'stocks' %}
+    <div class="hk-v37-empty hk-v37-static-state">{{ t('No Prophet candidates are published for this board.', '本期榜单暂无 Prophet 候选。') }}</div>
+  {% endif %}
+  {% if mode == 'stocks' %}
+    </div>{# /#hk-v37-card-grid — every owner stage stays in place #}
+    <div class="hk-v37-empty" id="hk-v37-grid-empty" hidden>{{ t('No actionable cards match this filter; the full stage board remains below.', '当前筛选无可操作卡片；完整阶段榜单仍保留在下方。') }}</div>
+  </section>
+
+  <section class="hk-v37-panel span12" id="hk-v37-leadership">
+    <div class="hk-v37-sec-hd">
+      <h2>{{ t('Leadership & Rotation', '领先与轮动') }}</h2>
+      <span class="hk-v37-lead-basis" id="hk-v37-lead-basis" hidden>{{ t('Relative strength vs HSI', '相对恒生指数') }}</span>
+      <span class="hk-v37-flow" id="hk-v37-flow"></span>
+      <span class="hk-v37-sec-spacer"></span>
+      <a class="hk-v37-link" href="sector_ranking.html">{{ t('Sector ranking', '板块排名') }} ↗</a>
+    </div>
+    <div class="hk-v37-lead-list" id="hk-v37-lead-list">
+      <div class="hk-v37-empty hk-v37-static-state">{{ t('Leadership detail is unavailable until enhancement runs; the owner boards above remain complete.', '增强脚本运行前，领先详情暂不可用；上方原生榜单保持完整。') }}</div>
+    </div>
+    <div class="hk-v37-expand-wrap"><button class="hk-v37-expand" id="hk-v37-expand" type="button">{{ t('Expand leadership', '展开领先排名') }} ↗</button></div>
+  </section>
   {% endif %}
 
   <!-- ===================== TRACK RECORD — receipt chip + popup (shared partial) — sits with Prophet ===================== -->
+  {% if mode == 'stocks' %}
+  <section class="hk-v37-panel span12" id="hk-v37-evidence">
+    <div class="hk-v37-sec-hd">
+      <h2>{{ t('Evidence & Record', '证据与往绩') }}</h2>
+      <span class="hk-v37-sec-spacer"></span>
+      <a class="hk-v37-link" href="measurement.html">{{ t('Methodology →', '方法论 →') }}</a>
+    </div>
+    <div class="hk-v37-evidence-body" id="hk-v37-evidence-body">
+  {% endif %}
   {% if mode == 'stocks' and track_record %}
   {% set TR = track_record %}
   {% set _hk_h21 = (TR.horizons | selectattr('h', 'equalto', '21d') | list | first) if TR.horizons else none %}
@@ -4568,6 +4737,34 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
     'note_zh': '每晚榜单都会记录，并按相对恒指的前瞻超额收益评分。暂无退市名库——消失的个股会离开样本，因此亏损可能被低估。',
   } %}
   <div class="panel span12" id="track-record" style="display:flex;justify-content:center;padding:16px">{% include '_track_record_dlg.html.j2' %}</div>
+  {% endif %}
+  {% if mode == 'stocks' %}
+    {% if not track_record %}<div class="hk-v37-empty hk-v37-static-state">{{ t('Track record is currently unavailable.', '往绩记录目前暂不可用。') }}</div>{% endif %}
+    </div>
+  </section>
+
+  <section class="hk-v37-panel span12" id="hk-v37-tools">
+    <div class="hk-v37-tools">
+      <b>{{ t('Research tools', '研究工具') }}</b>
+      <a class="hk-v37-tool" href="hk_stocks_lab.html">{{ t('Pick Lab', '选股实验室') }} ↗</a>
+      <a class="hk-v37-tool" href="hk.html">{{ t('HK Macro', '香港宏观') }} ↗</a>
+      <a class="hk-v37-tool" href="sector_ranking.html">{{ t('Sector ranking', '板块排名') }} ↗</a>
+      <a class="hk-v37-tool" href="#hk-velocity-desk">{{ t('Fast Movers', '快速异动') }} ↓</a>
+      <a class="hk-v37-tool" href="#washout-watch">{{ t('Washout Watch', '洗盘观察站') }} ↓</a>
+      <a class="hk-v37-tool" href="#mainland-money">{{ t('Mainland Money', '内地资金') }} ↓</a>
+      <a class="hk-v37-tool" href="#hk-screener">{{ t('Screener', '筛选器') }} ↓</a>
+    </div>
+  </section>
+
+  <div class="hk-v37-modal" id="hk-v37-modal" aria-hidden="true">
+    <div class="hk-v37-modal-card" role="dialog" aria-modal="true" aria-labelledby="hk-v37-modal-title">
+      <div class="hk-v37-modal-hd">
+        <h3 id="hk-v37-modal-title">{{ t('Leadership & Rotation', '领先与轮动') }}</h3>
+        <button class="hk-v37-modal-x" type="button" data-hk-modal-close aria-label="Close">×</button>
+      </div>
+      <div class="hk-v37-modal-body" id="hk-v37-modal-body"></div>
+    </div>
+  </div>
   {% endif %}
 
   {# ======= 1D VELOCITY DESK — fast movers (hk_stocks.html only) — moved AFTER Prophet (IA revamp 2026-07-22)
@@ -4999,8 +5196,10 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
         }
         var shown = expanded ? rows : rows.slice(0, CAP);
         body.innerHTML = shown.map(function (r) {
-          return '<tr>' + cols.map(function (c) { return '<td class="' + (c.l ? 'l' : '') + '">' + c.cell(r) + '</td>'; }).join('') + '</tr>';
-        }).join('') || '<tr><td>—</td></tr>';
+          return '<tr>' + cols.map(function (c) {
+            return '<td class="' + (c.l ? 'l' : '') + '" data-label-en="' + c.en + '" data-label-zh="' + c.zh + '">' + c.cell(r) + '</td>';
+          }).join('') + '</tr>';
+        }).join('') || '<tr><td class="l" data-label-en="Status" data-label-zh="状态">—</td></tr>';
         if (moreBtn) {
           if (rows.length > CAP) {
             moreBtn.style.display = 'block';
@@ -5042,6 +5241,7 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
   {# Southbound & A/H combined panel REMOVED 2026-07-22 — merged into #mainland-money above. #}
 
 </div>
+{% if mode == 'stocks' %}</main>{% endif %}
 
 <div class="foot">
   {{ t('Built', '生成于') }} {{ built }}<br>
@@ -5174,23 +5374,20 @@ function initStockTableView(){
   var currentView = localStorage.getItem(LS_VIEW) || 'grid';
 
   function applyView(v) {
+    v = v === 'table' ? 'table' : 'grid';
     currentView = v;
     localStorage.setItem(LS_VIEW, v);
     var standouts = document.getElementById('standouts');
-    var chipsEl   = document.getElementById('st-count-chips');
-    var gbtn = document.getElementById('st-btn-grid');
-    var tbtn = document.getElementById('st-btn-table');
+    var prophet = document.getElementById('hk-v37-prophet');
     if (!standouts) return;
-    if (v === 'table') {
-      standouts.classList.add('st-table-mode');
-      /* HK: count-chips uses CN stage taxonomy — never shown (element stays display:none) */
-      if (gbtn) gbtn.setAttribute('aria-selected','false');
-      if (tbtn) tbtn.setAttribute('aria-selected','true');
-    } else {
-      standouts.classList.remove('st-table-mode');
-      if (gbtn) gbtn.setAttribute('aria-selected','true');
-      if (tbtn) tbtn.setAttribute('aria-selected','false');
-    }
+    standouts.classList.toggle('st-table-mode', v === 'table');
+    if (prophet) prophet.setAttribute('data-active-view', v);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-hk-view]'), function (button) {
+      button.setAttribute('aria-selected', String(button.getAttribute('data-hk-view') === v));
+    });
+    standouts.dispatchEvent(new CustomEvent('stocktable:hk-view', {
+      bubbles: true, detail: { view: v }
+    }));
   }
 
   StockTable._setView = applyView;
@@ -5207,6 +5404,36 @@ function initStockTableView(){
     columns:     cols,
     optionLabels: { sector: SECTOR_LABELS },
     searchPlaceholder: ['Search name or theme…','搜索名称或主题…'],
+  });
+
+  /* The server-owned featured bit is also the table's Top identity. Preserve
+     it across StockTable re-renders so persisted Table startup and a missing
+     entitled composer cannot widen Top into All. */
+  var sourceRows = [];
+  try {
+    sourceRows = JSON.parse(document.getElementById('stocktable-data').textContent || '{}').rows || [];
+  } catch (e) {}
+  var topByTicker = Object.create(null);
+  sourceRows.forEach(function (row) {
+    if (row && row.ticker) topByTicker[String(row.ticker).trim().toUpperCase()] = row._top === true;
+  });
+  function tagSourceRows() {
+    Array.prototype.forEach.call(document.querySelectorAll('#stocktable-wrap tbody tr'), function (tr) {
+      var link = tr.querySelector('a.stf-tkr');
+      var ticker = link ? String(link.textContent || '').trim().toUpperCase() : '';
+      if (!ticker || !Object.prototype.hasOwnProperty.call(topByTicker, ticker)) return;
+      tr.setAttribute('data-ticker', ticker);
+      tr.setAttribute('data-prophet-top', String(topByTicker[ticker]));
+    });
+  }
+  tagSourceRows();
+  var tableWrap = document.getElementById('stocktable-wrap');
+  if (tableWrap && window.MutationObserver) {
+    new MutationObserver(tagSourceRows).observe(tableWrap, { childList: true, subtree: true });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-hk-view="table"]'), function (button) {
+    button.disabled = false;
+    button.removeAttribute('aria-disabled');
   });
 
   /* restore persisted view */

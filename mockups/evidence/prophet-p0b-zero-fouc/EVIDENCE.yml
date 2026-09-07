@@ -1,0 +1,11 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/canada.html.j2
+  - templates/hk.html.j2
+  - templates/stock-dashboard.css
+  - templates/dashboard-icons.js
+  - site/canada-stock-v36.js
+  - site/hk-stock-v36.js
+  - site/stock-dashboard.css
+  - site/dashboard-icons.js
+manifest: mockups/evidence/prophet-p0b-zero-fouc/manifest.json

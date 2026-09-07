@@ -1,4 +1,4 @@
-"""Byte-level pins for the HK Stock Dashboard V3.8 composer (V3.7 successor).
+"""Static-shell and enhancement pins for the HK Stock Dashboard V3.8.
 
 site/hk-stock-v36.js is the HK composer, corrected to V3.8 per
 research/STOCK_DASHBOARD_V38_ACTION_LEADERSHIP_ARCHITECTURE.md and
@@ -6,16 +6,15 @@ DEC:V38-ACTION-IS-NOT-LEADERSHIP (carrier
 stock-dashboard-v38-hk-ca-fable-20260826-sol-001). Canonical V3.8 law:
 ACTION TIMING ≠ TREND LEADERSHIP. These pins hold the constitution in place:
 
-  V3.7 laws still controlling (unchanged pins below):
+  Laws still controlling:
   - Top Picks is the owner's pv-featured cohort, never a position slice.
   - No LIVE plane exists for HK — no LIVE text, no live-quote enhancement,
     zero fetch() calls anywhere.
-  - Evidence & Record moves the HK trd wrapper via appendChild, never
-    recomputed.
+  - Evidence & Record and the HK track-record owner render in place; the
+    composer never moves or recomputes them.
   - Leadership/action-group filtering never silently switches the Top
     Picks / All Candidates population.
-  - Grid/Table XOR [hidden] overrides + the `.sm-hidden{display:flex}`
-    rescue against theme.js's live show-more references.
+  - Grid/Table and card filters preserve owner show-more state.
   - The Southbound flow cue is gated on the owner's own materiality marker
     (.sbah-sig sig-in/sig-out/sig-neu), never on mere node existence.
   - The loader (templates/dashboard-icons.js + site/ pair) retry pins.
@@ -43,7 +42,9 @@ from pathlib import Path
 
 import pytest
 
-COMPOSER = Path(__file__).resolve().parents[1] / "site" / "hk-stock-v36.js"
+ROOT = Path(__file__).resolve().parents[1]
+COMPOSER = ROOT / "site" / "hk-stock-v36.js"
+STOCK_CSS = ROOT / "templates" / "stock-dashboard.css"
 
 
 def _composer_text() -> str:
@@ -260,8 +261,8 @@ def test_southbound_flow_cue_gated_on_materiality_not_existence():
     assert '"#hk-v37-flow"' in cue_body, (
         "renderFlowCue() no longer targets the #hk-v37-flow header slot"
     )
-    assert 'id="hk-v37-flow"' in text, (
-        "buildShell() markup lost the #hk-v37-flow slot in the Leadership "
+    assert 'id="hk-v37-flow"' in HK_TEMPLATE.read_text(encoding="utf-8"), (
+        "the server-owned Leadership header lost the #hk-v37-flow slot; "
         "header — the cue has nowhere to render"
     )
 
@@ -291,73 +292,19 @@ def test_leadership_rows_keep_action_stance_as_separate_axis():
 # Evidence & Record — moves the HK trd wrapper(s), never recomputes
 # ---------------------------------------------------------------------------
 
-def test_evidence_and_record_moves_trd_wrap_via_appendchild():
-    """HK ships _track_record_dlg.html.j2 WITHOUT Canada's wrapping `.trk`
-    div: #track-record directly holds two sibling `.trd-wrap` elements (the
-    #trd-btn chip and the #trd-dlg dialog — verified site/hk_stocks.html:3765).
-    evidenceWraps() must move ALL `.trd-wrap` matches, not just the first —
-    moving only the button and stranding the dialog inside the hidden legacy
-    panel would silently break the "Track record" click (display:none on an
-    ancestor suppresses a position:fixed descendant too).
-
-    Hardened against comment-satisfiable false-passes: the markup/heading
-    assertions are scoped to evidenceSectionHtml()'s OWN function body (not
-    "anywhere in the file", which a stray comment could satisfy even after
-    the emitting code is deleted); the qsa(...) collection assertion is
-    scoped to evidenceWraps()'s own body the same way; the move itself is
-    pinned as a live `wraps.forEach(...evBody.appendChild(w)...)` call site,
-    not a bare substring; and evidenceSectionHtml() must appear at least
-    twice (definition + buildShell()'s conditional splice) so the section
-    can never be defined-but-never-rendered."""
+def test_evidence_and_record_renders_owner_track_record_in_place():
+    """Static HTML owns the evidence section and the complete dialog wrappers."""
     text = _composer_text()
-
-    m = re.search(r"function evidenceWraps\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate evidenceWraps() function body via regex"
-    wraps_body = m.group(0)
-    assert 'qsa(".trd-wrap", host)' in wraps_body, (
-        "evidenceWraps() no longer collects every .trd-wrap match via qsa() "
-        "INSIDE its own function body — moving only the first .trd-wrap "
-        "(querySelector) would strand the #trd-dlg dialog inside the hidden "
-        "legacy panel"
-    )
-
-    m2 = re.search(r"function evidenceSectionHtml\b.*?(?=\n  function )", text, re.S)
-    assert m2, "could not locate evidenceSectionHtml() function body via regex"
-    section_body = m2.group(0)
-    assert 'id="hk-v37-evidence"' in section_body, (
-        "Evidence & Record section markup missing its exact "
-        'id="hk-v37-evidence" INSIDE evidenceSectionHtml() itself'
-    )
-    assert "Evidence &amp; Record" in section_body or "Evidence & Record" in section_body, (
-        "Evidence & Record EN heading missing from evidenceSectionHtml()'s own markup"
-    )
-    assert "证据与往绩" in section_body, (
-        "Evidence & Record ZH heading missing from evidenceSectionHtml()'s own markup"
-    )
-    assert "measurement.html" in section_body, (
-        "Methodology link to measurement.html missing from evidenceSectionHtml()'s own markup"
-    )
-
-    assert text.count("evidenceSectionHtml()") >= 2, (
-        "evidenceSectionHtml() must appear at least twice: once where it is "
-        "defined and once where buildShell() splices its call "
-        "(`wraps.length ? evidenceSectionHtml() : ''`) into the panel "
-        "sequence — otherwise the section can be defined but never rendered"
-    )
-    assert "wraps.length ? evidenceSectionHtml() : ''" in text, (
-        "buildShell() no longer conditionally splices evidenceSectionHtml() "
-        "on wraps.length — the section would either always render (even "
-        "with zero .trd-wrap found) or never render at all"
-    )
-
-    assert re.search(
-        r"wraps\.forEach\(function \(w\) \{ evBody\.appendChild\(w\); \}\)", text
-    ), (
-        "composer no longer moves every element evidenceWraps() collected "
-        "via a live wraps.forEach(...evBody.appendChild(w)...) call — Track "
-        "Record must be MOVED into the Evidence body, never recomputed or "
-        "left unattached"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    start = template.index('<section class="hk-v37-panel span12" id="hk-v37-evidence">')
+    end = template.index("</section>", start)
+    section = template[start:end]
+    assert "Evidence & Record" in section and "证据与往绩" in section
+    assert "measurement.html" in section
+    assert 'id="track-record"' in section
+    assert "_track_record_dlg.html.j2" in section
+    assert "evidenceWraps" not in text and "evidenceSectionHtml" not in text
+    assert "appendChild" not in text and "insertBefore" not in text
     assert "hk_track_ledger" not in text, (
         "composer must never fetch factordata/hk_track_ledger.json itself; "
         "the trd dialog owns that fetch via its own data-url"
@@ -441,72 +388,29 @@ def test_leadership_activation_never_force_switches_population():
 # Grid/Table XOR — explicit [hidden] overrides (same UA-vs-author trap)
 # ---------------------------------------------------------------------------
 
-REQUIRED_HIDDEN_OVERRIDES = [
-    ".hk-v37-card-grid[hidden]{display:none!important}",
-    ".hk-v37-card-grid .pvcard[hidden]{display:none!important}",
-]
+REQUIRED_HIDDEN_OVERRIDE = (
+    ".mx-stockdash--hk .hk-v37-card-grid .pvcard[hidden] { display: none !important; }"
+)
 
 
-def test_hidden_attribute_overrides_ship_in_composer_style():
-    """The UA sheet's [hidden]{display:none} loses to ANY author display
-    rule, and both hidden targets carry one: the page stylesheet sets
-    .pvcard{display:flex} and the composer's own style sets
-    .hk-v37-card-grid{display:grid}. Without explicit overrides, the Top
-    Picks segment, the leadership filter's grid hiding, and the grid/table
-    view switch are all visually inert even though state/aria update."""
+def test_hidden_attribute_override_ships_in_governed_stylesheet():
+    """Card filters retain an author-level hidden override without runtime CSS."""
     text = _composer_text()
-    for rule in REQUIRED_HIDDEN_OVERRIDES:
-        assert rule in text, (
-            f"composer style lost the {rule!r} override; the hidden "
-            "attribute is defeated by author display rules and the Top "
-            "Picks segment / leadership filter / grid-table switch go "
-            "visually inert"
-        )
+    css = STOCK_CSS.read_text(encoding="utf-8")
+    assert REQUIRED_HIDDEN_OVERRIDE in css
     assert "card.hidden = !show" in text.replace("  ", " "), (
-        "composer no longer hides grid cards via the hidden attribute; "
-        "re-review REQUIRED_HIDDEN_OVERRIDES before deleting them"
+        "composer no longer hides filtered cards via the hidden attribute"
     )
+    assert "createElement(\"style\")" not in text and "style.textContent" not in text
 
 
-def test_sm_hidden_override_rescues_cards_from_theme_js_show_more():
-    """BLOCKER repair (adversarial review, 2026-08-25): site/theme.js's
-    row-mode show-more (`initShowMore`, triggered by the `data-showmore-rows`
-    attribute already present on #standouts .nbgrid) keeps a LIVE reference
-    to the original grid's children — the EXACT .pvcard nodes
-    collectCards() moves into #hk-v37-card-grid, not copies. Its `resize`
-    listener and ResizeObserver re-run `render()` on that live array
-    whenever the column count changes, re-adding `.sm-hidden`
-    (theme.css: display:none!important) to any card past its own page
-    threshold. A one-shot `card.classList.remove("sm-hidden")` at mount time
-    does not un-wire that listener, so a later resize (or a Table<->Grid
-    round trip that lets a hidden ResizeObserver fire) can silently delete
-    moved cards from the composed grid while hk-v37-result's counter keeps
-    counting them as shown.
-
-    Without `.hk-v37-card-grid .sm-hidden{display:flex!important}`, theme.js
-    re-adding `.sm-hidden` would win via the UA/author cascade (theme.css's
-    own `.sm-hidden{display:none!important}` outranks nothing scoped to the
-    composer's grid). The override must specifically NOT swallow a
-    genuinely-filtered card: `.pvcard[hidden]` is two classes + one
-    attribute (specificity 0,3,0) vs this rule's two classes (0,2,0), so
-    the composer's own Top Picks/leadership filter still wins over a stray
-    .sm-hidden class on the same card."""
+def test_owner_show_more_state_survives_in_place():
+    """No card move or global rescue may override the owner's show-more state."""
     text = _composer_text()
-    assert ".hk-v37-card-grid .sm-hidden{display:flex!important}" in text, (
-        "composer style lost the .sm-hidden{display:flex!important} rescue — "
-        "theme.js's live show-more references to the moved .pvcard nodes can "
-        "re-hide them on resize/ResizeObserver, silently deleting cards from "
-        "the composed grid while the shown-count counter keeps counting them"
-    )
-    # This rescue rule must never outrank a genuine composer-driven hide —
-    # the [hidden] override (asserted above) has to still appear in the text
-    # so the two rules coexist rather than one having replaced the other.
-    for rule in REQUIRED_HIDDEN_OVERRIDES:
-        assert rule in text, (
-            f"{rule!r} missing alongside the sm-hidden rescue — a genuinely "
-            "filtered-out card must still hide via [hidden], which needs "
-            "higher specificity than the sm-hidden rescue to win"
-        )
+    css = STOCK_CSS.read_text(encoding="utf-8")
+    assert 'classList.remove("sm-hidden")' not in text
+    assert ".hk-v37-card-grid .sm-hidden" not in css
+    assert "appendChild" not in text and "insertBefore" not in text
 
 
 # ---------------------------------------------------------------------------
@@ -541,7 +445,7 @@ def test_loader_retries_transient_entitled_fetch_failures():
         assert "!window.__mmHKStockV36" in block, (
             f"{path.name}: retry must not re-inject after a successful mount"
         )
-        assert '"hk-stock-v36.js?v=20260825"' in block, (
+        assert '"hk-stock-v36.js?v=20260906"' in block, (
             f"{path.name}: loader no longer injects hk-stock-v36.js"
         )
         assert "hk_stocks\\.html" in block, (
@@ -602,39 +506,36 @@ def test_close_modal_guards_on_is_open_before_clearing_overflow():
 # V3.8 — What to Act On Now at rest above Prophet (never modal-only)
 # ---------------------------------------------------------------------------
 
-def _build_shell_markup(text: str) -> str:
-    m = re.search(r"main\.innerHTML = .*?researchToolsHtml\(\);", text, re.S)
-    assert m, "could not locate buildShell()'s main.innerHTML composition"
-    return m.group(0)
+def _build_shell_markup(_text: str = "") -> str:
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    start = template.index('<main class="hk-v37 mx-stockdash mx-stockdash--hk" id="hk-v37">')
+    end = template.index("</main>", start)
+    return template[start:end]
 
 
 def test_act_now_renders_at_rest_above_prophet_never_modal_only():
     """V3.8 §13.1: without opening any modal, the user sees the owner-native
     action lanes — group action must not be recoverable only through Expand
-    Leadership. Pins (a) the #hk-v37-actnow section markup sits INSIDE
-    buildShell()'s at-rest page composition, BEFORE the #hk-v37-prophet
-    section (page grammar §4: Action above Prophet); (b) renderActNow() is
-    actually called from the mount path; (c) the V3.7 modal group-action
-    band (hk-v37-modal-lanes) is gone — the at-rest panel is the one home,
-    so the forbidden mutation 'move the lanes back inside openModal()' has
-    no surviving carrier to hide in."""
+    Leadership. Pins the server-owned #hk-v37-actnow markup before Prophet,
+    forbids client reconstruction/movement, and keeps the old modal action
+    band absent so there is exactly one action-surface owner."""
     text = _composer_text()
     shell = _build_shell_markup(text)
     actnow_idx = shell.find('id="hk-v37-actnow"')
     prophet_idx = shell.find('id="hk-v37-prophet"')
     assert actnow_idx != -1, (
-        "buildShell() no longer composes the #hk-v37-actnow section at rest "
+        "the template no longer renders the #hk-v37-actnow section at rest "
         "— the What to Act On Now job is buried again"
     )
-    assert prophet_idx != -1, "buildShell() lost the #hk-v37-prophet section"
+    assert prophet_idx != -1, "the template lost the #hk-v37-prophet section"
     assert actnow_idx < prophet_idx, (
         "the What to Act On Now section must render ABOVE Prophet (§4 page "
         "grammar), not below it"
     )
-    assert "renderActNow()" in text.split("main.innerHTML")[1], (
-        "renderActNow() is never called after the shell mounts — the panel "
-        "would be an empty box"
-    )
+    owner = shell[actnow_idx:prophet_idx]
+    assert 'id="act-now"' in owner
+    assert "main.innerHTML" not in text
+    assert "appendChild" not in text and "insertBefore" not in text
     assert "hk-v37-modal-lanes" not in text, (
         "the V3.7 modal group-action band (hk-v37-modal-lanes) is back — "
         "the at-rest panel is the one home for group action; a second home "
@@ -650,30 +551,22 @@ def test_act_now_renders_at_rest_above_prophet_never_modal_only():
 
 def test_at_rest_lane_rows_capped_at_three_with_view_all():
     """V3.8 §5.2 density law: no more than 3 group rows per lane at rest;
-    additional content only through the explicit View all expansion. Pins
-    the AN_AT_REST constant at exactly 3, the firstN(items, AN_AT_REST)
-    call inside anLaneHtml()'s collapsed branch, and the View-all control
-    keyed on items.length > AN_AT_REST — raising the constant, bypassing
-    firstN, or unconditionally rendering every row all turn this red."""
-    text = _composer_text()
-    assert re.search(r"var AN_AT_REST = 3;", text), (
-        "AN_AT_REST is no longer exactly 3 — the at-rest density pin "
-        "(≤3 rows per lane before View all) is broken"
-    )
-    m = re.search(r"function anLaneHtml\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate anLaneHtml() function body via regex"
-    body = m.group(0)
-    assert "firstN(items, AN_AT_REST)" in body, (
-        "anLaneHtml() no longer caps the collapsed lane at "
-        "firstN(items, AN_AT_REST) — every row would render at rest"
-    )
-    assert "items.length > AN_AT_REST" in body, (
-        "anLaneHtml() lost the items.length > AN_AT_REST condition for the "
-        "View-all control — either it never appears or it always appears"
-    )
-    assert "data-hk-an-view" in body, (
-        "anLaneHtml() lost the data-hk-an-view View-all control"
-    )
+    additional content is reachable through one native disclosure even when
+    the optional composer never loads. The server renders every owner row
+    exactly once: the first three directly and only the remainder inside the
+    market-local details/summary owner."""
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    css = STOCK_CSS.read_text(encoding="utf-8")
+    assert 'class="anv2-lst hk-v37-an-list"' in template
+    assert "{% for it in items[:3] %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert '<details class="hk-v37-an-disclosure" data-hk-an-disclosure>' in template
+    assert '<summary class="hk-v37-an-more" data-hk-an-view="{{ _hk_tone }}">' in template
+    assert "{% for it in items[3:] %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert "hk-v37-an-list is-collapsed" not in template
+    assert ".hk-v37-an-list.is-collapsed" not in css
+    assert ".hk-v37-an-disclosure:not([open]) > :not(summary) { display: none; }" in css
+    assert ".hk-v37-an-disclosure[open] > .hk-v37-an-more .lm-show { display: none; }" in css
+    assert ".hk-v37-an-disclosure[open] > .hk-v37-an-more .lm-hide { display: inline; }" in css
 
 
 # ---------------------------------------------------------------------------
@@ -732,6 +625,10 @@ def test_rank_basis_label_and_rs_prefix():
     # modal pane (modalPaneHtml) — losing either leaves a bare RS number
     # somewhere.
     shell = _build_shell_markup(text)
+    leadership = re.search(r"function renderLeadership\b.*?(?=\n  /\*)", text, re.S)
+    assert leadership, "could not locate renderLeadership()"
+    assert 'qs("#hk-v37-lead-basis")' in leadership.group(0)
+    assert "basis.hidden = !state.hasRankOwner" in leadership.group(0)
     mp = re.search(r"function modalPaneHtml\b.*?(?=\n  function )", text, re.S)
     assert mp, "could not locate modalPaneHtml() function body via regex"
     for where, markup in [("Leadership & Rotation header", shell),
@@ -798,10 +695,6 @@ def test_count_is_labelled_prophet_and_unknown_membership_never_renders_zero():
     for fn, snippet in [
         ("leadRow", 'x.count != null ? x.count : "—"'),
         ("modalRows", 'x.count != null ? x.count : "—"'),
-        # Exact ternary-head pin: a mutation like `(x.count != null || true)`
-        # keeps the bare substring but breaks this shape (adversarial review
-        # 2026-08-27, finding 8).
-        ("anRowHtml", "var countHtml = x.count != null ? '"),
     ]:
         m3 = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
         assert m3, f"could not locate {fn}() function body via regex"
@@ -809,77 +702,79 @@ def test_count_is_labelled_prophet_and_unknown_membership_never_renders_zero():
             f"{fn}() no longer branches on count != null — an unknown "
             "membership would render as zero, and missing ≠ zero"
         )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert "{% if _hk_members.known %}<span class=\"hk-v37-an-n\">" in template
 
 
 # ---------------------------------------------------------------------------
 # V3.8 — mobile lane grammar; presentation controls never touch population
 # ---------------------------------------------------------------------------
 
-def test_mobile_segment_grammar_one_lane_at_a_time():
-    """V3.8 §5.5: at ~390px the Act-Now panel is one horizontal segmented
-    lane selector plus ONE lane body at a time — never four stacked giant
-    lane cards. Pins the CSS mechanism: the segment bar is hidden at
-    desktop (display:none base rule) and shown in the 680px media query,
-    where lanes collapse to one column and only .is-current displays."""
-    text = _composer_text()
-    assert re.search(r"\.hk-v37-an-seg\{display:none", text), (
-        "the Act-Now segment bar lost its desktop display:none base rule"
+def test_static_owner_action_board_has_mobile_single_column_grammar():
+    """The first-frame owner lanes collapse to one bounded column on phones."""
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    stock_css = STOCK_CSS.read_text(encoding="utf-8")
+    shell = _build_shell_markup()
+    assert re.search(r'class="anv2-grid\s+hk-v37-an-lanes"', shell)
+    assert re.search(
+        r"@media\s*\(max-width:\s*680px\).*?"
+        r"\.hk-v37-an-lanes\s*\{[^}]*grid-template-columns:\s*1fr",
+        stock_css,
+        re.S,
     )
-    mq = re.search(r"@media\(max-width:680px\)\{.*?\}\"", text, re.S)
-    assert mq, "could not locate the 680px media query block"
-    mq_body = mq.group(0)
-    for rule in [
-        ".hk-v37-an-seg{display:flex}",
-        ".hk-v37-an-lanes{grid-template-columns:1fr}",
-        ".hk-v37-an-lane{display:none}",
-        ".hk-v37-an-lane.is-current{display:block}",
-    ]:
-        assert rule in mq_body, (
-            f"680px media query lost {rule!r} — the mobile grammar (one "
-            "segmented selector, one lane body at a time) is broken"
-        )
+    assert re.search(
+        r"\.hk-v37-an-body:not\(\.is-enhanced\).*?\.hk-v37-an-lane:target\s*\{[^}]*display:\s*block",
+        stock_css,
+        re.S,
+    )
+    assert ".hk-v37-an-body.is-enhanced .hk-v37-an-lane.is-current" in stock_css
+    assert 'id="act-now"' in template
 
 
 def test_mobile_lane_election_only_when_no_lane_chosen():
     """Adversarial review 2026-08-27, finding 1 (MAJOR): the default-lane
-    election must run ONLY while no lane has been chosen (state.anLane ==
-    null). Guarding it on the chosen lane's emptiness re-elects Buy Now on
-    every render, silently overriding a user who tapped an empty lane and
-    making the empty-lane "—" body unreachable on mobile (§5.5/§13.6 give
-    every lane title an accessible body, empty or not)."""
+    election belongs to the static owner and must be adopted once. The
+    enhancer must not re-elect from client data after a user chooses an empty
+    lane; all-empty deterministically falls back to Buy."""
     text = _composer_text()
-    m = re.search(r"function renderActNow\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate renderActNow() function body via regex"
-    body = m.group(0)
-    assert "if (state.anLane == null) {" in body, (
-        "renderActNow() lost the null-only default-lane election guard"
-    )
-    assert not re.search(r"state\.anLane == null\s*\|\|", body), (
-        "the default-lane election guard is an OR again — a chosen-but-empty "
-        "lane would be overridden back to the first non-empty lane on every "
-        "render, hijacking the user's segment choice"
-    )
-    assert "!anLaneItems(state.anLane).length" not in body, (
-        "renderActNow() re-elects when the chosen lane is empty — the "
-        "election must fire only when NO lane has been chosen yet"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert "renderActNow" not in text
+    adopt = re.search(r"function adoptActNow\b.*?(?=\n  function )", text, re.S)
+    assert adopt and 'getAttribute("data-hk-an-default") === "true"' in adopt.group(0)
+    assert 'host.classList.add("is-enhanced")' in adopt.group(0)
+    assert "('avoid' if _hk_red else 'buy')" in template
+
+
+def test_act_now_enhancement_reconciles_fragments_without_replacing_owner_nodes():
+    """The static owner is an anchor fallback; only the loaded composer may
+    upgrade those same nodes to tabs and bind action-local history."""
+    text = _composer_text()
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert '<div class="hk-v37-an-seg">' in template
+    assert '<a href="#anv2-buy" data-hk-an-lane="buy"' in template
+    assert 'role="tablist"' not in template[template.index('<div class="hk-v37-an-seg">'):template.index('<div class="anv2-grid hk-v37-an-lanes">')]
+    assert "function toneFromActionHash" in text
+    assert 'seg.setAttribute("role", "tablist")' in text
+    assert 'tab.setAttribute("role", "tab")' in text
+    assert 'tab.setAttribute("aria-controls", laneId)' in text
+    assert 'window.addEventListener("hashchange", reconcileActionLocation)' in text
+    assert 'window.addEventListener("popstate", reconcileActionLocation)' in text
+    assert "history.pushState" in text
+    assert "cloneNode(" not in re.search(
+        r"function adoptActNow\b.*?(?=\n  function )", text, re.S
+    ).group(0)
 
 
 def test_act_now_rows_carry_group_research_route_and_known_zero_state():
     """Adversarial review 2026-08-27, finding 2 (MAJOR): §5.4/§10 — a
     known-zero group must stay useful as a group-research destination.
-    Pins (a) anRowHtml() renders the harvested owner href as a live
+    Pins (a) the server row renders the harvested owner href as a live
     .hk-v37-an-go route link; (b) emptyStateHtml() has a distinct known-zero
     branch (members known, size 0) with quiet §10 copy — never the
     filter-miss language — that keeps the research route usable."""
     text = _composer_text()
-    m = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate anRowHtml() function body via regex"
-    body = m.group(0)
-    assert "x.href" in body and "hk-v37-an-go" in body, (
-        "anRowHtml() no longer renders the harvested sector href as an "
-        ".hk-v37-an-go route — known-zero groups become dead ends again"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert 'class="anv2-name-link hk-v37-an-go" href="sectors/{{ it.ticker }}.html"' in template
     m2 = re.search(r"function emptyStateHtml\b.*?(?=\n  function )", text, re.S)
     assert m2, "could not locate emptyStateHtml() function body via regex"
     empty_body = m2.group(0)
@@ -915,10 +810,10 @@ def test_rank_language_degrades_when_rank_owner_missing():
         "merged owner ranks"
     )
     shell = _build_shell_markup(text)
-    assert "state.hasRankOwner ?" in shell, (
-        "the at-rest Leadership basis chip is unconditional again — with no "
-        "rank owner the page would show rank language over a traversal-"
-        "ordered list"
+    assert 'id="hk-v37-lead-basis" hidden' in shell
+    rl = re.search(r"function renderLeadership\b.*?(?=\n  /\*)", text, re.S)
+    assert rl and "basis.hidden = !state.hasRankOwner" in rl.group(0), (
+        "the static rank-basis slot is no longer hidden when no owner rank exists"
     )
     mp = re.search(r"function modalPaneHtml\b.*?(?=\n  function )", text, re.S)
     assert mp, "could not locate modalPaneHtml() function body via regex"
@@ -940,61 +835,49 @@ def test_at_rest_action_rows_carry_no_metric_towers():
     """§5.2/§13.5: at-rest action rows carry only the group name, optional
     type cue, optional Prophet count, and a route/filter affordance — never
     performance stacks, score towers, percentile or diagnostic fields. Pins
-    the anRowHtml() surface to exactly the name span + optional count span
-    + optional route link, and bans the §5.2 forbidden-field vocabulary."""
+    the server row summary and the scoped CSS that keeps supplemental card
+    chips and stats out of the at-rest lane."""
     text = _composer_text()
-    m = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
-    assert m, "could not locate anRowHtml() function body via regex"
-    body = m.group(0)
-    for banned in ("20d", "60d", "5d", "pctile", "percentile", "score",
-                   "priority", "mom", "sparkline"):
-        assert banned not in body, (
-            f"anRowHtml() carries {banned!r} — at-rest action rows must not "
-            "grow performance/score/percentile towers (§5.2)"
-        )
-    spans = re.findall(r'<span class="([^"]+)"', body)
-    assert set(spans) <= {"hk-v37-an-name", "hk-v37-an-n"}, (
-        f"anRowHtml() renders unexpected span classes {spans!r} — the "
-        "at-rest row surface is name + optional count only"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert "renderActNow" not in text
+    assert '<div class="anv2-row-top">' in template
+    assert '<button class="anv2-name hk-v37-an-row"' in template
+    css = STOCK_CSS.read_text(encoding="utf-8")
+    assert ".hk-v37-an-body :is(.anv2-chips, .anv2-stat) { display: none; }" in css
 
 
 def test_act_now_lane_order_is_the_action_owners_order():
     """DEC:V38-ACTION-IS-NOT-LEADERSHIP: the rank axis must not order (or
     via the 3-row cap, gate the at-rest visibility of) the action surface.
-    collectLaneSectors() stamps the owner's own lane row order as laneIdx
-    and anLaneItems() sorts by it, undoing the rotation-rank sort that
-    state.sectors carries for the Leadership surface."""
+    collectLaneSectors() records the owner's lane order for Leadership, while
+    the static action surface preserves the owner's template iteration order
+    independently of that client-side presentation model."""
     text = _composer_text()
     m = re.search(r"function collectLaneSectors\b.*?(?=\n  /\*|\n  function )", text, re.S)
     assert m, "could not locate collectLaneSectors() function body via regex"
     assert "laneIdx: out.length" in m.group(0), (
         "collectLaneSectors() no longer stamps the action owner's row order"
     )
-    m2 = re.search(r"function anLaneItems\b.*?(?=\n  /\*|\n  function )", text, re.S)
-    assert m2, "could not locate anLaneItems() function body via regex"
-    assert re.search(r"a\.laneIdx \|\| 0\) - \(b\.laneIdx \|\| 0", m2.group(0)), (
-        "anLaneItems() no longer sorts by laneIdx — the at-rest action rows "
-        "would surface in rotation-rank order, letting the leadership axis "
-        "decide which action rows are visible under the 3-row cap"
-    )
+    template = HK_TEMPLATE.read_text(encoding="utf-8")
+    assert "{% for it in items[:3] %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert "{% for it in items[3:] %}{{ _hk_anrow(it, lane) }}{% endfor %}" in template
+    assert "renderActNow" not in text
 
 
 def test_act_now_presentation_controls_never_touch_population_or_filter():
-    """V3.8 §5.5: switching the visible mobile lane (or expanding View all)
-    is presentation-only — it must not mutate the Prophet selection until a
-    group is actually chosen. setAnLane()/toggleAnLane() must not call
-    setSource()/activate()/applyFilter() or assign state.source /
-    state.filter."""
+    """V3.8 §5.5: the composer owns only mobile lane selection. Native
+    details owns expansion, with no mirrored state or click interception;
+    switching lanes must not mutate the Prophet selection until a group is
+    actually chosen."""
     text = _composer_text()
-    for fn in ("setAnLane", "toggleAnLane"):
-        m = re.search(r"function " + fn + r"\b.*?\n  \}", text, re.S)
-        assert m, f"could not locate {fn}() function body via regex"
-        body = m.group(0)
-        for forbidden in ("setSource(", "activate(", "applyFilter(",
-                          "state.source", "state.filter"):
-            assert forbidden not in body, (
-                f"{fn}() references {forbidden!r} — Act-Now lane "
-                "presentation controls must never mutate the Prophet "
-                "population or filter"
-            )
+    m = re.search(r"function setAnLane\b.*?\n  \}", text, re.S)
+    assert m, "could not locate setAnLane() function body via regex"
+    for forbidden in ("setSource(", "activate(", "applyFilter(",
+                      "state.source", "state.filter"):
+        assert forbidden not in m.group(0), (
+            f"setAnLane() references {forbidden!r} — Act-Now lane controls "
+            "must never mutate the Prophet population or filter"
+        )
+    assert "toggleAnLane" not in text
+    assert "anOpen" not in text
+    assert 'closest("[data-hk-an-view]")' not in text

@@ -22,10 +22,6 @@
     "site/heatmap.js": {
       "create_style": 1
     },
-    "site/hk-stock-v36.js": {
-      "create_style": 1,
-      "style_text": 1
-    },
     "site/lightweight-charts-v5.js": {
       "create_style": 1
     },
@@ -161,6 +157,6 @@
       "create_style": 1
     }
   },
-  "generated_from": "07fc155aeacda5566f53139d530eb1cab1ec01aa",
+  "generated_from": "feec1fe60c4eb00fb5211636fe389a56974ef3fa",
   "schema": "mastermind.runtime_style_allowlist.v1"
 }

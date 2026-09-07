@@ -176,9 +176,9 @@ def _sha256_text(text: str) -> str:
 #: no leniency: literal file bytes. A legitimate future edit to any of these
 #: four templates must recompute and update its hash here.
 _EXPECTED_TEMPLATE_SHA256: dict[str, str] = {
-    "templates/hk.html.j2": "3fc18a6861518ac4691f30c7bfb13c5435a7339eacaeb01a921af33f9504476e",
+    "templates/hk.html.j2": "6e45058c198822f2580e3874ac48899f6a1cb45bf89df16548c374cdedef64a6",
     "templates/china.html.j2": "cb6e0685b96a6d897e9562418927c0bb5d5e656d4b31c99e843ec5f213fa7031",
-    "templates/canada.html.j2": "d4a951e0c3a1426ebbcbaa69296def90e74dd62e06722986e07f6b6d9d80d425",
+    "templates/canada.html.j2": "a108840bc92567faaa7fabaf9c6778c1ef33a63da59111fc847dabc86f2e36bc",
     "templates/intl.html.j2": "c62b4a6373ac3130a16f622b8dae9b73218642e261051a3bd3493fc95fd0d9a5",
 }
 
